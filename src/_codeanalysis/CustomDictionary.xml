@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Dictionary>
+  <Words>
+    <Recognized>
+      <Word>KNOWnoise</Word>
+    </Recognized>
+  </Words>
+  <Acronyms>
+    <CasingExceptions>
+      <Acronym>KNOWnoise</Acronym>
+      <Acronym>DI</Acronym>
+    </CasingExceptions>
+  </Acronyms>
+</Dictionary>

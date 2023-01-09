@@ -1,0 +1,24 @@
+# Editor configuration, see http://editorconfig.org
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+tab_width = 4
+end_of_line = crlf
+insert_final_newline = false
+
+[*.{ps1,psm1,js,ts,fs,json,jsx,tsx,rc}]
+indent_size = 2
+
+[*.md]
+indent_size = 2
+max_line_length = off
+trim_trailing_whitespace = false
+
+[*.{yml,yaml,html,xml,csproj,targets,ruleset,*proj}]
+indent_size = 2
+tab_width = 2

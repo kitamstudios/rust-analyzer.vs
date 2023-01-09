@@ -1,0 +1,44 @@
+// Use IntelliSense to learn about possible attributes.
+// Hover to view descriptions of existing attributes.
+// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Node",
+      "env": {
+        "TS_NODE_PROJECT": "tsconfig.cli.json",
+      },
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register",
+        "--max-old-space-size=8192",
+      ],
+      "program": "${workspaceFolder}/src/index-cli.ts",
+      "args": ["generate-files"],
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Launch Chrome against localhost",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
+      "type": "chrome",
+      "request": "attach",
+      "name": "Attach to Chrome",
+      "port": 9222,
+      "webRoot": "${workspaceFolder}"
+    },
+  ],
+  "compounds": [
+    {
+      "name": "Node only",
+      "configurations": ["Launch Node"],
+    }
+  ],
+}

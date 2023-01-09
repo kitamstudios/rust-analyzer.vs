@@ -1,0 +1,64 @@
+{
+  "id": "3e1ba62f-91d0-46ae-8768-270bca5890a8",
+  "name": "My Visual Studio extensions",
+  "description": "A collection of my Visual Studio extensions",
+  "version": "1.0",
+  "extensions": [
+    {
+      "name": "Clear MEF Component Cache",
+      "vsixId": "f5028141-9dd0-4ac4-ae6d-0481ae9a940d"
+    },
+    {
+      "name": "Comment Remover",
+      "vsixId": "d7c3f904-cc5a-4d47-aa25-81fb7c36df89"
+    },
+    {
+      "name": "Developer News 2022",
+      "vsixId": "36cfa8d9-bd14-4d32-a8a6-34133aa2309e"
+    },
+    {
+      "name": "Extension Manager 2022",
+      "vsixId": "4a196712-2c3f-4730-ad1d-e7cda4185eb3"
+    },
+    {
+      "name": "File Differ",
+      "vsixId": "ea5c68d6-cdae-4e79-bd46-2a39e95bb256"
+    },
+    {
+      "name": "File Icons",
+      "vsixId": "3a7b4930-a5fb-46ec-a9b8-9610c8f953b8"
+    },
+    {
+      "name": "Font Sizer 2.0",
+      "vsixId": "f7198797-d75d-4a7b-93c6-7bb56907735b"
+    },
+    {
+      "name": "Insert Guid",
+      "vsixId": "9def4441-acfd-4dd6-bffd-4531a57dee37"
+    },
+    {
+      "name": "Live Share 2022",
+      "vsixId": "Microsoft.VisualStudio.LiveShare.2022"
+    },
+    {
+      "name": "ML.NET Model Builder 2022",
+      "vsixId": "A274A0E2-E41E-40CC-A694-8D5D14BBD2D0"
+    },
+    {
+      "name": "Output enhancer",
+      "vsixId": "VSOutputEnhancer.Nikolay Balakin.a06be4c3-f97e-425c-8a0d-bdef08ac2abb"
+    },
+    {
+      "name": "Presenter Mode",
+      "vsixId": "RecordingDefaults.aa418e38-6c48-42a8-b461-a575b9e4f26a"
+    },
+    {
+      "name": "The Essentials 2022",
+      "vsixId": "046d9eae-a595-4033-9a0d-209e3f01b90e"
+    },
+    {
+      "name": "Tweaks 2022",
+      "vsixId": "0c8bd9fa-77d5-4563-ab57-9e01608c3d05"
+    }
+  ]
+}

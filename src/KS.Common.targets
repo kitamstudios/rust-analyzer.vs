@@ -1,0 +1,73 @@
+<Project>
+  <PropertyGroup>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <SignAssembly>False</SignAssembly>
+    <Nullable>enable</Nullable>
+    <LangVersion>10.0</LangVersion>
+    <AnalysisLevel>6.0</AnalysisLevel>
+    <AssemblyName>KS.$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace>KS.$(MSBuildProjectName)</RootNamespace>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Product>rust-analyzer - Rust Language support for Visual Studio.</Product>
+    <StrictCodeAnalysisEnabled>true</StrictCodeAnalysisEnabled> <!-- On by default -->
+    <StrictCodeAnalysisEnabled Condition="'$(BuildingForLiveUnitTesting)' == 'true' Or '$(Configuration)' != 'Release'">false</StrictCodeAnalysisEnabled>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>true</RunAnalyzersDuringLiveAnalysis>
+    <RunAnalyzers>true</RunAnalyzers>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TreatWarningsAsErrors>$(StrictCodeAnalysisEnabled)</TreatWarningsAsErrors>
+    <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)_codeanalysis\codeanalysis.ruleset</CodeAnalysisRuleSet>
+    <EnforceCodeStyleInBuild>$(StrictCodeAnalysisEnabled)</EnforceCodeStyleInBuild>
+    <CodeAnalysisTreatWarningsAsErrors>$(StrictCodeAnalysisEnabled)</CodeAnalysisTreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <!-- It's a temporary solution to cope with duplicate packages issue: https://github.com/dotnet/sdk/issues/24747 -->
+  <PropertyGroup>
+	<DisableCheckingDuplicateNuGetItems>true</DisableCheckingDuplicateNuGetItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)_codeanalysis\stylecop.json" Link="stylecop.json" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)_codeanalysis\codeanalysis.ruleset" Link="codeanalysis.ruleset" />
+  </ItemGroup>
+
+  <Target Name="CleanGeneratedFiles" AfterTargets="Clean">
+    <Exec Command="rmdir /s /q $(MSBuildProjectDirectory)\obj\$(Configuration)" />
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="Ensure.That" Version="10.1.0" />
+    <PackageReference Include="DalSoft.RestClient" Version="4.4.1" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="All" />
+    <PackageReference Include="FluentValidation" Version="10.3.5" />
+    <PackageReference Include="MediatR" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Data.Services.Client" Version="5.8.5" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="10.3.4" />
+    <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(IsTestProject)' != 'true'">
+    <PackageReference Include="Microsoft.VisualStudio.SDK.Analyzers" Version="16.10.10">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>
