@@ -44,24 +44,26 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Cargo\CargoExeRunner.cs" />
     <Compile Include="Cargo\CargoManifest.cs" />
+    <Compile Include="ProcessOutputProcessor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ProcessOutputRedirector.cs" />
     <Compile Include="RustAnalyzerPackage.cs" />
     <Compile Include="source.extension.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>source.extension.vsixmanifest</DependentUpon>
     </Compile>
-    <Compile Include="Cargo\CargoExeRunner.cs" />
     <Compile Include="VS\CargoScannerFactory.cs" />
     <Compile Include="Cargo\CargoManifestFactory.cs" />
     <Compile Include="VS\Guids.cs" />
-    <Compile Include="VS\OutputPaneWrapper.cs" />
+    <Compile Include="VS\RustOutputPane.cs" />
     <Compile Include="VS\PkgCmdId.cs" />
     <Compile Include="VS\RustActionProviderFactory.cs" />
     <Compile Include="RustConstants.cs" />
     <Compile Include="VS\RustContextProviderFactory.cs" />
-    <Compile Include="Cargo\RustHelpers.cs" />
+    <Compile Include="RustHelpers.cs" />
     <Compile Include="VS\WorkspaceExtensions.cs" />
   </ItemGroup>
   <ItemGroup>

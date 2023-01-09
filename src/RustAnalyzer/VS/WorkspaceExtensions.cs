@@ -27,7 +27,7 @@ public static class WorkspaceExtensions
             }
         }
 
-        return null;
+        return null!;
     }
 
     public sealed class FileCollector : IProgress<string>

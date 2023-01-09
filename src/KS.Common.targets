@@ -2,7 +2,7 @@
   <PropertyGroup>
     <ImplicitUsings>disable</ImplicitUsings>
     <SignAssembly>False</SignAssembly>
-    <Nullable>enable</Nullable>
+    <Nullable>disable</Nullable>
     <LangVersion>10.0</LangVersion>
     <AnalysisLevel>6.0</AnalysisLevel>
     <AssemblyName>KS.$(MSBuildProjectName)</AssemblyName>

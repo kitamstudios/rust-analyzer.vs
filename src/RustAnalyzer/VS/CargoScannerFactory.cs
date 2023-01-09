@@ -54,7 +54,7 @@ public class CargoScanner : IFileScanner
                     BuildConfigurationContext.DataValueName,
                     value: null,
                     target: null,
-                    context: "Debugxxx"),
+                    context: RustConstants.DefaultProfile),
 
                 new FileDataValue(
                     DebugLaunchActionContext.ContextTypeGuid,
@@ -69,7 +69,7 @@ public class CargoScanner : IFileScanner
         {
             var ret = new List<FileReferenceInfo>
             {
-                new FileReferenceInfo(@"D:\src\delme\hello_world\target\debug\hello_world.exe", null, "Debugxxx", (int)FileReferenceInfoType.Output)
+                new FileReferenceInfo(@"D:\src\delme\hello_world\target\debug\hello_world.exe", null, RustConstants.DefaultProfile, (int)FileReferenceInfoType.Output)
             };
 
             return await Task.FromResult((T)(IReadOnlyCollection<FileReferenceInfo>)ret);

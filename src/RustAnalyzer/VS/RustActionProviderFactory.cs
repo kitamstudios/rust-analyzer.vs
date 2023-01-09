@@ -18,10 +18,10 @@ public class RustActionProviderFactory : IWorkspaceProviderFactory<IFileContextA
 {
     public const string ProviderType = "F8C470E5-0000-498C-80B8-DA2674A82B88";
 
-    private readonly OutputPaneWrapper _outputPane;
+    private readonly RustOutputPane _outputPane;
 
     [ImportingConstructor]
-    public RustActionProviderFactory(OutputPaneWrapper outputPane)
+    public RustActionProviderFactory(RustOutputPane outputPane)
     {
         _outputPane = outputPane;
     }
@@ -43,9 +43,9 @@ public class RustActionProviderFactory : IWorkspaceProviderFactory<IFileContextA
 public class FileContextActionProvider : IFileContextActionProvider
 {
     private readonly IWorkspace _workspace;
-    private readonly OutputPaneWrapper _outputPane;
+    private readonly RustOutputPane _outputPane;
 
-    public FileContextActionProvider(IWorkspace workspace, OutputPaneWrapper outputPane)
+    public FileContextActionProvider(IWorkspace workspace, RustOutputPane outputPane)
     {
         _workspace = workspace;
         _outputPane = outputPane;
@@ -79,7 +79,7 @@ public class FileContextActionProvider : IFileContextActionProvider
 
 public sealed class BuildRustFileContextAction : BuildFileContextAction, IFileContextAction, IVsCommandItem
 {
-    public BuildRustFileContextAction(string filePath, FileContext fileContext, OutputPaneWrapper outputPane)
+    public BuildRustFileContextAction(string filePath, FileContext fileContext, RustOutputPane outputPane)
         : base(filePath, fileContext, outputPane)
     {
     }
@@ -93,21 +93,21 @@ public sealed class BuildRustFileContextAction : BuildFileContextAction, IFileCo
 
 public sealed class BuildCargoFileContextAction : BuildFileContextAction, IFileContextAction, IVsCommandItem
 {
-    public BuildCargoFileContextAction(string filePath, FileContext fileContext, OutputPaneWrapper outputPane)
+    public BuildCargoFileContextAction(string filePath, FileContext fileContext, RustOutputPane outputPane)
         : base(filePath, fileContext, outputPane)
     {
     }
 
     public override async Task<IFileContextActionResult> ExecuteAsync(IProgress<IFileContextActionProgressUpdate> progress, CancellationToken cancellationToken)
     {
-        var result = await CargoExeRunner.CompileProjectAsync(FilePath, OutputPane);
+        var result = await CargoExeRunner.CompileProjectAsync(FilePath, (Source.Context as RustBuildContext).BuildConfiguration, OutputPane);
         return CreateBuildProjectIncrementalResultFromBoolean(result);
     }
 }
 
 public abstract class BuildFileContextAction
 {
-    public BuildFileContextAction(string filePath, FileContext fileContext, OutputPaneWrapper outputPane)
+    public BuildFileContextAction(string filePath, FileContext fileContext, RustOutputPane outputPane)
     {
         Source = fileContext;
         FilePath = filePath;
@@ -122,7 +122,7 @@ public abstract class BuildFileContextAction
 
     public string FilePath { get; }
 
-    public OutputPaneWrapper OutputPane { get; }
+    public RustOutputPane OutputPane { get; }
 
     public string DisplayName => "Open Folder uses the name defined in .vsct file.";
 

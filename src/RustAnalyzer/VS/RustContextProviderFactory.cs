@@ -9,7 +9,7 @@ namespace KS.RustAnalyzer.VS;
 
 public sealed class RustBuildContext : IBuildConfigurationContext
 {
-    public string BuildConfiguration => "Debugxxx";
+    public string BuildConfiguration => RustConstants.DefaultProfile;
 }
 
 [ExportFileContextProvider(
@@ -57,7 +57,7 @@ public sealed class RustContextProvider : IFileContextProvider, IFileContextProv
                 BuildContextTypes.BuildContextTypeGuid,
                 new RustBuildContext(),
                 new[] { filePath },
-                displayName: "Debugxxx"),
+                displayName: RustConstants.DefaultProfile),
         };
     }
 
