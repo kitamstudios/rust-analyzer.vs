@@ -17,7 +17,9 @@ public enum OutputWindowTarget
 [Export(typeof(RustOutputPane))]
 public sealed class RustOutputPane
 {
-    private static readonly Guid CargoPaneGuid = new ("7CCFA622-0000-4459-9D8B-5B60BE0A18C2");
+    // This is the package manager pane that ships with VS2015, and we should print there if available.
+    private static readonly Guid VSPackageManagerPaneGuid = new ("C7E31C31-1451-4E05-B6BE-D11B6829E8BB");
+    private static readonly Guid CargoPaneGuid = VSConstants.OutputWindowPaneGuid.BuildOutputPane_guid;
 
     private readonly ConcurrentDictionary<OutputWindowTarget, IVsOutputWindowPane> _lazyOutputPaneCollection = new ();
 
@@ -66,10 +68,10 @@ public sealed class RustOutputPane
             {
                 return null;
             }
-
-            // Must activate the workspace pane for it to show up in the output window
-            lazyOutputPane.Activate();
         }
+
+        // Must activate the workspace pane for it to show up in the output window
+        lazyOutputPane.Activate();
 
         return lazyOutputPane;
     }

@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.Workspace.Build;
 
 namespace KS.RustAnalyzer.VS;
 
-public sealed class RustBuildContext : IBuildConfigurationContext
+public sealed class RustBuildConfigurationContext : IBuildConfigurationContext
 {
     public string BuildConfiguration => RustConstants.DefaultProfile;
 }
@@ -15,8 +15,8 @@ public sealed class RustBuildContext : IBuildConfigurationContext
 [ExportFileContextProvider(
     type: ProviderType,
     priority: ProviderPriority.Normal,
-    supportedGetContextsTypes: new Type[] { typeof(string) },
-    supportedContextTypeGuids: BuildContextTypes.BuildContextType)]
+    supportedGetContextsTypes: new[] { typeof(string) },
+    supportedContextTypeGuids: new[] { BuildContextTypes.BuildContextType, BuildContextTypes.CleanContextType, })]
 public sealed class RustContextProviderFactory : IWorkspaceProviderFactory<IFileContextProvider>
 {
     public static readonly Guid ProviderTypeGuid = new (ProviderType);
@@ -55,7 +55,13 @@ public sealed class RustContextProvider : IFileContextProvider, IFileContextProv
             new FileContext(
                 RustContextProviderFactory.ProviderTypeGuid,
                 BuildContextTypes.BuildContextTypeGuid,
-                new RustBuildContext(),
+                new RustBuildConfigurationContext(),
+                new[] { filePath },
+                displayName: RustConstants.DefaultProfile),
+            new FileContext(
+                RustContextProviderFactory.ProviderTypeGuid,
+                BuildContextTypes.CleanContextTypeGuid,
+                new RustBuildConfigurationContext(),
                 new[] { filePath },
                 displayName: RustConstants.DefaultProfile),
         };

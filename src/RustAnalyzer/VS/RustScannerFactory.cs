@@ -15,7 +15,7 @@ namespace KS.RustAnalyzer.VS;
     language: "rust",
     supportedFileExtensions: new[] { RustConstants.CargoFileName, RustConstants.RustFileExtension, },
     supportedTypes: new[] { typeof(IReadOnlyCollection<FileDataValue>), typeof(IReadOnlyCollection<FileReferenceInfo>) })]
-public class CargoScannerFactory : IWorkspaceProviderFactory<IFileScanner>
+public class RustScannerFactory : IWorkspaceProviderFactory<IFileScanner>
 {
     public const string ProviderType = "F5628EAD-0000-4683-B597-D8314B971ED6";
     public static readonly Guid ProviderTypeGuid = new (ProviderType);
@@ -44,7 +44,7 @@ public class CargoScanner : IFileScanner
             {
                 [LaunchConfigurationConstants.NameKey] = $"{"hello_world.exe"} [hello_world {Path.GetFileName(filePath)}]",
                 [LaunchConfigurationConstants.DebugTypeKey] = LaunchConfigurationConstants.NativeOptionKey,
-                [LaunchConfigurationConstants.ProgramKey] = @"D:\src\delme\hello_world\target\debug\hello_world.exe",
+                [LaunchConfigurationConstants.ProgramKey] = @"D:\src\ks\rust-analyzer\src\TestProjects\hello_world\target\debug\hello_world.exe",
             };
 
             var ret = new List<FileDataValue>
@@ -60,7 +60,7 @@ public class CargoScanner : IFileScanner
                     DebugLaunchActionContext.ContextTypeGuid,
                     DebugLaunchActionContext.IsDefaultStartupProjectEntry,
                     launchSettings,
-                    target: @"D:\src\delme\hello_world\target\debug\hello_world.exe")
+                    target: @"D:\src\ks\rust-analyzer\src\TestProjects\hello_world\target\debug\hello_world.exe")
             };
 
             return await Task.FromResult((T)(IReadOnlyCollection<FileDataValue>)ret);
@@ -69,7 +69,7 @@ public class CargoScanner : IFileScanner
         {
             var ret = new List<FileReferenceInfo>
             {
-                new FileReferenceInfo(@"D:\src\delme\hello_world\target\debug\hello_world.exe", null, RustConstants.DefaultProfile, (int)FileReferenceInfoType.Output)
+                new FileReferenceInfo(@"D:\src\ks\rust-analyzer\src\TestProjects\hello_world\target\debug\hello_world.exe", null, RustConstants.DefaultProfile, (int)FileReferenceInfoType.Output)
             };
 
             return await Task.FromResult((T)(IReadOnlyCollection<FileReferenceInfo>)ret);

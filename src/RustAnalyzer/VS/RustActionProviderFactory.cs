@@ -5,6 +5,7 @@ using System.ComponentModel.Design;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.Cargo;
+using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
 using Microsoft.VisualStudio.Workspace.Extensions.VS;
@@ -33,9 +34,9 @@ public class RustActionProviderFactory : IWorkspaceProviderFactory<IFileContextA
 
     public IReadOnlyCollection<CommandID> GetSupportedVsCommands()
     {
-        return new[]
+        return new CommandID[]
         {
-            new CommandID(Guids.GuidWorkspaceExplorerBuildActionCmdSet, PkgCmdId.CmdIdBuildActionContext),
+            // For additional menu items like restore, clippy, fmt, etc.
         };
     }
 }
@@ -61,62 +62,42 @@ public class FileContextActionProvider : IFileContextActionProvider
 
         if (RustHelpers.IsCargoFile(filePath))
         {
-            actions.Add(new BuildCargoFileContextAction(filePath, fileContext, _outputPane));
+            actions.Add(new RustBuildFileContextAction(filePath, fileContext, _outputPane));
         }
-        else if (RustHelpers.IsRustFile(filePath))
+        else if (RustHelpers.IsRustFile(filePath) && RustHelpers.GetParentCargoManifest(filePath, _workspace.Location, out string parentCargoPath))
         {
-            var cargo = await _workspace.GetParentCargoManifestAsync(filePath);
-
-            if (cargo != null)
-            {
-                actions.Add(new BuildRustFileContextAction(filePath, fileContext, _outputPane));
-            }
+            actions.Add(new RustBuildFileContextAction(parentCargoPath, fileContext, _outputPane, fileContextMenuVisible: false));
         }
 
         return actions;
     }
 }
 
-public sealed class BuildRustFileContextAction : BuildFileContextAction, IFileContextAction, IVsCommandItem
+public class RustBuildFileContextAction : IFileContextAction, IVsCommandItem
 {
-    public BuildRustFileContextAction(string filePath, FileContext fileContext, RustOutputPane outputPane)
-        : base(filePath, fileContext, outputPane)
-    {
-    }
+    private static readonly IReadOnlyDictionary<Guid, (uint, Func<string, string, RustOutputPane, Task<bool>>)> FileContextActionInfo =
+        new Dictionary<Guid, (uint, Func<string, string, RustOutputPane, Task<bool>>)>
+        {
+            [BuildContextTypes.BuildContextTypeGuid] = (PredefinedCmdId.CmdIdBuildActionContext, CargoExeRunner.BuildAsync),
+            [BuildContextTypes.CleanContextTypeGuid] = (PredefinedCmdId.CmdIdCleanActionContext, CargoExeRunner.CleanAsync),
+        };
 
-    public override async Task<IFileContextActionResult> ExecuteAsync(IProgress<IFileContextActionProgressUpdate> progress, CancellationToken cancellationToken)
-    {
-        var result = await CargoExeRunner.CompileFileAsync(FilePath, OutputPane);
-        return CreateBuildProjectIncrementalResultFromBoolean(result);
-    }
-}
+    private readonly bool _fileContextMenuVisible;
 
-public sealed class BuildCargoFileContextAction : BuildFileContextAction, IFileContextAction, IVsCommandItem
-{
-    public BuildCargoFileContextAction(string filePath, FileContext fileContext, RustOutputPane outputPane)
-        : base(filePath, fileContext, outputPane)
+    public RustBuildFileContextAction(string filePath, FileContext source, RustOutputPane outputPane, bool fileContextMenuVisible = true)
     {
-    }
-
-    public override async Task<IFileContextActionResult> ExecuteAsync(IProgress<IFileContextActionProgressUpdate> progress, CancellationToken cancellationToken)
-    {
-        var result = await CargoExeRunner.CompileProjectAsync(FilePath, (Source.Context as RustBuildContext).BuildConfiguration, OutputPane);
-        return CreateBuildProjectIncrementalResultFromBoolean(result);
-    }
-}
-
-public abstract class BuildFileContextAction
-{
-    public BuildFileContextAction(string filePath, FileContext fileContext, RustOutputPane outputPane)
-    {
-        Source = fileContext;
+        Source = source;
         FilePath = filePath;
         OutputPane = outputPane;
+        _fileContextMenuVisible = fileContextMenuVisible;
+        (CommandId, CommandFunc) = FileContextActionInfo[source.ContextType];
     }
 
-    public Guid CommandGroup => Guids.GuidWorkspaceExplorerBuildActionCmdSet;
+    public Guid CommandGroup => _fileContextMenuVisible ? PredefinedCmdGuid.GuidWorkspaceExplorerBuildActionCmdSet : Guid.Empty;
 
-    public uint CommandId => PkgCmdId.CmdIdBuildActionContext;
+    public uint CommandId { get; private set; }
+
+    public Func<string, string, RustOutputPane, Task<bool>> CommandFunc { get; private set; }
 
     public FileContext Source { get; }
 
@@ -126,7 +107,11 @@ public abstract class BuildFileContextAction
 
     public string DisplayName => "Open Folder uses the name defined in .vsct file.";
 
-    public abstract Task<IFileContextActionResult> ExecuteAsync(IProgress<IFileContextActionProgressUpdate> progress, CancellationToken cancellationToken);
+    public async Task<IFileContextActionResult> ExecuteAsync(IProgress<IFileContextActionProgressUpdate> progress, CancellationToken cancellationToken)
+    {
+        var result = await CommandFunc(FilePath, (Source.Context as RustBuildConfigurationContext).BuildConfiguration, OutputPane);
+        return CreateBuildProjectIncrementalResultFromBoolean(result);
+    }
 
     protected static IFileContextActionResult CreateBuildProjectIncrementalResultFromBoolean(bool buildSucceeded)
     {

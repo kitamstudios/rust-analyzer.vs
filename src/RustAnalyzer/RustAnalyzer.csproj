@@ -55,11 +55,10 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>source.extension.vsixmanifest</DependentUpon>
     </Compile>
-    <Compile Include="VS\CargoScannerFactory.cs" />
+    <Compile Include="VS\RustScannerFactory.cs" />
     <Compile Include="Cargo\CargoManifestFactory.cs" />
-    <Compile Include="VS\Guids.cs" />
+    <Compile Include="VS\PredefinedCmds.cs" />
     <Compile Include="VS\RustOutputPane.cs" />
-    <Compile Include="VS\PkgCmdId.cs" />
     <Compile Include="VS\RustActionProviderFactory.cs" />
     <Compile Include="RustConstants.cs" />
     <Compile Include="VS\RustContextProviderFactory.cs" />

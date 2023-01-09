@@ -17,24 +17,27 @@ public static class RustHelpers
         return StringComparer.OrdinalIgnoreCase.Equals(fileName, RustConstants.CargoFileName);
     }
 
-    public static string GetParentCargoManifest(string filePath, string projectRoot)
+    // TODO: Unit test this.
+    public static bool GetParentCargoManifest(string filePath, string projectRoot, out string parentCargoPath)
     {
-        var currentPath = Path.GetDirectoryName(filePath);
-
-        while (true)
+        var currentPath = filePath;
+        while ((currentPath = Path.GetDirectoryName(currentPath)) != null)
         {
-            var candidateCargoPath = Path.Combine(currentPath, "cargo.toml");
+            var candidateCargoPath = Path.Combine(currentPath, RustConstants.CargoFileName);
             if (currentPath.Equals(projectRoot, StringComparison.OrdinalIgnoreCase))
             {
-                return candidateCargoPath;
+                parentCargoPath = candidateCargoPath;
+                return true;
             }
 
             if (File.Exists(candidateCargoPath))
             {
-                return candidateCargoPath;
+                parentCargoPath = candidateCargoPath;
+                return true;
             }
-
-            currentPath = Path.GetDirectoryName(currentPath);
         }
+
+        parentCargoPath = null;
+        return false;
     }
 }
