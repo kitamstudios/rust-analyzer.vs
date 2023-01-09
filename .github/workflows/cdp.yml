@@ -47,7 +47,7 @@ jobs:
       uses: microsoft/vstest-action@v1.0.0
       with:
         testAssembly: '*.UnitTests.dll'
-        searchFolder: ./src/
+        searchFolder: ./src/**/Release/
         runInParallel: true
     - name: Upload artifacts
       uses: actions/upload-artifact@v2

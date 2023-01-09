@@ -1,0 +1,12 @@
+; Registers the language grammar files with Visual Studio
+; Replace "TextmateSample" with a name of your choice.
+[$RootKey$\TextMate\Repositories]
+"toml-rust-analyzer"="$PackageFolder$\VS\toml"
+
+; Associate icons with file extensions in Solution Explorer
+; Find more icons at http://glyphlist.azurewebsites.net/knownmonikers/
+[$RootKey$\ShellFileAssociations\.toml]
+"DefaultIconMoniker"="KnownMonikers.ClassFile"
+; Add an icon for each file extension supported by the .tmLanguage grammar file
+[$RootKey$\ShellFileAssociations\.toml]
+"DefaultIconMoniker"="KnownMonikers.ClassFile"

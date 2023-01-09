@@ -2,6 +2,12 @@
 
 [![CDP](https://github.com/kitamstudios/rust-analyzer/actions/workflows/cdp.yml/badge.svg)](https://github.com/kitamstudios/rust-analyzer/actions/workflows/cdp.yml)  [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
+## Principles
+
+- 100% UI and behavior parity with 'Open Folder' experience for a C# solution with multiple projects
+- Enhance with Rust community best practices e.g. fmt, clippy
+- Killer features e.g. copilot integration
+
 ## Documentation
 
 - [Open Folder extensibility](https://learn.microsoft.com/en-us/visualstudio/extensibility/open-folder?view=vs-2022) is pretty much the only documentation apart from the sample code folks have written (see [Acknowledgements](#Acknowledgements)).

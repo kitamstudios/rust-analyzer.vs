@@ -1,16 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
 
 namespace KS.RustAnalyzer.VS;
-
-public sealed class RustBuildConfigurationContext : IBuildConfigurationContext
-{
-    public string BuildConfiguration => RustConstants.DefaultProfile;
-}
 
 [ExportFileContextProvider(
     type: ProviderType,
@@ -45,26 +41,30 @@ public sealed class RustContextProvider : IFileContextProvider, IFileContextProv
 
     public async Task<IReadOnlyCollection<FileContext>> GetContextsForFileAsync(string filePath, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(filePath) || !await IsSupportedFileAsync(filePath))
+        var parentCargoManifest = await _workspace.GetParentCargoManifestAsync(filePath);
+        if (parentCargoManifest == null)
         {
             return FileContext.EmptyFileContexts;
         }
 
-        return new List<FileContext>
-        {
-            new FileContext(
-                RustContextProviderFactory.ProviderTypeGuid,
-                BuildContextTypes.BuildContextTypeGuid,
-                new RustBuildConfigurationContext(),
-                new[] { filePath },
-                displayName: RustConstants.DefaultProfile),
-            new FileContext(
-                RustContextProviderFactory.ProviderTypeGuid,
-                BuildContextTypes.CleanContextTypeGuid,
-                new RustBuildConfigurationContext(),
-                new[] { filePath },
-                displayName: RustConstants.DefaultProfile),
-        };
+        return parentCargoManifest.Profiles
+            .SelectMany(
+                profile => new[]
+                {
+                    new FileContext(
+                        RustContextProviderFactory.ProviderTypeGuid,
+                        BuildContextTypes.BuildContextTypeGuid,
+                        new BuildConfigurationContext(profile),
+                        new[] { filePath },
+                        displayName: profile),
+                    new FileContext(
+                        RustContextProviderFactory.ProviderTypeGuid,
+                        BuildContextTypes.CleanContextTypeGuid,
+                        new BuildConfigurationContext(profile),
+                        new[] { filePath },
+                        displayName: profile),
+                })
+            .ToList();
     }
 
     private async Task<bool> IsSupportedFileAsync(string filePath)

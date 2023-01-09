@@ -7,6 +7,4 @@ public class RustConstants
     public const string CargoFileExtension = ".toml";
 
     public const string CargoExePath = "cargo.exe";
-
-    public const string DefaultProfile = "dev";
 }

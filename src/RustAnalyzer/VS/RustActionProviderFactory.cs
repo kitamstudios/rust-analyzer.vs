@@ -109,7 +109,7 @@ public class RustBuildFileContextAction : IFileContextAction, IVsCommandItem
 
     public async Task<IFileContextActionResult> ExecuteAsync(IProgress<IFileContextActionProgressUpdate> progress, CancellationToken cancellationToken)
     {
-        var result = await CommandFunc(FilePath, (Source.Context as RustBuildConfigurationContext).BuildConfiguration, OutputPane);
+        var result = await CommandFunc(FilePath, (Source.Context as BuildConfigurationContext).BuildConfiguration, OutputPane);
         return CreateBuildProjectIncrementalResultFromBoolean(result);
     }
 
