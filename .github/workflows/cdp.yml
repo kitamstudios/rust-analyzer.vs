@@ -10,194 +10,47 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  build-test-deploy-linux:
-    name: Build, test & deploy (linux)
+  build-extension:
     runs-on: windows-latest
+    env:
+        DOTNET_NOLOGO: true
+        DOTNET_CLI_TELEMETRY_OPTOUT: true
+        RepositoryUrl: 'https://github.com/${{ github.repository }}'
+        RepositoryBranch: '${{ github.ref }}'
+        SourceRevisionId: '${{ github.sha }}'
+        VersionSuffix: 'pr-${{github.event.number}}.${{ github.run_number }}'
+        Configuration: Release
+        SolutionPath: src\RustAnalyzer.sln
+        VsixManifestPath: src\RustAnalyzer\source.extension.vsixmanifest
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Install musl tools
-        run: |
-              sudo apt-get install musl-tools
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          target: x86_64-unknown-linux-musl
-
-      - name: Run cargo build
-        uses: actions-rs/cargo@v1
-        continue-on-error: false
-        with:
-          command: build
-          args: --release --target x86_64-unknown-linux-musl
-
-      - name: Run cargo test
-        uses: actions-rs/cargo@v1
-        continue-on-error: false
-        with:
-          command: test
-          args: --release --target x86_64-unknown-linux-musl
-
-      - name: Azure Login
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS_KSAPPLICATIONS_STORAGE }}
-
-      - name: Deploy edpdgen
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        run: |
-              az storage blob upload --account-name ksapplications --container-name '$web' --name 'edpd/edpdgen' --file ./target/x86_64-unknown-linux-musl/release/edpdgen --content-cache-control 'no-store max-age=0' --content-type "application/x-executable"
-        shell: pwsh
-
-      - name: Azure Logout
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        run: |
-              az logout
-
-  build-test-deploy-windows:
-    name: Build, test & deploy (windows)
-    runs-on: windows-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          target: i686-pc-windows-msvc
-
-      - name: Run cargo build
-        uses: actions-rs/cargo@v1
-        continue-on-error: false
-        with:
-          command: build
-          args: --release --target i686-pc-windows-msvc
-
-      - name: Run cargo test
-        uses: actions-rs/cargo@v1
-        continue-on-error: false
-        with:
-          command: test
-          args: --release --target i686-pc-windows-msvc
-
-      - name: Azure Login
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS_KSAPPLICATIONS_STORAGE }}
-
-      - name: Deploy edpdgen
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        run: |
-              az storage blob upload --account-name ksapplications --container-name '$web' --name 'edpd/edpdgen.exe' --file ./target/i686-pc-windows-msvc/release/edpdgen.exe --content-cache-control 'no-store max-age=0' --content-type "application/x-executable"
-        shell: pwsh
-
-      - name: Azure Logout
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        run: |
-              az logout
-
-  lints:
-    name: Lints
-    runs-on: windows-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          components: rustfmt, clippy
-
-      - name: Run cargo fmt
-        uses: actions-rs/cargo@v1
-        continue-on-error: false
-        with:
-          command: fmt
-          args: --all -- --check
-
-      - name: Run cargo clippy
-        uses: actions-rs/cargo@v1
-        continue-on-error: false
-        with:
-          command: clippy
-          args: --all-targets --all-features -- -D warnings
-
-  build-dpdods2csv:
-    name: Build dpdods2csv
-    runs-on: windows-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Install
-        run: |
-              cd ./tools/dpdods2csv
-              yarn --no-progress --non-interactive --no-lockfile
-
-      - name: Lint code
-        run: |
-              cd ./tools/dpdods2csv
-              yarn lint
-
-      - name: Test
-        run: |
-              cd ./tools/dpdods2csv
-              yarn test --colors --coverage
-
-      - name: Build
-        run: |
-              cd ./tools/dpdods2csv
-              yarn build
-              cp ./build/index.js ./build/dpdods2csv.js
-
-      - name: Zip
-        uses: montudor/action-zip@v0.1.1
-        with:
-          args: zip -9 -j ./tools/dpdods2csv/build/dpdods2csv.zip ./tools/dpdods2csv/build/dpdods2csv.js
-
-      - name: Azure Login
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS_KSAPPLICATIONS_STORAGE }}
-
-      - name: Deploy dpdods2csv.zip
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        run: |
-              az storage blob upload --account-name ksapplications --container-name '$web' --name 'edpd/dpdods2csv.zip' --file ./tools/dpdods2csv/build/dpdods2csv.zip --content-cache-control 'no-store max-age=0' --content-type "application/gzip"
-        shell: pwsh
-
-      - name: Azure Logout
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        run: |
-              az logout
-
-  finish:
-    name: Finish
-    needs: [build-test-deploy-linux, build-test-deploy-windows, lints, build-dpdods2csv]
-    runs-on: windows-latest
-    steps:
-      - name: Notify DPT on Discord
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        env:
-          JOB_STATUS: ${{ job.status }}
-          WEBHOOK_URL: ${{ secrets.DISCORD_DPT_DEPLOYMENT_NOTIFICATIONS_WEBHOOK_URL }}
-          HOOK_OS_NAME: ${{ runner.os }}
-          WORKFLOW_NAME: ${{ github.workflow }}
-        run: |
-          git clone https://github.com/DiscordHooks/github-actions-discord-webhook webhook
-          bash webhook/send.sh $JOB_STATUS $WEBHOOK_URL
-        shell: bash
+    - uses: actions/checkout@v2
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v1.0.2
+    - name: Restore NuGet Packages
+      run: nuget restore $env:SolutionPath
+    - name: Calculate next version
+      uses: cezarypiatek/NextVersionGeneratorAction@0.4
+      with:
+        minor-pattern: '\bAdd\b'
+        patch-pattern: '.*'
+        output-to-env-variable: 'VersionPrefix'
+    - name: Set version for Visual Studio Extension
+      uses: cezarypiatek/VsixVersionAction@1.0
+      with:
+        version: '${{env.VersionPrefix}}+${{env.VersionSuffix}}'
+        vsix-manifest-file: ${{ env.VsixManifestPath }}
+    - name: Build
+      run: msbuild $env:SolutionPath /t:Rebuild
+      env:
+        DeployExtension: False
+    - name: Test
+      uses: microsoft/vstest-action@v1.0.0
+      with:
+        testAssembly: '*.UnitTests.dll'
+        searchFolder: ./src/
+        runInParallel: true
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: RustAnalyzer
+        path: src\RustAnalyzer\bin\Release\RustAnalyzer.vsix

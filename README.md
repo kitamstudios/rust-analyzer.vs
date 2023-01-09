@@ -1,6 +1,7 @@
 # rust-analyzer - Rust language support for Visual Studio
 
-[![CI](https://github.com/kitamstudios/rust-analyzer/workflows/cdp/badge.svg)](https://github.com/kitamstudios/rust-analyzer/actions?query=workflow)  [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+[![CDP](https://github.com/kitamstudios/rust-analyzer/actions/workflows/cdp.yml/badge.svg)](https://github.com/kitamstudios/rust-analyzer/actions/workflows/cdp.yml)  [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+
 
 ## Documentation
 
