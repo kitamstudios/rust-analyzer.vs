@@ -81,6 +81,9 @@
     <Content Include="languages.pkgdef">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+    <Resource Include="VS\Icons\rs.png" />
+    <Resource Include="VS\Icons\lock.png" />
+    <Resource Include="VS\Icons\toml.png" />
     <Content Include="VS\toml\LICENSE.txt">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -101,6 +104,9 @@
     </Content>
     <Content Include="Resources\Icon.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="Monikers.imagemanifest">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
   </ItemGroup>

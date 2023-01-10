@@ -88,5 +88,4 @@ public class CargoManifestTests
 
         parentCargoPath.Should().Be(Path.Combine(_thisTestRoot, parentCargoRelPath));
     }
-
 }

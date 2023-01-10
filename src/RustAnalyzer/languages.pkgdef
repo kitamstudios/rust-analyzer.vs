@@ -3,10 +3,11 @@
 [$RootKey$\TextMate\Repositories]
 "toml-rust-analyzer"="$PackageFolder$\VS\toml"
 
-; Associate icons with file extensions in Solution Explorer
-; Find more icons at http://glyphlist.azurewebsites.net/knownmonikers/
+[$RootKey$\ShellFileAssociations\.rs]
+"DefaultIconMoniker"="C622248C-8545-475A-99B2-201AF73752BD:0"
+
 [$RootKey$\ShellFileAssociations\.toml]
-"DefaultIconMoniker"="KnownMonikers.ClassFile"
-; Add an icon for each file extension supported by the .tmLanguage grammar file
-[$RootKey$\ShellFileAssociations\.toml]
-"DefaultIconMoniker"="KnownMonikers.ClassFile"
+"DefaultIconMoniker"="C622248C-8545-475A-99B2-201AF73752BD:1"
+
+[$RootKey$\ShellFileAssociations\.lock]
+"DefaultIconMoniker"="C622248C-8545-475A-99B2-201AF73752BD:2"
