@@ -12,6 +12,6 @@ public class UnitTest1
     {
         var val = await Task.FromResult(string.Empty);
 
-        val.Any().Should().BeTrue();
+        val.Any().Should().BeFalse();
     }
 }

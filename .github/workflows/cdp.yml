@@ -10,7 +10,7 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  build-extension:
+  build-test-deploy:
     runs-on: windows-latest
     env:
         DOTNET_NOLOGO: true
