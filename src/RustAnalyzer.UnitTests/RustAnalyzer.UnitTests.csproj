@@ -50,6 +50,24 @@
       <Name>RustAnalyzer</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\TestProjects\hello_library\Cargo.toml">
+      <Link>Cargo\TestData\hello_library\Cargo.toml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\TestProjects\hello_library\src\lib.rs">
+      <Link>Cargo\TestData\hello_library\src\lib.rs</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\TestProjects\hello_world\Cargo.toml">
+      <Link>Cargo\TestData\hello_world\Cargo.toml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\TestProjects\hello_world\src\main.rs">
+      <Link>Cargo\TestData\hello_world\src\main.rs</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!--
     Ensure this is always the last line.

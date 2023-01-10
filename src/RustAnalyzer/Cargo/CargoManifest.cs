@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using KS.RustAnalyzer.Common;
+using Tomlyn;
+using Tomlyn.Model;
 
 namespace KS.RustAnalyzer.Cargo;
 
@@ -17,10 +20,13 @@ public class CargoManifest
         ["bench"] = "release",
     };
 
+    private readonly TomlTable _model;
+
     private CargoManifest(string fullPath)
     {
         FullPath = fullPath;
         WorkspaceRoot = Path.GetDirectoryName(fullPath);
+        _model = Toml.ToModel(File.ReadAllText(fullPath));
     }
 
     public string WorkspaceRoot { get; private set; }
@@ -32,9 +38,9 @@ public class CargoManifest
 
     public string TargetFileName => $"{TargetFileNameWithoutExtension}{TargetFileExtension}";
 
-    public string TargetFileExtension => ".exe";
+    public string TargetFileExtension => GetPackageExtension();
 
-    public string TargetFileNameWithoutExtension => "hello_world";
+    public string TargetFileNameWithoutExtension => GetPackageName();
 
     public string StartupProjectEntryName => $"{TargetFileName} [{PathUtilities.MakeRelativePath(WorkspaceRoot, FullPath)}]";
 
@@ -51,5 +57,24 @@ public class CargoManifest
     public string GetTargetPathForProfileRelativeToPath(string profile, string filePath)
     {
         return PathUtilities.MakeRelativePath(Path.GetDirectoryName(filePath), GetTargetPathForProfile(profile));
+    }
+
+    private string GetPackageName()
+    {
+        return ((TomlTable)_model["package"])?["name"]?.ToString();
+    }
+
+    private string GetPackageExtension()
+    {
+        if (File.Exists(Path.Combine(Path.GetDirectoryName(FullPath), @"src\main.rs")))
+        {
+            return ".exe";
+        }
+        else if (File.Exists(Path.Combine(Path.GetDirectoryName(FullPath), @"src\lib.rs")))
+        {
+            return ".rlib";
+        }
+
+        throw new NotImplementedException();
     }
 }
