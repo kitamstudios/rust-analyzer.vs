@@ -64,7 +64,7 @@ public class FileContextActionProvider : IFileContextActionProvider
         {
             actions.Add(new RustBuildFileContextAction(filePath, fileContext, _outputPane));
         }
-        else if (RustHelpers.IsRustFile(filePath) && RustHelpers.GetParentCargoManifest(filePath, _workspace.Location, out string parentCargoPath))
+        else if (RustHelpers.IsRustFile(filePath) && CargoManifest.GetParentCargoManifest(filePath, _workspace.Location, out string parentCargoPath))
         {
             actions.Add(new RustBuildFileContextAction(parentCargoPath, fileContext, _outputPane, fileContextMenuVisible: false));
         }

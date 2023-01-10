@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using KS.RustAnalyzer.Common;
+using KS.RustAnalyzer.VS;
 using Tomlyn;
 using Tomlyn.Model;
 
@@ -25,11 +26,10 @@ public class CargoManifest
     private CargoManifest(string fullPath)
     {
         FullPath = fullPath;
-        WorkspaceRoot = Path.GetDirectoryName(fullPath);
         _model = Toml.ToModel(File.ReadAllText(fullPath));
     }
 
-    public string WorkspaceRoot { get; private set; }
+    public string WorkspaceRoot => GetWorkspaceRoot(FullPath);
 
     public string FullPath { get; private set; }
 
@@ -42,16 +42,33 @@ public class CargoManifest
 
     public string TargetFileNameWithoutExtension => GetPackageName();
 
-    public string StartupProjectEntryName => $"{TargetFileName} [{PathUtilities.MakeRelativePath(WorkspaceRoot, FullPath)}]";
+    public string StartupProjectEntryName => $"{Path.GetFileName(Path.GetDirectoryName(FullPath))}";
 
     public static CargoManifest Create(string parentCargoPath)
     {
         return new CargoManifest(parentCargoPath);
     }
 
+    public static bool GetParentCargoManifest(string filePath, string projectRoot, out string parentCargoPath)
+    {
+        var currentPath = filePath;
+        while ((currentPath = Path.GetDirectoryName(currentPath)) != null)
+        {
+            var candidateCargoPath = Path.Combine(currentPath, RustConstants.CargoFileName);
+            if (File.Exists(candidateCargoPath))
+            {
+                parentCargoPath = candidateCargoPath;
+                return true;
+            }
+        }
+
+        parentCargoPath = null;
+        return false;
+    }
+
     public string GetTargetPathForProfile(string profile)
     {
-        return $@"{Path.GetDirectoryName(FullPath)}\target\{ProfileInfos[profile]}\{TargetFileName}";
+        return Path.Combine(WorkspaceRoot, "target", ProfileInfos[profile], TargetFileName);
     }
 
     public string GetTargetPathForProfileRelativeToPath(string profile, string filePath)
@@ -75,6 +92,24 @@ public class CargoManifest
             return ".rlib";
         }
 
-        throw new NotImplementedException();
+        return "._ni_";
+    }
+
+    private static string GetWorkspaceRoot(string fullPath)
+    {
+        var currentCargoPath = fullPath;
+        while (GetParentCargoManifest(currentCargoPath, Path.GetDirectoryName(currentCargoPath), out string parentCargoPath))
+        {
+            var model = Toml.ToModel(File.ReadAllText(parentCargoPath));
+            if (model.ContainsKey("workspace"))
+            {
+                return Path.GetDirectoryName(parentCargoPath);
+            }
+
+            currentCargoPath = Path.GetDirectoryName(parentCargoPath);
+        }
+
+        // NOTE: Current cargo is the workspace.
+        return Path.GetDirectoryName(fullPath);
     }
 }

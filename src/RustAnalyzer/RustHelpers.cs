@@ -16,28 +16,4 @@ public static class RustHelpers
         var fileName = Path.GetFileName(filePath);
         return StringComparer.OrdinalIgnoreCase.Equals(fileName, RustConstants.CargoFileName);
     }
-
-    // TODO: Unit test this.
-    public static bool GetParentCargoManifest(string filePath, string projectRoot, out string parentCargoPath)
-    {
-        var currentPath = filePath;
-        while ((currentPath = Path.GetDirectoryName(currentPath)) != null)
-        {
-            var candidateCargoPath = Path.Combine(currentPath, RustConstants.CargoFileName);
-            if (currentPath.Equals(projectRoot, StringComparison.OrdinalIgnoreCase))
-            {
-                parentCargoPath = candidateCargoPath;
-                return true;
-            }
-
-            if (File.Exists(candidateCargoPath))
-            {
-                parentCargoPath = candidateCargoPath;
-                return true;
-            }
-        }
-
-        parentCargoPath = null;
-        return false;
-    }
 }

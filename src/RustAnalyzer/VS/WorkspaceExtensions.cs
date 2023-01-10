@@ -9,7 +9,7 @@ public static class WorkspaceExtensions
 {
     public static CargoManifest GetParentCargoManifest(this IWorkspace workspace, string filePath)
     {
-        var hasParentCargoFile = RustHelpers.GetParentCargoManifest(filePath, workspace.Location, out string parentCargoPath);
+        var hasParentCargoFile = CargoManifest.GetParentCargoManifest(filePath, workspace.Location, out string parentCargoPath);
         if (hasParentCargoFile)
         {
             return CargoManifest.Create(parentCargoPath);

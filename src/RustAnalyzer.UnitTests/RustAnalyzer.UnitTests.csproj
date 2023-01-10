@@ -59,6 +59,26 @@
       <Link>Cargo\TestData\hello_library\src\lib.rs</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\TestProjects\hello_workspace\Cargo.toml">
+      <Link>Cargo\TestData\hello_workspace\Cargo.toml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\TestProjects\hello_workspace\main\Cargo.toml">
+      <Link>Cargo\TestData\hello_workspace\main\Cargo.toml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\TestProjects\hello_workspace\main\src\main.rs">
+      <Link>Cargo\TestData\hello_workspace\main\src\main.rs</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\TestProjects\hello_workspace\shared\Cargo.toml">
+      <Link>Cargo\TestData\hello_workspace\shared\Cargo.toml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\TestProjects\hello_workspace\shared\src\lib.rs">
+      <Link>Cargo\TestData\hello_workspace\shared\src\lib.rs</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="..\TestProjects\hello_world\Cargo.toml">
       <Link>Cargo\TestData\hello_world\Cargo.toml</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -68,6 +88,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!--
     Ensure this is always the last line.
