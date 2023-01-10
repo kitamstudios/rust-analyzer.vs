@@ -34,7 +34,7 @@ public class CargoManifest
 
     public string TargetFileExtension => ".exe";
 
-    public string TargetFileNameWithoutExtension => Path.GetFileNameWithoutExtension(FullPath);
+    public string TargetFileNameWithoutExtension => "hello_world";
 
     public string StartupProjectEntryName => $"{TargetFileName} [{PathUtilities.MakeRelativePath(WorkspaceRoot, FullPath)}]";
 
