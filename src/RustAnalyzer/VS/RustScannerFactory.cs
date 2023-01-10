@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using KS.RustAnalyzer.Cargo;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
 using Microsoft.VisualStudio.Workspace.Debug;
@@ -38,7 +39,7 @@ public class CargoScanner : IFileScanner
     public async Task<T> ScanContentAsync<T>(string filePath, CancellationToken cancellationToken)
         where T : class
     {
-        var parentCargoManifest = await _workspace.GetParentCargoManifestAsync(filePath);
+        var parentCargoManifest = _workspace.GetParentCargoManifest(filePath);
         if (parentCargoManifest == null)
         {
             return (T)(IReadOnlyCollection<T>)Array.Empty<T>();
@@ -51,7 +52,7 @@ public class CargoScanner : IFileScanner
         }
         else if (typeof(T) == FileScannerTypeConstants.FileReferenceInfoType)
         {
-            var ret = GetFileReferenceInfos(parentCargoManifest);
+            var ret = GetFileReferenceInfos(parentCargoManifest, filePath);
             return await Task.FromResult((T)(IReadOnlyCollection<FileReferenceInfo>)ret);
         }
         else
@@ -60,7 +61,7 @@ public class CargoScanner : IFileScanner
         }
     }
 
-    private List<FileDataValue> GetFileDataValues(Cargo.CargoManifest parentCargoManifest, string filePath)
+    private List<FileDataValue> GetFileDataValues(CargoManifest parentCargoManifest, string filePath)
     {
         var allFileDataValues = new List<FileDataValue>();
 
@@ -68,7 +69,7 @@ public class CargoScanner : IFileScanner
         {
             IPropertySettings launchSettings = new PropertySettings
             {
-                [LaunchConfigurationConstants.NameKey] = $"{"hello_world.exe"} [{_workspace.MakeRelative(filePath)}]",
+                [LaunchConfigurationConstants.NameKey] = parentCargoManifest.StartupProjectEntryName,
                 [LaunchConfigurationConstants.DebugTypeKey] = LaunchConfigurationConstants.NativeOptionKey,
             };
 
@@ -95,7 +96,7 @@ public class CargoScanner : IFileScanner
                         BuildConfigurationContext.ContextTypeGuid,
                         BuildConfigurationContext.DataValueName,
                         value: null,
-                        target: $@"D:\src\ks\rust-analyzer\src\TestProjects\hello_world\target\{profile}\hello_world.exe",
+                        target: parentCargoManifest.GetTargetPathForProfile(profile),
                         context: profile),
                 });
 
@@ -104,11 +105,15 @@ public class CargoScanner : IFileScanner
         return allFileDataValues;
     }
 
-    private static List<FileReferenceInfo> GetFileReferenceInfos(Cargo.CargoManifest parentCargoManifest)
+    private static List<FileReferenceInfo> GetFileReferenceInfos(CargoManifest parentCargoManifest, string filePath)
     {
         return parentCargoManifest.Profiles
             .Select(
-                profile => new FileReferenceInfo($@"target\{profile}\hello_world.exe", $@"D:\src\ks\rust-analyzer\src\TestProjects\hello_world\target\{profile}\hello_world.exe", profile, (int)FileReferenceInfoType.Output))
+                profile => new FileReferenceInfo(
+                    parentCargoManifest.GetTargetPathForProfileRelativeToPath(profile, filePath),
+                    parentCargoManifest.GetTargetPathForProfile(profile),
+                    profile,
+                    (int)FileReferenceInfoType.Output))
             .ToList();
     }
 }

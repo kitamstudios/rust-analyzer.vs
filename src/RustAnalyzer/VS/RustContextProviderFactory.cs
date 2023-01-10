@@ -41,10 +41,10 @@ public sealed class RustContextProvider : IFileContextProvider, IFileContextProv
 
     public async Task<IReadOnlyCollection<FileContext>> GetContextsForFileAsync(string filePath, CancellationToken cancellationToken)
     {
-        var parentCargoManifest = await _workspace.GetParentCargoManifestAsync(filePath);
+        var parentCargoManifest = _workspace.GetParentCargoManifest(filePath);
         if (parentCargoManifest == null)
         {
-            return FileContext.EmptyFileContexts;
+            return await Task.FromResult(FileContext.EmptyFileContexts);
         }
 
         return parentCargoManifest.Profiles
@@ -65,23 +65,5 @@ public sealed class RustContextProvider : IFileContextProvider, IFileContextProv
                         displayName: profile),
                 })
             .ToList();
-    }
-
-    private async Task<bool> IsSupportedFileAsync(string filePath)
-    {
-        if (RustHelpers.IsCargoFile(filePath))
-        {
-            return true;
-        }
-
-        if (RustHelpers.IsRustFile(filePath))
-        {
-            if (await _workspace.GetParentCargoManifestAsync(filePath) != null)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 }
