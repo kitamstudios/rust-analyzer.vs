@@ -52,6 +52,13 @@ public sealed class RustOutputPane
         }
     }
 
+    public void Clear(OutputWindowTarget target = OutputWindowTarget.Crate)
+    {
+#pragma warning disable VSTHRD010 // Invoke single-threaded types on Main thread
+        _lazyOutputPaneCollection[target].Clear();
+#pragma warning restore VSTHRD010 // Invoke single-threaded types on Main thread
+    }
+
     private IVsOutputWindowPane InitializeOutputPane(string title, Guid paneId)
     {
         ThreadHelper.ThrowIfNotOnUIThread();

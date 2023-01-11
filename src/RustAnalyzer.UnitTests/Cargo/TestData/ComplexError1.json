@@ -1,0 +1,97 @@
+{
+    "reason": "compiler-message",
+    "package_id": "test_app 0.1.0 (path+file:///D:/src/dpt/pls/test_app)",
+    "manifest_path": "D:\\src\\dpt\\pls\\test_app\\Cargo.toml",
+    "target": {
+        "kind": [ "bin" ],
+        "crate_types": [ "bin" ],
+        "name": "test_app",
+        "src_path": "D:\\src\\dpt\\pls\\test_app\\src\\main.rs",
+        "edition": "2018",
+        "doc": true,
+        "doctest": false,
+        "test": true
+    },
+    "message": {
+        "rendered": "error: expected one of `!`, `,`, `.`, `::`, `?`, `{`, `}`, or an operator, found `redConsoleLogger`\n  --> test_app\\src\\main.rs:26:23\n   |\n21 |     let pls_host = PlsHost {\n   |                    ------- while parsing this struct\n...\n26 |         logger: &Colo redConsoleLogger {},\n   |                      -^^^^^^^^^^^^^^^^ expected one of 8 possible tokens\n   |                      |\n   |                      help: try adding a comma: `,`\n\n",
+        "children": [
+            {
+                "children": [],
+                "code": null,
+                "level": "help",
+                "message": "try adding a comma",
+                "rendered": null,
+                "spans": [
+                    {
+                        "byte_end": 951,
+                        "byte_start": 951,
+                        "column_end": 22,
+                        "column_start": 22,
+                        "expansion": null,
+                        "file_name": "test_app\\src\\main.rs",
+                        "is_primary": true,
+                        "label": null,
+                        "line_end": 26,
+                        "line_start": 26,
+                        "suggested_replacement": ",",
+                        "suggestion_applicability": "MachineApplicable",
+                        "text": [
+                            {
+                                "highlight_end": 22,
+                                "highlight_start": 22,
+                                "text": "        logger: &Colo redConsoleLogger {},"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "code": null,
+        "level": "error",
+        "message": "expected one of `!`, `,`, `.`, `::`, `?`, `{`, `}`, or an operator, found `redConsoleLogger`",
+        "spans": [
+            {
+                "byte_end": 968,
+                "byte_start": 952,
+                "column_end": 39,
+                "column_start": 23,
+                "expansion": null,
+                "file_name": "test_app\\src\\main.rs",
+                "is_primary": true,
+                "label": "expected one of 8 possible tokens",
+                "line_end": 26,
+                "line_start": 26,
+                "suggested_replacement": null,
+                "suggestion_applicability": null,
+                "text": [
+                    {
+                        "highlight_end": 39,
+                        "highlight_start": 23,
+                        "text": "        logger: &Colo redConsoleLogger {},"
+                    }
+                ]
+            },
+            {
+                "byte_end": 778,
+                "byte_start": 771,
+                "column_end": 27,
+                "column_start": 20,
+                "expansion": null,
+                "file_name": "test_app\\src\\main.rs",
+                "is_primary": false,
+                "label": "while parsing this struct",
+                "line_end": 21,
+                "line_start": 21,
+                "suggested_replacement": null,
+                "suggestion_applicability": null,
+                "text": [
+                    {
+                        "highlight_end": 27,
+                        "highlight_start": 20,
+                        "text": "    let pls_host = PlsHost {"
+                    }
+                ]
+            }
+        ]
+    }
+}

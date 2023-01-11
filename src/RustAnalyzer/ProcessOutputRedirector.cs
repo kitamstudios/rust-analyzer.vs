@@ -12,12 +12,16 @@ public abstract class ProcessOutputRedirector
     /// is never null.</param>
     public abstract void WriteLine(string line);
 
+    public abstract void WriteLineWithoutProcessing(string line);
+
     /// <summary>
     /// Called when a line is written to standard error.
     /// </summary>
     /// <param name="line">The line of text, not including the newline. This
     /// is never null.</param>
     public abstract void WriteErrorLine(string line);
+
+    public abstract void WriteErrorLineWithoutProcessing(string line);
 
     /// <summary>
     /// Called when output is written that should be brought to the user's

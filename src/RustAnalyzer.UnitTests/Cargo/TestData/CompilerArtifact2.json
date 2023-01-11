@@ -1,0 +1,26 @@
+{
+  "reason": "compiler-artifact",
+  "package_id": "tera 1.17.1 (registry+https://github.com/rust-lang/crates.io-index)",
+  "manifest_path": "C:\\Users\\partho\\.cargo\\registry\\src\\github.com-1ecc6299db9ec823\\tera-1.17.1\\Cargo.toml",
+  "target": {
+    "kind": [ "lib" ],
+    "crate_types": [ "lib" ],
+    "name": "tera",
+    "src_path": "C:\\Users\\partho\\.cargo\\registry\\src\\github.com-1ecc6299db9ec823\\tera-1.17.1\\src\\lib.rs",
+    "edition": "2018",
+    "doc": true,
+    "doctest": true,
+    "test": true
+  },
+  "profile": {
+    "opt_level": "0",
+    "debuginfo": 2,
+    "debug_assertions": true,
+    "overflow_checks": true,
+    "test": false
+  },
+  "features": [],
+  "filenames": [ "D:\\src\\dpt\\pls\\target\\debug\\deps\\libtera-829e50cb35aec68d.rlib", "D:\\src\\dpt\\pls\\target\\debug\\deps\\libtera-829e50cb35aec68d.rmeta" ],
+  "executable": null,
+  "fresh": false
+}

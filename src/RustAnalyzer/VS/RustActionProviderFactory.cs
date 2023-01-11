@@ -5,7 +5,6 @@ using System.ComponentModel.Design;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.Cargo;
-using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
 using Microsoft.VisualStudio.Workspace.Extensions.VS;

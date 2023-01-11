@@ -1,0 +1,87 @@
+{
+  "reason": "compiler-message",
+  "package_id": "test_app 0.1.0 (path+file:///D:/src/dpt/pls/test_app)",
+  "manifest_path": "D:\\src\\dpt\\pls\\test_app\\Cargo.toml",
+  "target": {
+    "kind": [ "bin" ],
+    "crate_types": [ "bin" ],
+    "name": "test_app",
+    "src_path": "D:\\src\\dpt\\pls\\test_app\\src\\main.rs",
+    "edition": "2018",
+    "doc": true,
+    "doctest": false,
+    "test": true
+  },
+  "message": {
+    "rendered": "warning: unused import: `pls_core_extras::logger::ColoredConsoleLogger`\n --> test_app\\src\\main.rs:2:5\n  |\n2 | use pls_core_extras::logger::ColoredConsoleLogger;\n  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(unused_imports)]` on by default\n\n",
+    "children": [
+      {
+        "children": [],
+        "code": null,
+        "level": "note",
+        "message": "`#[warn(unused_imports)]` on by default",
+        "rendered": null,
+        "spans": []
+      },
+      {
+        "children": [],
+        "code": null,
+        "level": "help",
+        "message": "remove the whole `use` item",
+        "rendered": null,
+        "spans": [
+          {
+            "byte_end": 86,
+            "byte_start": 36,
+            "column_end": 51,
+            "column_start": 1,
+            "expansion": null,
+            "file_name": "test_app\\src\\main.rs",
+            "is_primary": true,
+            "label": null,
+            "line_end": 2,
+            "line_start": 2,
+            "suggested_replacement": "",
+            "suggestion_applicability": "MachineApplicable",
+            "text": [
+              {
+                "highlight_end": 51,
+                "highlight_start": 1,
+                "text": "use pls_core_extras::logger::ColoredConsoleLogger;"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "code": {
+      "code": "unused_imports",
+      "explanation": null
+    },
+    "level": "warning",
+    "message": "unused import: `pls_core_extras::logger::ColoredConsoleLogger`",
+    "spans": [
+      {
+        "byte_end": 85,
+        "byte_start": 40,
+        "column_end": 50,
+        "column_start": 5,
+        "expansion": null,
+        "file_name": "test_app\\src\\main.rs",
+        "is_primary": true,
+        "label": null,
+        "line_end": 2,
+        "line_start": 2,
+        "suggested_replacement": null,
+        "suggestion_applicability": null,
+        "text": [
+          {
+            "highlight_end": 50,
+            "highlight_start": 5,
+            "text": "use pls_core_extras::logger::ColoredConsoleLogger;"
+          }
+        ]
+      }
+    ]
+  }
+}

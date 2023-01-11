@@ -1,0 +1,23 @@
+{
+  "reason": "compiler-message",
+  "package_id": "test_app 0.1.0 (path+file:///D:/src/dpt/pls/test_app)",
+  "manifest_path": "D:\\src\\dpt\\pls\\test_app\\Cargo.toml",
+  "target": {
+    "kind": [ "bin" ],
+    "crate_types": [ "bin" ],
+    "name": "test_app",
+    "src_path": "D:\\src\\dpt\\pls\\test_app\\src\\main.rs",
+    "edition": "2018",
+    "doc": true,
+    "doctest": false,
+    "test": true
+  },
+  "message": {
+    "rendered": "error: aborting due to previous error; 1 warning emitted\n\n",
+    "children": [],
+    "code": null,
+    "level": "error",
+    "message": "aborting due to previous error; 1 warning emitted",
+    "spans": []
+  }
+}

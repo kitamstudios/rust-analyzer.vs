@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="Cargo\CargoExeRunner.cs" />
     <Compile Include="Cargo\CargoManifest.cs" />
+    <Compile Include="Cargo\CargoJsonOutputParser.cs" />
     <Compile Include="Common\PathUtilities.cs" />
     <Compile Include="ProcessOutputProcessor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

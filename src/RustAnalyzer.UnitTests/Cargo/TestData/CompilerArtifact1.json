@@ -1,0 +1,26 @@
+{
+  "reason": "compiler-artifact",
+  "package_id": "pls_core_extras 0.1.0 (path+file:///D:/src/dpt/pls/pls_core_extras)",
+  "manifest_path": "D:\\src\\dpt\\pls\\pls_core_extras\\Cargo.toml",
+  "target": {
+    "kind": [ "lib" ],
+    "crate_types": [ "lib" ],
+    "name": "pls_core_extras",
+    "src_path": "D:\\src\\dpt\\pls\\pls_core_extras\\src\\lib.rs",
+    "edition": "2018",
+    "doc": true,
+    "doctest": true,
+    "test": true
+  },
+  "profile": {
+    "opt_level": "0",
+    "debuginfo": 2,
+    "debug_assertions": true,
+    "overflow_checks": true,
+    "test": false
+  },
+  "features": [],
+  "filenames": [ "D:\\src\\dpt\\pls\\target\\debug\\deps\\libpls_core_extras-3d8f13600999ef02.rlib", "D:\\src\\dpt\\pls\\target\\debug\\deps\\libpls_core_extras-3d8f13600999ef02.rmeta" ],
+  "executable": null,
+  "fresh": false
+}
