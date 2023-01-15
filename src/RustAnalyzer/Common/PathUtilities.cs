@@ -20,6 +20,31 @@ public static class PathUtilities
         !(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ||
         RuntimeInformation.IsOSPlatform(OSPlatform.OSX));
 
+    public static bool ExistsOnPath(string fileName)
+    {
+        return SearchInPath(fileName) != null;
+    }
+
+    public static string SearchInPath(string fileName)
+    {
+        if (File.Exists(fileName))
+        {
+            return Path.GetFullPath(fileName);
+        }
+
+        var values = Environment.GetEnvironmentVariable("PATH");
+        foreach (var path in values.Split(Path.PathSeparator))
+        {
+            var fullPath = Path.Combine(path, fileName);
+            if (File.Exists(fullPath))
+            {
+                return fullPath;
+            }
+        }
+
+        return null;
+    }
+
     public static string MakeRelativePath(string relativeTo, string path)
     {
 #if NETCOREAPP2_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER

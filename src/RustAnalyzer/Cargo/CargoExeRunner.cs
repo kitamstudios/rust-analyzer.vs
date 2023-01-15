@@ -10,60 +10,73 @@ namespace KS.RustAnalyzer.Cargo;
 
 public class CargoExeRunner
 {
-    public static Task<bool> BuildAsync(string filePath, string profile, RustOutputPane outputPane, ITelemetryService ts)
+    public static Task<bool> BuildAsync(string filePath, string profile, RustOutputPane outputPane, ITelemetryService ts, Func<string, Task> showMessageBox)
     {
-        ts.TrackEvent(
-            "Build",
-            new[] { ("FilePath", filePath), ("Profile", profile), });
-
         return ExecuteOperationAsync(
+            "build",
             filePath,
             arguments: $"build --manifest-path \"{filePath}\" --profile {profile} --message-format json",
             profile,
+            ts,
+            showMessageBox,
             outputPane,
             CargoJsonOutputParser.Parse);
     }
 
-    public static Task<bool> CleanAsync(string filePath, string profile, RustOutputPane outputPane, ITelemetryService ts)
+    public static Task<bool> CleanAsync(string filePath, string profile, RustOutputPane outputPane, ITelemetryService ts, Func<string, Task> showMessageBox)
     {
-        ts.TrackEvent(
-            "Clean",
-            new[] { ("FilePath", filePath), ("Profile", profile), });
-
         return ExecuteOperationAsync(
+            "clean",
             filePath,
             arguments: $"clean --manifest-path \"{filePath}\" --profile {profile}",
             profile,
+            ts,
+            showMessageBox,
             outputPane,
             x => new[] { x });
     }
 
-    private static async Task<bool> ExecuteOperationAsync(string filePath, string arguments, string profile, RustOutputPane outputPane, Func<string, string[]> outputPreprocessor)
+    private static async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, ITelemetryService ts, Func<string, Task> showMessageBox, RustOutputPane outputPane, Func<string, string[]> outputPreprocessor)
     {
         if (!RustHelpers.IsCargoFile(filePath) || !Path.IsPathRooted(filePath))
         {
+            // TODO: Log this.
             throw new ArgumentException($"{nameof(filePath)} has to be a rooted cargo file.");
         }
 
         outputPane.Clear();
+
+        var cargoFullPath = PathUtilities.SearchInPath(RustConstants.CargoExe);
+
+        ts.TrackEvent(
+            opName,
+            new[] { ("FilePath", filePath), ("Profile", profile), ("CargoPath", cargoFullPath), ("Arguments", arguments) });
+
+        if (string.IsNullOrEmpty(cargoFullPath))
+        {
+            await showMessageBox($"Unable to perform '{opName}'.\r\n\r\n{RustConstants.CargoExe} is not found in path.\r\n\r\nInstall from https://www.rust-lang.org/tools/install and try again.");
+            return false;
+        }
+
         return await RunAsync(
+            cargoFullPath,
             arguments,
             workingDir: Path.GetDirectoryName(filePath),
             redirector: new BuildOutputRedirector(outputPane, outputPreprocessor));
     }
 
-    private static async Task<bool> RunAsync(string arguments, string workingDir, ProcessOutputRedirector redirector)
+    private static async Task<bool> RunAsync(string cargoFullPath, string arguments, string workingDir, ProcessOutputRedirector redirector)
     {
         Debug.Assert(!string.IsNullOrEmpty(arguments), $"{nameof(arguments)} should not be empty.");
 
-        redirector?.WriteLineWithoutProcessing($"\n=== Cargo started: {RustConstants.CargoExePath} {arguments} ===");
-        redirector?.WriteLineWithoutProcessing($"         Path: {RustConstants.CargoExePath}");
+        redirector?.WriteLineWithoutProcessing($"\n=== Cargo started: {RustConstants.CargoExe} {arguments} ===");
+        redirector?.WriteLineWithoutProcessing($"         Path: {cargoFullPath}");
         redirector?.WriteLineWithoutProcessing($"    Arguments: {arguments}");
         redirector?.WriteLineWithoutProcessing($"   WorkingDir: {workingDir}");
         redirector?.WriteLineWithoutProcessing($"");
 
         using (var process = ProcessOutputProcessor.Run(
-            RustConstants.CargoExePath,
+            cargoFullPath,
             new[] { arguments },
             workingDir,
             env: null,
@@ -77,7 +90,7 @@ public class CargoExeRunner
             {
                 // Process failed to start, and any exception message has
                 // already been sent through the redirector
-                redirector.WriteErrorLineWithoutProcessing(string.Format("Error - Failed to start '{0}'", RustConstants.CargoExePath));
+                redirector.WriteErrorLineWithoutProcessing(string.Format("Error - Failed to start '{0}'", cargoFullPath));
                 return false;
             }
             else

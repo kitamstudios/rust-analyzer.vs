@@ -6,5 +6,5 @@ public class RustConstants
     public const string CargoFileName = "Cargo.toml"; // NOTE: cargo.exe requires caps 'C'.
     public const string CargoFileExtension = ".toml";
 
-    public const string CargoExePath = "cargo.exe";
+    public const string CargoExe = "cargo.exe";
 }
