@@ -58,7 +58,7 @@ jobs:
 
   publish:
     if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
-    needs: build
+    needs: build-test-deploy
     runs-on: windows-latest
 
     steps:

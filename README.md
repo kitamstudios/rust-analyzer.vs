@@ -17,9 +17,10 @@ Support: [![](https://dcbadge.vercel.app/api/server/JyK55EsACr)](https://discord
 - Enhance with Rust community best practices e.g. fmt, clippy.
 - Killer features e.g. copilot integration.
 
-## Common links
+## Demo
 
-- [Open Folder extensibility](https://learn.microsoft.com/en-us/visualstudio/extensibility/open-folder?view=vs-2022) is pretty much the only documentation apart from the sample code folks have written (see [Acknowledgements](#Acknowledgements)).
+### MVP1 - Build & debug
+[![ra.vs MVP1](https://img.youtube.com/vi/HfCWxkfUNCI/0.jpg)](https://www.youtube.com/watch?v=HfCWxkfUNCI)
 
 ## How can I help?
 
@@ -28,6 +29,10 @@ If you enjoy using the extension, please give it a ★★★★★ rating on the
 Should you encounter bugs or if you have feature requests, head on over to the [GitHub repo][repo] to open an issue if one doesn't already exist.
 
 Pull requests are also very welcome, since I can't always get around to fixing all bugs myself.
+
+## Common links
+
+- [Open Folder extensibility](https://learn.microsoft.com/en-us/visualstudio/extensibility/open-folder?view=vs-2022) is pretty much the only documentation apart from the sample code folks have written (see [Acknowledgements](#Acknowledgements)).
 
 ## Acknowledgements
 
