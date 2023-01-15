@@ -1,56 +1,93 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: CDP
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
   pull_request:
-    branches:
-      - master
+    branches: [master]
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    branches: [master]
 
 jobs:
   build-test-deploy:
-    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.vsix_version.outputs.version-number }}
+    name: Build
+    runs-on: windows-2022
     env:
-        DOTNET_NOLOGO: true
-        DOTNET_CLI_TELEMETRY_OPTOUT: true
-        RepositoryUrl: 'https://github.com/${{ github.repository }}'
-        RepositoryBranch: '${{ github.ref }}'
-        SourceRevisionId: '${{ github.sha }}'
-        VersionSuffix: 'pr-${{github.event.number}}.${{ github.run_number }}'
-        Configuration: Release
-        SolutionPath: src\RustAnalyzer.sln
-        VsixManifestPath: src\RustAnalyzer\source.extension.vsixmanifest
+      Configuration: Release
+      DeployExtension: False
+      SolutionPath: src\RustAnalyzer.sln
+      VsixManifestPath: src\RustAnalyzer\source.extension.vsixmanifest
+      VsixManifestSourcePath: src\RustAnalyzer\source.extension.cs
+
     steps:
     - uses: actions/checkout@v2
-    - name: Setup MSBuild.exe
-      uses: microsoft/setup-msbuild@v1.0.2
-    - name: Restore NuGet Packages
-      run: nuget restore $env:SolutionPath
-    - name: Calculate next version
-      uses: cezarypiatek/NextVersionGeneratorAction@0.4
+
+    - name: Setup .NET build dependencies
+      uses: timheuer/bootstrap-dotnet@v1
       with:
-        minor-pattern: '\bAdd\b'
-        patch-pattern: '.*'
-        output-to-env-variable: 'VersionPrefix'
-    - name: Set version for Visual Studio Extension
-      uses: cezarypiatek/VsixVersionAction@1.0
+        nuget: 'false'
+        sdk: 'false'
+        msbuild: 'true'
+
+    - name: Increment VSIX version
+      id: vsix_version
+      uses: timheuer/vsix-version-stamp@v1
       with:
-        version: '${{env.VersionPrefix}}+${{env.VersionSuffix}}'
-        vsix-manifest-file: ${{ env.VsixManifestPath }}
+        manifest-file: ${{ env.VsixManifestPath }}
+        vsix-token-source-file: ${{ env.VsixManifestSourcePath }}
+
     - name: Build
-      run: msbuild $env:SolutionPath /t:Rebuild
-      env:
-        DeployExtension: False
+      run: msbuild /v:m /restore /p:OutDir=\_built
+
     - name: Test
       uses: microsoft/vstest-action@v1.0.0
       with:
         testAssembly: '*.UnitTests.dll'
-        searchFolder: ./src/**/Release/
+        searchFolder: ./src/**/Release/ /_built/**/
         runInParallel: true
-    - name: Upload artifacts
+
+    - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
-        name: RustAnalyzer
-        path: src\RustAnalyzer\bin\Release\RustAnalyzer.vsix
+        name: ${{ github.event.repository.name }}.vsix
+        path: /_built/**/*.vsix
+
+  publish:
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    needs: build
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download Package artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.event.repository.name }}.vsix
+
+      - name: Upload to Open VSIX
+        uses: timheuer/openvsixpublish@v1
+        with:
+          vsix-file: ${{ github.event.repository.name }}.vsix
+
+      - name: Tag and Release
+        if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]') }}
+        id: tag_release
+        uses: softprops/action-gh-release@v0.1.13
+        with:
+          body: Release ${{ needs.build.outputs.version }}
+          tag_name: ${{ needs.build.outputs.version }}
+          files: |
+            **/*.vsix
+
+      - name: Publish extension to Marketplace
+        if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]') }}
+        uses: cezarypiatek/VsixPublisherAction@0.1
+        with:
+          extension-file: '${{ github.event.repository.name }}.vsix'
+          publish-manifest-file: 'vs-publish.json'
+          personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}

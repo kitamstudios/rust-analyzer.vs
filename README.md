@@ -1,8 +1,15 @@
+[marketplace]: https://marketplace.visualstudio.com/items?itemName=KitamStudios.RustAnalyzer
+[vsixgallery]: http://vsixgallery.com/extension/KS.RustAnalyzer.86e60933-e1fd-4db1-992e-79303efc192b/
+[repo]: https://github.com/kitamstudios/rust-analyzer
+
 # rust-analyzer - Rust language support for Visual Studio
 
 [![CDP](https://github.com/kitamstudios/rust-analyzer/actions/workflows/cdp.yml/badge.svg)](https://github.com/kitamstudios/rust-analyzer/actions/workflows/cdp.yml)  [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
-[![](https://dcbadge.vercel.app/api/server/JyK55EsACr)](https://discord.gg/JyK55EsACr)
+Download this extension from the [Visual Studio Marketplace][marketplace] or get the [CI build][vsixgallery].
+
+
+Support: [![](https://dcbadge.vercel.app/api/server/JyK55EsACr)](https://discord.gg/JyK55EsACr)
 
 ## Principles
 
@@ -13,6 +20,14 @@
 ## Common links
 
 - [Open Folder extensibility](https://learn.microsoft.com/en-us/visualstudio/extensibility/open-folder?view=vs-2022) is pretty much the only documentation apart from the sample code folks have written (see [Acknowledgements](#Acknowledgements)).
+
+## How can I help?
+
+If you enjoy using the extension, please give it a ★★★★★ rating on the [Visual Studio Marketplace][marketplace].
+
+Should you encounter bugs or if you have feature requests, head on over to the [GitHub repo][repo] to open an issue if one doesn't already exist.
+
+Pull requests are also very welcome, since I can't always get around to fixing all bugs myself.
 
 ## Acknowledgements
 
