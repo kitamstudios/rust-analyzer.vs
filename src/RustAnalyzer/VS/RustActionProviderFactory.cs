@@ -21,13 +21,14 @@ public class RustActionProviderFactory : IWorkspaceProviderFactory<IFileContextA
     public const string ProviderType = "F8C470E5-0000-498C-80B8-DA2674A82B88";
 
     private readonly RustOutputPane _outputPane;
-
+    private readonly ILogger _logger;
     private ITelemetryService _telemetryService;
 
     [ImportingConstructor]
-    public RustActionProviderFactory(RustOutputPane outputPane)
+    public RustActionProviderFactory(RustOutputPane outputPane, ILogger logger)
     {
         _outputPane = outputPane;
+        _logger = logger;
     }
 
     public IFileContextActionProvider CreateProvider(IWorkspace workspaceContext)
@@ -36,8 +37,9 @@ public class RustActionProviderFactory : IWorkspaceProviderFactory<IFileContextA
         _telemetryService.TrackEvent(
             "Create Context Action Provider",
             new[] { ("Location", workspaceContext.Location) });
+        _logger.WriteLine("Creating {0}.", GetType().Name);
 
-        return new FileContextActionProvider(workspaceContext, _outputPane, _telemetryService);
+        return new FileContextActionProvider(workspaceContext, _outputPane, _telemetryService, _logger);
     }
 
     public IReadOnlyCollection<CommandID> GetSupportedVsCommands()
@@ -54,13 +56,15 @@ public class FileContextActionProvider : IFileContextActionProvider
     private readonly IWorkspace _workspace;
     private readonly RustOutputPane _outputPane;
     private readonly ITelemetryService _telemetryService;
+    private readonly ILogger _logger;
     private readonly Func<string, Task> _showMessageBox;
 
-    public FileContextActionProvider(IWorkspace workspace, RustOutputPane outputPane, ITelemetryService telemetryService)
+    public FileContextActionProvider(IWorkspace workspace, RustOutputPane outputPane, ITelemetryService telemetryService, ILogger logger)
     {
         _workspace = workspace;
         _outputPane = outputPane;
         _telemetryService = telemetryService;
+        _logger = logger;
         _showMessageBox = ShowMessageBoxAsync;
     }
 
@@ -74,11 +78,11 @@ public class FileContextActionProvider : IFileContextActionProvider
 
         if (RustHelpers.IsCargoFile(filePath))
         {
-            actions.Add(new RustBuildFileContextAction(filePath, fileContext, _outputPane, _telemetryService, _showMessageBox));
+            actions.Add(new RustBuildFileContextAction(filePath, fileContext, _outputPane, _telemetryService, _showMessageBox, _logger));
         }
         else if (RustHelpers.IsRustFile(filePath) && CargoManifest.GetParentCargoManifest(filePath, _workspace.Location, out string parentCargoPath))
         {
-            actions.Add(new RustBuildFileContextAction(parentCargoPath, fileContext, _outputPane, _telemetryService, _showMessageBox, fileContextMenuVisible: false));
+            actions.Add(new RustBuildFileContextAction(parentCargoPath, fileContext, _outputPane, _telemetryService, _showMessageBox, _logger, fileContextMenuVisible: false));
         }
 
         return actions;
@@ -94,8 +98,8 @@ public class FileContextActionProvider : IFileContextActionProvider
 
 public class RustBuildFileContextAction : IFileContextAction, IVsCommandItem
 {
-    private static readonly IReadOnlyDictionary<Guid, (uint, Func<string, string, RustOutputPane, ITelemetryService, Func<string, Task>, Task<bool>>)> FileContextActionInfo =
-        new Dictionary<Guid, (uint, Func<string, string, RustOutputPane, ITelemetryService, Func<string, Task>, Task<bool>>)>
+    private static readonly IReadOnlyDictionary<Guid, (uint, Func<string, string, RustOutputPane, ITelemetryService, Func<string, Task>, ILogger, Task<bool>>)> FileContextActionInfo =
+        new Dictionary<Guid, (uint, Func<string, string, RustOutputPane, ITelemetryService, Func<string, Task>, ILogger, Task<bool>>)>
         {
             [BuildContextTypes.BuildContextTypeGuid] = (PredefinedCmdId.CmdIdBuildActionContext, CargoExeRunner.BuildAsync),
             [BuildContextTypes.CleanContextTypeGuid] = (PredefinedCmdId.CmdIdCleanActionContext, CargoExeRunner.CleanAsync),
@@ -103,15 +107,17 @@ public class RustBuildFileContextAction : IFileContextAction, IVsCommandItem
 
     private readonly ITelemetryService _telemetryService;
     private readonly Func<string, Task> _showMessageBox;
+    private readonly ILogger _logger;
     private readonly bool _fileContextMenuVisible;
 
-    public RustBuildFileContextAction(string filePath, FileContext source, RustOutputPane outputPane, ITelemetryService telemetryService, Func<string, Task> showMessageBox, bool fileContextMenuVisible = true)
+    public RustBuildFileContextAction(string filePath, FileContext source, RustOutputPane outputPane, ITelemetryService telemetryService, Func<string, Task> showMessageBox, ILogger logger, bool fileContextMenuVisible = true)
     {
         Source = source;
         FilePath = filePath;
         OutputPane = outputPane;
         _telemetryService = telemetryService;
         _showMessageBox = showMessageBox;
+        _logger = logger;
         _fileContextMenuVisible = fileContextMenuVisible;
         (CommandId, CommandFunc) = FileContextActionInfo[source.ContextType];
     }
@@ -120,7 +126,7 @@ public class RustBuildFileContextAction : IFileContextAction, IVsCommandItem
 
     public uint CommandId { get; private set; }
 
-    public Func<string, string, RustOutputPane, ITelemetryService, Func<string, Task>, Task<bool>> CommandFunc { get; private set; }
+    public Func<string, string, RustOutputPane, ITelemetryService, Func<string, Task>, ILogger, Task<bool>> CommandFunc { get; private set; }
 
     public FileContext Source { get; }
 
@@ -132,7 +138,7 @@ public class RustBuildFileContextAction : IFileContextAction, IVsCommandItem
 
     public async Task<IFileContextActionResult> ExecuteAsync(IProgress<IFileContextActionProgressUpdate> progress, CancellationToken cancellationToken)
     {
-        var result = await CommandFunc(FilePath, (Source.Context as BuildConfigurationContext).BuildConfiguration, OutputPane, _telemetryService, _showMessageBox);
+        var result = await CommandFunc(FilePath, (Source.Context as BuildConfigurationContext).BuildConfiguration, OutputPane, _telemetryService, _showMessageBox, _logger);
         return CreateBuildProjectIncrementalResultFromBoolean(result);
     }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Text.RegularExpressions;
+using KS.RustAnalyzer.Common;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -9,7 +10,7 @@ public static class CargoJsonOutputParser
 {
     private static readonly Regex CompilerArtifactMessageCracker = new Regex(@"^(.*) (.*) \((.*)\+(.*)\)$", RegexOptions.Compiled);
 
-    public static string[] Parse(string jsonLine)
+    public static string[] Parse(string jsonLine, ILogger logger)
     {
         dynamic obj;
         try
@@ -32,9 +33,9 @@ public static class CargoJsonOutputParser
                 return ParseCompilerMessage(obj);
             }
         }
-        catch
+        catch (Exception e)
         {
-            // TODO: Log to the output window.
+            logger.WriteLine("CargoJsonOutputParser failed to parse line: {0}. Exception {1}.", jsonLine, e);
             return new[] { jsonLine };
         }
 

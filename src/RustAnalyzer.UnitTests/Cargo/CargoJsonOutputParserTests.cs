@@ -3,12 +3,15 @@ using System.IO;
 using System.Reflection;
 using FluentAssertions;
 using KS.RustAnalyzer.Cargo;
+using KS.RustAnalyzer.Common;
+using Moq;
 using Xunit;
 
 namespace KS.RustAnalyzer.UnitTests.Cargo;
 
 public class CargoJsonOutputParserTests
 {
+    private static readonly ILogger _l = Mock.Of<ILogger>();
     private static readonly string _thisTestRoot =
         Path.Combine(
             Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)),
@@ -18,7 +21,7 @@ public class CargoJsonOutputParserTests
     public void IfNotParsableIgnore()
     {
         var jsonOutput = "   Compiling pest v2.5.2";
-        var output = CargoJsonOutputParser.Parse(jsonOutput);
+        var output = CargoJsonOutputParser.Parse(jsonOutput, _l);
 
         output.Should().BeEmpty();
     }
@@ -36,7 +39,7 @@ public class CargoJsonOutputParserTests
     public void ParseCompilerArtifiacts(string dataFile, string[] expected)
     {
         var jsonOutput = File.ReadAllText(Path.Combine(_thisTestRoot, dataFile));
-        var output = CargoJsonOutputParser.Parse(jsonOutput);
+        var output = CargoJsonOutputParser.Parse(jsonOutput, _l);
 
         output.Should().BeEquivalentTo(expected);
     }
@@ -54,7 +57,7 @@ public class CargoJsonOutputParserTests
     public void ParseCompilerMessages(string dataFile, string expected)
     {
         var jsonOutput = File.ReadAllText(Path.Combine(_thisTestRoot, dataFile));
-        var output = CargoJsonOutputParser.Parse(jsonOutput);
+        var output = CargoJsonOutputParser.Parse(jsonOutput, _l);
 
         output[0].Should().Be(expected);
         output[1].Should().NotBeNullOrWhiteSpace();

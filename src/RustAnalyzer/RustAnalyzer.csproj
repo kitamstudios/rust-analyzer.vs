@@ -47,6 +47,7 @@
     <Compile Include="Cargo\CargoExeRunner.cs" />
     <Compile Include="Cargo\CargoManifest.cs" />
     <Compile Include="Cargo\CargoJsonOutputParser.cs" />
+    <Compile Include="Common\ILogger.cs" />
     <Compile Include="Common\PathUtilities.cs" />
     <Compile Include="ProcessOutputProcessor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -57,6 +58,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>source.extension.vsixmanifest</DependentUpon>
     </Compile>
+    <Compile Include="VS\OutputWindowLogger.cs" />
     <Compile Include="VS\TelemetryService.cs" />
     <Compile Include="Common\ITelemetryService.cs" />
     <Compile Include="VS\RustScannerFactory.cs" />

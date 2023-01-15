@@ -1,13 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Community.VisualStudio.Toolkit;
+using KS.RustAnalyzer.Common;
+using KS.RustAnalyzer.VS;
 using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 
 namespace KS.RustAnalyzer;
@@ -19,9 +23,17 @@ namespace KS.RustAnalyzer;
 [Guid(PackageGuids.RustAnalyzerString)]
 public sealed class RustAnalyzerPackage : ToolkitPackage
 {
+    private ILogger _logger;
+
+    private ITelemetryService _telemetry;
+
     protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
     {
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        var cmServiceProvider = (IComponentModel)await GetServiceAsync(typeof(SComponentModel));
+        _logger = cmServiceProvider?.GetService<ILogger>();
+        _telemetry = new TelemetryServiceFactory().CreateService(null) as ITelemetryService;
     }
 
     protected override async Task OnAfterPackageLoadedAsync(CancellationToken cancellationToken)
@@ -30,11 +42,13 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
 
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
-        await DisableIncompatibleExtensionsAsync();
+        await SearchAndDisableIncompatibleExtensionsAsync();
     }
 
-    private async Task DisableIncompatibleExtensionsAsync()
+    private async Task SearchAndDisableIncompatibleExtensionsAsync()
     {
+        _logger?.WriteLine("Searching and disabling incompatible extensions.");
+
         try
         {
 #pragma warning disable CS0618 // Type or member is obsolete
@@ -54,6 +68,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                         "Disable them and restart Visual Studio? You can enable them back later from Extensions > Manage Extensions.");
                 if (mbRet == VSConstants.MessageBoxResult.IDOK)
                 {
+                    _telemetry?.TrackEvent("DisableIncompatExts", ("NumberOfExts", incompatibleExtensions.Count().ToString(CultureInfo.InvariantCulture)));
                     foreach (var e in incompatibleExtensions)
                     {
                         exMgr.Disable(e);
@@ -61,6 +76,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                 }
                 else
                 {
+                    _telemetry?.TrackEvent("DisableThisExt");
                     var thisExtension = enabledExtensions.Where(e => (e.Header.Name as string).Equals(Vsix.Name, StringComparison.OrdinalIgnoreCase));
                     exMgr.Disable(thisExtension);
                 }
@@ -68,9 +84,9 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                 await RestartProcessAsync();
             }
         }
-        catch
+        catch (Exception e)
         {
-            // TODO: Log the exception.
+            _logger?.WriteLine("Failed in searching and disabling incompatible extensions. Ex: {0}", e);
         }
     }
 

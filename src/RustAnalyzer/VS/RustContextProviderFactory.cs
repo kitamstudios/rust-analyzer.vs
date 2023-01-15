@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,12 +20,23 @@ public sealed class RustContextProviderFactory : IWorkspaceProviderFactory<IFile
     public static readonly Guid ProviderTypeGuid = new (ProviderType);
 
     private const string ProviderType = "{72D3FCEF-0000-4266-B8DD-D3ED06E35A2B}";
+    private readonly ILogger _logger;
+    private ITelemetryService _telemetryService;
+
+    [ImportingConstructor]
+    public RustContextProviderFactory(ILogger logger)
+    {
+        _logger = logger;
+    }
 
     public IFileContextProvider CreateProvider(IWorkspace workspaceContext)
     {
-        workspaceContext.GetService<ITelemetryService>().TrackEvent(
+        _telemetryService = workspaceContext.GetService<ITelemetryService>();
+        _telemetryService.TrackEvent(
             "Create Context Provider",
             new[] { ("Location", workspaceContext.Location) });
+        _logger.WriteLine("Creating {0}.", GetType().Name);
+
         return new RustContextProvider(workspaceContext);
     }
 }

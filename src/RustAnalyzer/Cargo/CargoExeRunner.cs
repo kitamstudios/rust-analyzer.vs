@@ -10,7 +10,7 @@ namespace KS.RustAnalyzer.Cargo;
 
 public class CargoExeRunner
 {
-    public static Task<bool> BuildAsync(string filePath, string profile, RustOutputPane outputPane, ITelemetryService ts, Func<string, Task> showMessageBox)
+    public static Task<bool> BuildAsync(string filePath, string profile, RustOutputPane outputPane, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l)
     {
         return ExecuteOperationAsync(
             "build",
@@ -20,10 +20,11 @@ public class CargoExeRunner
             ts,
             showMessageBox,
             outputPane,
-            CargoJsonOutputParser.Parse);
+            l,
+            x => CargoJsonOutputParser.Parse(x, l));
     }
 
-    public static Task<bool> CleanAsync(string filePath, string profile, RustOutputPane outputPane, ITelemetryService ts, Func<string, Task> showMessageBox)
+    public static Task<bool> CleanAsync(string filePath, string profile, RustOutputPane outputPane, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l)
     {
         return ExecuteOperationAsync(
             "clean",
@@ -33,15 +34,15 @@ public class CargoExeRunner
             ts,
             showMessageBox,
             outputPane,
+            l,
             x => new[] { x });
     }
 
-    private static async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, ITelemetryService ts, Func<string, Task> showMessageBox, RustOutputPane outputPane, Func<string, string[]> outputPreprocessor)
+    private static async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, ITelemetryService ts, Func<string, Task> showMessageBox, RustOutputPane outputPane, ILogger l, Func<string, string[]> outputPreprocessor)
     {
-        if (!RustHelpers.IsCargoFile(filePath) || !Path.IsPathRooted(filePath))
+        if (!RustHelpers.IsCargoFile(filePath) || !Path.IsPathRooted(filePath) || true)
         {
-            // TODO: Log this.
-            throw new ArgumentException($"{nameof(filePath)} has to be a rooted cargo file.");
+            l.WriteLine("{0} has to be a rooted cargo file", filePath);
         }
 
         outputPane.Clear();
@@ -54,10 +55,12 @@ public class CargoExeRunner
 
         if (string.IsNullOrEmpty(cargoFullPath))
         {
+            l.WriteLine($"{RustConstants.CargoExe} not found in path.");
             await showMessageBox($"Unable to perform '{opName}'.\r\n\r\n{RustConstants.CargoExe} is not found in path.\r\n\r\nInstall from https://www.rust-lang.org/tools/install and try again.");
             return false;
         }
 
+        l.WriteLine("Using {0} from {1}.", RustConstants.CargoExe, cargoFullPath);
         return await RunAsync(
             cargoFullPath,
             arguments,

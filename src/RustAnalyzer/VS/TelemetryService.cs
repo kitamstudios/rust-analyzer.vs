@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.Workspace;
 
 namespace KS.RustAnalyzer.VS;
 
-[ExportWorkspaceServiceFactory(WorkspaceServiceFactoryOptions.None, typeof(ITelemetryService))]
+[ExportWorkspaceServiceFactory(WorkspaceServiceFactoryOptions.CreateOnWorkspaceInitialize, typeof(ITelemetryService))]
 public sealed class TelemetryServiceFactory : IWorkspaceServiceFactory
 {
     public object CreateService(IWorkspace workspaceContext)
@@ -41,7 +41,7 @@ public sealed class TelemetryService : ITelemetryService
         _telemetryClient = new TelemetryClient(configuration);
     }
 
-    public void TrackEvent(string eventName, (string key, string value)[] properties)
+    public void TrackEvent(string eventName, params (string key, string value)[] properties)
     {
         var propsDict = properties.Aggregate(
             new Dictionary<string, string>(),
