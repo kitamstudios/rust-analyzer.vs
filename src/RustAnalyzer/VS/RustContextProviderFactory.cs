@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using KS.RustAnalyzer.Common;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
 
@@ -21,6 +22,9 @@ public sealed class RustContextProviderFactory : IWorkspaceProviderFactory<IFile
 
     public IFileContextProvider CreateProvider(IWorkspace workspaceContext)
     {
+        workspaceContext.GetService<ITelemetryService>().TrackEvent(
+            "Create Context Provider",
+            new[] { ("Location", workspaceContext.Location) });
         return new RustContextProvider(workspaceContext);
     }
 }

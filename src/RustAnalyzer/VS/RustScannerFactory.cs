@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.Cargo;
+using KS.RustAnalyzer.Common;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
 using Microsoft.VisualStudio.Workspace.Debug;
@@ -23,6 +25,10 @@ public class RustScannerFactory : IWorkspaceProviderFactory<IFileScanner>
 
     public IFileScanner CreateProvider(IWorkspace workspaceContext)
     {
+        workspaceContext.GetService<ITelemetryService>().TrackEvent(
+            "Create Scanner",
+            new[] { ("Location", workspaceContext.Location) });
+
         return new CargoScanner(workspaceContext);
     }
 }

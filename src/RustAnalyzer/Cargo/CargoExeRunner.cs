@@ -3,14 +3,19 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using KS.RustAnalyzer.Common;
 using KS.RustAnalyzer.VS;
 
 namespace KS.RustAnalyzer.Cargo;
 
 public class CargoExeRunner
 {
-    public static Task<bool> BuildAsync(string filePath, string profile, RustOutputPane outputPane)
+    public static Task<bool> BuildAsync(string filePath, string profile, RustOutputPane outputPane, ITelemetryService ts)
     {
+        ts.TrackEvent(
+            "Build",
+            new[] { ("FilePath", filePath), ("Profile", profile), });
+
         return ExecuteOperationAsync(
             filePath,
             arguments: $"build --manifest-path \"{filePath}\" --profile {profile} --message-format json",
@@ -19,8 +24,12 @@ public class CargoExeRunner
             CargoJsonOutputParser.Parse);
     }
 
-    public static Task<bool> CleanAsync(string filePath, string profile, RustOutputPane outputPane)
+    public static Task<bool> CleanAsync(string filePath, string profile, RustOutputPane outputPane, ITelemetryService ts)
     {
+        ts.TrackEvent(
+            "Clean",
+            new[] { ("FilePath", filePath), ("Profile", profile), });
+
         return ExecuteOperationAsync(
             filePath,
             arguments: $"clean --manifest-path \"{filePath}\" --profile {profile}",

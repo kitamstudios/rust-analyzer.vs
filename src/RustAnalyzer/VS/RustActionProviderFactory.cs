@@ -5,8 +5,10 @@ using System.ComponentModel.Design;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.Cargo;
+using KS.RustAnalyzer.Common;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
+using Microsoft.VisualStudio.Workspace.Debug;
 using Microsoft.VisualStudio.Workspace.Extensions.VS;
 
 namespace KS.RustAnalyzer.VS;
@@ -20,6 +22,8 @@ public class RustActionProviderFactory : IWorkspaceProviderFactory<IFileContextA
 
     private readonly RustOutputPane _outputPane;
 
+    private ITelemetryService _telemetryService;
+
     [ImportingConstructor]
     public RustActionProviderFactory(RustOutputPane outputPane)
     {
@@ -28,7 +32,12 @@ public class RustActionProviderFactory : IWorkspaceProviderFactory<IFileContextA
 
     public IFileContextActionProvider CreateProvider(IWorkspace workspaceContext)
     {
-        return new FileContextActionProvider(workspaceContext, _outputPane);
+        _telemetryService = workspaceContext.GetService<ITelemetryService>();
+        _telemetryService.TrackEvent(
+            "Create Context Action Provider",
+            new[] { ("Location", workspaceContext.Location) });
+
+        return new FileContextActionProvider(workspaceContext, _outputPane, _telemetryService);
     }
 
     public IReadOnlyCollection<CommandID> GetSupportedVsCommands()
@@ -44,11 +53,13 @@ public class FileContextActionProvider : IFileContextActionProvider
 {
     private readonly IWorkspace _workspace;
     private readonly RustOutputPane _outputPane;
+    private readonly ITelemetryService _telemetryService;
 
-    public FileContextActionProvider(IWorkspace workspace, RustOutputPane outputPane)
+    public FileContextActionProvider(IWorkspace workspace, RustOutputPane outputPane, ITelemetryService telemetryService)
     {
         _workspace = workspace;
         _outputPane = outputPane;
+        _telemetryService = telemetryService;
     }
 
     public async Task<IReadOnlyList<IFileContextAction>> GetActionsAsync(string filePath, FileContext fileContext, CancellationToken cancellationToken)
@@ -61,11 +72,11 @@ public class FileContextActionProvider : IFileContextActionProvider
 
         if (RustHelpers.IsCargoFile(filePath))
         {
-            actions.Add(new RustBuildFileContextAction(filePath, fileContext, _outputPane));
+            actions.Add(new RustBuildFileContextAction(filePath, fileContext, _outputPane, _telemetryService));
         }
         else if (RustHelpers.IsRustFile(filePath) && CargoManifest.GetParentCargoManifest(filePath, _workspace.Location, out string parentCargoPath))
         {
-            actions.Add(new RustBuildFileContextAction(parentCargoPath, fileContext, _outputPane, fileContextMenuVisible: false));
+            actions.Add(new RustBuildFileContextAction(parentCargoPath, fileContext, _outputPane, _telemetryService, fileContextMenuVisible: false));
         }
 
         return actions;
@@ -74,20 +85,23 @@ public class FileContextActionProvider : IFileContextActionProvider
 
 public class RustBuildFileContextAction : IFileContextAction, IVsCommandItem
 {
-    private static readonly IReadOnlyDictionary<Guid, (uint, Func<string, string, RustOutputPane, Task<bool>>)> FileContextActionInfo =
-        new Dictionary<Guid, (uint, Func<string, string, RustOutputPane, Task<bool>>)>
+    private static readonly IReadOnlyDictionary<Guid, (uint, Func<string, string, RustOutputPane, ITelemetryService, Task<bool>>)> FileContextActionInfo =
+        new Dictionary<Guid, (uint, Func<string, string, RustOutputPane, ITelemetryService, Task<bool>>)>
         {
             [BuildContextTypes.BuildContextTypeGuid] = (PredefinedCmdId.CmdIdBuildActionContext, CargoExeRunner.BuildAsync),
             [BuildContextTypes.CleanContextTypeGuid] = (PredefinedCmdId.CmdIdCleanActionContext, CargoExeRunner.CleanAsync),
         };
 
+    private readonly ITelemetryService _telemetryService;
+
     private readonly bool _fileContextMenuVisible;
 
-    public RustBuildFileContextAction(string filePath, FileContext source, RustOutputPane outputPane, bool fileContextMenuVisible = true)
+    public RustBuildFileContextAction(string filePath, FileContext source, RustOutputPane outputPane, ITelemetryService telemetryService, bool fileContextMenuVisible = true)
     {
         Source = source;
         FilePath = filePath;
         OutputPane = outputPane;
+        _telemetryService = telemetryService;
         _fileContextMenuVisible = fileContextMenuVisible;
         (CommandId, CommandFunc) = FileContextActionInfo[source.ContextType];
     }
@@ -96,7 +110,7 @@ public class RustBuildFileContextAction : IFileContextAction, IVsCommandItem
 
     public uint CommandId { get; private set; }
 
-    public Func<string, string, RustOutputPane, Task<bool>> CommandFunc { get; private set; }
+    public Func<string, string, RustOutputPane, ITelemetryService, Task<bool>> CommandFunc { get; private set; }
 
     public FileContext Source { get; }
 
@@ -108,7 +122,7 @@ public class RustBuildFileContextAction : IFileContextAction, IVsCommandItem
 
     public async Task<IFileContextActionResult> ExecuteAsync(IProgress<IFileContextActionProgressUpdate> progress, CancellationToken cancellationToken)
     {
-        var result = await CommandFunc(FilePath, (Source.Context as BuildConfigurationContext).BuildConfiguration, OutputPane);
+        var result = await CommandFunc(FilePath, (Source.Context as BuildConfigurationContext).BuildConfiguration, OutputPane, _telemetryService);
         return CreateBuildProjectIncrementalResultFromBoolean(result);
     }
 
