@@ -34,6 +34,7 @@ public sealed class RustOutputPane
         }
 
 #pragma warning disable VSTHRD010 // Invoke single-threaded types on Main thread
+        _lazyOutputPaneCollection[target].Activate();
         var hr = _lazyOutputPaneCollection[target].OutputStringThreadSafe(message + Environment.NewLine);
 #pragma warning restore VSTHRD010 // Invoke single-threaded types on Main thread
         Ensure.That(ErrorHandler.Succeeded(hr));
@@ -76,9 +77,6 @@ public sealed class RustOutputPane
                 return null;
             }
         }
-
-        // Must activate the workspace pane for it to show up in the output window
-        lazyOutputPane.Activate();
 
         return lazyOutputPane;
     }
