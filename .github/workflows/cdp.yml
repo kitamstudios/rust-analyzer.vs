@@ -22,6 +22,7 @@ jobs:
       SolutionPath: src\RustAnalyzer.sln
       VsixManifestPath: src\RustAnalyzer\source.extension.vsixmanifest
       VsixManifestSourcePath: src\RustAnalyzer\source.extension.cs
+      OutDir: \_built
 
     steps:
     - uses: actions/checkout@v2
@@ -41,20 +42,20 @@ jobs:
         vsix-token-source-file: ${{ env.VsixManifestSourcePath }}
 
     - name: Build
-      run: msbuild /v:m /restore /p:OutDir=\_built
+      run: msbuild $env:SolutionPath /t:rebuild /restore /p:OutDir=$env:OutDir
 
     - name: Test
       uses: microsoft/vstest-action@v1.0.0
       with:
         testAssembly: '*.UnitTests.dll'
-        searchFolder: ./src/**/Release/ /_built/**/
+        searchFolder: ./src/**/Release/ $env:OutDir/**/
         runInParallel: true
 
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
         name: ${{ github.event.repository.name }}.vsix
-        path: /_built/**/*.vsix
+        path: $env:OutDir/**/*.vsix
 
   publish:
     if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
