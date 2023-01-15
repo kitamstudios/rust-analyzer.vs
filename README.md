@@ -1,4 +1,4 @@
-[marketplace]: https://marketplace.visualstudio.com/items?itemName=KitamStudios.RustAnalyzer
+[marketplace]: https://marketplace.visualstudio.com/items?itemName=kitamstudios.RustAnalyzer
 [vsixgallery]: http://vsixgallery.com/extension/KS.RustAnalyzer.86e60933-e1fd-4db1-992e-79303efc192b/
 [repo]: https://github.com/kitamstudios/rust-analyzer
 
@@ -20,7 +20,8 @@ Support: [![](https://dcbadge.vercel.app/api/server/JyK55EsACr)](https://discord
 ## Demo
 
 ### MVP1 - Build & debug
-[![ra.vs MVP1](https://img.youtube.com/vi/HfCWxkfUNCI/0.jpg)](https://www.youtube.com/watch?v=HfCWxkfUNCI)
+
+<img src="http://i.imgur.com/qvqSHDp.gif" width="605" height="405" />
 
 ## How can I help?
 
