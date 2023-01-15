@@ -42,7 +42,7 @@ jobs:
         vsix-token-source-file: ${{ env.VsixManifestSourcePath }}
 
     - name: Build
-      run: msbuild $env:SolutionPath /t:rebuild /restore /p:OutDir=$env:OutDir
+      run: msbuild $env:SolutionPath /m /t:rebuild /restore /p:OutDir=$env:OutDir
 
     - name: Test
       uses: microsoft/vstest-action@v1.0.0
@@ -55,7 +55,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: ${{ github.event.repository.name }}.vsix
-        path: $env:OutDir/**/*.vsix
+        path: \_built\*.vsix
 
   publish:
     if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}

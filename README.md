@@ -1,5 +1,5 @@
 [marketplace]: https://marketplace.visualstudio.com/items?itemName=kitamstudios.RustAnalyzer
-[vsixgallery]: http://vsixgallery.com/extension/KS.RustAnalyzer.86e60933-e1fd-4db1-992e-79303efc192b/
+[vsixgallery]: http://vsixgallery.com/extension/KS.RustAnalyzer.3a91e56b-fb28-4d85-b572-ec964abf8e31/
 [repo]: https://github.com/kitamstudios/rust-analyzer
 
 # rust-analyzer - Rust language support for Visual Studio
@@ -8,8 +8,7 @@
 
 Download this extension from the [Visual Studio Marketplace][marketplace] or get the [CI build][vsixgallery].
 
-
-Support: [![](https://dcbadge.vercel.app/api/server/JyK55EsACr)](https://discord.gg/JyK55EsACr)
+[![](https://dcbadge.vercel.app/api/server/JyK55EsACr)](https://discord.gg/JyK55EsACr)
 
 ## Principles
 
