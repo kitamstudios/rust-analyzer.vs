@@ -8,7 +8,6 @@ using KS.RustAnalyzer.Cargo;
 using KS.RustAnalyzer.Common;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
-using Microsoft.VisualStudio.Workspace.Debug;
 using Microsoft.VisualStudio.Workspace.Extensions.VS;
 
 namespace KS.RustAnalyzer.VS;

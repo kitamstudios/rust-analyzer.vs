@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +16,8 @@ namespace KS.RustAnalyzer.VS;
     type: ProviderType,
     language: "Rust",
     supportedFileExtensions: new[] { RustConstants.CargoFileName, RustConstants.RustFileExtension, },
-    supportedTypes: new[] { typeof(IReadOnlyCollection<FileDataValue>), typeof(IReadOnlyCollection<FileReferenceInfo>) })]
+    supportedTypes: new[] { typeof(IReadOnlyCollection<FileDataValue>), typeof(IReadOnlyCollection<FileReferenceInfo>) },
+    priority: ProviderPriority.Highest)]
 public class RustScannerFactory : IWorkspaceProviderFactory<IFileScanner>
 {
     public const string ProviderType = "F5628EAD-0000-4683-B597-D8314B971ED6";
