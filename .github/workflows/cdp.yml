@@ -10,6 +10,12 @@ on:
   workflow_dispatch:
     branches: [master]
 
+env:
+  VsixFileName: RustAnalyzer.vsix
+  SolutionPath: src\RustAnalyzer.sln
+  VsixManifestPath: src\RustAnalyzer\source.extension.vsixmanifest
+  VsixManifestSourcePath: src\RustAnalyzer\source.extension.cs
+
 jobs:
   build-test-deploy:
     outputs:
@@ -19,10 +25,6 @@ jobs:
     env:
       Configuration: Release
       DeployExtension: False
-      SolutionPath: src\RustAnalyzer.sln
-      VsixManifestPath: src\RustAnalyzer\source.extension.vsixmanifest
-      VsixManifestSourcePath: src\RustAnalyzer\source.extension.cs
-      VsixFileName: RustAnalyzer.vsix
       OutDir: \_built
 
     steps:
