@@ -76,12 +76,6 @@ jobs:
         with:
           name: ${{ github.event.repository.name }}.zip
 
-      - name: 'Echo download path'
-        run: echo ${{ steps.download.outputs.download-path }}
-
-      - name: Display structure of downloaded files
-        run: dir -rec -filt * \a\rust-analyzer
-
       - name: Upload to Open VSIX
         uses: timheuer/openvsixpublish@v1
         with:
