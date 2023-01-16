@@ -83,7 +83,7 @@ jobs:
       - name: Upload to Open VSIX
         uses: timheuer/openvsixpublish@v1
         with:
-          vsix-file: '${{ steps.download.outputs.download-path }}\${{ env.VsixFileName }}'
+          vsix-file: '${{ steps.download.outputs.download-path }}\\${{ env.VsixFileName }}'
 
       - name: Tag and Release
         if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]') }}
@@ -99,6 +99,6 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]') }}
         uses: cezarypiatek/VsixPublisherAction@0.1
         with:
-          extension-file: '${{ steps.download.outputs.download-path }}\${{ env.VsixFileName }}'
+          extension-file: '${{ steps.download.outputs.download-path }}\\${{ env.VsixFileName }}'
           publish-manifest-file: 'vs-publish.json'
           personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
