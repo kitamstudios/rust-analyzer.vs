@@ -13,7 +13,7 @@
       "rust-analyzer"
     ],
     "displayName": "rust-analyzer",
-    "description": "Rust language support for Visual Studio"
+    "description": "Rust language support for Visual Studio. Build, lint, format, test, debug your Rust workspace from inside Visual Studio."
   },
   "assetFiles": [
   ],
