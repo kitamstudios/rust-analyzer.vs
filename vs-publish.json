@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json.schemastore.org/vsix-publish",
+  "categories": [
+    "Build",
+    "Coding",
+    "Programming Languages"
+  ],
+  "identity": {
+    "internalName": "RustAnalyzer",
+    "tags": [
+      "rust",
+      "cargo",
+      "rust-analyzer"
+    ],
+    "displayName": "rust-analyzer",
+    "description": "Rust language support for Visual Studio"
+  },
+  "assetFiles": [
+  ],
+  "overview": "README.md",
+  "publisher": "kitamstudios",
+  "repo": "https://github.com/kitamstudios/rust-analyzer"
+}

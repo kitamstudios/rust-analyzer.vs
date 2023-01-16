@@ -22,6 +22,7 @@ jobs:
       SolutionPath: src\RustAnalyzer.sln
       VsixManifestPath: src\RustAnalyzer\source.extension.vsixmanifest
       VsixManifestSourcePath: src\RustAnalyzer\source.extension.cs
+      VsixFileName: RustAnalyzer.vsix
       OutDir: \_built
 
     steps:
@@ -54,8 +55,8 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ github.event.repository.name }}.vsix
-        path: \_built\*.vsix
+        name: ${{ github.event.repository.name }}.zip
+        path: \_built\${{ env.VsixFileName }}
         if-no-files-found: error
 
   publish:
@@ -71,10 +72,10 @@ jobs:
         id: download
         uses: actions/download-artifact@v3
         with:
-          name: ${{ github.event.repository.name }}.vsix
+          name: ${{ github.event.repository.name }}.zip
 
       - name: 'Echo download path'
-        run: echo ${{steps.download.outputs.download-path}}
+        run: echo ${{ steps.download.outputs.download-path }}
 
       - name: Display structure of downloaded files
         run: dir -rec -filt * \a\rust-analyzer
@@ -82,7 +83,7 @@ jobs:
       - name: Upload to Open VSIX
         uses: timheuer/openvsixpublish@v1
         with:
-          vsix-file: ${{ github.event.repository.name }}.vsix
+          vsix-file: '${{ steps.download.outputs.download-path }}\${{ env.VsixFileName }}'
 
       - name: Tag and Release
         if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]') }}
@@ -92,12 +93,12 @@ jobs:
           body: Release ${{ needs.build.outputs.version }}
           tag_name: ${{ needs.build.outputs.version }}
           files: |
-            **/*.vsix
+            ${{ steps.download.outputs.download-path }}/**/*.vsix
 
       - name: Publish extension to Marketplace
         if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]') }}
         uses: cezarypiatek/VsixPublisherAction@0.1
         with:
-          extension-file: '${{ github.event.repository.name }}.vsix'
+          extension-file: '${{ steps.download.outputs.download-path }}\${{ env.VsixFileName }}'
           publish-manifest-file: 'vs-publish.json'
           personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
