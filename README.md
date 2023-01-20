@@ -12,11 +12,26 @@ Download this extension from the [Visual Studio Marketplace][marketplace] or get
 
 - 100% UI and behavior parity with 'Open Folder' experience for a C# solution with multiple projects.
 - Enhance with Rust community best practices e.g. fmt, clippy.
-- Killer features e.g. copilot integration.
+- Killer features e.g. ChatGPT integration.
+
+### Features
+
+- Basic workspace support.
+- Build, Clean.
+- Debug.
+- Intellisense / Auto-complete / Goto definition / Code actions / Find references etc. all features from Rust language server.
+
+### Upcoming features
+
+- Enhanced workspace support.
+- Unit testing integration.
+- Clippy / Fmt integration.
+- ChatGPT integration.
+- Basic crate.io integration.
+- Basic cargo management.
+
 
 ## Demo
-
-### MVP1 - Build & debug
 
 <img src="http://i.imgur.com/qvqSHDp.gif" width="605" height="405" />
 
