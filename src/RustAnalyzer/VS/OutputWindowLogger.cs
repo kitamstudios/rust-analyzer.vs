@@ -10,13 +10,11 @@ namespace KS.RustAnalyzer.VS;
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class OutputWindowLogger : ILogger
 {
-    private readonly string _name;
+    private readonly string _name = Vsix.Name;
     private IVsOutputWindowPane _pane;
 
-    public OutputWindowLogger()
-    {
-        _name = Vsix.Name;
-    }
+    [Import]
+    public ITelemetryService T { get; set; }
 
     [Import]
     public SVsServiceProvider ServiceProvider { get; set; }
@@ -36,9 +34,9 @@ public sealed class OutputWindowLogger : ILogger
                 }
             });
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            // Do nothing
+            T.TrackException(e);
         }
     }
 

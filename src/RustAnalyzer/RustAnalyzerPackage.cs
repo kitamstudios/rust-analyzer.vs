@@ -34,7 +34,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
 
         var cmServiceProvider = (IComponentModel)await GetServiceAsync(typeof(SComponentModel));
         _logger = cmServiceProvider?.GetService<ILogger>();
-        _telemetry = new TelemetryServiceFactory().CreateService(null) as ITelemetryService;
+        _telemetry = cmServiceProvider?.GetService<ITelemetryService>();
     }
 
     protected override async Task OnAfterPackageLoadedAsync(CancellationToken cancellationToken)
@@ -88,6 +88,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
         catch (Exception e)
         {
             _logger?.WriteLine("Failed in searching and disabling incompatible extensions. Ex: {0}", e);
+            _telemetry?.TrackException(e);
         }
     }
 

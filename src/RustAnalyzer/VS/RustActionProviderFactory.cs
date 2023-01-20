@@ -22,18 +22,18 @@ public class RustActionProviderFactory : IWorkspaceProviderFactory<IFileContextA
 
     private readonly RustOutputPane _outputPane;
     private readonly ILogger _logger;
-    private ITelemetryService _telemetryService;
+    private readonly ITelemetryService _telemetryService;
 
     [ImportingConstructor]
-    public RustActionProviderFactory(RustOutputPane outputPane, ILogger logger)
+    public RustActionProviderFactory(RustOutputPane outputPane, ILogger logger, ITelemetryService telemetryService)
     {
         _outputPane = outputPane;
         _logger = logger;
+        _telemetryService = telemetryService;
     }
 
     public IFileContextActionProvider CreateProvider(IWorkspace workspaceContext)
     {
-        _telemetryService = workspaceContext.GetService<ITelemetryService>();
         _telemetryService.TrackEvent(
             "Create Context Action Provider",
             new[] { ("Location", workspaceContext.Location) });

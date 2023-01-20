@@ -21,7 +21,7 @@ public class CargoExeRunner
             showMessageBox,
             outputPane,
             l,
-            x => CargoJsonOutputParser.Parse(x, l));
+            x => CargoJsonOutputParser.Parse(x, l, ts));
     }
 
     public static Task<bool> CleanAsync(string filePath, string profile, RustOutputPane outputPane, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l)

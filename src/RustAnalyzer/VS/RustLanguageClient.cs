@@ -132,7 +132,7 @@ public class RustLanguageClient : ILanguageClient, ILanguageClientCustomMessage2
         message = $"{message}\n {exception}";
 
         _logger.WriteLine(message);
-        _telemetryService.TrackEvent("rust-analyzer-start-failure", ("exception", exception.ToString()));
+        _telemetryService.TrackException(initializationState.InitializationException);
 
         var failureContext = new InitializationFailureContext()
         {

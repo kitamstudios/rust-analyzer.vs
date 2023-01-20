@@ -21,17 +21,17 @@ public sealed class RustContextProviderFactory : IWorkspaceProviderFactory<IFile
 
     private const string ProviderType = "{72D3FCEF-0000-4266-B8DD-D3ED06E35A2B}";
     private readonly ILogger _logger;
-    private ITelemetryService _telemetryService;
+    private readonly ITelemetryService _telemetryService;
 
     [ImportingConstructor]
-    public RustContextProviderFactory(ILogger logger)
+    public RustContextProviderFactory(ILogger logger, ITelemetryService telemetryService)
     {
         _logger = logger;
+        _telemetryService = telemetryService;
     }
 
     public IFileContextProvider CreateProvider(IWorkspace workspaceContext)
     {
-        _telemetryService = workspaceContext.GetService<ITelemetryService>();
         _telemetryService.TrackEvent(
             "Create Context Provider",
             new[] { ("Location", workspaceContext.Location) });

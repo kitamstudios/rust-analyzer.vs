@@ -10,7 +10,7 @@ public static class CargoJsonOutputParser
 {
     private static readonly Regex CompilerArtifactMessageCracker = new Regex(@"^(.*) (.*) \((.*)\+(.*)\)$", RegexOptions.Compiled);
 
-    public static string[] Parse(string jsonLine, ILogger logger)
+    public static string[] Parse(string jsonLine, ILogger logger, ITelemetryService t)
     {
         dynamic obj;
         try
@@ -36,6 +36,7 @@ public static class CargoJsonOutputParser
         catch (Exception e)
         {
             logger.WriteLine("CargoJsonOutputParser failed to parse line: {0}. Exception {1}.", jsonLine, e);
+            t.TrackException(e, new[] { ("Line", jsonLine) });
             return new[] { jsonLine };
         }
 
