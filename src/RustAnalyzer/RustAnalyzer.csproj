@@ -58,6 +58,8 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>source.extension.vsixmanifest</DependentUpon>
     </Compile>
+    <Compile Include="VS\RustContentDefinition.cs" />
+    <Compile Include="VS\RustLanguageClient.cs" />
     <Compile Include="VS\OutputWindowLogger.cs" />
     <Compile Include="VS\TelemetryService.cs" />
     <Compile Include="Common\ITelemetryService.cs" />
@@ -83,6 +85,14 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\external\rust-analyzer.exe">
+      <Link>rust-analyzer.exe</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="..\external\rust_analyzer.pdb">
+      <Link>rust_analyzer.pdb</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <Content Include="languages.pkgdef">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>

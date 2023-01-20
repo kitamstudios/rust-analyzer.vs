@@ -24,17 +24,17 @@ public class RustScannerFactory : IWorkspaceProviderFactory<IFileScanner>
     public const string ProviderType = "F5628EAD-0000-4683-B597-D8314B971ED6";
     public static readonly Guid ProviderTypeGuid = new (ProviderType);
     private readonly ILogger _logger;
-    private ITelemetryService _telemetryService;
+    private readonly ITelemetryService _telemetryService;
 
     [ImportingConstructor]
-    public RustScannerFactory(ILogger logger)
+    public RustScannerFactory(ILogger logger, ITelemetryService telemetryService)
     {
         _logger = logger;
+        _telemetryService = telemetryService;
     }
 
     public IFileScanner CreateProvider(IWorkspace workspaceContext)
     {
-        _telemetryService = workspaceContext.GetService<ITelemetryService>();
         _telemetryService.TrackEvent(
             "Create Scanner",
             new[] { ("Location", workspaceContext.Location) });

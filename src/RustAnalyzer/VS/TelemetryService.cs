@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Linq;
 using KS.RustAnalyzer.Common;
@@ -30,6 +31,8 @@ public sealed class TelemetryServiceFactory : IWorkspaceServiceFactory
     }
 }
 
+[Export(typeof(ITelemetryService))]
+[PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class TelemetryService : ITelemetryService
 {
     private readonly TelemetryClient _telemetryClient;
