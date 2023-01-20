@@ -6,6 +6,7 @@
     "Programming Languages"
   ],
   "identity": {
+
     "internalName": "RustAnalyzer",
     "tags": [
       "rust",
@@ -13,11 +14,12 @@
       "rust-analyzer"
     ],
     "displayName": "rust-analyzer",
-    "description": "Rust language support for Visual Studio. Build, lint, format, test, debug your Rust workspace from inside Visual Studio."
+    "description": "Rust language support for Visual Studio"
   },
   "assetFiles": [
   ],
   "overview": "README.md",
   "publisher": "kitamstudios",
+  "qna": false,
   "repo": "https://github.com/kitamstudios/rust-analyzer"
 }
