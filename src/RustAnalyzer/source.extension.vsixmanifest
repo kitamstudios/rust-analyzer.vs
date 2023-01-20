@@ -6,6 +6,8 @@
         <Description xml:space="preserve">Rust language support for Visual Studio</Description>
         <MoreInfo>https://github.com/kitamstudios/rust-analyzer</MoreInfo>
         <License>LICENSE.txt</License>
+        <GettingStartedGuide>https://github.com/kitamstudios/rust-analyzer/blob/master/README.md</GettingStartedGuide>
+        <ReleaseNotes>https://github.com/kitamstudios/rust-analyzer/releases</ReleaseNotes>
         <Icon>Resources\Icon.png</Icon>
         <PreviewImage>Resources\Icon.png</PreviewImage>
         <Tags>Rust;Cargo;RustAnalyser</Tags>
