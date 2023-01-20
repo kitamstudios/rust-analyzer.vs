@@ -76,7 +76,7 @@ public class RustLanguageClient : ILanguageClient, ILanguageClientCustomMessage2
             UseShellExecute = false,
             CreateNoWindow = true,
             WindowStyle = ProcessWindowStyle.Minimized,
-            WorkingDirectory = _workspaceService.CurrentWorkspace.Location,
+            WorkingDirectory = _workspaceService.CurrentWorkspace?.Location ?? Path.GetDirectoryName(programPath),
         };
 
         Process process = new ()
