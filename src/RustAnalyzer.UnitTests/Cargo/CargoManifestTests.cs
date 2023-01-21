@@ -18,7 +18,7 @@ public class CargoManifestTests
     public void SimplestExe()
     {
         string cmPath = Path.Combine(_thisTestRoot, @"hello_world\Cargo.toml");
-        var cargo = CargoManifest.Create(cmPath);
+        var cargo = Manifest.Create(cmPath);
 
         cargo.Should().BeEquivalentTo(
             new
@@ -35,7 +35,7 @@ public class CargoManifestTests
     public void SimplestLib()
     {
         string cmPath = Path.Combine(_thisTestRoot, @"hello_library\Cargo.toml");
-        var cargo = CargoManifest.Create(cmPath);
+        var cargo = Manifest.Create(cmPath);
 
         cargo.Should().BeEquivalentTo(
             new
@@ -54,7 +54,7 @@ public class CargoManifestTests
     public void WorkspaceRootTests(string cargoRelPath, string workspaceRelPath, string targetFileRelPath)
     {
         string cmPath = Path.Combine(_thisTestRoot, cargoRelPath);
-        var cargo = CargoManifest.Create(cmPath);
+        var cargo = Manifest.Create(cmPath);
 
         cargo.WorkspaceRoot.Should().Be(Path.Combine(_thisTestRoot, workspaceRelPath));
         cargo.GetTargetPathForProfile("dev").Should().Be(Path.Combine(_thisTestRoot, targetFileRelPath));
@@ -71,7 +71,7 @@ public class CargoManifestTests
         @"target\debug\hello_world.exe")]
     public void GetTargetPathForProfileRelativeToPathTests(string manifestPath, string filePath, string ret)
     {
-        var cargo = CargoManifest.Create(Path.Combine(_thisTestRoot, manifestPath));
+        var cargo = Manifest.Create(Path.Combine(_thisTestRoot, manifestPath));
 
         cargo.GetTargetPathForProfileRelativeToPath("dev", Path.Combine(_thisTestRoot, filePath)).Should().Be(ret);
     }
@@ -84,7 +84,7 @@ public class CargoManifestTests
     public void GetParentCargoManifestTests(string projFilePath, string parentCargoRelPath)
     {
         string path = Path.Combine(_thisTestRoot, projFilePath);
-        var cargo = CargoManifest.GetParentCargoManifest(path, null, out string parentCargoPath);
+        var cargo = Manifest.GetParentCargoManifest(path, null, out string parentCargoPath);
 
         parentCargoPath.Should().Be(Path.Combine(_thisTestRoot, parentCargoRelPath));
     }

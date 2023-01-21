@@ -10,7 +10,8 @@ namespace KS.RustAnalyzer.VS;
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class OutputWindowLogger : ILogger
 {
-    private readonly string _name = Vsix.Name;
+    private static readonly Guid OuputWidowPaneGuid = new ("9142a5bb-c829-4d2a-87e3-9c7b545edf30");
+    private static readonly string OuputWidowPaneName = Vsix.Name;
     private IVsOutputWindowPane _pane;
 
     [Import]
@@ -45,9 +46,9 @@ public sealed class OutputWindowLogger : ILogger
         if (_pane == null)
         {
             var outputWindow = ServiceProvider.GetService<SVsOutputWindow, IVsOutputWindow>();
-            Guid guid = new Guid("9142a5bb-c829-4d2a-87e3-9c7b545edf30");
+            Guid guid = OuputWidowPaneGuid;
 #pragma warning disable VSTHRD010 // Invoke single-threaded types on Main thread
-            outputWindow.CreatePane(ref guid, _name, 1, 1);
+            outputWindow.CreatePane(ref guid, OuputWidowPaneName, 1, 1);
             outputWindow.GetPane(ref guid, out _pane);
 #pragma warning restore VSTHRD010 // Invoke single-threaded types on Main thread
         }

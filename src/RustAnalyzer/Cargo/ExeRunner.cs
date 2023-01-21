@@ -8,9 +8,9 @@ using KS.RustAnalyzer.VS;
 
 namespace KS.RustAnalyzer.Cargo;
 
-public class CargoExeRunner
+public class ExeRunner
 {
-    public static Task<bool> BuildAsync(string filePath, string profile, RustOutputPane outputPane, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l)
+    public static Task<bool> BuildAsync(string filePath, string profile, IOutputWindowPane outputPane, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l)
     {
         return ExecuteOperationAsync(
             "build",
@@ -21,10 +21,10 @@ public class CargoExeRunner
             showMessageBox,
             outputPane,
             l,
-            x => CargoJsonOutputParser.Parse(x, l, ts));
+            x => BuildJsonOutputParser.Parse(x, l, ts));
     }
 
-    public static Task<bool> CleanAsync(string filePath, string profile, RustOutputPane outputPane, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l)
+    public static Task<bool> CleanAsync(string filePath, string profile, IOutputWindowPane outputPane, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l)
     {
         return ExecuteOperationAsync(
             "clean",
@@ -38,7 +38,7 @@ public class CargoExeRunner
             x => new[] { x });
     }
 
-    private static async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, ITelemetryService ts, Func<string, Task> showMessageBox, RustOutputPane outputPane, ILogger l, Func<string, string[]> outputPreprocessor)
+    private static async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, ITelemetryService ts, Func<string, Task> showMessageBox, IOutputWindowPane outputPane, ILogger l, Func<string, string[]> outputPreprocessor)
     {
         if (!RustHelpers.IsCargoFile(filePath) || !Path.IsPathRooted(filePath) || true)
         {
@@ -47,7 +47,7 @@ public class CargoExeRunner
 
         outputPane.Clear();
 
-        var cargoFullPath = PathUtilities.SearchInPath(RustConstants.CargoExe);
+        var cargoFullPath = PathUtilities.SearchInPath(Constants.CargoExe);
 
         ts.TrackEvent(
             opName,
@@ -55,12 +55,12 @@ public class CargoExeRunner
 
         if (string.IsNullOrEmpty(cargoFullPath))
         {
-            l.WriteLine($"{RustConstants.CargoExe} not found in path.");
-            await showMessageBox($"Unable to perform '{opName}'.\r\n\r\n{RustConstants.CargoExe} is not found in path.\r\n\r\nInstall from https://www.rust-lang.org/tools/install and try again.");
+            l.WriteLine($"{Constants.CargoExe} not found in path.");
+            await showMessageBox($"Unable to perform '{opName}'.\r\n\r\n{Constants.CargoExe} is not found in path.\r\n\r\nInstall from https://www.rust-lang.org/tools/install and try again.");
             return false;
         }
 
-        l.WriteLine("Using {0} from {1}.", RustConstants.CargoExe, cargoFullPath);
+        l.WriteLine("Using {0} from {1}.", Constants.CargoExe, cargoFullPath);
         return await RunAsync(
             cargoFullPath,
             arguments,
@@ -72,7 +72,7 @@ public class CargoExeRunner
     {
         Debug.Assert(!string.IsNullOrEmpty(arguments), $"{nameof(arguments)} should not be empty.");
 
-        redirector?.WriteLineWithoutProcessing($"\n=== Cargo started: {RustConstants.CargoExe} {arguments} ===");
+        redirector?.WriteLineWithoutProcessing($"\n=== Cargo started: {Constants.CargoExe} {arguments} ===");
         redirector?.WriteLineWithoutProcessing($"         Path: {cargoFullPath}");
         redirector?.WriteLineWithoutProcessing($"    Arguments: {arguments}");
         redirector?.WriteLineWithoutProcessing($"   WorkingDir: {workingDir}");
@@ -124,10 +124,10 @@ public class CargoExeRunner
 
     private sealed class BuildOutputRedirector : ProcessOutputRedirector
     {
-        private readonly RustOutputPane _outputPane;
+        private readonly IOutputWindowPane _outputPane;
         private readonly Func<string, string[]> _jsonProcessor;
 
-        public BuildOutputRedirector(RustOutputPane outputPane, Func<string, string[]> jsonProcessor)
+        public BuildOutputRedirector(IOutputWindowPane outputPane, Func<string, string[]> jsonProcessor)
         {
             _outputPane = outputPane;
             _jsonProcessor = jsonProcessor;
@@ -153,7 +153,7 @@ public class CargoExeRunner
             WriteLineCore(line, _outputPane, x => new[] { x });
         }
 
-        private static void WriteLineCore(string jsonLine, RustOutputPane outputPane, Func<string, string[]> jsonProcessor)
+        private static void WriteLineCore(string jsonLine, IOutputWindowPane outputPane, Func<string, string[]> jsonProcessor)
         {
             var lines = jsonProcessor(jsonLine);
             Array.ForEach(
@@ -162,7 +162,7 @@ public class CargoExeRunner
                 {
                     if (!string.IsNullOrEmpty(l))
                     {
-                        outputPane.WriteLine(l, OutputWindowTarget.Cargo);
+                        outputPane.WriteLine(l);
                     }
                 });
         }

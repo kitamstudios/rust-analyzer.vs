@@ -5,14 +5,14 @@ using Microsoft.VisualStudio.Workspace;
 
 namespace KS.RustAnalyzer.VS;
 
-public static class WorkspaceExtensions
+public static class IWorkspaceExtensions
 {
-    public static CargoManifest GetParentCargoManifest(this IWorkspace workspace, string filePath)
+    public static Manifest GetParentCargoManifest(this IWorkspace workspace, string filePath)
     {
-        var hasParentCargoFile = CargoManifest.GetParentCargoManifest(filePath, workspace.Location, out string parentCargoPath);
+        var hasParentCargoFile = Manifest.GetParentCargoManifest(filePath, workspace.Location, out string parentCargoPath);
         if (hasParentCargoFile)
         {
-            return CargoManifest.Create(parentCargoPath);
+            return Manifest.Create(parentCargoPath);
         }
 
         return null!;

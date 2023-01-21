@@ -17,32 +17,25 @@ using StreamJsonRpc;
 
 namespace KS.RustAnalyzer.VS;
 
-[ContentType(RustConstants.RustLanguageContentType)]
+[ContentType(Constants.RustLanguageContentType)]
 [Export(typeof(ILanguageClient))]
 [RunOnContext(RunningContext.RunOnHost)]
-public class RustLanguageClient : ILanguageClient, ILanguageClientCustomMessage2
+public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
 {
-    private readonly IVsFolderWorkspaceService _workspaceService;
-    private readonly ILogger _logger;
-    private readonly ITelemetryService _telemetryService;
-
-    [ImportingConstructor]
-    public RustLanguageClient([Import] IVsFolderWorkspaceService workspaceService, ILogger logger, ITelemetryService telemetryService)
-    {
-        _workspaceService = workspaceService;
-        _logger = logger;
-        _telemetryService = telemetryService;
-    }
-
     public event AsyncEventHandler<EventArgs> StartAsync;
 
     public event AsyncEventHandler<EventArgs> StopAsync;
 
-    public JsonRpc Rpc
-    {
-        get;
-        set;
-    }
+    [Import]
+    public IVsFolderWorkspaceService WorkspaceService { get; set; }
+
+    [Import]
+    public ILogger L { get; set; }
+
+    [Import]
+    public ITelemetryService T { get; set; }
+
+    public JsonRpc Rpc { get; set; }
 
     public string Name => "Rust Language Extension";
 
@@ -50,7 +43,7 @@ public class RustLanguageClient : ILanguageClient, ILanguageClientCustomMessage2
     {
         get
         {
-            yield return RustConstants.ConfigurationSectionName;
+            yield return Constants.ConfigurationSectionName;
         }
     }
 
@@ -58,7 +51,7 @@ public class RustLanguageClient : ILanguageClient, ILanguageClientCustomMessage2
 
     public IEnumerable<string> FilesToWatch => null;
 
-    public object MiddleLayer => new RustLanguageExtensionMiddleLayer(_logger);
+    public object MiddleLayer => new RustLanguageExtensionMiddleLayer(L);
 
     public object CustomMessageTarget => null;
 
@@ -67,7 +60,7 @@ public class RustLanguageClient : ILanguageClient, ILanguageClientCustomMessage2
     public async Task<Connection> ActivateAsync(CancellationToken token)
     {
         var programPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "rust-analyzer.exe");
-        _logger.WriteLine("Starting rust-analyzer from path: {0}.", programPath);
+        L.WriteLine("Starting rust-analyzer from path: {0}.", programPath);
         ProcessStartInfo info = new ()
         {
             FileName = programPath,
@@ -76,7 +69,7 @@ public class RustLanguageClient : ILanguageClient, ILanguageClientCustomMessage2
             UseShellExecute = false,
             CreateNoWindow = true,
             WindowStyle = ProcessWindowStyle.Minimized,
-            WorkingDirectory = _workspaceService.CurrentWorkspace?.Location ?? Path.GetDirectoryName(programPath),
+            WorkingDirectory = WorkspaceService.CurrentWorkspace?.Location ?? Path.GetDirectoryName(programPath),
         };
 
         Process process = new ()
@@ -86,14 +79,14 @@ public class RustLanguageClient : ILanguageClient, ILanguageClientCustomMessage2
 
         if (process.Start())
         {
-            _logger.WriteLine("Done starting rust-analyzer from path.");
-            _telemetryService.TrackEvent("rust-analyzer-start", ("Path", programPath));
+            L.WriteLine("Done starting rust-analyzer from path.");
+            T.TrackEvent("rust-analyzer-start", ("Path", programPath));
 
             return await Task.FromResult(new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream));
         }
 
-        _logger.WriteLine("Error starting rust-analyzer from path.");
-        _telemetryService.TrackEvent("rust-analyzer-start-failure", ("Path", programPath));
+        L.WriteLine("Error starting rust-analyzer from path.");
+        T.TrackEvent("rust-analyzer-start-failure", ("Path", programPath));
         return null;
     }
 
@@ -131,8 +124,8 @@ public class RustLanguageClient : ILanguageClient, ILanguageClientCustomMessage2
         string exception = initializationState.InitializationException?.ToString() ?? string.Empty;
         message = $"{message}\n {exception}";
 
-        _logger.WriteLine(message);
-        _telemetryService.TrackException(initializationState.InitializationException);
+        L.WriteLine(message);
+        T.TrackException(initializationState.InitializationException);
 
         var failureContext = new InitializationFailureContext()
         {

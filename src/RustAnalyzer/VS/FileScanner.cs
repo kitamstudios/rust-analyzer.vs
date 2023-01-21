@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,42 +12,11 @@ using Microsoft.VisualStudio.Workspace.Indexing;
 
 namespace KS.RustAnalyzer.VS;
 
-[ExportFileScanner(
-    type: ProviderType,
-    language: "Rust",
-    supportedFileExtensions: new[] { RustConstants.CargoFileName, RustConstants.RustFileExtension, },
-    supportedTypes: new[] { typeof(IReadOnlyCollection<FileDataValue>), typeof(IReadOnlyCollection<FileReferenceInfo>) },
-    priority: ProviderPriority.Highest)]
-public class RustScannerFactory : IWorkspaceProviderFactory<IFileScanner>
-{
-    public const string ProviderType = "F5628EAD-0000-4683-B597-D8314B971ED6";
-    public static readonly Guid ProviderTypeGuid = new (ProviderType);
-    private readonly ILogger _logger;
-    private readonly ITelemetryService _telemetryService;
-
-    [ImportingConstructor]
-    public RustScannerFactory(ILogger logger, ITelemetryService telemetryService)
-    {
-        _logger = logger;
-        _telemetryService = telemetryService;
-    }
-
-    public IFileScanner CreateProvider(IWorkspace workspaceContext)
-    {
-        _telemetryService.TrackEvent(
-            "Create Scanner",
-            new[] { ("Location", workspaceContext.Location) });
-        _logger.WriteLine("Creating {0}.", GetType().Name);
-
-        return new CargoScanner(workspaceContext);
-    }
-}
-
-public class CargoScanner : IFileScanner
+public class FileScanner : IFileScanner
 {
     private readonly IWorkspace _workspace;
 
-    public CargoScanner(IWorkspace workspace)
+    public FileScanner(IWorkspace workspace)
     {
         _workspace = workspace;
     }
@@ -78,7 +46,7 @@ public class CargoScanner : IFileScanner
         }
     }
 
-    private List<FileDataValue> GetFileDataValues(CargoManifest parentCargoManifest, string filePath)
+    private List<FileDataValue> GetFileDataValues(Manifest parentCargoManifest, string filePath)
     {
         var allFileDataValues = new List<FileDataValue>();
 
@@ -122,7 +90,7 @@ public class CargoScanner : IFileScanner
         return allFileDataValues;
     }
 
-    private static List<FileReferenceInfo> GetFileReferenceInfos(CargoManifest parentCargoManifest, string filePath)
+    private static List<FileReferenceInfo> GetFileReferenceInfos(Manifest parentCargoManifest, string filePath)
     {
         return parentCargoManifest.Profiles
             .Select(

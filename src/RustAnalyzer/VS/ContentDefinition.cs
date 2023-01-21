@@ -4,18 +4,18 @@ using Microsoft.VisualStudio.Utilities;
 
 namespace KS.RustAnalyzer.VS;
 
-public class RustContentDefinition
+public class ContentDefinition
 {
     [Export]
-    [Name(RustConstants.RustLanguageContentType)]
+    [Name(Constants.RustLanguageContentType)]
     [BaseDefinition(CodeRemoteContentDefinition.CodeRemoteContentTypeName)]
 #pragma warning disable SA1401 // Fields should be private
     public static ContentTypeDefinition RustContentTypeDefinition;
 #pragma warning restore SA1401 // Fields should be private
 
     [Export]
-    [FileExtension(RustConstants.RustFileExtension)]
-    [ContentType(RustConstants.RustLanguageContentType)]
+    [FileExtension(Constants.RustFileExtension)]
+    [ContentType(Constants.RustLanguageContentType)]
 #pragma warning disable SA1401 // Fields should be private
     public static FileExtensionToContentTypeDefinition RustFileExtensionDefinition;
 #pragma warning restore SA1401 // Fields should be private

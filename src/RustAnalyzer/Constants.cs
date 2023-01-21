@@ -1,6 +1,6 @@
-namespace KS.RustAnalyzer.VS;
+namespace KS.RustAnalyzer;
 
-public class RustConstants
+public class Constants
 {
     public const string RustLanguageContentType = "rust";
     public const string RustFileExtension = ".rs";

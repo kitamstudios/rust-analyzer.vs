@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 
 namespace KS.RustAnalyzer.Cargo;
 
-public static class CargoJsonOutputParser
+public static class BuildJsonOutputParser
 {
     private static readonly Regex CompilerArtifactMessageCracker = new Regex(@"^(.*) (.*) \((.*)\+(.*)\)$", RegexOptions.Compiled);
 

@@ -22,7 +22,7 @@ public class CargoJsonOutputParserTests
     public void IfNotParsableIgnore()
     {
         var jsonOutput = "   Compiling pest v2.5.2";
-        var output = CargoJsonOutputParser.Parse(jsonOutput, _l, _t);
+        var output = BuildJsonOutputParser.Parse(jsonOutput, _l, _t);
 
         output.Should().BeEmpty();
     }
@@ -40,7 +40,7 @@ public class CargoJsonOutputParserTests
     public void ParseCompilerArtifiacts(string dataFile, string[] expected)
     {
         var jsonOutput = File.ReadAllText(Path.Combine(_thisTestRoot, dataFile));
-        var output = CargoJsonOutputParser.Parse(jsonOutput, _l, _t);
+        var output = BuildJsonOutputParser.Parse(jsonOutput, _l, _t);
 
         output.Should().BeEquivalentTo(expected);
     }
@@ -58,7 +58,7 @@ public class CargoJsonOutputParserTests
     public void ParseCompilerMessages(string dataFile, string expected)
     {
         var jsonOutput = File.ReadAllText(Path.Combine(_thisTestRoot, dataFile));
-        var output = CargoJsonOutputParser.Parse(jsonOutput, _l, _t);
+        var output = BuildJsonOutputParser.Parse(jsonOutput, _l, _t);
 
         output[0].Should().Be(expected);
         output[1].Should().NotBeNullOrWhiteSpace();

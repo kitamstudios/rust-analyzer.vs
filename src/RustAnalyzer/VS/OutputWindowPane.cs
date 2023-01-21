@@ -2,31 +2,25 @@ using System;
 using System.Collections.Concurrent;
 using System.ComponentModel.Composition;
 using EnsureThat;
+using KS.RustAnalyzer.Common;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
 namespace KS.RustAnalyzer.VS;
 
-public enum OutputWindowTarget
+[Export(typeof(IOutputWindowPane))]
+[PartCreationPolicy(CreationPolicy.Shared)]
+public sealed class OutputWindowPane : IOutputWindowPane
 {
-    Cargo,
-    Crate,
-}
+    private static readonly Guid BuildOutputPaneGuid = VSConstants.OutputWindowPaneGuid.BuildOutputPane_guid;
 
-[Export(typeof(RustOutputPane))]
-public sealed class RustOutputPane
-{
-    // This is the package manager pane that ships with VS2015, and we should print there if available.
-    private static readonly Guid VSPackageManagerPaneGuid = new ("C7E31C31-1451-4E05-B6BE-D11B6829E8BB");
-    private static readonly Guid CargoPaneGuid = VSConstants.OutputWindowPaneGuid.BuildOutputPane_guid;
-
-    private readonly ConcurrentDictionary<OutputWindowTarget, IVsOutputWindowPane> _lazyOutputPaneCollection = new ();
+    private readonly ConcurrentDictionary<int, IVsOutputWindowPane> _lazyOutputPaneCollection = new ();
 
     [Import]
     private SVsServiceProvider ServiceProvider { get; set; }
 
-    public void WriteLine(string message, OutputWindowTarget target = OutputWindowTarget.Crate)
+    public void WriteLine(string message)
     {
         if (!IsInitialized())
         {
@@ -34,29 +28,27 @@ public sealed class RustOutputPane
         }
 
 #pragma warning disable VSTHRD010 // Invoke single-threaded types on Main thread
-        _lazyOutputPaneCollection[target].Activate();
-        var hr = _lazyOutputPaneCollection[target].OutputStringThreadSafe(message + Environment.NewLine);
+        _lazyOutputPaneCollection[0].Activate();
+        var hr = _lazyOutputPaneCollection[0].OutputStringThreadSafe(message + Environment.NewLine);
 #pragma warning restore VSTHRD010 // Invoke single-threaded types on Main thread
         Ensure.That(ErrorHandler.Succeeded(hr));
     }
 
-    public void InitializeOutputPanes()
+    public void Initialize()
     {
         ThreadHelper.ThrowIfNotOnUIThread();
 
         if (!IsInitialized())
         {
-            var crates = InitializeOutputPane("Rust (crates)", CargoPaneGuid);
-            _lazyOutputPaneCollection.TryAdd(OutputWindowTarget.Crate, crates);
-            var cargoPane = InitializeOutputPane("Rust (cargo)", CargoPaneGuid);
-            _lazyOutputPaneCollection.TryAdd(OutputWindowTarget.Cargo, cargoPane);
+            var crates = InitializeOutputPane("Rust (crates)", BuildOutputPaneGuid);
+            _lazyOutputPaneCollection.TryAdd(0, crates);
         }
     }
 
-    public void Clear(OutputWindowTarget target = OutputWindowTarget.Crate)
+    public void Clear()
     {
 #pragma warning disable VSTHRD010 // Invoke single-threaded types on Main thread
-        _lazyOutputPaneCollection[target].Clear();
+        _lazyOutputPaneCollection[0].Clear();
 #pragma warning restore VSTHRD010 // Invoke single-threaded types on Main thread
     }
 
@@ -83,7 +75,6 @@ public sealed class RustOutputPane
 
     private bool IsInitialized()
     {
-        return _lazyOutputPaneCollection.TryGetValue(OutputWindowTarget.Crate, out var crateWindow) && crateWindow != null
-            && _lazyOutputPaneCollection.TryGetValue(OutputWindowTarget.Cargo, out var cargoWindow) && cargoWindow != null;
+        return _lazyOutputPaneCollection.TryGetValue(0, out var crateWindow) && crateWindow != null;
     }
 }

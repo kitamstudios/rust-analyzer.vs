@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using KS.RustAnalyzer.Common;
-using KS.RustAnalyzer.VS;
 using Tomlyn;
 using Tomlyn.Model;
 
@@ -11,7 +9,7 @@ namespace KS.RustAnalyzer.Cargo;
 /// <summary>
 /// NOTE: Assuming defaults to start with. Gradually TDD in the common and then lesser common cases.
 /// </summary>
-public class CargoManifest
+public class Manifest
 {
     private static readonly IDictionary<string, string> ProfileInfos = new Dictionary<string, string>
     {
@@ -23,7 +21,7 @@ public class CargoManifest
 
     private readonly TomlTable _model;
 
-    private CargoManifest(string fullPath)
+    private Manifest(string fullPath)
     {
         FullPath = fullPath;
         _model = Toml.ToModel(File.ReadAllText(fullPath));
@@ -44,9 +42,9 @@ public class CargoManifest
 
     public string StartupProjectEntryName => $"{Path.GetFileName(Path.GetDirectoryName(FullPath))}";
 
-    public static CargoManifest Create(string parentCargoPath)
+    public static Manifest Create(string parentCargoPath)
     {
-        return new CargoManifest(parentCargoPath);
+        return new Manifest(parentCargoPath);
     }
 
     public static bool GetParentCargoManifest(string filePath, string projectRoot, out string parentCargoPath)
@@ -54,7 +52,7 @@ public class CargoManifest
         var currentPath = filePath;
         while ((currentPath = Path.GetDirectoryName(currentPath)) != null)
         {
-            var candidateCargoPath = Path.Combine(currentPath, RustConstants.CargoFileName);
+            var candidateCargoPath = Path.Combine(currentPath, Constants.CargoFileName);
             if (File.Exists(candidateCargoPath))
             {
                 parentCargoPath = candidateCargoPath;
