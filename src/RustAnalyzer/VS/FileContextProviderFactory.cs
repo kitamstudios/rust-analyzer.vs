@@ -30,6 +30,6 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
             new[] { ("Location", workspaceContext.Location) });
         L.WriteLine("Creating {0}.", GetType().Name);
 
-        return new FileContextProvider(workspaceContext);
+        return new FileContextProvider(workspaceContext.Location);
     }
 }

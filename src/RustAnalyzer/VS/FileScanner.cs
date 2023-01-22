@@ -14,30 +14,30 @@ namespace KS.RustAnalyzer.VS;
 
 public class FileScanner : IFileScanner
 {
-    private readonly IWorkspace _workspace;
+    private readonly string _workspaceRoot;
 
-    public FileScanner(IWorkspace workspace)
+    public FileScanner(string workspaceRoot)
     {
-        _workspace = workspace;
+        _workspaceRoot = workspaceRoot;
     }
 
     public async Task<T> ScanContentAsync<T>(string filePath, CancellationToken cancellationToken)
         where T : class
     {
-        var parentCargoManifest = _workspace.GetParentCargoManifest(filePath);
-        if (parentCargoManifest == null)
+        var owningManifest = RustHelpers.IsCargoFile(filePath) ? Manifest.Create(filePath) : Manifest.GetParentManifest(_workspaceRoot, filePath);
+        if (owningManifest == null)
         {
             return (T)(IReadOnlyCollection<T>)Array.Empty<T>();
         }
 
         if (typeof(T) == FileScannerTypeConstants.FileDataValuesType)
         {
-            var ret = GetFileDataValues(parentCargoManifest, filePath);
+            var ret = GetFileDataValues(owningManifest, filePath);
             return await Task.FromResult((T)(IReadOnlyCollection<FileDataValue>)ret);
         }
         else if (typeof(T) == FileScannerTypeConstants.FileReferenceInfoType)
         {
-            var ret = GetFileReferenceInfos(parentCargoManifest, filePath);
+            var ret = GetFileReferenceInfos(owningManifest, filePath);
             return await Task.FromResult((T)(IReadOnlyCollection<FileReferenceInfo>)ret);
         }
         else
@@ -46,59 +46,72 @@ public class FileScanner : IFileScanner
         }
     }
 
-    private List<FileDataValue> GetFileDataValues(Manifest parentCargoManifest, string filePath)
+    private List<FileDataValue> GetFileDataValues(Manifest owningManifest, string filePath)
     {
         var allFileDataValues = new List<FileDataValue>();
 
-        if (RustHelpers.IsCargoFile(filePath))
+        if (owningManifest.Is(filePath) && !owningManifest.IsWorkspace && owningManifest.IsPackage && owningManifest.IsBinary)
         {
-            IPropertySettings launchSettings = new PropertySettings
+            var launchSettings = new PropertySettings
             {
-                [LaunchConfigurationConstants.NameKey] = parentCargoManifest.StartupProjectEntryName,
+                [LaunchConfigurationConstants.NameKey] = owningManifest.StartupProjectEntryName,
                 [LaunchConfigurationConstants.DebugTypeKey] = LaunchConfigurationConstants.NativeOptionKey,
             };
 
             allFileDataValues.Add(
                 new FileDataValue(
-                    DebugLaunchActionContext.ContextTypeGuid,
-                    DebugLaunchActionContext.IsDefaultStartupProjectEntry,
-                    launchSettings,
+                    type: DebugLaunchActionContext.ContextTypeGuid,
+                    name: DebugLaunchActionContext.IsDefaultStartupProjectEntry,
+                    value: launchSettings,
                     target: null,
                     context: null));
+
+            var fileDataValuesForAllProfiles1 = owningManifest.Profiles.Select(
+                profile =>
+                    new FileDataValue(
+                        type: BuildConfigurationContext.ContextTypeGuid,
+                        name: BuildConfigurationContext.DataValueName,
+                        value: null,
+                        target: owningManifest.GetTargetPathForProfile(profile),
+                        context: profile));
+
+            allFileDataValues.AddRange(fileDataValuesForAllProfiles1);
         }
 
-        var fileDataValuesForAllProfiles = parentCargoManifest.Profiles.SelectMany(
-            profile => new[]
-                {
-                    new FileDataValue(
-                        BuildConfigurationContext.ContextTypeGuid,
-                        BuildConfigurationContext.DataValueName,
-                        value: null,
-                        target: null,
-                        context: profile),
+        if (owningManifest.Is(filePath))
+        {
+            var fileDataValuesForAllProfiles = owningManifest.Profiles.Select(
+            profile =>
+                new FileDataValue(
+                    type: BuildConfigurationContext.ContextTypeGuid,
+                    name: BuildConfigurationContext.DataValueName,
+                    value: null,
+                    target: null,
+                    context: profile));
 
-                    new FileDataValue(
-                        BuildConfigurationContext.ContextTypeGuid,
-                        BuildConfigurationContext.DataValueName,
-                        value: null,
-                        target: parentCargoManifest.GetTargetPathForProfile(profile),
-                        context: profile),
-                });
-
-        allFileDataValues.AddRange(fileDataValuesForAllProfiles);
+            allFileDataValues.AddRange(fileDataValuesForAllProfiles);
+        }
 
         return allFileDataValues;
     }
 
-    private static List<FileReferenceInfo> GetFileReferenceInfos(Manifest parentCargoManifest, string filePath)
+    private static List<FileReferenceInfo> GetFileReferenceInfos(Manifest owningManifest, string filePath)
     {
-        return parentCargoManifest.Profiles
-            .Select(
-                profile => new FileReferenceInfo(
-                    parentCargoManifest.GetTargetPathForProfileRelativeToPath(profile, filePath),
-                    parentCargoManifest.GetTargetPathForProfile(profile),
-                    profile,
-                    (int)FileReferenceInfoType.Output))
-            .ToList();
+        var allFileRefInfos = new List<FileReferenceInfo>();
+
+        if (owningManifest.Is(filePath) && !owningManifest.IsWorkspace && owningManifest.IsPackage)
+        {
+            var fileRefInfosForProfiles = owningManifest.Profiles
+                .Select(
+                    profile => new FileReferenceInfo(
+                        relativePath: owningManifest.GetTargetPathForProfileRelativeToPath(profile, filePath),
+                        target: owningManifest.GetTargetPathForProfile(profile),
+                        context: profile,
+                        referenceType: (int)FileReferenceInfoType.Output));
+
+            allFileRefInfos.AddRange(fileRefInfosForProfiles);
+        }
+
+        return allFileRefInfos;
     }
 }

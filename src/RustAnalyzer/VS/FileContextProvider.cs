@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using KS.RustAnalyzer.Cargo;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
 
@@ -9,11 +10,11 @@ namespace KS.RustAnalyzer.VS;
 
 public sealed class FileContextProvider : IFileContextProvider, IFileContextProvider<string>
 {
-    private readonly IWorkspace _workspace;
+    private readonly string _workspaceRoot;
 
-    public FileContextProvider(IWorkspace workspace)
+    public FileContextProvider(string workspaceRoot)
     {
-        _workspace = workspace;
+        _workspaceRoot = workspaceRoot;
     }
 
     public Task<IReadOnlyCollection<FileContext>> GetContextsForFileAsync(string filePath, string context, CancellationToken cancellationToken)
@@ -23,7 +24,7 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
 
     public async Task<IReadOnlyCollection<FileContext>> GetContextsForFileAsync(string filePath, CancellationToken cancellationToken)
     {
-        var parentCargoManifest = _workspace.GetParentCargoManifest(filePath);
+        var parentCargoManifest = Manifest.GetParentManifest(_workspaceRoot, filePath);
         if (parentCargoManifest == null)
         {
             return await Task.FromResult(FileContext.EmptyFileContexts);

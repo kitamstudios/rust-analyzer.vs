@@ -1,0 +1,9 @@
+﻿[0] = { Type = 55b77c41-9751-433c-9d5f-5e815f152562, Name = IsDefaultStartupProject, Value = { [name] = hello_world, [debugType] = native,  }, Target = , Context =  }
+[1] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\hello_world\target\debug\hello_world.exe, Context = dev }
+[2] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\hello_world\target\release\hello_world.exe, Context = release }
+[3] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\hello_world\target\debug\hello_world.exe, Context = test }
+[4] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\hello_world\target\release\hello_world.exe, Context = bench }
+[5] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = , Context = dev }
+[6] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = , Context = release }
+[7] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = , Context = test }
+[8] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = , Context = bench }

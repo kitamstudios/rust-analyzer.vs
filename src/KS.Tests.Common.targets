@@ -18,7 +18,7 @@
     </PackageReference>
     <PackageReference Include="Moq" Version="4.16.1" />
     <PackageReference Include="DalSoft.RestClient" Version="4.4.1" />
-    <PackageReference Include="ApprovalTests" Version="5.7.1" />
+    <PackageReference Include="ApprovalTests" Version="5.8.0" />
   </ItemGroup>
 
   <Import Project=".\KS.Common.targets" />

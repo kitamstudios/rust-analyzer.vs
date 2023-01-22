@@ -7,12 +7,12 @@ using Xunit;
 
 namespace KS.RustAnalyzer.UnitTests.Cargo;
 
-public class CargoManifestTests
+public class ManifestTests
 {
     private static readonly string _thisTestRoot =
         Path.Combine(
             Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)),
-            @"Cargo\TestData");
+            @"Cargo\TestData").ToLowerInvariant();
 
     [Fact]
     public void SimplestExe()
@@ -77,15 +77,19 @@ public class CargoManifestTests
     }
 
     [Theory]
-    [InlineData(@"hello_library\src\lib.rs", @"hello_library\Cargo.toml")]
-    [InlineData(@"hello_library\Cargo.toml", @"hello_library\Cargo.toml")]
-    [InlineData(@"hello_workspace\main\src\main.rs", @"hello_workspace\main\Cargo.toml")]
-    [InlineData(@"hello_workspace\main\Cargo.toml", @"hello_workspace\main\Cargo.toml")]
-    public void GetParentCargoManifestTests(string projFilePath, string parentCargoRelPath)
+    [InlineData(@"hello_library\src\lib.rs", @"hello_library\Cargo.toml", true)]
+    [InlineData(@"hello_library\Cargo.toml", @"hello_library\Cargo.toml", true)]
+    [InlineData(@"hello_workspace\main\src\main.rs", @"hello_workspace\main\Cargo.toml", true)]
+    [InlineData(@"hello_workspace\main\Cargo.toml", @"hello_workspace\main\Cargo.toml", true)]
+    [InlineData(@"not_a_project\src\main.rs", @"not_a_project\Cargo.toml", false)]
+    public void GetParentCargoManifestTests(string projFilePath, string parentCargoRelPath, bool foundParentManifest)
     {
         string path = Path.Combine(_thisTestRoot, projFilePath);
-        var cargo = Manifest.GetParentCargoManifest(path, null, out string parentCargoPath);
+        var workspaceRoot = Path.Combine(_thisTestRoot, Path.GetDirectoryName(parentCargoRelPath));
+        var found = Manifest.GetParentManifest(workspaceRoot, path, out string parentCargoPath);
 
-        parentCargoPath.Should().Be(Path.Combine(_thisTestRoot, parentCargoRelPath));
+        found.Should().Be(foundParentManifest);
+        var expectedParentManifestpath = found ? Path.Combine(_thisTestRoot, parentCargoRelPath) : null;
+        parentCargoPath.Should().Be(expectedParentManifestpath);
     }
 }

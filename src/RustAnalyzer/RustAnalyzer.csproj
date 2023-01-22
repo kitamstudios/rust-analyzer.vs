@@ -75,7 +75,6 @@
     <Compile Include="VS\FileContextActionProviderFactory.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="VS\FileContextProviderFactory.cs" />
-    <Compile Include="VS\IWorkspaceExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <VSCTCompile Include="VSCommandTable.vsct">

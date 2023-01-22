@@ -41,9 +41,31 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Cargo\CargoJsonOutputParserTests.cs" />
-    <Compile Include="Cargo\CargoManifestTests.cs" />
+    <PackageReference Include="Microsoft.VisualStudio.Workspace">
+      <Version>17.1.11-preview-0002</Version>
+      <NoWarn>NU1603</NoWarn>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Workspace.Extensions">
+      <Version>17.1.11-preview-0002</Version>
+      <NoWarn>NU1603</NoWarn>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Workspace.Extensions.VS">
+      <Version>17.1.11-preview-0002</Version>
+      <NoWarn>NU1603</NoWarn>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Workspace.VSIntegration">
+      <Version>17.1.11-preview-0002</Version>
+      <NoWarn>NU1603</NoWarn>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Cargo\BuildJsonOutputParser.cs" />
+    <Compile Include="Cargo\ManifestTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="VS\FileScannerTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RustAnalyzer\RustAnalyzer.csproj">
@@ -87,6 +109,9 @@
     <None Include="..\TestProjects\hello_world\src\main.rs">
       <Link>Cargo\TestData\hello_world\src\main.rs</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\TestProjects\not_a_project\src\main.rs">
+      <Link>Cargo\TestData\not_a_project\src\main.rs</Link>
     </None>
     <None Include="Cargo\TestData\CompilerArtifact3.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

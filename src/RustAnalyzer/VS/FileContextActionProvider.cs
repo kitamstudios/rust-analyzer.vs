@@ -38,7 +38,7 @@ public class FileContextActionProvider : IFileContextActionProvider
         {
             actions.Add(new BuildFileContextAction(filePath, fileContext, _outputPane, _telemetryService, _showMessageBox, _logger));
         }
-        else if (RustHelpers.IsRustFile(filePath) && Manifest.GetParentCargoManifest(filePath, _workspace.Location, out string parentCargoPath))
+        else if (RustHelpers.IsRustFile(filePath) && Manifest.GetParentManifest(_workspace.Location, filePath, out string parentCargoPath))
         {
             actions.Add(new BuildFileContextAction(parentCargoPath, fileContext, _outputPane, _telemetryService, _showMessageBox, _logger, fileContextMenuVisible: false));
         }

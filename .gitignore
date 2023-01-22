@@ -3,7 +3,8 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
-# Service Graph specific files
+# Project specific files
+*.bak
 .paket/
 .fake/
 ServiceGraph.*.json

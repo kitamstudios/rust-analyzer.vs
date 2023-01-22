@@ -1,0 +1,4 @@
+[0] = { WorkspacePath = ..\target\debug\shared.rlib, Target = <TestRoot>\hello_workspace\target\debug\shared.rlib, Context = dev, ReferenceType = 2 }
+[1] = { WorkspacePath = ..\target\release\shared.rlib, Target = <TestRoot>\hello_workspace\target\release\shared.rlib, Context = release, ReferenceType = 2 }
+[2] = { WorkspacePath = ..\target\debug\shared.rlib, Target = <TestRoot>\hello_workspace\target\debug\shared.rlib, Context = test, ReferenceType = 2 }
+[3] = { WorkspacePath = ..\target\release\shared.rlib, Target = <TestRoot>\hello_workspace\target\release\shared.rlib, Context = bench, ReferenceType = 2 }

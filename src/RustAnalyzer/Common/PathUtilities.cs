@@ -20,12 +20,17 @@ public static class PathUtilities
         !(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ||
         RuntimeInformation.IsOSPlatform(OSPlatform.OSX));
 
-    public static bool ExistsOnPath(string fileName)
+    public static string ReplaceInvalidChars(this string filename)
+    {
+        return string.Join("_", filename.Split(Path.GetInvalidFileNameChars()));
+    }
+
+    public static bool ExistsOnPath(this string fileName)
     {
         return SearchInPath(fileName) != null;
     }
 
-    public static string SearchInPath(string fileName)
+    public static string SearchInPath(this string fileName)
     {
         if (File.Exists(fileName))
         {

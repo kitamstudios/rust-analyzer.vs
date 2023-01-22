@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using EnsureThat;
 using KS.RustAnalyzer.Common;
 using Tomlyn;
 using Tomlyn.Model;
@@ -9,9 +12,15 @@ namespace KS.RustAnalyzer.Cargo;
 /// <summary>
 /// NOTE: Assuming defaults to start with. Gradually TDD in the common and then lesser common cases.
 /// </summary>
+[DebuggerDisplay("{FullPath}, IsWorkspace = {IsWorkspace}, IsPackage = {IsPackage}")]
 public class Manifest
 {
-    private static readonly IDictionary<string, string> ProfileInfos = new Dictionary<string, string>
+    public const string KeyNamePackage = "package";
+    public const string KeyNameWorkspace = "workspace";
+    public const string FolderNameTarget = "target";
+    public const string ValueNameName = "name";
+
+    public static readonly IReadOnlyDictionary<string, string> ProfileInfos = new Dictionary<string, string>
     {
         ["dev"] = "debug",
         ["release"] = "release",
@@ -42,20 +51,45 @@ public class Manifest
 
     public string StartupProjectEntryName => $"{Path.GetFileName(Path.GetDirectoryName(FullPath))}";
 
+    public bool IsPackage => _model.ContainsKey(KeyNamePackage);
+
+    public bool IsWorkspace => _model.ContainsKey(KeyNameWorkspace);
+
+    public bool IsLibrary => File.Exists(Path.Combine(Path.GetDirectoryName(FullPath), @"src\lib.rs"));
+
+    public bool IsBinary => File.Exists(Path.Combine(Path.GetDirectoryName(FullPath), @"src\main.rs"));
+
+    public bool Is(string filePath)
+    {
+        return FullPath.Equals(filePath, StringComparison.OrdinalIgnoreCase);
+    }
+
     public static Manifest Create(string parentCargoPath)
     {
         return new Manifest(parentCargoPath);
     }
 
-    public static bool GetParentCargoManifest(string filePath, string projectRoot, out string parentCargoPath)
+    public static Manifest GetParentManifest(string workspaceRoot, string filePath)
     {
+        var hasParentManifest = GetParentManifest(workspaceRoot, filePath, out string parentManifestPath);
+        if (hasParentManifest)
+        {
+            return Create(parentManifestPath);
+        }
+
+        return null!;
+    }
+
+    public static bool GetParentManifest(string workspaceRoot, string filePath, out string parentCargoPath)
+    {
+        var parentManifestPath = Path.Combine(workspaceRoot, Constants.CargoFileName);
         var currentPath = filePath;
         while ((currentPath = Path.GetDirectoryName(currentPath)) != null)
         {
-            var candidateCargoPath = Path.Combine(currentPath, Constants.CargoFileName);
-            if (File.Exists(candidateCargoPath))
+            var candidateManifestPath = Path.Combine(currentPath, Constants.CargoFileName);
+            if (File.Exists(candidateManifestPath) && candidateManifestPath.Equals(parentManifestPath, StringComparison.OrdinalIgnoreCase))
             {
-                parentCargoPath = candidateCargoPath;
+                parentCargoPath = candidateManifestPath;
                 return true;
             }
         }
@@ -66,7 +100,7 @@ public class Manifest
 
     public string GetTargetPathForProfile(string profile)
     {
-        return Path.Combine(WorkspaceRoot, "target", ProfileInfos[profile], TargetFileName);
+        return Path.Combine(WorkspaceRoot, FolderNameTarget, ProfileInfos[profile], TargetFileName);
     }
 
     public string GetTargetPathForProfileRelativeToPath(string profile, string filePath)
@@ -76,16 +110,20 @@ public class Manifest
 
     private string GetPackageName()
     {
-        return ((TomlTable)_model["package"])?["name"]?.ToString();
+        Ensure.That(IsPackage, nameof(IsPackage)).IsTrue();
+
+        return ((TomlTable)_model[KeyNamePackage])?[ValueNameName]?.ToString() ?? "<[package] section must have a name>";
     }
 
     private string GetPackageExtension()
     {
-        if (File.Exists(Path.Combine(Path.GetDirectoryName(FullPath), @"src\main.rs")))
+        Ensure.That(IsPackage, nameof(IsPackage)).IsTrue();
+
+        if (IsBinary)
         {
             return ".exe";
         }
-        else if (File.Exists(Path.Combine(Path.GetDirectoryName(FullPath), @"src\lib.rs")))
+        else if (IsLibrary)
         {
             return ".rlib";
         }
@@ -96,10 +134,10 @@ public class Manifest
     private static string GetWorkspaceRoot(string fullPath)
     {
         var currentCargoPath = fullPath;
-        while (GetParentCargoManifest(currentCargoPath, Path.GetDirectoryName(currentCargoPath), out string parentCargoPath))
+        while (GetParentManifest(Path.GetDirectoryName(currentCargoPath), currentCargoPath, out string parentCargoPath))
         {
             var model = Toml.ToModel(File.ReadAllText(parentCargoPath));
-            if (model.ContainsKey("workspace"))
+            if (model.ContainsKey(KeyNameWorkspace))
             {
                 return Path.GetDirectoryName(parentCargoPath);
             }
