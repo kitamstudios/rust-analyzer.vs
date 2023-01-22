@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.Cargo;
-using KS.RustAnalyzer.Common;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
 using Microsoft.VisualStudio.Workspace.Debug;
@@ -24,7 +23,7 @@ public class FileScanner : IFileScanner
     public async Task<T> ScanContentAsync<T>(string filePath, CancellationToken cancellationToken)
         where T : class
     {
-        var owningManifest = RustHelpers.IsCargoFile(filePath) ? Manifest.Create(filePath) : Manifest.GetParentManifest(_workspaceRoot, filePath);
+        var owningManifest = Manifest.IsManifest(filePath) ? Manifest.Create(filePath) : Manifest.GetParentManifest(_workspaceRoot, filePath);
         if (owningManifest == null)
         {
             return (T)(IReadOnlyCollection<T>)Array.Empty<T>();
@@ -50,7 +49,7 @@ public class FileScanner : IFileScanner
     {
         var allFileDataValues = new List<FileDataValue>();
 
-        if (owningManifest.Is(filePath) && !owningManifest.IsWorkspace && owningManifest.IsPackage && owningManifest.IsBinary)
+        if (owningManifest.Is(filePath) && owningManifest.IsPackage && owningManifest.IsBinary)
         {
             var launchSettings = new PropertySettings
             {
@@ -99,7 +98,7 @@ public class FileScanner : IFileScanner
     {
         var allFileRefInfos = new List<FileReferenceInfo>();
 
-        if (owningManifest.Is(filePath) && !owningManifest.IsWorkspace && owningManifest.IsPackage)
+        if (owningManifest.Is(filePath) && owningManifest.IsPackage)
         {
             var fileRefInfosForProfiles = owningManifest.Profiles
                 .Select(

@@ -10,7 +10,7 @@ using Microsoft.VisualStudio.Workspace.Extensions.VS;
 
 namespace KS.RustAnalyzer.VS;
 
-public class BuildFileContextAction : IFileContextAction, IVsCommandItem
+public sealed class BuildFileContextAction : IFileContextAction, IVsCommandItem
 {
     private static readonly IReadOnlyDictionary<Guid, (uint, Func<string, string, IOutputWindowPane, ITelemetryService, Func<string, Task>, ILogger, Task<bool>>)> FileContextActionInfo =
         new Dictionary<Guid, (uint, Func<string, string, IOutputWindowPane, ITelemetryService, Func<string, Task>, ILogger, Task<bool>>)>
@@ -56,7 +56,7 @@ public class BuildFileContextAction : IFileContextAction, IVsCommandItem
         return CreateBuildProjectIncrementalResultFromBoolean(result);
     }
 
-    protected static IFileContextActionResult CreateBuildProjectIncrementalResultFromBoolean(bool buildSucceeded)
+    private static IFileContextActionResult CreateBuildProjectIncrementalResultFromBoolean(bool buildSucceeded)
     {
         // Assuming there is only project being compiled.
         return new BuildProjectIncrementalResult(

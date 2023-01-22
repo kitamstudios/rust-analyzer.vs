@@ -98,6 +98,12 @@ public class Manifest
         return false;
     }
 
+    public static bool IsManifest(string filePath)
+    {
+        var fileName = Path.GetFileName(filePath);
+        return StringComparer.OrdinalIgnoreCase.Equals(fileName, Constants.CargoFileName);
+    }
+
     public string GetTargetPathForProfile(string profile)
     {
         return Path.Combine(WorkspaceRoot, FolderNameTarget, ProfileInfos[profile], TargetFileName);

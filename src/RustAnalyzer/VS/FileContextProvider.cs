@@ -24,13 +24,13 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
 
     public async Task<IReadOnlyCollection<FileContext>> GetContextsForFileAsync(string filePath, CancellationToken cancellationToken)
     {
-        var parentCargoManifest = Manifest.GetParentManifest(_workspaceRoot, filePath);
-        if (parentCargoManifest == null)
+        var parentManifest = Manifest.GetParentManifest(_workspaceRoot, filePath);
+        if (parentManifest == null)
         {
             return await Task.FromResult(FileContext.EmptyFileContexts);
         }
 
-        return parentCargoManifest.Profiles
+        return parentManifest.Profiles
             .SelectMany(
                 profile => new[]
                 {

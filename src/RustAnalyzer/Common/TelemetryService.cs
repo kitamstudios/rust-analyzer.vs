@@ -4,13 +4,12 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using KS.RustAnalyzer.Common;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 
-namespace KS.RustAnalyzer.VS;
+namespace KS.RustAnalyzer.Common;
 
 [Export(typeof(ITelemetryService))]
 [PartCreationPolicy(CreationPolicy.Shared)]
@@ -80,6 +79,7 @@ public sealed class TelemetryService : ITelemetryService
     {
         public void Initialize(ITelemetry telemetry)
         {
+            telemetry.Context.Component.Version = Vsix.Version;
             if (telemetry is ISupportProperties telemetryWithProperties)
             {
                 telemetryWithProperties.Properties["VsixVersion"] = Vsix.Version;

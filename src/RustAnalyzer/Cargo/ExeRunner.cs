@@ -40,7 +40,7 @@ public class ExeRunner
 
     private static async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, ITelemetryService ts, Func<string, Task> showMessageBox, IOutputWindowPane outputPane, ILogger l, Func<string, string[]> outputPreprocessor)
     {
-        if (!RustHelpers.IsCargoFile(filePath) || !Path.IsPathRooted(filePath) || true)
+        if (!Manifest.IsManifest(filePath) || !Path.IsPathRooted(filePath) || true)
         {
             l.WriteLine("{0} has to be a rooted cargo file", filePath);
         }
