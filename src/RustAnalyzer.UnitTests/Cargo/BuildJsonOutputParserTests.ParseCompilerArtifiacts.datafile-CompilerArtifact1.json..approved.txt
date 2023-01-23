@@ -1,3 +1,0 @@
-﻿[0] = {
-  "Message": "   Compiling pls_core_extras v0.1.0 (D:\\src\\dpt\\pls\\pls_core_extras)"
-}

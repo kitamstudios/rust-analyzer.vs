@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
@@ -46,7 +47,7 @@ public class BuildJsonOutputParserTests
     }
 
     [Theory]
-    [UseReporter(typeof(QuietReporter))]
+    [UseReporter(typeof(DiffReporter))]
     [InlineData("ComplexError1.json")]
     [InlineData("ComplexWarning1.json")]
     [InlineData("ComplexError2.json")]
@@ -63,6 +64,7 @@ public class BuildJsonOutputParserTests
 
     public static string SerializeObject(object obj)
     {
-        return JsonConvert.SerializeObject(obj, Formatting.Indented);
+        var str = JsonConvert.SerializeObject(obj, Formatting.Indented);
+        return Regex.Replace(str, @"\r\n?|\n", "\n");
     }
 }
