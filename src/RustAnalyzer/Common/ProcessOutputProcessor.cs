@@ -17,7 +17,9 @@ namespace KS.RustAnalyzer.Common;
 public sealed class ProcessOutputProcessor : IDisposable
 {
     private readonly ProcessOutputRedirector _redirector;
+    private readonly CancellationToken _cancellationToken;
     private readonly object _seenNullLock = new object();
+    private readonly object _killLock = new object();
 
     private readonly string _arguments;
     private readonly List<string> _output = new List<string>();
@@ -32,13 +34,13 @@ public sealed class ProcessOutputProcessor : IDisposable
     private static readonly char[] EolChars = new[] { '\r', '\n' };
     private static readonly char[] NeedToBeQuoted = new[] { ' ', '"' };
 
-    private ProcessOutputProcessor(Process process, ProcessOutputRedirector redirector)
+    private ProcessOutputProcessor(Process process, ProcessOutputRedirector redirector, CancellationToken cancellationToken)
     {
         EnsureArg.IsNotNull(process, nameof(process));
 
         _arguments = QuoteSingleArgument(process.StartInfo.FileName) + " " + process.StartInfo.Arguments;
         _redirector = redirector;
-
+        _cancellationToken = cancellationToken;
         Process = process;
         if (Process.StartInfo.RedirectStandardOutput)
         {
@@ -311,35 +313,27 @@ public sealed class ProcessOutputProcessor : IDisposable
     {
         if (Process != null && !Process.HasExited)
         {
-            Process.Kill();
+            lock (_killLock)
+            {
+                if (Process != null && !Process.HasExited)
+                {
+                    Process.Kill();
 
-            // Should have already been called, in which case this is a no-op
-            OnExited(this, EventArgs.Empty);
+                    // Should have already been called, in which case this is a no-op
+                    OnExited(this, EventArgs.Empty);
+                }
+            }
         }
     }
 
-    /// <summary>
-    /// Runs the provided executable file and allows the program to display
-    /// output to the user.
-    /// </summary>
-    /// <param name="filename">Executable file to run.</param>
-    /// <param name="arguments">Arguments to pass.</param>
-    /// <returns>A <see cref="ProcessOutputProcessor"/> object.</returns>
-    public static ProcessOutputProcessor RunVisible(string filename, params string[] arguments)
+    public static ProcessOutputProcessor RunVisible(string filename, string[] arguments, CancellationToken cancellationToken)
     {
-        return Run(filename, arguments, null!, null!, true, null!);
+        return Run(filename, arguments, null!, null!, true, null!, cancellationToken: cancellationToken);
     }
 
-    /// <summary>
-    /// Runs the provided executable file hidden and captures any output
-    /// messages.
-    /// </summary>
-    /// <param name="filename">Executable file to run.</param>
-    /// <param name="arguments">Arguments to pass.</param>
-    /// <returns>A <see cref="ProcessOutputProcessor"/> object.</returns>
-    public static ProcessOutputProcessor RunHiddenAndCapture(string filename, params string[] arguments)
+    public static ProcessOutputProcessor RunHiddenAndCapture(string filename, string[] arguments, CancellationToken cancellationToken)
     {
-        return Run(filename, arguments, null!, null!, false, null!);
+        return Run(filename, arguments, null!, null!, false, null!, cancellationToken: cancellationToken);
     }
 
     /// <summary>
@@ -366,6 +360,9 @@ public sealed class ProcessOutputProcessor : IDisposable
     /// <param name="errorEncoding">
     /// Encoding for error stream.
     /// </param>
+    /// <param name="cancellationToken">
+    /// Request cancellation.
+    /// </param>
     /// <returns>A <see cref="ProcessOutputProcessor"/> object.</returns>
     public static ProcessOutputProcessor Run(
         string filename,
@@ -376,7 +373,8 @@ public sealed class ProcessOutputProcessor : IDisposable
         ProcessOutputRedirector redirector,
         bool quoteArgs = true,
         Encoding outputEncoding = null!,
-        Encoding errorEncoding = null!)
+        Encoding errorEncoding = null!,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(filename))
         {
@@ -411,7 +409,7 @@ public sealed class ProcessOutputProcessor : IDisposable
         }
 
         var process = new Process { StartInfo = psi };
-        return new ProcessOutputProcessor(process, redirector);
+        return new ProcessOutputProcessor(process, redirector, cancellationToken);
     }
 
     public static string GetArguments(IEnumerable<string> arguments, bool quoteArgs)
@@ -562,6 +560,11 @@ public sealed class ProcessOutputProcessor : IDisposable
             return;
         }
 
+        if (_cancellationToken.IsCancellationRequested)
+        {
+            Kill();
+        }
+
         if (e.Data == null)
         {
             bool shouldExit;
@@ -598,6 +601,11 @@ public sealed class ProcessOutputProcessor : IDisposable
         if (_isDisposed)
         {
             return;
+        }
+
+        if (_cancellationToken.IsCancellationRequested)
+        {
+            Kill();
         }
 
         if (e.Data == null)

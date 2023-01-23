@@ -11,7 +11,7 @@ namespace KS.RustAnalyzer
         public const string Name = "rust-analyzer";
         public const string Description = @"Rust language support for Visual Studio";
         public const string Language = "en-US";
-        public const string Version = "1.2";
+        public const string Version = "1.3";
         public const string Author = "Kitam Studios";
         public const string Tags = "Rust;Cargo;RustAnalyser";
     }

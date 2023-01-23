@@ -37,8 +37,10 @@ public static class BuildJsonOutputParser
         {
             obj = JObject.Parse(jsonLine);
         }
-        catch
+        catch (Exception e)
         {
+            l.WriteLine("CargoJsonOutputParser failed to parse line: {0}. Exception {1}.", jsonLine, e);
+            t.TrackException(e, new[] { ("Id", "JObjectParse"), ("Line", jsonLine) });
             return new[] { new StringBuildMessage { Message = jsonLine } };
         }
 

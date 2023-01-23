@@ -92,7 +92,8 @@ public class ExeRunner
             visible: false,
             redirector: redirector,
             quoteArgs: false,
-            outputEncoding: Encoding.UTF8))
+            outputEncoding: Encoding.UTF8,
+            cancellationToken: ct))
         {
             var whnd = process.WaitHandle;
             if (whnd == null)
@@ -131,10 +132,10 @@ public class ExeRunner
     private sealed class BuildOutputRedirector : ProcessOutputRedirector
     {
         private readonly IBuildOutputSink _outputPane;
-        private readonly Func<Common.BuildMessage, Task> _buildMessageReporter;
-        private readonly Func<string, Common.BuildMessage[]> _jsonProcessor;
+        private readonly Func<BuildMessage, Task> _buildMessageReporter;
+        private readonly Func<string, BuildMessage[]> _jsonProcessor;
 
-        public BuildOutputRedirector(IBuildOutputSink outputPane, Func<Common.BuildMessage, Task> buildMessageReporter, Func<string, Common.BuildMessage[]> jsonProcessor)
+        public BuildOutputRedirector(IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, Func<string, BuildMessage[]> jsonProcessor)
         {
             _outputPane = outputPane;
             _buildMessageReporter = buildMessageReporter;
@@ -143,7 +144,7 @@ public class ExeRunner
 
         public override void WriteErrorLine(string line)
         {
-            WriteLineCore(line, _jsonProcessor);
+            WriteErrorLineWithoutProcessing(line);
         }
 
         public override void WriteErrorLineWithoutProcessing(string line)
@@ -161,7 +162,7 @@ public class ExeRunner
             WriteLineCore(line, x => new[] { new StringBuildMessage { Message = x } });
         }
 
-        private void WriteLineCore(string jsonLine, Func<string, Common.BuildMessage[]> jsonProcessor)
+        private void WriteLineCore(string jsonLine, Func<string, BuildMessage[]> jsonProcessor)
         {
             var lines = jsonProcessor(jsonLine);
             Array.ForEach(
