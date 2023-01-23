@@ -46,7 +46,7 @@ public class BuildJsonOutputParserTests
     }
 
     [Theory]
-    [UseReporter(typeof(DiffReporter))]
+    [UseReporter(typeof(QuietReporter))]
     [InlineData("ComplexError1.json")]
     [InlineData("ComplexWarning1.json")]
     [InlineData("ComplexError2.json")]
