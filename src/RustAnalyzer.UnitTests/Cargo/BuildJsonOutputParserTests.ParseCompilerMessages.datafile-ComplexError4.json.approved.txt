@@ -1,12 +1,1 @@
-﻿[0] = {
-  "Code": "RS0000",
-  "ProjectFile": "D:\\src\\ks\\rust-analyzer\\src\\TestProjects\\hello_workspace\\shared\\Cargo.toml",
-  "Type": 2,
-  "LogMessage": "D:\\src\\ks\\rust-analyzer\\src\\TestProjects\\hello_workspace\\shared\\src\\lib.rs(1,1): Error RS0000: aborting due to previous error\r\nDetails:\r\nerror: aborting due to previous error\n\n",
-  "TaskText": "aborting due to previous error",
-  "File": "D:\\src\\ks\\rust-analyzer\\src\\TestProjects\\hello_workspace\\shared\\src\\lib.rs",
-  "LineNumber": 1,
-  "ColumnNumber": 1,
-  "SubCategory": null,
-  "HelpKeyword": "RS0000"
-}
+﻿[0] = {"Code":"RS0000","ProjectFile":"D:\\src\\ks\\rust-analyzer\\src\\TestProjects\\hello_workspace\\shared\\Cargo.toml","Type":2,"LogMessage":"D:\\src\\ks\\rust-analyzer\\src\\TestProjects\\hello_workspace\\shared\\src\\lib.rs(1,1): Error RS0000: aborting due to previous error\r\nDetails:\r\nerror: aborting due to previous error\n\n","TaskText":"aborting due to previous error","File":"D:\\src\\ks\\rust-analyzer\\src\\TestProjects\\hello_workspace\\shared\\src\\lib.rs","LineNumber":1,"ColumnNumber":1,"SubCategory":null,"HelpKeyword":"RS0000"}

@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
@@ -64,7 +63,6 @@ public class BuildJsonOutputParserTests
 
     public static string SerializeObject(object obj)
     {
-        var str = JsonConvert.SerializeObject(obj, Formatting.Indented);
-        return Regex.Replace(str, @"\r\n?|\n", "\n");
+        return JsonConvert.SerializeObject(obj);
     }
 }
