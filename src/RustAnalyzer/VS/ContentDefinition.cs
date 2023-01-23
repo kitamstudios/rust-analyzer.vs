@@ -9,14 +9,12 @@ public class ContentDefinition
     [Export]
     [Name(Constants.RustLanguageContentType)]
     [BaseDefinition(CodeRemoteContentDefinition.CodeRemoteContentTypeName)]
-#pragma warning disable SA1401 // Fields should be private
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:Fields should be private", Justification = "MPF requires a field as per examples.")]
     public static ContentTypeDefinition RustContentTypeDefinition;
-#pragma warning restore SA1401 // Fields should be private
 
     [Export]
     [FileExtension(Constants.RustFileExtension)]
     [ContentType(Constants.RustLanguageContentType)]
-#pragma warning disable SA1401 // Fields should be private
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:Fields should be private", Justification = "MPF requires a field as per examples.")]
     public static FileExtensionToContentTypeDefinition RustFileExtensionDefinition;
-#pragma warning restore SA1401 // Fields should be private
 }

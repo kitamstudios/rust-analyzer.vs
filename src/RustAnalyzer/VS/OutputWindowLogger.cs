@@ -29,9 +29,7 @@ public sealed class OutputWindowLogger : ILogger
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 if (EnsurePane())
                 {
-#pragma warning disable RS0030 // Do not used banned APIs
-                    _pane.OutputString($"{DateTime.Now:yyyyMMdd HHmmss} - {string.Format(format, args)}\n");
-#pragma warning restore RS0030 // Do not used banned APIs
+                    _pane.OutputStringThreadSafe($"{DateTime.Now:yyyyMMdd HHmmss} - {string.Format(format, args)}\n");
                 }
             });
         }
@@ -43,14 +41,13 @@ public sealed class OutputWindowLogger : ILogger
 
     private bool EnsurePane()
     {
+        ThreadHelper.ThrowIfNotOnUIThread();
         if (_pane == null)
         {
             var outputWindow = ServiceProvider.GetService<SVsOutputWindow, IVsOutputWindow>();
             Guid guid = OuputWidowPaneGuid;
-#pragma warning disable VSTHRD010 // Invoke single-threaded types on Main thread
             outputWindow.CreatePane(ref guid, OuputWidowPaneName, 1, 1);
             outputWindow.GetPane(ref guid, out _pane);
-#pragma warning restore VSTHRD010 // Invoke single-threaded types on Main thread
         }
 
         return _pane != null;

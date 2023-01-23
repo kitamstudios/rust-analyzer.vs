@@ -18,7 +18,7 @@ namespace KS.RustAnalyzer.UnitTests.VS;
 
 public class FileScannerTests
 {
-    private static readonly string _thisTestRoot =
+    private static readonly string ThisTestRoot =
         Path.Combine(
             Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)),
             @"Cargo\TestData").ToLowerInvariant();
@@ -45,7 +45,7 @@ public class FileScannerTests
     public async Task ScanContentFileRefInfoTestsAsync(string workspaceRootRel, string filePathRel)
     {
         NamerFactory.AdditionalInformation = $"{Path.Combine(workspaceRootRel, filePathRel).ReplaceInvalidChars()}";
-        string workspaceRoot = Path.Combine(_thisTestRoot, workspaceRootRel);
+        string workspaceRoot = Path.Combine(ThisTestRoot, workspaceRootRel);
         var fs = new FileScanner(workspaceRoot);
         var filePath = Path.Combine(workspaceRoot, filePathRel);
 
@@ -54,7 +54,7 @@ public class FileScannerTests
             ri => new
             {
                 WorkspacePath = ri.WorkspacePath.ToLowerInvariant(),
-                Target = ri.Target.ToLowerInvariant().Replace(_thisTestRoot, "<TestRoot>"),
+                Target = ri.Target.ToLowerInvariant().Replace(ThisTestRoot, "<TestRoot>"),
                 ri.Context,
                 ri.ReferenceType,
             });
@@ -67,7 +67,7 @@ public class FileScannerTests
     public async Task ScanContentFileDataValueTestsAsync(string workspaceRootRel, string filePathRel)
     {
         NamerFactory.AdditionalInformation = $"{Path.Combine(workspaceRootRel, filePathRel).ReplaceInvalidChars()}";
-        string workspaceRoot = Path.Combine(_thisTestRoot, workspaceRootRel);
+        string workspaceRoot = Path.Combine(ThisTestRoot, workspaceRootRel);
         var fs = new FileScanner(workspaceRoot);
         var filePath = Path.Combine(workspaceRoot, filePathRel);
 
@@ -78,7 +78,7 @@ public class FileScannerTests
                 dv.Type,
                 dv.Name,
                 Value = SerializeDataValue(dv.Value),
-                Target = dv.Target?.ToLowerInvariant().Replace(_thisTestRoot, "<TestRoot>"),
+                Target = dv.Target?.ToLowerInvariant().Replace(ThisTestRoot, "<TestRoot>"),
                 dv.Context,
             });
         Approvals.VerifyAll(processedDataValues, label: string.Empty);

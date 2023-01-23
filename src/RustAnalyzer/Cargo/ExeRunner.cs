@@ -2,15 +2,16 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.Common;
-using KS.RustAnalyzer.VS;
+using Microsoft.VisualStudio.Workspace.Build;
 
 namespace KS.RustAnalyzer.Cargo;
 
 public class ExeRunner
 {
-    public static Task<bool> BuildAsync(string filePath, string profile, IOutputWindowPane outputPane, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l)
+    public static Task<bool> BuildAsync(string workspaceRoot, string filePath, string profile, IOutputWindowPane outputPane, Func<BuildMessage, object, Task> buildMessageReporter, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l, CancellationToken ct)
     {
         return ExecuteOperationAsync(
             "build",
@@ -20,11 +21,13 @@ public class ExeRunner
             ts,
             showMessageBox,
             outputPane,
+            buildMessageReporter,
             l,
-            x => BuildJsonOutputParser.Parse(x, l, ts));
+            x => BuildJsonOutputParser.Parse(workspaceRoot, x, l, ts),
+            ct);
     }
 
-    public static Task<bool> CleanAsync(string filePath, string profile, IOutputWindowPane outputPane, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l)
+    public static Task<bool> CleanAsync(string workspaceRoot, string filePath, string profile, IOutputWindowPane outputPane, Func<BuildMessage, object, Task> buildMessageReporter, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l, CancellationToken ct)
     {
         return ExecuteOperationAsync(
             "clean",
@@ -34,11 +37,13 @@ public class ExeRunner
             ts,
             showMessageBox,
             outputPane,
+            buildMessageReporter,
             l,
-            x => new[] { x });
+            x => new[] { new StringOutputMessage { Message = x } },
+            ct);
     }
 
-    private static async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, ITelemetryService ts, Func<string, Task> showMessageBox, IOutputWindowPane outputPane, ILogger l, Func<string, string[]> outputPreprocessor)
+    private static async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, ITelemetryService ts, Func<string, Task> showMessageBox, IOutputWindowPane outputPane, Func<BuildMessage, object, Task> buildMessageReporter, ILogger l, Func<string, OutputMessage[]> outputPreprocessor, CancellationToken ct)
     {
         if (!Manifest.IsManifest(filePath) || !Path.IsPathRooted(filePath) || true)
         {
@@ -65,10 +70,11 @@ public class ExeRunner
             cargoFullPath,
             arguments,
             workingDir: Path.GetDirectoryName(filePath),
-            redirector: new BuildOutputRedirector(outputPane, outputPreprocessor));
+            redirector: new BuildOutputRedirector(outputPane, buildMessageReporter, outputPreprocessor),
+            ct: ct);
     }
 
-    private static async Task<bool> RunAsync(string cargoFullPath, string arguments, string workingDir, ProcessOutputRedirector redirector)
+    private static async Task<bool> RunAsync(string cargoFullPath, string arguments, string workingDir, ProcessOutputRedirector redirector, CancellationToken ct)
     {
         Debug.Assert(!string.IsNullOrEmpty(arguments), $"{nameof(arguments)} should not be empty.");
 
@@ -125,45 +131,44 @@ public class ExeRunner
     private sealed class BuildOutputRedirector : ProcessOutputRedirector
     {
         private readonly IOutputWindowPane _outputPane;
-        private readonly Func<string, string[]> _jsonProcessor;
+        private readonly Func<BuildMessage, object, Task> _buildMessageReporter;
+        private readonly Func<string, OutputMessage[]> _jsonProcessor;
 
-        public BuildOutputRedirector(IOutputWindowPane outputPane, Func<string, string[]> jsonProcessor)
+        public BuildOutputRedirector(IOutputWindowPane outputPane, Func<BuildMessage, object, Task> buildMessageReporter, Func<string, OutputMessage[]> jsonProcessor)
         {
             _outputPane = outputPane;
+            _buildMessageReporter = buildMessageReporter;
             _jsonProcessor = jsonProcessor;
         }
 
         public override void WriteErrorLine(string line)
         {
-            WriteLineCore(line, _outputPane, _jsonProcessor);
+            WriteLineCore(line, _jsonProcessor);
         }
 
         public override void WriteErrorLineWithoutProcessing(string line)
         {
-            WriteLineCore(line, _outputPane, x => new[] { x });
+            WriteLineCore(line, x => new[] { new StringOutputMessage { Message = x } });
         }
 
         public override void WriteLine(string line)
         {
-            WriteLineCore(line, _outputPane, _jsonProcessor);
+            WriteLineCore(line, _jsonProcessor);
         }
 
         public override void WriteLineWithoutProcessing(string line)
         {
-            WriteLineCore(line, _outputPane, x => new[] { x });
+            WriteLineCore(line, x => new[] { new StringOutputMessage { Message = x } });
         }
 
-        private static void WriteLineCore(string jsonLine, IOutputWindowPane outputPane, Func<string, string[]> jsonProcessor)
+        private void WriteLineCore(string jsonLine, Func<string, OutputMessage[]> jsonProcessor)
         {
             var lines = jsonProcessor(jsonLine);
             Array.ForEach(
                 lines,
                 l =>
                 {
-                    if (!string.IsNullOrEmpty(l))
-                    {
-                        outputPane.WriteLine(l);
-                    }
+                    _outputPane.WriteLine(_buildMessageReporter, l);
                 });
         }
     }

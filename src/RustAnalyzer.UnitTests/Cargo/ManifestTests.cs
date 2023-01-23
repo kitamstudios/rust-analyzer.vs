@@ -9,7 +9,7 @@ namespace KS.RustAnalyzer.UnitTests.Cargo;
 
 public class ManifestTests
 {
-    private static readonly string _thisTestRoot =
+    private static readonly string ThisTestRoot =
         Path.Combine(
             Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)),
             @"Cargo\TestData").ToLowerInvariant();
@@ -17,7 +17,7 @@ public class ManifestTests
     [Fact]
     public void SimplestExe()
     {
-        string cmPath = Path.Combine(_thisTestRoot, @"hello_world\Cargo.toml");
+        string cmPath = Path.Combine(ThisTestRoot, @"hello_world\Cargo.toml");
         var cargo = Manifest.Create(cmPath);
 
         cargo.Should().BeEquivalentTo(
@@ -34,7 +34,7 @@ public class ManifestTests
     [Fact]
     public void SimplestLib()
     {
-        string cmPath = Path.Combine(_thisTestRoot, @"hello_library\Cargo.toml");
+        string cmPath = Path.Combine(ThisTestRoot, @"hello_library\Cargo.toml");
         var cargo = Manifest.Create(cmPath);
 
         cargo.Should().BeEquivalentTo(
@@ -53,11 +53,11 @@ public class ManifestTests
     [InlineData(@"hello_workspace\main\Cargo.toml", "hello_workspace", @"hello_workspace\target\debug\main.exe")]
     public void WorkspaceRootTests(string cargoRelPath, string workspaceRelPath, string targetFileRelPath)
     {
-        string cmPath = Path.Combine(_thisTestRoot, cargoRelPath);
+        string cmPath = Path.Combine(ThisTestRoot, cargoRelPath);
         var cargo = Manifest.Create(cmPath);
 
-        cargo.WorkspaceRoot.Should().Be(Path.Combine(_thisTestRoot, workspaceRelPath));
-        cargo.GetTargetPathForProfile("dev").Should().Be(Path.Combine(_thisTestRoot, targetFileRelPath));
+        cargo.WorkspaceRoot.Should().Be(Path.Combine(ThisTestRoot, workspaceRelPath));
+        cargo.GetTargetPathForProfile("dev").Should().Be(Path.Combine(ThisTestRoot, targetFileRelPath));
     }
 
     [Theory]
@@ -71,9 +71,9 @@ public class ManifestTests
         @"target\debug\hello_world.exe")]
     public void GetTargetPathForProfileRelativeToPathTests(string manifestPath, string filePath, string ret)
     {
-        var cargo = Manifest.Create(Path.Combine(_thisTestRoot, manifestPath));
+        var cargo = Manifest.Create(Path.Combine(ThisTestRoot, manifestPath));
 
-        cargo.GetTargetPathForProfileRelativeToPath("dev", Path.Combine(_thisTestRoot, filePath)).Should().Be(ret);
+        cargo.GetTargetPathForProfileRelativeToPath("dev", Path.Combine(ThisTestRoot, filePath)).Should().Be(ret);
     }
 
     [Theory]
@@ -84,12 +84,12 @@ public class ManifestTests
     [InlineData(@"not_a_project\src\main.rs", @"not_a_project\Cargo.toml", false)]
     public void GetParentCargoManifestTests(string projFilePath, string parentCargoRelPath, bool foundParentManifest)
     {
-        string path = Path.Combine(_thisTestRoot, projFilePath);
-        var workspaceRoot = Path.Combine(_thisTestRoot, Path.GetDirectoryName(parentCargoRelPath));
-        var found = Manifest.GetParentManifest(workspaceRoot, path, out string parentCargoPath);
+        string path = Path.Combine(ThisTestRoot, projFilePath);
+        var workspaceRoot = Path.Combine(ThisTestRoot, Path.GetDirectoryName(parentCargoRelPath));
+        var found = Manifest.TryGetParentManifest(workspaceRoot, path, out string parentCargoPath);
 
         found.Should().Be(foundParentManifest);
-        var expectedParentManifestpath = found ? Path.Combine(_thisTestRoot, parentCargoRelPath) : null;
+        var expectedParentManifestpath = found ? Path.Combine(ThisTestRoot, parentCargoRelPath) : null;
         parentCargoPath.Should().Be(expectedParentManifestpath);
     }
 }

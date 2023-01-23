@@ -47,6 +47,7 @@
     <Compile Include="Cargo\ExeRunner.cs" />
     <Compile Include="Cargo\Manifest.cs" />
     <Compile Include="Cargo\BuildJsonOutputParser.cs" />
+    <Compile Include="Common\ArrayExtensions.cs" />
     <Compile Include="Common\ILogger.cs" />
     <Compile Include="Common\IOutputWindowPane.cs" />
     <Compile Include="Common\PathUtilities.cs" />
@@ -59,8 +60,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>source.extension.vsixmanifest</DependentUpon>
     </Compile>
-    <Compile Include="VS\BuildFileContextAction.cs" />
-    <Compile Include="VS\FileContextActionProvider.cs" />
     <Compile Include="VS\ContentDefinition.cs" />
     <Compile Include="VS\FileContextProvider.cs" />
     <Compile Include="VS\FileScanner.cs" />
@@ -71,9 +70,9 @@
     <Compile Include="VS\FileScannerFactory.cs" />
     <Compile Include="VS\PredefinedCmds.cs" />
     <Compile Include="VS\OutputWindowPane.cs" />
-    <Compile Include="VS\FileContextActionProviderFactory.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="VS\FileContextProviderFactory.cs" />
+    <Compile Include="VS\BuildFileContext.cs" />
   </ItemGroup>
   <ItemGroup>
     <VSCTCompile Include="VSCommandTable.vsct">

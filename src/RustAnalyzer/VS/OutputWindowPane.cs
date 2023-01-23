@@ -1,11 +1,14 @@
 using System;
-using System.Collections.Concurrent;
 using System.ComponentModel.Composition;
+using System.Threading.Tasks;
+using AutoMapper;
 using EnsureThat;
 using KS.RustAnalyzer.Common;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Workspace.Build;
+using static System.Windows.Forms.DataFormats;
 
 namespace KS.RustAnalyzer.VS;
 
@@ -14,47 +17,83 @@ namespace KS.RustAnalyzer.VS;
 public sealed class OutputWindowPane : IOutputWindowPane
 {
     private static readonly Guid BuildOutputPaneGuid = VSConstants.OutputWindowPaneGuid.BuildOutputPane_guid;
+    private readonly IMapper _buildMessageMapper = new MapperConfiguration(cfg => cfg.CreateMap<BuildOutputMessage, BuildMessage>()).CreateMapper();
+    private IVsOutputWindowPane _buildOutputPane;
 
-    private readonly ConcurrentDictionary<int, IVsOutputWindowPane> _lazyOutputPaneCollection = new ();
+    [Import]
+    public ITelemetryService T { get; set; }
 
     [Import]
     private SVsServiceProvider ServiceProvider { get; set; }
 
-    public void WriteLine(string message)
+    public void WriteLine(Func<BuildMessage, object, Task> buildMessageReporter, OutputMessage message)
     {
-        if (!IsInitialized())
+        try
         {
-            throw new InvalidOperationException("You need to initialize the output panes before using them.");
+            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                Initialize();
+
+                if (message is StringOutputMessage sm)
+                {
+                    if (string.IsNullOrEmpty(sm.Message))
+                    {
+                        return;
+                    }
+
+                    _buildOutputPane.Activate();
+                    var hr = _buildOutputPane.OutputStringThreadSafe(sm.Message + Environment.NewLine);
+                    Ensure.That(ErrorHandler.Succeeded(hr));
+                }
+                else if (message is BuildOutputMessage bm)
+                {
+                    // TODO: wait for the results
+                    _ = buildMessageReporter(_buildMessageMapper.Map<BuildMessage>(bm), null);
+                }
+                else
+                {
+                    throw new ArgumentOutOfRangeException(nameof(message));
+                }
+            });
         }
-
-#pragma warning disable VSTHRD010 // Invoke single-threaded types on Main thread
-        _lazyOutputPaneCollection[0].Activate();
-        var hr = _lazyOutputPaneCollection[0].OutputStringThreadSafe(message + Environment.NewLine);
-#pragma warning restore VSTHRD010 // Invoke single-threaded types on Main thread
-        Ensure.That(ErrorHandler.Succeeded(hr));
-    }
-
-    public void Initialize()
-    {
-        ThreadHelper.ThrowIfNotOnUIThread();
-
-        if (!IsInitialized())
+        catch (Exception e)
         {
-            var crates = InitializeOutputPane("Rust (crates)", BuildOutputPaneGuid);
-            _lazyOutputPaneCollection.TryAdd(0, crates);
+            T.TrackException(e);
         }
     }
 
     public void Clear()
     {
-#pragma warning disable VSTHRD010 // Invoke single-threaded types on Main thread
-        _lazyOutputPaneCollection[0].Clear();
-#pragma warning restore VSTHRD010 // Invoke single-threaded types on Main thread
+        try
+        {
+            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                Initialize();
+                _buildOutputPane.Clear();
+            });
+        }
+        catch (Exception e)
+        {
+            T.TrackException(e);
+        }
+    }
+
+    private void Initialize()
+    {
+        ThreadHelper.ThrowIfNotOnUIThread();
+
+        if (!IsInitialized())
+        {
+            _buildOutputPane = InitializeOutputPane("Rust (cargo)", BuildOutputPaneGuid);
+        }
     }
 
     private IVsOutputWindowPane InitializeOutputPane(string title, Guid paneId)
     {
         ThreadHelper.ThrowIfNotOnUIThread();
+
         var outputWindow = ServiceProvider.GetService<SVsOutputWindow, IVsOutputWindow>();
 
         // Try to get the workspace pane if it has already been registered
@@ -75,6 +114,6 @@ public sealed class OutputWindowPane : IOutputWindowPane
 
     private bool IsInitialized()
     {
-        return _lazyOutputPaneCollection.TryGetValue(0, out var crateWindow) && crateWindow != null;
+        return _buildOutputPane != null;
     }
 }

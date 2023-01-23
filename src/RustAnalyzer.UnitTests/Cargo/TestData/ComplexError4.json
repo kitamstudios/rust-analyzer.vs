@@ -1,0 +1,23 @@
+{
+  "reason": "compiler-message",
+  "package_id": "shared 0.1.0 (path+file:///D:/src/ks/rust-analyzer/src/TestProjects/hello_workspace/shared)",
+  "manifest_path": "D:\\src\\ks\\rust-analyzer\\src\\TestProjects\\hello_workspace\\shared\\Cargo.toml",
+  "target": {
+    "kind": [ "lib" ],
+    "crate_types": [ "lib" ],
+    "name": "shared",
+    "src_path": "D:\\src\\ks\\rust-analyzer\\src\\TestProjects\\hello_workspace\\shared\\src\\lib.rs",
+    "edition": "2018",
+    "doc": true,
+    "doctest": true,
+    "test": true
+  },
+  "message": {
+    "rendered": "error: aborting due to previous error\n\n",
+    "children": [],
+    "code": null,
+    "level": "error",
+    "message": "aborting due to previous error",
+    "spans": []
+  }
+}

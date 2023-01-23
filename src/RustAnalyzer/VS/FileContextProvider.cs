@@ -1,8 +1,12 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using KS.RustAnalyzer.Cargo;
+using KS.RustAnalyzer.Common;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
 
@@ -11,10 +15,16 @@ namespace KS.RustAnalyzer.VS;
 public sealed class FileContextProvider : IFileContextProvider, IFileContextProvider<string>
 {
     private readonly string _workspaceRoot;
+    private readonly IOutputWindowPane _outputPane;
+    private readonly ITelemetryService _t;
+    private readonly ILogger _l;
 
-    public FileContextProvider(string workspaceRoot)
+    public FileContextProvider(string workspaceRoot, IOutputWindowPane outputPane, ITelemetryService t, ILogger l)
     {
         _workspaceRoot = workspaceRoot;
+        _outputPane = outputPane;
+        _t = t;
+        _l = l;
     }
 
     public Task<IReadOnlyCollection<FileContext>> GetContextsForFileAsync(string filePath, string context, CancellationToken cancellationToken)
@@ -37,16 +47,23 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
                     new FileContext(
                         FileContextProviderFactory.ProviderTypeGuid,
                         BuildContextTypes.BuildContextTypeGuid,
-                        new BuildConfigurationContext(profile),
+                        new BuildFileContext(profile, parentManifest, filePath, _outputPane, _t, ShowMessageBoxAsync, _l),
                         new[] { filePath },
                         displayName: profile),
                     new FileContext(
                         FileContextProviderFactory.ProviderTypeGuid,
                         BuildContextTypes.CleanContextTypeGuid,
-                        new BuildConfigurationContext(profile),
+                        new CleanFileContext(profile, parentManifest, filePath, _outputPane, _t, ShowMessageBoxAsync, _l),
                         new[] { filePath },
                         displayName: profile),
                 })
             .ToList();
+    }
+
+    private async Task ShowMessageBoxAsync(string message)
+    {
+        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+        MessageBox.Show(message, "rust-analyzer", MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
 }

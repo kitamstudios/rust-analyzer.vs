@@ -18,6 +18,9 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
     private const string ProviderType = "{72D3FCEF-0000-4266-B8DD-D3ED06E35A2B}";
 
     [Import]
+    public IOutputWindowPane OutputPane { get; set; }
+
+    [Import]
     public ILogger L { get; set; }
 
     [Import]
@@ -30,6 +33,6 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
             new[] { ("Location", workspaceContext.Location) });
         L.WriteLine("Creating {0}.", GetType().Name);
 
-        return new FileContextProvider(workspaceContext.Location);
+        return new FileContextProvider(workspaceContext.Location, OutputPane, T, L);
     }
 }

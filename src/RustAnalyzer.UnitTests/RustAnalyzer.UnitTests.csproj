@@ -62,7 +62,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Cargo\BuildJsonOutputParser.cs" />
+    <Compile Include="Cargo\BuildJsonOutputParserTests.cs" />
     <Compile Include="Cargo\ManifestTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VS\FileScannerTests.cs" />
@@ -120,6 +120,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Cargo\TestData\CompilerArtifact1.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Cargo\TestData\ComplexError4.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Cargo\TestData\ComplexError3.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Cargo\TestData\ComplexError2.json">

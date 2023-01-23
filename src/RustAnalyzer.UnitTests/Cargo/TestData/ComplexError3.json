@@ -1,0 +1,45 @@
+{
+  "reason": "compiler-message",
+  "package_id": "shared 0.1.0 (path+file:///D:/src/ks/rust-analyzer/src/TestProjects/hello_workspace/shared)",
+  "manifest_path": "D:\\src\\ks\\rust-analyzer\\src\\TestProjects\\hello_workspace\\shared\\Cargo.toml",
+  "target": {
+    "kind": [ "lib" ],
+    "crate_types": [ "lib" ],
+    "name": "shared",
+    "src_path": "D:\\src\\ks\\rust-analyzer\\src\\TestProjects\\hello_workspace\\shared\\src\\lib.rs",
+    "edition": "2018",
+    "doc": true,
+    "doctest": true,
+    "test": true
+  },
+  "message": {
+    "rendered": "error: expected `where`, `{`, `(`, or `;` after struct name, found `elA`\n --> shared\\src\\models.rs:1:16\n  |\n1 | pub struct Mod elA {\n  |                ^^^ expected `where`, `{`, `(`, or `;` after struct name\n\n",
+    "children": [],
+    "code": null,
+    "level": "error",
+    "message": "expected `where`, `{`, `(`, or `;` after struct name, found `elA`",
+    "spans": [
+      {
+        "byte_end": 18,
+        "byte_start": 15,
+        "column_end": 19,
+        "column_start": 16,
+        "expansion": null,
+        "file_name": "shared\\src\\models.rs",
+        "is_primary": true,
+        "label": "expected `where`, `{`, `(`, or `;` after struct name",
+        "line_end": 1,
+        "line_start": 1,
+        "suggested_replacement": null,
+        "suggestion_applicability": null,
+        "text": [
+          {
+            "highlight_end": 19,
+            "highlight_start": 16,
+            "text": "pub struct Mod elA {"
+          }
+        ]
+      }
+    ]
+  }
+}

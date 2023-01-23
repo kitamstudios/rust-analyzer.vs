@@ -12,7 +12,7 @@ namespace KS.RustAnalyzer.VS;
     language: "Rust",
     supportedFileExtensions: new[] { Constants.CargoFileName, Constants.RustFileExtension, },
     supportedTypes: new[] { typeof(IReadOnlyCollection<FileDataValue>), typeof(IReadOnlyCollection<FileReferenceInfo>) },
-    priority: ProviderPriority.Highest)]
+    priority: ProviderPriority.Normal)]
 public class FileScannerFactory : IWorkspaceProviderFactory<IFileScanner>
 {
     public const string ProviderType = "F5628EAD-0000-4683-B597-D8314B971ED6";

@@ -71,16 +71,15 @@ public class Manifest
 
     public static Manifest GetParentManifest(string workspaceRoot, string filePath)
     {
-        var hasParentManifest = GetParentManifest(workspaceRoot, filePath, out string parentManifestPath);
-        if (hasParentManifest)
+        if (TryGetParentManifest(workspaceRoot, filePath, out string parentManifestPath))
         {
             return Create(parentManifestPath);
         }
 
-        return null!;
+        return null;
     }
 
-    public static bool GetParentManifest(string workspaceRoot, string filePath, out string parentCargoPath)
+    public static bool TryGetParentManifest(string workspaceRoot, string filePath, out string parentCargoPath)
     {
         var parentManifestPath = Path.Combine(workspaceRoot, Constants.CargoFileName);
         var currentPath = filePath;
@@ -140,7 +139,7 @@ public class Manifest
     private static string GetWorkspaceRoot(string fullPath)
     {
         var currentCargoPath = fullPath;
-        while (GetParentManifest(Path.GetDirectoryName(currentCargoPath), currentCargoPath, out string parentCargoPath))
+        while (TryGetParentManifest(Path.GetDirectoryName(currentCargoPath), currentCargoPath, out string parentCargoPath))
         {
             var model = Toml.ToModel(File.ReadAllText(parentCargoPath));
             if (model.ContainsKey(KeyNameWorkspace))
