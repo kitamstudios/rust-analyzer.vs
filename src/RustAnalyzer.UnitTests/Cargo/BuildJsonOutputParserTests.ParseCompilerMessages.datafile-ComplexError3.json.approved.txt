@@ -1,1 +1,12 @@
-﻿[0] = {"Code":"RS0000","ProjectFile":"D:\\src\\ks\\rust-analyzer\\src\\TestProjects\\hello_workspace\\shared\\Cargo.toml","Type":2,"LogMessage":"d:\\src\\ks\\rust-analyzer\\src\\rustanalyzer.unittests\\bin\\debug\\cargo\\testdata\\shared\\src\\models.rs(1,16): Error RS0000: expected `where`, `{`, `(`, or `;` after struct name, found `elA`\r\nDetails:\r\nerror: expected `where`, `{`, `(`, or `;` after struct name, found `elA`\n --> shared\\src\\models.rs:1:16\n  |\n1 | pub struct Mod elA {\n  |                ^^^ expected `where`, `{`, `(`, or `;` after struct name\n\n","TaskText":"expected `where`, `{`, `(`, or `;` after struct name, found `elA`","File":"d:\\src\\ks\\rust-analyzer\\src\\rustanalyzer.unittests\\bin\\debug\\cargo\\testdata\\shared\\src\\models.rs","LineNumber":1,"ColumnNumber":16,"SubCategory":null,"HelpKeyword":"RS0000"}
+﻿[0] = {
+  "Code": "RS0000",
+  "ProjectFile": "D:\\src\\ks\\rust-analyzer\\src\\TestProjects\\hello_workspace\\shared\\Cargo.toml",
+  "Type": 2,
+  "LogMessage": "d:\\src\\dpt\\pls\\test_app\\shared\\src\\models.rs(1,16): Error RS0000: expected `where`, `{`, `(`, or `;` after struct name, found `elA`\r\nDetails:\r\nerror: expected `where`, `{`, `(`, or `;` after struct name, found `elA`\n --> shared\\src\\models.rs:1:16\n  |\n1 | pub struct Mod elA {\n  |                ^^^ expected `where`, `{`, `(`, or `;` after struct name\n\n",
+  "TaskText": "expected `where`, `{`, `(`, or `;` after struct name, found `elA`",
+  "File": "d:\\src\\dpt\\pls\\test_app\\shared\\src\\models.rs",
+  "LineNumber": 1,
+  "ColumnNumber": 16,
+  "SubCategory": null,
+  "HelpKeyword": "RS0000"
+}

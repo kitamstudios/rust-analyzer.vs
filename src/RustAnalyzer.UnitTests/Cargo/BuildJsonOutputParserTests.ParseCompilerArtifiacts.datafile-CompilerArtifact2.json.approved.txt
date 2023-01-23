@@ -1,1 +1,3 @@
-﻿[0] = {"Message":"   Compiling tera v1.17.1"}
+﻿[0] = {
+  "Message": "   Compiling tera v1.17.1"
+}

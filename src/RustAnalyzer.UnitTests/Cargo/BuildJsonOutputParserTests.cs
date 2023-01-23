@@ -56,13 +56,13 @@ public class BuildJsonOutputParserTests
     {
         NamerFactory.AdditionalInformation = $"datafile-{dataFile}";
         var jsonOutput = File.ReadAllText(Path.Combine(ThisTestRoot, dataFile));
-        var output = RustAnalyzer.Cargo.BuildJsonOutputParser.Parse(ThisTestRoot, jsonOutput, L, T);
+        var output = RustAnalyzer.Cargo.BuildJsonOutputParser.Parse(@"d:\src\dpt\pls\test_app", jsonOutput, L, T);
 
         Approvals.VerifyAll(output.Select(SerializeObject), label: string.Empty);
     }
 
     public static string SerializeObject(object obj)
     {
-        return JsonConvert.SerializeObject(obj);
+        return JsonConvert.SerializeObject(obj, Formatting.Indented);
     }
 }
