@@ -68,8 +68,8 @@ public class FileScanner : IFileScanner
             var fileDataValuesForAllProfiles1 = owningManifest.Profiles.Select(
                 profile =>
                     new FileDataValue(
-                        type: Microsoft.VisualStudio.Workspace.Build.BuildConfigurationContext.ContextTypeGuid,
-                        name: Microsoft.VisualStudio.Workspace.Build.BuildConfigurationContext.DataValueName,
+                        type: BuildConfigurationContext.ContextTypeGuid,
+                        name: BuildConfigurationContext.DataValueName,
                         value: null,
                         target: owningManifest.GetTargetPathForProfile(profile),
                         context: profile));
@@ -82,8 +82,8 @@ public class FileScanner : IFileScanner
             var fileDataValuesForAllProfiles = owningManifest.Profiles.Select(
             profile =>
                 new FileDataValue(
-                    type: Microsoft.VisualStudio.Workspace.Build.BuildConfigurationContext.ContextTypeGuid,
-                    name: Microsoft.VisualStudio.Workspace.Build.BuildConfigurationContext.DataValueName,
+                    type: BuildConfigurationContext.ContextTypeGuid,
+                    name: BuildConfigurationContext.DataValueName,
                     value: null,
                     target: null,
                     context: profile));

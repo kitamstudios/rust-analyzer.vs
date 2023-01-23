@@ -36,6 +36,7 @@ public class FileScannerTests
             new[] { @"hello_workspace", @"main\src\main.rs" },
             new[] { @"hello_workspace", @"shared\Cargo.toml" },
             new[] { @"hello_workspace", @"shared\src\lib.rs" },
+            new[] { @"hello_workspace2", @"Cargo.toml" },
         }.AsEnumerable();
     }
 
