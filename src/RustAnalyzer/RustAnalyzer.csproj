@@ -49,7 +49,7 @@
     <Compile Include="Cargo\BuildJsonOutputParser.cs" />
     <Compile Include="Common\ArrayExtensions.cs" />
     <Compile Include="Common\ILogger.cs" />
-    <Compile Include="Common\IOutputWindowPane.cs" />
+    <Compile Include="Common\IBuildOutputSink.cs" />
     <Compile Include="Common\PathUtilities.cs" />
     <Compile Include="Common\ProcessOutputProcessor.cs" />
     <Compile Include="Common\ProcessOutputRedirector.cs" />
@@ -69,7 +69,7 @@
     <Compile Include="Common\ITelemetryService.cs" />
     <Compile Include="VS\FileScannerFactory.cs" />
     <Compile Include="VS\PredefinedCmds.cs" />
-    <Compile Include="VS\OutputWindowPane.cs" />
+    <Compile Include="VS\BuildOutputSink.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="VS\FileContextProviderFactory.cs" />
     <Compile Include="VS\BuildFileContext.cs" />

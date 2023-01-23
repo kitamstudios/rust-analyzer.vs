@@ -5,13 +5,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.Common;
-using Microsoft.VisualStudio.Workspace.Build;
+using BuildMessage = KS.RustAnalyzer.Common.BuildMessage;
 
 namespace KS.RustAnalyzer.Cargo;
 
 public class ExeRunner
 {
-    public static Task<bool> BuildAsync(string workspaceRoot, string filePath, string profile, IOutputWindowPane outputPane, Func<BuildMessage, object, Task> buildMessageReporter, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l, CancellationToken ct)
+    public static Task<bool> BuildAsync(string workspaceRoot, string filePath, string profile, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l, CancellationToken ct)
     {
         return ExecuteOperationAsync(
             "build",
@@ -27,7 +27,7 @@ public class ExeRunner
             ct);
     }
 
-    public static Task<bool> CleanAsync(string workspaceRoot, string filePath, string profile, IOutputWindowPane outputPane, Func<BuildMessage, object, Task> buildMessageReporter, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l, CancellationToken ct)
+    public static Task<bool> CleanAsync(string workspaceRoot, string filePath, string profile, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l, CancellationToken ct)
     {
         return ExecuteOperationAsync(
             "clean",
@@ -39,11 +39,11 @@ public class ExeRunner
             outputPane,
             buildMessageReporter,
             l,
-            x => new[] { new StringOutputMessage { Message = x } },
+            x => new[] { new StringBuildMessage { Message = x } },
             ct);
     }
 
-    private static async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, ITelemetryService ts, Func<string, Task> showMessageBox, IOutputWindowPane outputPane, Func<BuildMessage, object, Task> buildMessageReporter, ILogger l, Func<string, OutputMessage[]> outputPreprocessor, CancellationToken ct)
+    private static async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, ITelemetryService ts, Func<string, Task> showMessageBox, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, ILogger l, Func<string, BuildMessage[]> outputPreprocessor, CancellationToken ct)
     {
         if (!Manifest.IsManifest(filePath) || !Path.IsPathRooted(filePath) || true)
         {
@@ -130,11 +130,11 @@ public class ExeRunner
 
     private sealed class BuildOutputRedirector : ProcessOutputRedirector
     {
-        private readonly IOutputWindowPane _outputPane;
-        private readonly Func<BuildMessage, object, Task> _buildMessageReporter;
-        private readonly Func<string, OutputMessage[]> _jsonProcessor;
+        private readonly IBuildOutputSink _outputPane;
+        private readonly Func<Common.BuildMessage, Task> _buildMessageReporter;
+        private readonly Func<string, Common.BuildMessage[]> _jsonProcessor;
 
-        public BuildOutputRedirector(IOutputWindowPane outputPane, Func<BuildMessage, object, Task> buildMessageReporter, Func<string, OutputMessage[]> jsonProcessor)
+        public BuildOutputRedirector(IBuildOutputSink outputPane, Func<Common.BuildMessage, Task> buildMessageReporter, Func<string, Common.BuildMessage[]> jsonProcessor)
         {
             _outputPane = outputPane;
             _buildMessageReporter = buildMessageReporter;
@@ -148,7 +148,7 @@ public class ExeRunner
 
         public override void WriteErrorLineWithoutProcessing(string line)
         {
-            WriteLineCore(line, x => new[] { new StringOutputMessage { Message = x } });
+            WriteLineCore(line, x => new[] { new StringBuildMessage { Message = x } });
         }
 
         public override void WriteLine(string line)
@@ -158,10 +158,10 @@ public class ExeRunner
 
         public override void WriteLineWithoutProcessing(string line)
         {
-            WriteLineCore(line, x => new[] { new StringOutputMessage { Message = x } });
+            WriteLineCore(line, x => new[] { new StringBuildMessage { Message = x } });
         }
 
-        private void WriteLineCore(string jsonLine, Func<string, OutputMessage[]> jsonProcessor)
+        private void WriteLineCore(string jsonLine, Func<string, Common.BuildMessage[]> jsonProcessor)
         {
             var lines = jsonProcessor(jsonLine);
             Array.ForEach(

@@ -1,23 +1,19 @@
 using System;
 using System.ComponentModel.Composition;
 using System.Threading.Tasks;
-using AutoMapper;
 using EnsureThat;
 using KS.RustAnalyzer.Common;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.Workspace.Build;
-using static System.Windows.Forms.DataFormats;
 
 namespace KS.RustAnalyzer.VS;
 
-[Export(typeof(IOutputWindowPane))]
+[Export(typeof(IBuildOutputSink))]
 [PartCreationPolicy(CreationPolicy.Shared)]
-public sealed class OutputWindowPane : IOutputWindowPane
+public sealed class BuildOutputSink : IBuildOutputSink
 {
     private static readonly Guid BuildOutputPaneGuid = VSConstants.OutputWindowPaneGuid.BuildOutputPane_guid;
-    private readonly IMapper _buildMessageMapper = new MapperConfiguration(cfg => cfg.CreateMap<BuildOutputMessage, BuildMessage>()).CreateMapper();
     private IVsOutputWindowPane _buildOutputPane;
 
     [Import]
@@ -26,7 +22,7 @@ public sealed class OutputWindowPane : IOutputWindowPane
     [Import]
     private SVsServiceProvider ServiceProvider { get; set; }
 
-    public void WriteLine(Func<BuildMessage, object, Task> buildMessageReporter, OutputMessage message)
+    public void WriteLine(Func<Common.BuildMessage, Task> buildOutputTaskReporter, Common.BuildMessage message)
     {
         try
         {
@@ -35,7 +31,7 @@ public sealed class OutputWindowPane : IOutputWindowPane
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 Initialize();
 
-                if (message is StringOutputMessage sm)
+                if (message is StringBuildMessage sm)
                 {
                     if (string.IsNullOrEmpty(sm.Message))
                     {
@@ -46,10 +42,9 @@ public sealed class OutputWindowPane : IOutputWindowPane
                     var hr = _buildOutputPane.OutputStringThreadSafe(sm.Message + Environment.NewLine);
                     Ensure.That(ErrorHandler.Succeeded(hr));
                 }
-                else if (message is BuildOutputMessage bm)
+                else if (message is DetailedBuildMessage bm)
                 {
-                    // TODO: wait for the results
-                    _ = buildMessageReporter(_buildMessageMapper.Map<BuildMessage>(bm), null);
+                    await buildOutputTaskReporter(bm);
                 }
                 else
                 {

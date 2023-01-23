@@ -20,8 +20,12 @@ public sealed class TelemetryService : ITelemetryService
     public TelemetryService()
     {
         var configuration = TelemetryConfiguration.CreateDefault();
+        var builder = configuration.DefaultTelemetrySink.TelemetryProcessorChainBuilder;
+        builder.Use((next) => new FilterTelemetryProcessor(next));
+        builder.Build();
+
         configuration.TelemetryInitializers.Add(new DefaultPropertiesTelemetryInitializer());
-        SetConnectionString(configuration);
+        configuration.ConnectionString = "InstrumentationKey=e2b04606-c5f2-41e5-b906-c6310a0c1900;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/";
         _telemetryClient = new TelemetryClient(configuration);
     }
 
@@ -54,27 +58,6 @@ public sealed class TelemetryService : ITelemetryService
             });
     }
 
-    private void SetConnectionString(TelemetryConfiguration configuration)
-    {
-        if (IsExperimentalInstance())
-        {
-            return;
-        }
-
-        configuration.ConnectionString = "InstrumentationKey=e2b04606-c5f2-41e5-b906-c6310a0c1900;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/";
-    }
-
-    private bool IsExperimentalInstance()
-    {
-        var env = Process.GetCurrentProcess().StartInfo.Environment;
-        if (env.TryGetValue("VSROOTSUFFIX", out string rootSuffix) && rootSuffix.Equals("exp", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        return false;
-    }
-
     public class DefaultPropertiesTelemetryInitializer : ITelemetryInitializer
     {
         public void Initialize(ITelemetry telemetry)
@@ -84,6 +67,37 @@ public sealed class TelemetryService : ITelemetryService
             {
                 telemetryWithProperties.Properties["VsixVersion"] = Vsix.Version;
             }
+        }
+    }
+
+    public class FilterTelemetryProcessor : ITelemetryProcessor
+    {
+        public FilterTelemetryProcessor(ITelemetryProcessor next)
+        {
+            Next = next;
+        }
+
+        private ITelemetryProcessor Next { get; set; }
+
+        public void Process(ITelemetry item)
+        {
+            if (IsExperimentalInstance())
+            {
+                return;
+            }
+
+            Next.Process(item);
+        }
+
+        private bool IsExperimentalInstance()
+        {
+            var env = System.Diagnostics.Process.GetCurrentProcess().StartInfo.Environment;
+            if (env.TryGetValue("VSROOTSUFFIX", out string rootSuffix) && rootSuffix.Equals("exp", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }

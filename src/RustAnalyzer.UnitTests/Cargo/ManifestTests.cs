@@ -49,6 +49,19 @@ public class ManifestTests
     }
 
     [Theory]
+    [InlineData(@"hello_world\Cargo.toml", @"hello_world")]
+    [InlineData(@"hello_library\Cargo.toml", @"hello_lib")]
+    [InlineData(@"hello_workspace\main\Cargo.toml", @"main")]
+    [InlineData(@"hello_workspace\shared\Cargo.toml", @"shared")]
+    public void StartupProjectEntryNameTests(string cargoRelPath, string startupProjectEntryName)
+    {
+        string cmPath = Path.Combine(ThisTestRoot, cargoRelPath);
+        var cargo = Manifest.Create(cmPath);
+
+        cargo.StartupProjectEntryName.Should().Be(startupProjectEntryName);
+    }
+
+    [Theory]
     [InlineData(@"hello_library\Cargo.toml", "hello_library", @"hello_library\target\debug\hello_lib.rlib")]
     [InlineData(@"hello_workspace\main\Cargo.toml", "hello_workspace", @"hello_workspace\target\debug\main.exe")]
     public void WorkspaceRootTests(string cargoRelPath, string workspaceRelPath, string targetFileRelPath)

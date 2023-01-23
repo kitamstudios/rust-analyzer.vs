@@ -18,7 +18,7 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
     private const string ProviderType = "{72D3FCEF-0000-4266-B8DD-D3ED06E35A2B}";
 
     [Import]
-    public IOutputWindowPane OutputPane { get; set; }
+    public IBuildOutputSink OutputPane { get; set; }
 
     [Import]
     public ILogger L { get; set; }

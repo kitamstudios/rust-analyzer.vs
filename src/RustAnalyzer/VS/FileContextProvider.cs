@@ -15,11 +15,11 @@ namespace KS.RustAnalyzer.VS;
 public sealed class FileContextProvider : IFileContextProvider, IFileContextProvider<string>
 {
     private readonly string _workspaceRoot;
-    private readonly IOutputWindowPane _outputPane;
+    private readonly IBuildOutputSink _outputPane;
     private readonly ITelemetryService _t;
     private readonly ILogger _l;
 
-    public FileContextProvider(string workspaceRoot, IOutputWindowPane outputPane, ITelemetryService t, ILogger l)
+    public FileContextProvider(string workspaceRoot, IBuildOutputSink outputPane, ITelemetryService t, ILogger l)
     {
         _workspaceRoot = workspaceRoot;
         _outputPane = outputPane;

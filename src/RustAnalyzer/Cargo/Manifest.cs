@@ -49,7 +49,7 @@ public class Manifest
 
     public string TargetFileNameWithoutExtension => GetPackageName();
 
-    public string StartupProjectEntryName => $"{Path.GetFileName(Path.GetDirectoryName(FullPath))}";
+    public string StartupProjectEntryName => $"{TargetFileNameWithoutExtension}";
 
     public bool IsPackage => _model.ContainsKey(KeyNamePackage);
 

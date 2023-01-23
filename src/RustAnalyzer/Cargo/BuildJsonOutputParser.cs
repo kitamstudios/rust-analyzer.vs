@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using KS.RustAnalyzer.Common;
 using Newtonsoft.Json.Linq;
-using static KS.RustAnalyzer.Common.BuildOutputMessage;
+using static KS.RustAnalyzer.Common.DetailedBuildMessage;
 
 namespace KS.RustAnalyzer.Cargo;
 
@@ -30,18 +30,16 @@ public static class BuildJsonOutputParser
     private static readonly Regex CompilerArtifactMessageCracker =
         new (@"^(.*) (.*) \((.*)\+(.*)\)$", RegexOptions.Compiled);
 
-    public static OutputMessage[] Parse(string workspaceRoot, string jsonLine, ILogger l, ITelemetryService t)
+    public static BuildMessage[] Parse(string workspaceRoot, string jsonLine, ILogger l, ITelemetryService t)
     {
         dynamic obj;
         try
         {
             obj = JObject.Parse(jsonLine);
         }
-        catch (Exception e)
+        catch
         {
-            l.WriteLine("CargoJsonOutputParser failed to parse line: {0}. Exception {1}.", jsonLine, e);
-            t.TrackException(e, new[] { ("Id", "JObjectParse"), ("Line", jsonLine) });
-            return new[] { new StringOutputMessage { Message = jsonLine } };
+            return new[] { new StringBuildMessage { Message = jsonLine } };
         }
 
         try
@@ -59,24 +57,24 @@ public static class BuildJsonOutputParser
         {
             l.WriteLine("CargoJsonOutputParser failed to parse line: {0}. Exception {1}.", jsonLine, e);
             t.TrackException(e, new[] { ("Id", "ParseCompilerX"), ("Line", jsonLine) });
-            return new[] { new StringOutputMessage { Message = jsonLine } };
+            return new[] { new StringBuildMessage { Message = jsonLine } };
         }
 
-        return Array.Empty<OutputMessage>();
+        return Array.Empty<BuildMessage>();
     }
 
     // TODO: Test for 0 spans, 1 spans, multiple spans.
-    private static OutputMessage[] ParseCompilerMessage(string workspaceRoot, dynamic obj)
+    private static BuildMessage[] ParseCompilerMessage(string workspaceRoot, dynamic obj)
     {
         if (obj.message.spans == null || obj.message.spans.Count == 0)
         {
-            return new OutputMessage[] { CreateBuildMessage(workspaceRoot, obj) };
+            return new BuildMessage[] { CreateBuildMessage(workspaceRoot, obj) };
         }
 
         return (obj.message.spans as IEnumerable<dynamic>).Select(
             s =>
             {
-                BuildOutputMessage msg = CreateBuildMessage(workspaceRoot, obj, s.file_name, s.line_start, s.column_start);
+                DetailedBuildMessage msg = CreateBuildMessage(workspaceRoot, obj, s.file_name, s.line_start, s.column_start);
                 return msg;
             }).ToArray();
     }
@@ -89,9 +87,9 @@ public static class BuildJsonOutputParser
             : defaultValue;
     }
 
-    private static BuildOutputMessage CreateBuildMessage(string workspaceRoot, dynamic obj, dynamic fileInfo = null, dynamic lineInfo = null, dynamic colInfo = null)
+    private static DetailedBuildMessage CreateBuildMessage(string workspaceRoot, dynamic obj, dynamic fileInfo = null, dynamic lineInfo = null, dynamic colInfo = null)
     {
-        var msg = new BuildOutputMessage
+        var msg = new DetailedBuildMessage
         {
             Code = GetMessageCode(obj.message),
             ColumnNumber = GetIntValue(colInfo, 1),
@@ -127,7 +125,7 @@ public static class BuildJsonOutputParser
             : "RS0000";
     }
 
-    private static dynamic GetLogMessage(dynamic message, BuildOutputMessage msg)
+    private static dynamic GetLogMessage(dynamic message, DetailedBuildMessage msg)
     {
         var logMsgText = $@"{msg.File}({msg.LineNumber},{msg.ColumnNumber}): {msg.Type} {msg.Code}: {msg.TaskText}";
         var rendered = message.rendered != null ? $"Details:\r\n{message.rendered.Value}" : string.Empty;
@@ -142,11 +140,11 @@ public static class BuildJsonOutputParser
             : Level.Error;
     }
 
-    private static OutputMessage[] ParseCompilerArtifact(dynamic obj)
+    private static BuildMessage[] ParseCompilerArtifact(dynamic obj)
     {
         if ((bool)obj.fresh.Value)
         {
-            return Array.Empty<OutputMessage>();
+            return Array.Empty<BuildMessage>();
         }
 
         var matches = CompilerArtifactMessageCracker.Matches(obj.package_id.Value as string);
@@ -156,6 +154,6 @@ public static class BuildJsonOutputParser
             path = $" ({new Uri(matches[0].Groups[4].Value).LocalPath})";
         }
 
-        return new[] { new StringOutputMessage { Message = $"   Compiling {matches[0].Groups[1].Value} v{matches[0].Groups[2].Value}{path}" } };
+        return new[] { new StringBuildMessage { Message = $"   Compiling {matches[0].Groups[1].Value} v{matches[0].Groups[2].Value}{path}" } };
     }
 }

@@ -1,26 +1,25 @@
 using System;
 using System.Threading.Tasks;
-using Microsoft.VisualStudio.Workspace.Build;
 
 namespace KS.RustAnalyzer.Common;
 
-public interface IOutputWindowPane
+public interface IBuildOutputSink
 {
     void Clear();
 
-    void WriteLine(Func<BuildMessage, object, Task> buildMessageReporter, OutputMessage message);
+    void WriteLine(Func<BuildMessage, Task> buildOutputTaskReporter, BuildMessage message);
 }
 
-public abstract class OutputMessage
+public abstract class BuildMessage
 {
 }
 
-public class StringOutputMessage : OutputMessage
+public class StringBuildMessage : BuildMessage
 {
     public string Message { get; set; }
 }
 
-public class BuildOutputMessage : OutputMessage
+public class DetailedBuildMessage : BuildMessage
 {
     public enum Level
     {
