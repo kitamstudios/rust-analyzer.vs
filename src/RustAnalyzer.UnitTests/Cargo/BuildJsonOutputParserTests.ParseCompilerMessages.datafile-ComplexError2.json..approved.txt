@@ -1,0 +1,12 @@
+﻿[0] = {
+  "Code": "RS0000",
+  "ProjectFile": "D:\\src\\dpt\\pls\\test_app\\Cargo.toml",
+  "Type": 2,
+  "LogMessage": "D:\\src\\dpt\\pls\\test_app\\src\\main.rs(1,1): Error RS0000: aborting due to previous error; 1 warning emitted\r\nDetails:\r\nerror: aborting due to previous error; 1 warning emitted\n\n",
+  "TaskText": "aborting due to previous error; 1 warning emitted",
+  "File": "D:\\src\\dpt\\pls\\test_app\\src\\main.rs",
+  "LineNumber": 1,
+  "ColumnNumber": 1,
+  "SubCategory": null,
+  "HelpKeyword": "RS0000"
+}

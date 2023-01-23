@@ -1,0 +1,12 @@
+﻿[0] = {
+  "Code": "unused_imports",
+  "ProjectFile": "D:\\src\\dpt\\pls\\test_app\\Cargo.toml",
+  "Type": 1,
+  "LogMessage": "d:\\src\\ks\\rust-analyzer\\src\\rustanalyzer.unittests\\bin\\debug\\cargo\\testdata\\test_app\\src\\main.rs(2,5): Warning unused_imports: unused import: `pls_core_extras::logger::ColoredConsoleLogger`\r\nDetails:\r\nwarning: unused import: `pls_core_extras::logger::ColoredConsoleLogger`\n --> test_app\\src\\main.rs:2:5\n  |\n2 | use pls_core_extras::logger::ColoredConsoleLogger;\n  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(unused_imports)]` on by default\n\n",
+  "TaskText": "unused import: `pls_core_extras::logger::ColoredConsoleLogger`",
+  "File": "d:\\src\\ks\\rust-analyzer\\src\\rustanalyzer.unittests\\bin\\debug\\cargo\\testdata\\test_app\\src\\main.rs",
+  "LineNumber": 2,
+  "ColumnNumber": 5,
+  "SubCategory": null,
+  "HelpKeyword": "unused_imports"
+}
