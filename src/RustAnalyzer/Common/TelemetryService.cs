@@ -63,10 +63,6 @@ public sealed class TelemetryService : ITelemetryService
         public void Initialize(ITelemetry telemetry)
         {
             telemetry.Context.Component.Version = Vsix.Version;
-            if (telemetry is ISupportProperties telemetryWithProperties)
-            {
-                telemetryWithProperties.Properties["VsixVersion"] = Vsix.Version;
-            }
         }
     }
 

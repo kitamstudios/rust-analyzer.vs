@@ -144,9 +144,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <Import Project="..\KS.Tests.Common.targets" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!--
     Ensure this is always the last line.
   -->
-  <Import Project="..\KS.Tests.Common.targets" />
 </Project>

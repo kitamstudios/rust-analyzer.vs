@@ -54,6 +54,15 @@ jobs:
         searchFolder: \_built\
         runInParallel: true
 
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Tests Results
+        path: "$env:GITHUB_WORKSPACE/TestResults/*.trx"
+        reporter: dotnet-trx
+        fail-on-error: true
+
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:

@@ -6,6 +6,7 @@
     <LangVersion>10.0</LangVersion>
     <AnalysisLevel>6.0</AnalysisLevel>
     <AssemblyName>KS.$(MSBuildProjectName)</AssemblyName>
+    <TargetName>KS.$(MSBuildProjectName)</TargetName>
     <RootNamespace>KS.$(MSBuildProjectName)</RootNamespace>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Product>rust-analyzer - Rust language support for Visual Studio.</Product>
