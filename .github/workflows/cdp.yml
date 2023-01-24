@@ -60,7 +60,7 @@ jobs:
       uses: microsoft/vstest-action@v1.0.0
       with:
         testAssembly: '*.UnitTests.dll'
-        searchFolder: ${{ env.OutDir }}
+        searchFolder: '${{ env.OutDir }}\\'
         runInParallel: true
 
     - name: Test Report
