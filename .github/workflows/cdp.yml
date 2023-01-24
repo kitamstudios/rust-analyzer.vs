@@ -15,6 +15,7 @@ env:
   SolutionPath: src\RustAnalyzer.sln
   VsixManifestPath: src\RustAnalyzer\source.extension.vsixmanifest
   VsixManifestSourcePath: src\RustAnalyzer\source.extension.cs
+  TestAdapterNameNoExt: KS.RustAnalyzer.TestAdapter
 
 jobs:
   build-test-deploy:
@@ -47,11 +48,19 @@ jobs:
     - name: Build
       run: msbuild $env:SolutionPath /m /t:rebuild /restore /p:OutDir=$env:OutDir
 
+    - name: Zip TestAdapter
+      uses: vimtor/action-zip@v1
+      with:
+        files: |
+          '${{ env.OutDir }}\\${{ env.TestAdapterNameNoExt }}.dll'
+          '${{ env.OutDir }}\\${{ env.TestAdapterNameNoExt }}.pdb'
+        dest: '${{ env.OutDir }}\\${{ env.TestAdapterNameNoExt }}.zip'
+
     - name: Test
       uses: microsoft/vstest-action@v1.0.0
       with:
         testAssembly: '*.UnitTests.dll'
-        searchFolder: \_built\
+        searchFolder: ${{ env.OutDir }}
         runInParallel: true
 
     - name: Test Report
@@ -63,11 +72,19 @@ jobs:
         reporter: dotnet-trx
         fail-on-error: true
 
-    - name: Upload artifact
+    - name: Upload VSIX
       uses: actions/upload-artifact@v3
       with:
         name: ${{ github.event.repository.name }}.zip
-        path: \_built\${{ env.VsixFileName }}
+        path: |
+          '${{ env.OutDir }}\\${{ env.VsixFileName }}''
+        if-no-files-found: error
+
+    - name: Upload TestAdapter
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.TestAdapterNameNoExt }}.zip
+        path: '${{ env.OutDir }}\\${{ env.TestAdapterNameNoExt }}.zip'
         if-no-files-found: error
 
   publish:
@@ -79,16 +96,22 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Download Package artifact
-        id: download
+      - name: Download VSIX
+        id: downloadvx
         uses: actions/download-artifact@v3
         with:
           name: ${{ github.event.repository.name }}.zip
 
+      - name: Download TestAdapter
+        id: downloadta
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ env.TestAdapterNameNoExt }}.zip
+
       - name: Upload to Open VSIX
         uses: timheuer/openvsixpublish@v1
         with:
-          vsix-file: '${{ steps.download.outputs.download-path }}\\${{ env.VsixFileName }}'
+          vsix-file: '${{ steps.downloadvx.outputs.download-path }}\\${{ env.VsixFileName }}'
 
       - name: Tag and Release
         if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]') }}
@@ -99,12 +122,13 @@ jobs:
           tag_name: ${{ needs.build-test-deploy.outputs.version }}
           name: Release ${{ needs.build-test-deploy.outputs.version }}
           files: |
-            ${{ steps.download.outputs.download-path }}/**/*.vsix
+            '${{ steps.downloadvx.outputs.download-path }}\\${{ env.VsixFileName }}'
+            '${{ steps.downloadta.outputs.download-path }}\\${{ env.TestAdapterNameNoExt }}.zip'
 
       - name: Publish extension to Marketplace
         if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]') }}
         uses: cezarypiatek/VsixPublisherAction@0.1
         with:
-          extension-file: '${{ steps.download.outputs.download-path }}\\${{ env.VsixFileName }}'
+          extension-file: '${{ steps.downloadvx.outputs.download-path }}\\${{ env.VsixFileName }}'
           publish-manifest-file: 'vs-publish.json'
           personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
