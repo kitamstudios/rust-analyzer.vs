@@ -26,7 +26,7 @@ jobs:
     env:
       Configuration: Release
       DeployExtension: False
-      OutDir: \_built
+      OutDir: \_built\
 
     steps:
     - uses: actions/checkout@v2
@@ -48,19 +48,34 @@ jobs:
     - name: Build
       run: msbuild $env:SolutionPath /m /t:rebuild /restore /p:OutDir=$env:OutDir
 
+    - name: Upload VSIX
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ github.event.repository.name }}.zip
+        path: |
+          '${{ env.OutDir }}${{ env.VsixFileName }}''
+        if-no-files-found: error
+
     - name: Zip TestAdapter
       uses: vimtor/action-zip@v1
       with:
         files: |
-          '${{ env.OutDir }}\\${{ env.TestAdapterNameNoExt }}.dll'
-          '${{ env.OutDir }}\\${{ env.TestAdapterNameNoExt }}.pdb'
-        dest: '${{ env.OutDir }}\\${{ env.TestAdapterNameNoExt }}.zip'
+          '${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.dll'
+          '${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.pdb'
+        dest: '${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.zip'
+
+    - name: Upload TestAdapter
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.TestAdapterNameNoExt }}.zip
+        path: '${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.zip'
+        if-no-files-found: error
 
     - name: Test
       uses: microsoft/vstest-action@v1.0.0
       with:
         testAssembly: '*.UnitTests.dll'
-        searchFolder: '${{ env.OutDir }}\\'
+        searchFolder: '${{ env.OutDir }}'
         runInParallel: true
 
     - name: Test Report
@@ -71,21 +86,6 @@ jobs:
         path: TestResults/*.trx
         reporter: dotnet-trx
         fail-on-error: true
-
-    - name: Upload VSIX
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ github.event.repository.name }}.zip
-        path: |
-          '${{ env.OutDir }}\\${{ env.VsixFileName }}''
-        if-no-files-found: error
-
-    - name: Upload TestAdapter
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ env.TestAdapterNameNoExt }}.zip
-        path: '${{ env.OutDir }}\\${{ env.TestAdapterNameNoExt }}.zip'
-        if-no-files-found: error
 
   publish:
     name: Publish
