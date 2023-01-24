@@ -59,7 +59,7 @@ jobs:
       if: always()
       with:
         name: Tests Results
-        path: "${{ env.GITHUB_WORKSPACE }}/TestResults/*.trx"
+        path: TestResults/*.trx
         reporter: dotnet-trx
         fail-on-error: true
 
