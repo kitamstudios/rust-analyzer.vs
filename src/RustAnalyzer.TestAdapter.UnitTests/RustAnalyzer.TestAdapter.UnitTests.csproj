@@ -1,0 +1,85 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\TestProjects\hello_library\Cargo.toml">
+      <Link>Cargo\TestData\hello_library\Cargo.toml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\TestProjects\hello_library\src\lib.rs">
+      <Link>Cargo\TestData\hello_library\src\lib.rs</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\TestProjects\hello_workspace2\Cargo.toml">
+      <Link>Cargo\TestData\hello_workspace2\Cargo.toml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\TestProjects\hello_workspace\Cargo.toml">
+      <Link>Cargo\TestData\hello_workspace\Cargo.toml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\TestProjects\hello_workspace\main\Cargo.toml">
+      <Link>Cargo\TestData\hello_workspace\main\Cargo.toml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\TestProjects\hello_workspace\main\src\main.rs">
+      <Link>Cargo\TestData\hello_workspace\main\src\main.rs</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\TestProjects\hello_workspace\shared\Cargo.toml">
+      <Link>Cargo\TestData\hello_workspace\shared\Cargo.toml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\TestProjects\hello_workspace\shared\src\lib.rs">
+      <Link>Cargo\TestData\hello_workspace\shared\src\lib.rs</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\TestProjects\hello_world\Cargo.toml">
+      <Link>Cargo\TestData\hello_world\Cargo.toml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\TestProjects\hello_world\src\main.rs">
+      <Link>Cargo\TestData\hello_world\src\main.rs</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\TestProjects\not_a_project\src\main.rs">
+      <Link>Cargo\TestData\not_a_project\src\main.rs</Link>
+    </None>
+    <None Include="Cargo\TestData\CompilerArtifact3.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Cargo\TestData\CompilerArtifact2.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Cargo\TestData\CompilerArtifact1.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Cargo\TestData\ComplexError4.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Cargo\TestData\ComplexError3.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Cargo\TestData\ComplexError2.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Cargo\TestData\ComplexWarning1.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Cargo\TestData\ComplexError1.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RustAnalyzer.TestAdapter\RustAnalyzer.TestAdapter.csproj" />
+  </ItemGroup>
+  
+  <Import Project="..\KS.Tests.Common.targets" />
+  
+</Project>

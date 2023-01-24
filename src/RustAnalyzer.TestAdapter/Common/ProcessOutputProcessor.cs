@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EnsureThat;
 
-namespace KS.RustAnalyzer.Common;
+namespace KS.RustAnalyzer.TestAdapter.Common;
 
 /// <summary>
 /// Stolen from https://github.com/microsoft/nodejstools/blob/main/Common/Product/SharedProject/ProcessOutput.cs.
@@ -125,7 +125,7 @@ public sealed class ProcessOutputProcessor : IDisposable
     /// </summary>
     public event EventHandler Exited;
 
-    public int? ProcessId => IsStarted ? Process.Id : (int?)null;
+    public int? ProcessId => IsStarted ? Process.Id : null;
 
     public Process Process { get; }
 
@@ -389,7 +389,7 @@ public sealed class ProcessOutputProcessor : IDisposable
             WorkingDirectory = workingDirectory
         };
 
-        if (!visible || (redirector != null))
+        if (!visible || redirector != null)
         {
             psi.RedirectStandardError = true;
             psi.RedirectStandardOutput = true;

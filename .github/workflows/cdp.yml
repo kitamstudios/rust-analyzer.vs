@@ -53,7 +53,7 @@ jobs:
       with:
         name: ${{ github.event.repository.name }}.zip
         path: |
-          '${{ env.OutDir }}${{ env.VsixFileName }}''
+          '${{ env.OutDir }}${{ env.VsixFileName }}'
         if-no-files-found: error
 
     - name: Zip TestAdapter

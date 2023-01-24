@@ -1,4 +1,5 @@
 using System.ComponentModel.Composition;
+using KS.RustAnalyzer.TestAdapter;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Utilities;
 

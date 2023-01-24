@@ -1,4 +1,4 @@
-namespace KS.RustAnalyzer.Common;
+namespace KS.RustAnalyzer.TestAdapter.Common;
 
 using System;
 using System.Collections.Generic;
@@ -27,7 +27,7 @@ public static class PathUtilities
 
     public static bool ExistsOnPath(this string fileName)
     {
-        return SearchInPath(fileName) != null;
+        return fileName.SearchInPath() != null;
     }
 
     public static string SearchInPath(this string fileName)

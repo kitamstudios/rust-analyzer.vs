@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using EnsureThat;
-using KS.RustAnalyzer.Common;
+using KS.RustAnalyzer.TestAdapter.Common;
 using Tomlyn;
 using Tomlyn.Model;
 
-namespace KS.RustAnalyzer.Cargo;
+namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
 /// <summary>
 /// NOTE: Assuming defaults to start with. Gradually TDD in the common and then lesser common cases.
@@ -38,7 +38,7 @@ public class Manifest
 
     public string WorkspaceRoot => GetWorkspaceRoot(FullPath);
 
-    public string FullPath { get; private set; }
+    public string FullPath { get; }
 
     // NOTE: From https://doc.rust-lang.org/cargo/reference/profiles.html#profiles.
     public IEnumerable<string> Profiles => ProfileInfos.Keys;
@@ -81,11 +81,11 @@ public class Manifest
 
     public static bool TryGetParentManifest(string workspaceRoot, string filePath, out string parentCargoPath)
     {
-        var parentManifestPath = Path.Combine(workspaceRoot, Constants.CargoFileName);
+        var parentManifestPath = Path.Combine(workspaceRoot, Constants.ManifestFileName);
         var currentPath = filePath;
         while ((currentPath = Path.GetDirectoryName(currentPath)) != null)
         {
-            var candidateManifestPath = Path.Combine(currentPath, Constants.CargoFileName);
+            var candidateManifestPath = Path.Combine(currentPath, Constants.ManifestFileName);
             if (File.Exists(candidateManifestPath) && candidateManifestPath.Equals(parentManifestPath, StringComparison.OrdinalIgnoreCase))
             {
                 parentCargoPath = candidateManifestPath;
@@ -100,7 +100,7 @@ public class Manifest
     public static bool IsManifest(string filePath)
     {
         var fileName = Path.GetFileName(filePath);
-        return StringComparer.OrdinalIgnoreCase.Equals(fileName, Constants.CargoFileName);
+        return StringComparer.OrdinalIgnoreCase.Equals(fileName, Constants.ManifestFileName);
     }
 
     public string GetTargetPathForProfile(string profile)

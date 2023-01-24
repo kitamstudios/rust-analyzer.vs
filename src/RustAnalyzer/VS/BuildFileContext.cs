@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using KS.RustAnalyzer.Cargo;
-using KS.RustAnalyzer.Common;
+using KS.RustAnalyzer.TestAdapter.Cargo;
+using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Workspace.Build;
-using BuildMessage = KS.RustAnalyzer.Common.BuildMessage;
+using BuildMessage = KS.RustAnalyzer.TestAdapter.Common.BuildMessage;
 using WorkspaceBuildMessage = Microsoft.VisualStudio.Workspace.Build.BuildMessage;
 
 namespace KS.RustAnalyzer.VS;
@@ -54,9 +54,9 @@ public abstract class BuildFileContextBase : IBuildFileContext
         CommandFunc = FileContextActionInfo[contextTypeGuid];
     }
 
-    public string BuildConfiguration { get; private set; }
+    public string BuildConfiguration { get; }
 
-    public Func<string, string, string, IBuildOutputSink, Func<BuildMessage, Task>, ITelemetryService, Func<string, Task>, ILogger, CancellationToken, Task<bool>> CommandFunc { get; private set; }
+    public Func<string, string, string, IBuildOutputSink, Func<BuildMessage, Task>, ITelemetryService, Func<string, Task>, ILogger, CancellationToken, Task<bool>> CommandFunc { get; }
 
     public string FilePath { get; }
 

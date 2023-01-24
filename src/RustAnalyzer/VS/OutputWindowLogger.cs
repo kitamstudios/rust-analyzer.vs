@@ -1,6 +1,6 @@
 using System;
 using System.ComponentModel.Composition;
-using KS.RustAnalyzer.Common;
+using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 

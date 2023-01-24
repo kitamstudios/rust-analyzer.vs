@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using KS.RustAnalyzer.Common;
+using KS.RustAnalyzer.TestAdapter.Common;
 using Newtonsoft.Json.Linq;
-using static KS.RustAnalyzer.Common.DetailedBuildMessage;
+using static KS.RustAnalyzer.TestAdapter.Common.DetailedBuildMessage;
 
-namespace KS.RustAnalyzer.Cargo;
+namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
 /// <summary>
 /// References

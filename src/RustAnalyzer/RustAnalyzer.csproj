@@ -14,6 +14,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <IsNetFramework>true</IsNetFramework>
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <UseCodebase>true</UseCodebase>
     <IncludeAssemblyInVSIXContainer>true</IncludeAssemblyInVSIXContainer>
@@ -44,15 +45,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Cargo\ExeRunner.cs" />
-    <Compile Include="Cargo\Manifest.cs" />
-    <Compile Include="Cargo\BuildJsonOutputParser.cs" />
-    <Compile Include="Common\ArrayExtensions.cs" />
-    <Compile Include="Common\ILogger.cs" />
-    <Compile Include="Common\IBuildOutputSink.cs" />
-    <Compile Include="Common\PathUtilities.cs" />
-    <Compile Include="Common\ProcessOutputProcessor.cs" />
-    <Compile Include="Common\ProcessOutputRedirector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RustAnalyzerPackage.cs" />
     <Compile Include="source.extension.cs">
@@ -67,12 +59,9 @@
     <Compile Include="VS\FileScanner.cs" />
     <Compile Include="VS\LanguageClient.cs" />
     <Compile Include="VS\OutputWindowLogger.cs" />
-    <Compile Include="Common\TelemetryService.cs" />
-    <Compile Include="Common\ITelemetryService.cs" />
     <Compile Include="VS\FileScannerFactory.cs" />
     <Compile Include="VS\PredefinedCmds.cs" />
     <Compile Include="VS\BuildOutputSink.cs" />
-    <Compile Include="Constants.cs" />
     <Compile Include="VS\FileContextProviderFactory.cs" />
     <Compile Include="VS\BuildFileContext.cs" />
   </ItemGroup>
@@ -188,6 +177,8 @@
     <ProjectReference Include="..\RustAnalyzer.TestAdapter\RustAnalyzer.TestAdapter.csproj">
       <Project>{884a1604-99de-46dc-ae8d-f5893ce1abe1}</Project>
       <Name>RustAnalyzer.TestAdapter</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bBuiltProjectOutputGroupDependencies%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

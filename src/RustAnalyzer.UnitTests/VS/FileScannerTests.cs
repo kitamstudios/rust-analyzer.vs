@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
-using KS.RustAnalyzer.Common;
+using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.VS;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Indexing;

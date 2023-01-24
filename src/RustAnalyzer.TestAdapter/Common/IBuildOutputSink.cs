@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace KS.RustAnalyzer.Common;
+namespace KS.RustAnalyzer.TestAdapter.Common;
 
 public interface IBuildOutputSink
 {

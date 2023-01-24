@@ -1,4 +1,4 @@
-namespace KS.RustAnalyzer.Common;
+namespace KS.RustAnalyzer.TestAdapter.Common;
 
 public static class ArrayExtensions
 {

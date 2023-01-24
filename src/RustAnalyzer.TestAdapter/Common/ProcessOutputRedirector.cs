@@ -1,4 +1,4 @@
-namespace KS.RustAnalyzer.Common;
+namespace KS.RustAnalyzer.TestAdapter.Common;
 
 /// <summary>
 /// Stolen from https://github.com/microsoft/nodejstools/blob/main/Common/Product/SharedProject/ProcessOutput.cs.

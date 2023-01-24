@@ -2,16 +2,16 @@ using System;
 using System.IO;
 using System.Reflection;
 using FluentAssertions;
-using KS.RustAnalyzer.Cargo;
+using KS.RustAnalyzer.TestAdapter.Cargo;
 using Xunit;
 
-namespace KS.RustAnalyzer.UnitTests.Cargo;
+namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 
 public class ManifestTests
 {
     private static readonly string ThisTestRoot =
         Path.Combine(
-            Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)),
+            Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(Assembly.GetExecutingAssembly().Location).AbsolutePath)),
             @"Cargo\TestData").ToLowerInvariant();
 
     [Fact]

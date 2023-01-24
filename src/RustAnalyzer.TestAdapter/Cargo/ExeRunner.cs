@@ -4,10 +4,10 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using KS.RustAnalyzer.Common;
-using BuildMessage = KS.RustAnalyzer.Common.BuildMessage;
+using KS.RustAnalyzer.TestAdapter.Common;
+using BuildMessage = KS.RustAnalyzer.TestAdapter.Common.BuildMessage;
 
-namespace KS.RustAnalyzer.Cargo;
+namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
 public class ExeRunner
 {

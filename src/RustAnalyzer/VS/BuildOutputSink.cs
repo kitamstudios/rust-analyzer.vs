@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel.Composition;
 using System.Threading.Tasks;
 using EnsureThat;
-using KS.RustAnalyzer.Common;
+using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -22,7 +22,7 @@ public sealed class BuildOutputSink : IBuildOutputSink
     [Import]
     private SVsServiceProvider ServiceProvider { get; set; }
 
-    public void WriteLine(Func<Common.BuildMessage, Task> buildOutputTaskReporter, Common.BuildMessage message)
+    public void WriteLine(Func<BuildMessage, Task> buildOutputTaskReporter, BuildMessage message)
     {
         try
         {

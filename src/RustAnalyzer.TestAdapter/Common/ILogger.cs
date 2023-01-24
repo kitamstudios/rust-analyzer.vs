@@ -1,4 +1,4 @@
-namespace KS.RustAnalyzer.Common;
+namespace KS.RustAnalyzer.TestAdapter.Common;
 
 /// <summary>
 /// TODO: Move over to Microsoft.Logging.

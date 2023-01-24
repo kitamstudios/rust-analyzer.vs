@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using KS.RustAnalyzer.Common;
+using KS.RustAnalyzer.TestAdapter;
+using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Indexing;
 
@@ -10,7 +11,7 @@ namespace KS.RustAnalyzer.VS;
 [ExportFileScanner(
     type: ProviderType,
     language: "Rust",
-    supportedFileExtensions: new[] { Constants.CargoFileName, Constants.RustFileExtension, },
+    supportedFileExtensions: new[] { Constants.ManifestFileName, Constants.RustFileExtension, },
     supportedTypes: new[] { typeof(IReadOnlyCollection<FileDataValue>), typeof(IReadOnlyCollection<FileReferenceInfo>) },
     priority: ProviderPriority.Normal)]
 public class FileScannerFactory : IWorkspaceProviderFactory<IFileScanner>

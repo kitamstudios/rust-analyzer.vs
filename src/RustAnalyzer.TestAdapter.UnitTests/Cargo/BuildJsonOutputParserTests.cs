@@ -5,12 +5,13 @@ using System.Reflection;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
-using KS.RustAnalyzer.Common;
+using KS.RustAnalyzer.TestAdapter.Cargo;
+using KS.RustAnalyzer.TestAdapter.Common;
 using Moq;
 using Newtonsoft.Json;
 using Xunit;
 
-namespace KS.RustAnalyzer.UnitTests.Cargo;
+namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 
 public class BuildJsonOutputParserTests
 {
@@ -18,7 +19,7 @@ public class BuildJsonOutputParserTests
     private static readonly ITelemetryService T = Mock.Of<ITelemetryService>();
     private static readonly string ThisTestRoot =
         Path.Combine(
-            Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)),
+            Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(Assembly.GetExecutingAssembly().Location).AbsolutePath)),
             @"Cargo\TestData").ToLowerInvariant();
 
     [Fact]
@@ -26,7 +27,7 @@ public class BuildJsonOutputParserTests
     public void IfNotParsableReturnAsIs()
     {
         var jsonOutput = "   Compiling pest v2.5.2";
-        var output = RustAnalyzer.Cargo.BuildJsonOutputParser.Parse(ThisTestRoot, jsonOutput, L, T);
+        var output = BuildJsonOutputParser.Parse(ThisTestRoot, jsonOutput, L, T);
 
         Approvals.VerifyAll(output.Select(SerializeObject), label: string.Empty);
     }
@@ -40,7 +41,7 @@ public class BuildJsonOutputParserTests
     {
         NamerFactory.AdditionalInformation = $"datafile-{dataFile}";
         var jsonOutput = File.ReadAllText(Path.Combine(ThisTestRoot, dataFile));
-        var output = RustAnalyzer.Cargo.BuildJsonOutputParser.Parse(ThisTestRoot, jsonOutput, L, T);
+        var output = BuildJsonOutputParser.Parse(ThisTestRoot, jsonOutput, L, T);
 
         Approvals.VerifyAll(output.Select(SerializeObject), label: string.Empty);
     }
@@ -56,7 +57,7 @@ public class BuildJsonOutputParserTests
     {
         NamerFactory.AdditionalInformation = $"datafile-{dataFile}";
         var jsonOutput = File.ReadAllText(Path.Combine(ThisTestRoot, dataFile));
-        var output = RustAnalyzer.Cargo.BuildJsonOutputParser.Parse(@"d:\src\dpt\pls\test_app", jsonOutput, L, T);
+        var output = BuildJsonOutputParser.Parse(@"d:\src\dpt\pls\test_app", jsonOutput, L, T);
 
         Approvals.VerifyAll(output.Select(SerializeObject), label: string.Empty);
     }
