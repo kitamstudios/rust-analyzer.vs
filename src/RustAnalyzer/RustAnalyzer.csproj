@@ -46,12 +46,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Content Include="vs-threading.MainThreadAssertingMethods.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="vs-threading.MainThreadSwitchingMethods.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Compile Include="RustAnalyzerPackage.cs" />
     <Compile Include="source.extension.cs">
       <AutoGen>True</AutoGen>

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
@@ -9,18 +11,25 @@ using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter;
 
+[DebuggerDisplay("{Constants.ExecutorUriString}/{Source}")]
 public class TestContainer : ITestContainer
 {
-    public TestContainer(string source, DateTime timeStamp, ITestContainerDiscoverer discoverer, ILogger l, ITelemetryService t)
+    public TestContainer(string source, ITestContainerDiscoverer discoverer, ILogger l, ITelemetryService t)
     {
         Source = source;
-        TimeStamp = timeStamp;
+        TimeStamp = GetTimeStamp();
         Discoverer = discoverer;
         L = l;
         T = t;
 
         T.TrackEvent("NewTestContainer", ("Source", source));
-        L.WriteLine("New Test container {0} [{1}]", source, timeStamp);
+        L.WriteLine("New Test container {0} [{1}]", source, TimeStamp);
+    }
+
+    private TestContainer(TestContainer testContainer)
+        : this(testContainer.Source, testContainer.Discoverer, testContainer.L, testContainer.T)
+    {
+        TimeStamp = testContainer.TimeStamp;
     }
 
     public ITestContainerDiscoverer Discoverer { get; }
@@ -31,7 +40,7 @@ public class TestContainer : ITestContainer
 
     public FrameworkVersion TargetFramework => FrameworkVersion.None;
 
-    public Architecture TargetPlatform => Architecture.AnyCPU;
+    public Architecture TargetPlatform => Architecture.Default;
 
     public bool IsAppContainerTestContainer => false;
 
@@ -61,5 +70,15 @@ public class TestContainer : ITestContainer
 
     public IDeploymentData DeployAppContainer() => null;
 
-    public ITestContainer Snapshot() => this;
+    public ITestContainer Snapshot() => new TestContainer(this);
+
+    private DateTime GetTimeStamp()
+    {
+        if (File.Exists(Source))
+        {
+            return File.GetLastWriteTime(Source);
+        }
+
+        return DateTime.MinValue;
+    }
 }

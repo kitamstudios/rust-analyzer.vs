@@ -63,7 +63,7 @@ jobs:
         searchFolder: '${{ env.OutDir }}'
         runInParallel: true
 
-    - name: Test Report
+    - name: Generate test report
       uses: dorny/test-reporter@v1
       if: always()
       with:

@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using EnsureThat;
-using EnvDTE;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.ComponentModelHost;
@@ -70,7 +69,7 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 
         if (!_testContainersCache.ContainsKey(path))
         {
-            var added = _testContainersCache.TryAdd(path, new TestContainer(path, new FileInfo(path).LastWriteTime, this, L, T));
+            var added = _testContainersCache.TryAdd(path, new TestContainer(path, this, L, T));
             if (!added)
             {
                 L.WriteError("Failed to add container {0}.", path);
