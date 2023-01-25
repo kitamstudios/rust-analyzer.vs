@@ -31,6 +31,12 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Setup dotnet
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: |
+          6.0.x
+
     - name: Setup .NET build dependencies
       uses: timheuer/bootstrap-dotnet@v1
       with:
@@ -52,8 +58,8 @@ jobs:
       uses: vimtor/action-zip@v1
       with:
         files: |
-          '${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.dll'
-          '${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.pdb'
+          ${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.dll
+          ${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.pdb
         dest: '${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.zip'
 
     - name: Test

@@ -16,11 +16,10 @@ Download this extension from the [Visual Studio Marketplace][marketplace] or get
 
 ## Features
 
-- Basic workspace support.
+- Workspace support.
 - Build, Clean (errors in Error list with details in output window).
 - Debug.
 - Intellisense / Auto-complete / Goto definition / Code actions / Find references etc. all features from Rust language server.
-- Enhanced workspace support.
 
 ### Upcoming
 
