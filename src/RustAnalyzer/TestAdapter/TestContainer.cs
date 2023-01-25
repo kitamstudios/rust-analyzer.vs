@@ -23,11 +23,6 @@ public class TestContainer : ITestContainer
         L.WriteLine("New Test container {0} [{1}]", source, timeStamp);
     }
 
-    private TestContainer(TestContainer testContainer)
-        : this(testContainer.Source, testContainer.TimeStamp, testContainer.Discoverer, testContainer.L, testContainer.T)
-    {
-    }
-
     public ITestContainerDiscoverer Discoverer { get; }
 
     public string Source { get; }
@@ -36,7 +31,7 @@ public class TestContainer : ITestContainer
 
     public FrameworkVersion TargetFramework => FrameworkVersion.None;
 
-    public Architecture TargetPlatform => Architecture.Default;
+    public Architecture TargetPlatform => Architecture.AnyCPU;
 
     public bool IsAppContainerTestContainer => false;
 
@@ -66,5 +61,5 @@ public class TestContainer : ITestContainer
 
     public IDeploymentData DeployAppContainer() => null;
 
-    public ITestContainer Snapshot() => new TestContainer(this);
+    public ITestContainer Snapshot() => this;
 }

@@ -3,13 +3,17 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
-using System.Threading;
+using System.Linq;
 using System.Threading.Tasks;
+using EnsureThat;
+using EnvDTE;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.TestWindow.Extensibility;
 using Microsoft.VisualStudio.Workspace;
-using Microsoft.VisualStudio.Workspace.VSIntegration;
+using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter;
@@ -17,16 +21,24 @@ namespace KS.RustAnalyzer.TestAdapter;
 [Export(typeof(ITestContainerDiscoverer))]
 public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 {
-    private readonly IWorkspace _workspace;
     private readonly ConcurrentDictionary<string, TestContainer> _testContainersCache
         = new (StringComparer.OrdinalIgnoreCase);
 
+    private readonly IVsFolderWorkspaceService _workspaceFactory;
+    private IWorkspace _currentWorkspace;
+
     [ImportingConstructor]
-    public TestContainerDiscoverer([Import] IVsWorkspaceFactory workspaceFactory)
+    public TestContainerDiscoverer([Import] SVsServiceProvider serviceProvider)
     {
-        _workspace = workspaceFactory.CurrentWorkspace;
-        _workspace.GetFileWatcherService().OnFileSystemChanged += FileSystemChangedEventHandlerAsync;
-        _ = _workspace.JTF.RunAsync(OnFirstTimeLoadAsync);
+        _workspaceFactory = serviceProvider
+            .GetService<SComponentModel, IComponentModel>()
+            .GetService<IVsFolderWorkspaceService>();
+        _workspaceFactory.OnActiveWorkspaceChanged += ActiveWorkspaceChangedEventHandlerAsync;
+        _currentWorkspace = _workspaceFactory.CurrentWorkspace;
+        if (_currentWorkspace != null)
+        {
+            _ = ThreadHelper.JoinableTaskFactory.RunAsync(() => ActiveWorkspaceChangedEventHandlerAsync(this, new EventArgs()));
+        }
     }
 
     public event EventHandler TestContainersUpdated;
@@ -43,36 +55,70 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 
     private void TryUpdateTestContainersCache(string path, WatcherChangeTypes changeType = WatcherChangeTypes.Created)
     {
-        if (!Manifest.IsManifest(path))
+        Ensure.That(Manifest.IsManifest(path)).IsTrue();
+
+        if (!File.Exists(path))
+        {
+            var removed = _testContainersCache.TryRemove(path, out _);
+            if (!removed)
+            {
+                L.WriteError("Failed to remove container {0}.", path);
+            }
+
+            TestContainersUpdated?.Invoke(this, EventArgs.Empty);
+        }
+
+        if (!_testContainersCache.ContainsKey(path))
+        {
+            var added = _testContainersCache.TryAdd(path, new TestContainer(path, new FileInfo(path).LastWriteTime, this, L, T));
+            if (!added)
+            {
+                L.WriteError("Failed to add container {0}.", path);
+            }
+        }
+
+        TestContainersUpdated?.Invoke(this, EventArgs.Empty);
+    }
+
+    private bool IsPathInDirectory(string location, string path)
+    {
+        return new FileInfo(path).FullName.ToUpperInvariant().StartsWith(new DirectoryInfo(location).FullName.ToUpperInvariant());
+    }
+
+    private async Task ActiveWorkspaceChangedEventHandlerAsync(object sender, EventArgs eventArgs)
+    {
+        if (_currentWorkspace != null)
+        {
+            L.WriteLine("Unloading workspace at {0}", _currentWorkspace.Location);
+            _currentWorkspace.GetFileWatcherService().OnBatchFileSystemChanged -= BatchFileSystemChangedEventHandlerAsync;
+        }
+
+        if (_workspaceFactory.CurrentWorkspace == null)
         {
             return;
         }
 
-        if (changeType.HasFlag(WatcherChangeTypes.Deleted) || changeType.HasFlag(WatcherChangeTypes.Renamed))
-        {
-            if (_testContainersCache.TryRemove(path, out _))
-            {
-                TestContainersUpdated?.Invoke(this, EventArgs.Empty);
-                return;
-            }
-        }
-
-        if (_testContainersCache.TryAdd(path, new TestContainer(path, new FileInfo(path).LastWriteTime, this, L, T)))
-        {
-            TestContainersUpdated?.Invoke(this, EventArgs.Empty);
-        }
+        _currentWorkspace = _workspaceFactory.CurrentWorkspace;
+        L.WriteLine("TestContainerDiscoverer loading new workspace at {0}", _currentWorkspace.Location);
+        T.TrackEvent("TestContainerDiscoverer.LoadWorkspace", ("Location", _currentWorkspace.Location));
+        _currentWorkspace.GetFileWatcherService().OnBatchFileSystemChanged += BatchFileSystemChangedEventHandlerAsync;
+        await _currentWorkspace.GetFindFilesService().FindFilesAsync(Constants.ManifestFileName, new FindFilesProgress(TryUpdateTestContainersCache));
     }
 
-    private Task FileSystemChangedEventHandlerAsync(object sender, FileSystemEventArgs eventArgs)
+    private Task BatchFileSystemChangedEventHandlerAsync(object sender, BatchFileSystemEventArgs eventArgs)
     {
-        TryUpdateTestContainersCache(eventArgs.FullPath, eventArgs.ChangeType);
+        foreach (var fsea in eventArgs.FileSystemEvents.Where(CanFileChangeTests))
+        {
+            TryUpdateTestContainersCache(fsea.FullPath, fsea.ChangeType);
+        }
+
         return Task.CompletedTask;
     }
 
-    private async Task OnFirstTimeLoadAsync()
+    private bool CanFileChangeTests(FileSystemEventArgs eventArgs)
     {
-        T.TrackEvent("LoadTestContainerDiscoverer");
-        await _workspace.GetFindFilesService().FindFilesAsync("Cargo.toml", new FindFilesProgress(TryUpdateTestContainersCache), CancellationToken.None);
+        // TODO: We need to expand the check to include .rs and possibly other files as well.
+        return Manifest.IsManifest(eventArgs.FullPath) && IsPathInDirectory(_currentWorkspace.Location, eventArgs.FullPath);
     }
 
     public class FindFilesProgress : IProgress<string>

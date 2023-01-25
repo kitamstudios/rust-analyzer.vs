@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.Composition;
+using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -27,15 +28,37 @@ public sealed class OutputWindowLogger : ILogger
             _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                if (EnsurePane())
-                {
-                    _pane.OutputStringThreadSafe($"{DateTime.Now:yyyyMMdd HHmmss} - {string.Format(format, args)}\n");
-                }
+                WriteCore(format, args);
             });
         }
         catch (Exception e)
         {
             T.TrackException(e);
+        }
+    }
+
+    public void WriteError(string format, params object[] args)
+    {
+        try
+        {
+            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                WriteCore("[ERROR]: " + format, args);
+            });
+        }
+        catch (Exception e)
+        {
+            T.TrackException(e);
+        }
+    }
+
+    private void WriteCore(string format, object[] args)
+    {
+        ThreadHelper.ThrowIfNotOnUIThread();
+        if (EnsurePane())
+        {
+            _pane.OutputStringThreadSafe($"{DateTime.Now:yyyyMMdd.HH.mm.ss} - {string.Format(format, args)}\n");
         }
     }
 
