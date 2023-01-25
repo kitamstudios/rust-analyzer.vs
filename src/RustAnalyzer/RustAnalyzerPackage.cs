@@ -67,7 +67,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                         $"- OK: Disable the above and restart VS. (You can enable them back later from Extensions > Manage Extensions.)\r\n- Cancel: Disable {Vsix.Name} and restart VS.");
                 if (mbRet == VSConstants.MessageBoxResult.IDOK)
                 {
-                    _telemetry?.TrackEvent("DisableIncompatExts", ("NumberOfExts", incompatibleExtensions.Count().ToString(CultureInfo.InvariantCulture)));
+                    _telemetry?.TrackEvent("DisableIncompatExts", ("Extensions", string.Join(",", incompatibleExtensions.Select(x => x.Id))));
                     foreach (var e in incompatibleExtensions)
                     {
                         exMgr.Disable(e.Extension);

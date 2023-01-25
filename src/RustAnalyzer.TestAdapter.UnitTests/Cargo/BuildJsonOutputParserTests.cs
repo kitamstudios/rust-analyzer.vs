@@ -19,7 +19,7 @@ public class BuildJsonOutputParserTests
     private static readonly ITelemetryService T = Mock.Of<ITelemetryService>();
     private static readonly string ThisTestRoot =
         Path.Combine(
-            Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(Assembly.GetExecutingAssembly().Location).AbsolutePath)),
+            Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)),
             @"Cargo\TestData").ToLowerInvariant();
 
     [Fact]
