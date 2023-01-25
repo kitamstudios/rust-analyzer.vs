@@ -51,9 +51,7 @@ jobs:
     - name: Zip TestAdapter
       uses: vimtor/action-zip@v1
       with:
-        files: |
-          ${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.dll
-          ${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.pdb
+        files: ${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.dll ${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.pdb
         dest: '${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.zip'
 
     - name: Test
