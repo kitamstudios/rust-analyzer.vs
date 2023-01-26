@@ -67,6 +67,7 @@ jobs:
         testAssembly: '*.UnitTests.dll'
         searchFolder: '${{ env.OutDir }}'
         runInParallel: true
+        resultLogsArtifactName: unit-tests-results-log
       continue-on-error: true
 
     - name: Generate test report
@@ -93,7 +94,7 @@ jobs:
         if-no-files-found: warn
 
   run-integration-tests:
-    name: Adapter integration tests
+    name: Integration tests
     needs: build-test-deploy
     runs-on: windows-2022
     env:
@@ -109,14 +110,17 @@ jobs:
         name: ${{ env.TestAdapterNameNoExt }}.zip
       continue-on-error: true
 
-    - name: Install TestAdapter
+    - name: Prepare for integration tests
       run: |
-        $adapterPathNoExt = "${env:itdownloadta}\\${env:TestAdapterNameNoExt}"
+        # Install adapter
+        $adapterPathNoExt = "${env:itdownloadta}\${env:TestAdapterNameNoExt}"
         echo ">>>> $adapterPathNoExt | $env:TestAdapterLocation"
         mkdir $env:TestAdapterLocation
-        move "${env:itdownloadta}\\${env:TestAdapterNameNoExt}.*" "$env:TestAdapterLocation" -Verbose
-        move "${env:itdownloadta}\\Microsoft.ApplicationInsights.*" "$env:TestAdapterLocation" -Verbose
+        Expand-Archive "${env:itdownloadta}\${env:TestAdapterNameNoExt}.zip" -DestinationPath $env:TestAdapterLocation
         dir $env:TestAdapterLocation
+
+        # Cleanup testresults
+        rmdir -rec -force TestResults -ErrorAction SilentlyContinue
       shell: pwsh
       env:
         itdownloadta: ${{ steps.itdownloadta.outputs.download-path }}
@@ -130,13 +134,14 @@ jobs:
         searchFolder: '.\src\TestProjects\workspace_with_tests\'
         runInParallel: true
         otherConsoleOptions: /logger:console;verbosity=detailed /logger:trx;LogFileName=${{ env.TestAdapterNameNoExt }}.trx
+        resultLogsArtifactName: integration-tests-results-log
         ifNoFilesFound: warn
       continue-on-error: true
 
     - name: Check integration test results
       run: |
-        dir ".\TestResults\${env:TestAdapterNameNoExt}.trx"
-        $xml = [xml] (gc ".\TestResults\${env:TestAdapterNameNoExt}.trx")
+        $trx = dir ".\TestResults\*.trx" | % { $_.FullName }
+        $xml = [xml] (gc $trx)
         $output = ($xml.TestRun.Results.UnitTestResult | % { "$($_.testName)=>$($_.outcome)" }) -join "; "
         if ($output -cne "tests::it_works_passing=>Passed; tests::it_works_failing=>Failed; tests::it_works_skipped=>Passed")
         {
@@ -150,9 +155,9 @@ jobs:
       if: always()
       with:
         name: Integration Tests Results
-        path: TestResults\${{ env.TestAdapterNameNoExt }}.trx
+        path: TestResults\*.trx
         reporter: dotnet-trx
-        fail-on-error: false
+        fail-on-error: true
       continue-on-error: true
 
   publish:

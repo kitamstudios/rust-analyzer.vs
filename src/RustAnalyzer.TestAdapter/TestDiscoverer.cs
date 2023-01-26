@@ -92,7 +92,7 @@ public class TestDiscoverer : ITestDiscoverer
             "tests::it_works_failing",
             "tests::it_works_passing",
             "tests::it_works_skipped",
-        }.AsEnumerable();
+        }.AsEnumerable().Select(x => x?.Replace("::", "."));
 
         return await Task.FromResult(tests);
     }
