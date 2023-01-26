@@ -84,7 +84,7 @@ public sealed class TelemetryService : ITelemetryService
 
         public void Process(ITelemetry item)
         {
-            if (IsExperimentalInstance())
+            if (IsExperimentalInstance() || IsTelemetryDisabled())
             {
                 return;
             }
@@ -92,15 +92,15 @@ public sealed class TelemetryService : ITelemetryService
             Next.Process(item);
         }
 
-        private bool IsExperimentalInstance()
+        private static bool IsExperimentalInstance()
         {
             var env = System.Diagnostics.Process.GetCurrentProcess().StartInfo.Environment;
-            if (env.TryGetValue("VSROOTSUFFIX", out string rootSuffix) && rootSuffix.Equals("exp", StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
+            return env.TryGetValue("VSROOTSUFFIX", out string rootSuffix) && rootSuffix.Equals("exp", StringComparison.OrdinalIgnoreCase);
+        }
 
-            return false;
+        private static bool IsTelemetryDisabled()
+        {
+            return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("RUSTANALYZER_TELEMETRY_DISABLED"));
         }
     }
 }

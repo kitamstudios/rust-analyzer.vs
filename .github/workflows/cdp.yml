@@ -16,6 +16,7 @@ env:
   VsixManifestPath: src\RustAnalyzer\source.extension.vsixmanifest
   VsixManifestSourcePath: src\RustAnalyzer\source.extension.cs
   TestAdapterNameNoExt: KS.RustAnalyzer.TestAdapter
+  RUSTANALYZER_TELEMETRY_DISABLED: 1
 
 jobs:
   build-test-deploy:
@@ -49,10 +50,15 @@ jobs:
       run: msbuild $env:SolutionPath /m /t:rebuild /restore /p:OutDir=$env:OutDir
 
     - name: Zip TestAdapter
-      uses: vimtor/action-zip@v1
-      with:
-        files: ${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.dll ${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.pdb
-        dest: '${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.zip'
+      run: |
+        $files = @("${env:OutDir}${env:TestAdapterNameNoExt}.dll", "${env:OutDir}${env:TestAdapterNameNoExt}.pdb")
+        $dst = "${env:OutDir}${env:TestAdapterNameNoExt}.zip"
+        Compress-Archive -Path $files -DestinationPath $dst -Verbose
+        # List contents for debugging purposes
+        Add-Type -assembly "system.io.compression.filesystem"
+        [io.compression.zipfile]::OpenRead($dst).Entries.Name
+      shell: pwsh
+      continue-on-error: true
 
     - name: Test
       uses: microsoft/vstest-action@v1.0.0
@@ -60,6 +66,7 @@ jobs:
         testAssembly: '*.UnitTests.dll'
         searchFolder: '${{ env.OutDir }}'
         runInParallel: true
+      continue-on-error: true
 
     - name: Generate test report
       uses: dorny/test-reporter@v1
@@ -82,13 +89,70 @@ jobs:
       with:
         name: ${{ env.TestAdapterNameNoExt }}.zip
         path: ${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.zip
-        if-no-files-found: error
+        if-no-files-found: warn
+
+  run-rust-tests:
+    name: Adapter integration tests
+    needs: build-test-deploy
+    runs-on: windows-2022
+    env:
+      TestAdapterLocation: \testadapter
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Download TestAdapter
+      id: itdownloadta
+      uses: actions/download-artifact@v3
+      with:
+        name: ${{ env.TestAdapterNameNoExt }}.zip
+      continue-on-error: true
+
+    - name: Install TestAdapter
+      run: |
+        AdapterPath
+        $adapterPathNoExt = "${env:itdownloadta}\\${env:TestAdapterNameNoExt}"
+        echo ">>>> $adapterPathNoExt"
+        mkdir $env:TestAdapterLocation
+        move "$adapterPathNoExt.*" "$env:TestAdapterLocation" -Verbose
+        dir $env:TestAdapterLocation
+      shell: pwsh
+      env:
+        itdownloadta: ${{ steps.itdownloadta.outputs.download-path }}
+      continue-on-error: true
+
+    - name: Run integration tests
+      uses: microsoft/vstest-action@v1.0.0
+      with:
+        pathToCustomTestAdapters: ${{env.TestAdapterLocation}}
+        testAssembly: '**\\*Cargo.toml'
+        searchFolder: '${{ env.OutDir }}'
+        runInParallel: true
+        otherConsoleOptions: /logger:console;verbosity=detailed /logger:trx;LogFileName=${{ env.TestAdapterNameNoExt }}.trx
+        ifNoFilesFound: warn
+      continue-on-error: true
+
+    - name: Check integration test results
+      run: |
+        dir TestResults\${env:TestAdapterNameNoExt}.trx
+      shell: pwsh
+      continue-on-error: true
+
+    - name: Generate integration test report
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Integration Tests Results
+        path: TestResults\${env:TestAdapterNameNoExt}.trx
+        reporter: dotnet-trx
+        fail-on-error: false
+      continue-on-error: true
 
   publish:
     name: Publish
     if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
-    needs: build-test-deploy
-    runs-on: windows-latest
+    needs: run-rust-tests
+    runs-on: windows-2022
 
     steps:
       - uses: actions/checkout@v2

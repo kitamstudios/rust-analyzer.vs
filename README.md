@@ -23,10 +23,11 @@ Download this extension from the [Visual Studio Marketplace][marketplace] or get
 
 ### Upcoming
 
-- Testing integration - 1 (unit, integration)
-- Test integration - 2 (document, example)
-- Examples (run & debug).
+- Test integration - 1 (unit / integration, run & debug)
 - Clippy / Fmt integration.
+- Test integration - 2 (document / example)
+- Folder enhancements (icons, context menus)
+- Examples (run & debug).
 - ChatGPT integration.
 - Basic crates.io integration.
 - Basic cargo management.

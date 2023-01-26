@@ -52,7 +52,7 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
 
     public IEnumerable<string> FilesToWatch => null;
 
-    public object MiddleLayer => new RustLanguageExtensionMiddleLayer(L);
+    public object MiddleLayer => null;
 
     public object CustomMessageTarget => null;
 
@@ -136,27 +136,27 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
         return Task.FromResult(failureContext);
     }
 
-    public class RustLanguageExtensionMiddleLayer : ILanguageClientMiddleLayer
+    public class LanguageExtensionMiddleLayer : ILanguageClientMiddleLayer
     {
         private readonly ILogger _logger;
 
-        public RustLanguageExtensionMiddleLayer(ILogger logger)
+        public LanguageExtensionMiddleLayer(ILogger logger)
         {
             _logger = logger;
         }
 
         public bool CanHandle(string methodName) => true;
 
-        public Task HandleNotificationAsync(string methodName, JToken methodParam, Func<JToken, Task> sendNotification)
+        public async Task HandleNotificationAsync(string methodName, JToken methodParam, Func<JToken, Task> sendNotification)
         {
             _logger.WriteLine("HandleNotificationAsync: {0}", methodName);
-            return sendNotification(methodParam);
+            await sendNotification(methodParam);
         }
 
-        public Task<JToken> HandleRequestAsync(string methodName, JToken methodParam, Func<JToken, Task<JToken>> sendRequest)
+        public async Task<JToken> HandleRequestAsync(string methodName, JToken methodParam, Func<JToken, Task<JToken>> sendRequest)
         {
             _logger.WriteLine("HandleRequestAsync: {0}", methodName);
-            return sendRequest(methodParam);
+            return await sendRequest(methodParam);
         }
     }
 }
