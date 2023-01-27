@@ -142,8 +142,9 @@ jobs:
       run: |
         $trx = dir ".\TestResults\*.trx" | % { $_.FullName }
         $xml = [xml] (gc $trx)
-        $output = ($xml.TestRun.Results.UnitTestResult | % { "$($_.testName)=>$($_.outcome)" }) -join "; "
-        if ($output -cne "tests::it_works_passing=>Passed; tests::it_works_failing=>Failed; tests::it_works_skipped=>Passed")
+        $output = ($xml.TestRun.Results.UnitTestResult | Sort-Object -Property testName | % { "$($_.testName)=>$($_.outcome)" }) -join "; "
+        echo ">>>> $output"
+        if ($output -cne 'tests::it_works_failing=>Failed; tests::it_works_passing=>Passed; tests::it_works_skipped=>Passed')
         {
           throw "test failed"
         }

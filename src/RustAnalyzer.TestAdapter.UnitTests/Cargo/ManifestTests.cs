@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using FluentAssertions;
 using KS.RustAnalyzer.TestAdapter.Cargo;
@@ -23,11 +24,13 @@ public class ManifestTests
         cargo.Should().BeEquivalentTo(
             new
             {
-                TargetFileNameWithoutExtension = "hello_world",
-                TargetFileExtension = ".exe",
-                TargetFileName = "hello_world.exe",
                 WorkspaceRoot = Path.GetDirectoryName(cmPath),
                 FullPath = cmPath,
+            });
+        cargo.Targets.ToArray()[0].Should().BeEquivalentTo(
+            new
+            {
+                TargetFileName = "hello_world.exe",
             });
     }
 
@@ -40,25 +43,28 @@ public class ManifestTests
         cargo.Should().BeEquivalentTo(
             new
             {
-                TargetFileNameWithoutExtension = "hello_lib",
-                TargetFileExtension = ".rlib",
-                TargetFileName = "hello_lib.rlib",
                 WorkspaceRoot = Path.GetDirectoryName(cmPath),
                 FullPath = cmPath,
+            });
+        cargo.Targets.ToArray()[0].Should().BeEquivalentTo(
+            new
+            {
+                TargetFileName = "hello_lib.rlib",
             });
     }
 
     [Theory]
-    [InlineData(@"hello_world\Cargo.toml", @"hello_world")]
-    [InlineData(@"hello_library\Cargo.toml", @"hello_lib")]
-    [InlineData(@"hello_workspace\main\Cargo.toml", @"main")]
-    [InlineData(@"hello_workspace\shared\Cargo.toml", @"shared")]
-    public void StartupProjectEntryNameTests(string cargoRelPath, string startupProjectEntryName)
+    [InlineData(@"hello_world\Cargo.toml", true, @"hello_world.exe")]
+    [InlineData(@"hello_library\Cargo.toml", false, @"hello_lib.rlib")]
+    [InlineData(@"hello_workspace\main\Cargo.toml", true, @"main.exe")]
+    [InlineData(@"hello_workspace\shared\Cargo.toml", false, @"shared.rlib")]
+    public void StartupProjectEntryNameTests(string cargoRelPath, bool isRunnable, string targetFileName)
     {
         string cmPath = Path.Combine(ThisTestRoot, cargoRelPath);
         var cargo = Manifest.Create(cmPath);
 
-        cargo.StartupProjectEntryName.Should().Be(startupProjectEntryName);
+        cargo.Targets.ToArray()[0].IsRunnable.Should().Be(isRunnable);
+        cargo.Targets.ToArray()[0].TargetFileName.Should().Be(targetFileName);
     }
 
     [Theory]

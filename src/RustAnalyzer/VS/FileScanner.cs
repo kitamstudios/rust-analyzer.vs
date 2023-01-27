@@ -49,11 +49,11 @@ public class FileScanner : IFileScanner
     {
         var allFileDataValues = new List<FileDataValue>();
 
-        if (owningManifest.Is(filePath) && owningManifest.IsPackage && owningManifest.IsBinary)
+        if (owningManifest.Is(filePath) && owningManifest.IsPackage && owningManifest.Targets.ToArray()[0].IsRunnable)
         {
             var launchSettings = new PropertySettings
             {
-                [LaunchConfigurationConstants.NameKey] = owningManifest.StartupProjectEntryName,
+                [LaunchConfigurationConstants.NameKey] = owningManifest.Targets.ToArray()[0].TargetFileName,
                 [LaunchConfigurationConstants.DebugTypeKey] = LaunchConfigurationConstants.NativeOptionKey,
             };
 

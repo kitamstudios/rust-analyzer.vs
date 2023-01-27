@@ -34,10 +34,6 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
             .GetService<IVsFolderWorkspaceService>();
         _workspaceFactory.OnActiveWorkspaceChanged += ActiveWorkspaceChangedEventHandlerAsync;
         _currentWorkspace = _workspaceFactory.CurrentWorkspace;
-        if (_currentWorkspace != null)
-        {
-            _ = ThreadHelper.JoinableTaskFactory.RunAsync(() => ActiveWorkspaceChangedEventHandlerAsync(this, new EventArgs()));
-        }
     }
 
     public event EventHandler TestContainersUpdated;
@@ -86,11 +82,10 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 
     private async Task ActiveWorkspaceChangedEventHandlerAsync(object sender, EventArgs eventArgs)
     {
-        if (_currentWorkspace != null)
-        {
-            L.WriteLine("Unloading workspace at {0}", _currentWorkspace.Location);
-            _currentWorkspace.GetFileWatcherService().OnBatchFileSystemChanged -= BatchFileSystemChangedEventHandlerAsync;
-        }
+        _testContainersCache.Clear();
+
+        L.WriteLine("Unloading workspace at {0}", _currentWorkspace?.Location);
+        _currentWorkspace.GetFileWatcherService().OnBatchFileSystemChanged -= BatchFileSystemChangedEventHandlerAsync;
 
         if (_workspaceFactory.CurrentWorkspace == null)
         {

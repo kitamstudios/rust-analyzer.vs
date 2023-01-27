@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Tomlyn;
@@ -40,24 +41,28 @@ public class Manifest
 
     public string FullPath { get; }
 
-    // NOTE: From https://doc.rust-lang.org/cargo/reference/profiles.html#profiles.
+    /// <summary>
+    /// From https://doc.rust-lang.org/cargo/reference/profiles.html#profiles.
+    /// </summary>
     public IEnumerable<string> Profiles => ProfileInfos.Keys;
-
-    public string TargetFileName => $"{TargetFileNameWithoutExtension}{TargetFileExtension}";
-
-    public string TargetFileExtension => GetPackageExtension();
-
-    public string TargetFileNameWithoutExtension => GetPackageName();
-
-    public string StartupProjectEntryName => $"{TargetFileNameWithoutExtension}";
 
     public bool IsPackage => _model.ContainsKey(KeyNamePackage);
 
     public bool IsWorkspace => _model.ContainsKey(KeyNameWorkspace);
 
-    public bool IsLibrary => File.Exists(Path.Combine(Path.GetDirectoryName(FullPath), @"src\lib.rs"));
+    /// <summary>
+    /// Gets the targets from this manifest. Each manifest can have one or more targets.
+    /// Ref: https://doc.rust-lang.org/cargo/reference/cargo-targets.html.
+    /// </summary>
+    public IEnumerable<Target> Targets => GetTargets();
 
-    public bool IsBinary => File.Exists(Path.Combine(Path.GetDirectoryName(FullPath), @"src\main.rs"));
+    public IEnumerable<Target> GetTargets()
+    {
+        return new[]
+        {
+            new Target(this),
+        };
+    }
 
     public bool Is(string filePath)
     {
@@ -105,7 +110,7 @@ public class Manifest
 
     public string GetTargetPathForProfile(string profile)
     {
-        return Path.Combine(WorkspaceRoot, FolderNameTarget, ProfileInfos[profile], TargetFileName);
+        return Path.Combine(WorkspaceRoot, FolderNameTarget, ProfileInfos[profile], Targets.ToArray()[0].TargetFileName);
     }
 
     public string GetTargetPathForProfileRelativeToPath(string profile, string filePath)
@@ -113,29 +118,14 @@ public class Manifest
         return PathUtilities.MakeRelativePath(Path.GetDirectoryName(filePath), GetTargetPathForProfile(profile));
     }
 
-    private string GetPackageName()
+    public string GetPackageName()
     {
         Ensure.That(IsPackage, nameof(IsPackage)).IsTrue();
 
         return ((TomlTable)_model[KeyNamePackage])?[ValueNameName]?.ToString() ?? "<[package] section must have a name>";
     }
 
-    private string GetPackageExtension()
-    {
-        Ensure.That(IsPackage, nameof(IsPackage)).IsTrue();
-
-        if (IsBinary)
-        {
-            return ".exe";
-        }
-        else if (IsLibrary)
-        {
-            return ".rlib";
-        }
-
-        return "._ni_";
-    }
-
+    // TODO: Why is this recursing over folders like its only caller?
     private static string GetWorkspaceRoot(string fullPath)
     {
         var currentCargoPath = fullPath;
