@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using AutoMapper;
 using KS.RustAnalyzer.TestAdapter.Common;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
@@ -16,7 +14,7 @@ public enum TargetType
     Bench,
 }
 
-[DebuggerDisplay("{Name}, {Type}, {TargetFileName}")]
+[DebuggerDisplay("{QualifiedTargetFileName}")]
 public class Target
 {
     /// <summary>

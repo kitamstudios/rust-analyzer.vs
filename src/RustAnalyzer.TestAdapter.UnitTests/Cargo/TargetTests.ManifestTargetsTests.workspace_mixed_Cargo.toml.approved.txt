@@ -79,12 +79,3 @@
   "Manifest": "<TestRoot>\\workspace_mixed\\cargo.toml",
   "Path": "testdata\\workspace_mixed\\target\\debug\\bench1.exe"
 }
-[9] = {
-  "Name": "main",
-  "IsRunnable": true,
-  "TargetFileName": "main.exe",
-  "QualifiedTargetFileName": "[bin: \\] main.exe",
-  "Type": "Bin",
-  "Manifest": "<TestRoot>\\workspace_mixed\\cargo.toml",
-  "Path": "testdata\\workspace_mixed\\target\\debug\\main.exe"
-}

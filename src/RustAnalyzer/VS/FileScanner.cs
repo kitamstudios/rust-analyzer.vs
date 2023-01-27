@@ -51,12 +51,14 @@ public class FileScanner : IFileScanner
 
         if (owningManifest.Is(filePath) && owningManifest.IsPackage)
         {
-            foreach (var runnableTarget in owningManifest.Targets.Where(t => t.IsRunnable))
+            foreach (var target in owningManifest.Targets.Where(t => t.IsRunnable && t.Type == TargetType.Bin))
             {
                 var launchSettings = new PropertySettings
                 {
-                    [LaunchConfigurationConstants.NameKey] = runnableTarget.QualifiedTargetFileName,
+                    [LaunchConfigurationConstants.NameKey] = target.QualifiedTargetFileName,
                     [LaunchConfigurationConstants.DebugTypeKey] = LaunchConfigurationConstants.NativeOptionKey,
+                    [LaunchConfigurationConstants.ProjectKey] = owningManifest.FullPath,
+                    [LaunchConfigurationConstants.ProjectTargetKey] = target.QualifiedTargetFileName,
                 };
 
                 allFileDataValues.Add(
@@ -73,7 +75,7 @@ public class FileScanner : IFileScanner
                             type: BuildConfigurationContext.ContextTypeGuid,
                             name: BuildConfigurationContext.DataValueName,
                             value: null,
-                            target: runnableTarget.GetPath(profile),
+                            target: target.GetPath(profile),
                             context: profile));
 
                 allFileDataValues.AddRange(fileDataValuesForAllProfiles1);

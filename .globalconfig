@@ -152,6 +152,9 @@ csharp_preserve_single_line_statements = true
 
 #### Naming styles ####
 
+# IDE0005: Using directive is unnecessary.
+dotnet_diagnostic.IDE0005.severity = error
+
 # CA1303: Do not pass literals as localized parameters
 dotnet_diagnostic.CA1303.severity = none    # Justification: We're not going to be localizing the product.
 

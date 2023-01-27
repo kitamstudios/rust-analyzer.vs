@@ -11,6 +11,7 @@ using ApprovalTests.Reporters;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.VS;
 using Microsoft.VisualStudio.Workspace;
+using Microsoft.VisualStudio.Workspace.Debug;
 using Microsoft.VisualStudio.Workspace.Indexing;
 using Xunit;
 
@@ -83,18 +84,21 @@ public class FileScannerTests
             {
                 dv.Type,
                 dv.Name,
-                Value = SerializeDataValue(dv.Value),
+                Value = NormalizeAndSerializeDataValue(dv.Value),
                 Target = dv.Target?.ToLowerInvariant().Replace(ThisTestRoot, "<TestRoot>"),
                 dv.Context,
             });
         Approvals.VerifyAll(processedDataValues, label: string.Empty);
     }
 
-    private static object SerializeDataValue(object value)
+    private static object NormalizeAndSerializeDataValue(object value)
     {
-        if (value is PropertySettings propSettings)
+        if (value is PropertySettings ps)
         {
-            return propSettings
+            ps[LaunchConfigurationConstants.ProjectKey] =
+                ps[LaunchConfigurationConstants.ProjectKey].ToString().ToLowerInvariant().Replace(ThisTestRoot, "<TestRoot>");
+
+            return ps
                 .Aggregate(new StringBuilder("{ "), (acc, e) => acc.AppendFormat("[{0}] = {1}, ", e.Key, e.Value))
                 .Append(" }")
                 .ToString();

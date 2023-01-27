@@ -59,7 +59,18 @@ public class Manifest
 
     public bool Is(string filePath) => FullPath.Equals(filePath, StringComparison.OrdinalIgnoreCase);
 
-    public static Manifest Create(string parentCargoPath) => new (parentCargoPath);
+    public static Manifest Create(string parentCargoPath)
+    {
+        try
+        {
+            return new (parentCargoPath);
+        }
+        catch
+        {
+            // NOTE: In case the toml is malformed.
+            return null;
+        }
+    }
 
     public static Manifest GetParentManifest(string workspaceRoot, string filePath)
     {
@@ -134,9 +145,12 @@ public class Manifest
             .GetEnumValues<TargetType>()
             .SelectMany(GetTargetsForOneType);
 
-        var autoDiscoveredTargets = GetAutoDiscoveredTargets();
+        if (definedTargets.Any())
+        {
+            return definedTargets;
+        }
 
-        return definedTargets.Concat(autoDiscoveredTargets);
+        return GetAutoDiscoveredTargets();
     }
 
     /// <summary>
@@ -151,6 +165,12 @@ public class Manifest
         }
 
         if (File.Exists(Path.Combine(Path.GetDirectoryName(FullPath), @"src\main.rs")))
+        {
+            autoDiscoveredTargets.Add(new Target(this, GetDefaultTargetName(), TargetType.Bin));
+        }
+
+        // NOTE: Here we neither have any explicitly define targets, neither do we have any lib.rs or main.rs.
+        if (!autoDiscoveredTargets.Any())
         {
             autoDiscoveredTargets.Add(new Target(this, GetDefaultTargetName(), TargetType.Bin));
         }

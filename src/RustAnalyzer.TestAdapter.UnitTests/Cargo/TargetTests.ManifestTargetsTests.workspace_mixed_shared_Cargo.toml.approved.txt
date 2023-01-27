@@ -25,12 +25,3 @@
   "Manifest": "<TestRoot>\\workspace_mixed\\shared\\cargo.toml",
   "Path": "testdata\\workspace_mixed\\target\\debug\\bench2.exe"
 }
-[3] = {
-  "Name": "shared",
-  "IsRunnable": false,
-  "TargetFileName": "shared.lib",
-  "QualifiedTargetFileName": "[lib: shared\\] shared.lib",
-  "Type": "Lib",
-  "Manifest": "<TestRoot>\\workspace_mixed\\shared\\cargo.toml",
-  "Path": "testdata\\workspace_mixed\\target\\debug\\shared.lib"
-}
