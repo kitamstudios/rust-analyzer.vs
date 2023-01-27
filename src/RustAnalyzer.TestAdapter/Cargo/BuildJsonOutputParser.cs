@@ -65,7 +65,6 @@ public static class BuildJsonOutputParser
         return Array.Empty<BuildMessage>();
     }
 
-    // TODO: Test for 0 spans, 1 spans, multiple spans.
     private static BuildMessage[] ParseCompilerMessage(string workspaceRoot, dynamic obj)
     {
         if (obj.message.spans == null || obj.message.spans.Count == 0)

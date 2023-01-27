@@ -4,7 +4,7 @@
 
 # rust-analyzer - Rust language support for Visual Studio
 
-[![CDP](https://github.com/kitamstudios/rust-analyzer/actions/workflows/cdp.yml/badge.svg)](https://github.com/kitamstudios/rust-analyzer/actions/workflows/cdp.yml)  [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/) [![](https://dcbadge.vercel.app/api/server/JyK55EsACr?style=flat)](https://discord.gg/JyK55EsACr) [![Visual Studio Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/i/kitamstudios.RustAnalyzer)](https://marketplace.visualstudio.com/items?itemName=kitamstudios.RustAnalyzer)
+[![CDP](https://github.com/kitamstudios/rust-analyzer/actions/workflows/cdp.yml/badge.svg)](https://github.com/kitamstudios/rust-analyzer/actions/workflows/cdp.yml)  [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/) [![](https://dcbadge.vercel.app/api/server/JyK55EsACr?style=flat)](https://discord.gg/JyK55EsACr) [![Release](https://img.shields.io/github/release/kitamstudios/rust-analyzer.vs.svg?label=Release)](https://github.com/kitamstudios/rust-analyzer.vs/releases) [![Visual Studio Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/i/kitamstudios.RustAnalyzer)](https://marketplace.visualstudio.com/items?itemName=kitamstudios.RustAnalyzer)
 
 Download this extension from the [Visual Studio Marketplace][marketplace] or get the [CI build][vsixgallery].
 

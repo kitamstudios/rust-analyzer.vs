@@ -49,32 +49,35 @@ public class FileScanner : IFileScanner
     {
         var allFileDataValues = new List<FileDataValue>();
 
-        if (owningManifest.Is(filePath) && owningManifest.IsPackage && owningManifest.Targets.ToArray()[0].IsRunnable)
+        if (owningManifest.Is(filePath) && owningManifest.IsPackage)
         {
-            var launchSettings = new PropertySettings
+            foreach (var runnableTarget in owningManifest.Targets.Where(t => t.IsRunnable))
             {
-                [LaunchConfigurationConstants.NameKey] = owningManifest.Targets.ToArray()[0].TargetFileName,
-                [LaunchConfigurationConstants.DebugTypeKey] = LaunchConfigurationConstants.NativeOptionKey,
-            };
+                var launchSettings = new PropertySettings
+                {
+                    [LaunchConfigurationConstants.NameKey] = runnableTarget.QualifiedTargetFileName,
+                    [LaunchConfigurationConstants.DebugTypeKey] = LaunchConfigurationConstants.NativeOptionKey,
+                };
 
-            allFileDataValues.Add(
-                new FileDataValue(
-                    type: DebugLaunchActionContext.ContextTypeGuid,
-                    name: DebugLaunchActionContext.IsDefaultStartupProjectEntry,
-                    value: launchSettings,
-                    target: null,
-                    context: null));
-
-            var fileDataValuesForAllProfiles1 = owningManifest.Profiles.Select(
-                profile =>
+                allFileDataValues.Add(
                     new FileDataValue(
-                        type: BuildConfigurationContext.ContextTypeGuid,
-                        name: BuildConfigurationContext.DataValueName,
-                        value: null,
-                        target: owningManifest.GetTargetPathForProfile(profile),
-                        context: profile));
+                        type: DebugLaunchActionContext.ContextTypeGuid,
+                        name: DebugLaunchActionContext.IsDefaultStartupProjectEntry,
+                        value: launchSettings,
+                        target: null,
+                        context: null));
 
-            allFileDataValues.AddRange(fileDataValuesForAllProfiles1);
+                var fileDataValuesForAllProfiles1 = owningManifest.Profiles.Select(
+                    profile =>
+                        new FileDataValue(
+                            type: BuildConfigurationContext.ContextTypeGuid,
+                            name: BuildConfigurationContext.DataValueName,
+                            value: null,
+                            target: runnableTarget.GetPath(profile),
+                            context: profile));
+
+                allFileDataValues.AddRange(fileDataValuesForAllProfiles1);
+            }
         }
 
         if (owningManifest.Is(filePath))
@@ -100,15 +103,15 @@ public class FileScanner : IFileScanner
 
         if (owningManifest.Is(filePath) && owningManifest.IsPackage)
         {
-            var fileRefInfosForProfiles = owningManifest.Profiles
-                .Select(
-                    profile => new FileReferenceInfo(
-                        relativePath: owningManifest.GetTargetPathForProfileRelativeToPath(profile, filePath),
-                        target: owningManifest.GetTargetPathForProfile(profile),
-                        context: profile,
-                        referenceType: (int)FileReferenceInfoType.Output));
+            var refInfos = owningManifest.Profiles
+                .SelectMany(p => owningManifest.Targets.Select(t => (Target: t, Profile: p)))
+                .Select(x => new FileReferenceInfo(
+                            relativePath: x.Target.GetPathRelativeTo(x.Profile, filePath),
+                            target: x.Target.GetPath(x.Profile),
+                            context: x.Profile,
+                            referenceType: (int)FileReferenceInfoType.Output));
 
-            allFileRefInfos.AddRange(fileRefInfosForProfiles);
+            allFileRefInfos.AddRange(refInfos);
         }
 
         return allFileRefInfos;

@@ -42,6 +42,7 @@ public class Manifest
     public string FullPath { get; }
 
     /// <summary>
+    /// Gets the default profiles for now.
     /// From https://doc.rust-lang.org/cargo/reference/profiles.html#profiles.
     /// </summary>
     public IEnumerable<string> Profiles => ProfileInfos.Keys;
@@ -56,23 +57,9 @@ public class Manifest
     /// </summary>
     public IEnumerable<Target> Targets => GetTargets();
 
-    public IEnumerable<Target> GetTargets()
-    {
-        return new[]
-        {
-            new Target(this),
-        };
-    }
+    public bool Is(string filePath) => FullPath.Equals(filePath, StringComparison.OrdinalIgnoreCase);
 
-    public bool Is(string filePath)
-    {
-        return FullPath.Equals(filePath, StringComparison.OrdinalIgnoreCase);
-    }
-
-    public static Manifest Create(string parentCargoPath)
-    {
-        return new Manifest(parentCargoPath);
-    }
+    public static Manifest Create(string parentCargoPath) => new (parentCargoPath);
 
     public static Manifest GetParentManifest(string workspaceRoot, string filePath)
     {
@@ -108,24 +95,16 @@ public class Manifest
         return StringComparer.OrdinalIgnoreCase.Equals(fileName, Constants.ManifestFileName);
     }
 
-    public string GetTargetPathForProfile(string profile)
-    {
-        return Path.Combine(WorkspaceRoot, FolderNameTarget, ProfileInfos[profile], Targets.ToArray()[0].TargetFileName);
-    }
-
-    public string GetTargetPathForProfileRelativeToPath(string profile, string filePath)
-    {
-        return PathUtilities.MakeRelativePath(Path.GetDirectoryName(filePath), GetTargetPathForProfile(profile));
-    }
-
     public string GetPackageName()
     {
         Ensure.That(IsPackage, nameof(IsPackage)).IsTrue();
 
-        return ((TomlTable)_model[KeyNamePackage])?[ValueNameName]?.ToString() ?? "<[package] section must have a name>";
+        return ((TomlTable)_model[KeyNamePackage])?[ValueNameName]?.ToString() ?? "package_section_must_have_a_name";
     }
 
-    // TODO: Why is this recursing over folders like its only caller?
+    private string GetDefaultTargetName() => GetPackageName().Replace("-", "_");
+
+    // TODO: Why is this recursing over folders like the function it calls TryGetParentManifest? Appears suboptimal.
     private static string GetWorkspaceRoot(string fullPath)
     {
         var currentCargoPath = fullPath;
@@ -142,5 +121,64 @@ public class Manifest
 
         // NOTE: Current cargo is the workspace.
         return Path.GetDirectoryName(fullPath);
+    }
+
+    private IEnumerable<Target> GetTargets()
+    {
+        if (!IsPackage)
+        {
+            return Enumerable.Empty<Target>();
+        }
+
+        var definedTargets = EnumExtensions
+            .GetEnumValues<TargetType>()
+            .SelectMany(GetTargetsForOneType);
+
+        var autoDiscoveredTargets = GetAutoDiscoveredTargets();
+
+        return definedTargets.Concat(autoDiscoveredTargets);
+    }
+
+    /// <summary>
+    /// NOTE: Only the very basic auto-discovery https://doc.rust-lang.org/cargo/reference/cargo-targets.html#target-auto-discovery.
+    /// </summary>
+    private IEnumerable<Target> GetAutoDiscoveredTargets()
+    {
+        var autoDiscoveredTargets = new List<Target>();
+        if (File.Exists(Path.Combine(Path.GetDirectoryName(FullPath), @"src\lib.rs")))
+        {
+            autoDiscoveredTargets.Add(new Target(this, GetDefaultTargetName(), TargetType.Lib));
+        }
+
+        if (File.Exists(Path.Combine(Path.GetDirectoryName(FullPath), @"src\main.rs")))
+        {
+            autoDiscoveredTargets.Add(new Target(this, GetDefaultTargetName(), TargetType.Bin));
+        }
+
+        return autoDiscoveredTargets;
+    }
+
+    private IEnumerable<Target> GetTargetsForOneType(TargetType type)
+    {
+        string targetDefSectionName = Target.TargetTypeInfos[type].SectionName;
+        if (!_model.ContainsKey(targetDefSectionName))
+        {
+            yield break;
+        }
+
+        object targetDefSection = _model[targetDefSectionName];
+        var targetDefTables = targetDefSection is TomlTable table
+            ? new[] { table }
+            : targetDefSection is TomlTableArray tableArray
+              ? tableArray.ToArray()
+              : throw new InvalidOperationException(string.Format($"{targetDefSectionName} is neither a TomlTable nor a TomlTableArray."));
+
+        foreach (var targetDefTable in targetDefTables)
+        {
+            var targetName = targetDefTable.TryGetValue(ValueNameName, out var name)
+                ? name.ToString()
+                : GetDefaultTargetName();
+            yield return new Target(this, targetName, type);
+        }
     }
 }

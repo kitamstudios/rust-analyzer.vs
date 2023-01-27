@@ -1,0 +1,9 @@
+﻿[0] = {
+  "Name": "main",
+  "IsRunnable": true,
+  "TargetFileName": "main.exe",
+  "QualifiedTargetFileName": "[bin: main\\] main.exe",
+  "Type": "Bin",
+  "Manifest": "<TestRoot>\\hello_workspace\\main\\cargo.toml",
+  "Path": "testdata\\hello_workspace\\target\\debug\\main.exe"
+}

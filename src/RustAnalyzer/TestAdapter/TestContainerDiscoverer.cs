@@ -85,7 +85,10 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
         _testContainersCache.Clear();
 
         L.WriteLine("Unloading workspace at {0}", _currentWorkspace?.Location);
-        _currentWorkspace.GetFileWatcherService().OnBatchFileSystemChanged -= BatchFileSystemChangedEventHandlerAsync;
+        if (_currentWorkspace != null)
+        {
+            _currentWorkspace.GetFileWatcherService().OnBatchFileSystemChanged -= BatchFileSystemChangedEventHandlerAsync;
+        }
 
         if (_workspaceFactory.CurrentWorkspace == null)
         {

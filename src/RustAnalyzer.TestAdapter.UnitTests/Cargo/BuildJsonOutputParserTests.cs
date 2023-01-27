@@ -29,7 +29,7 @@ public class BuildJsonOutputParserTests
         var jsonOutput = "   Compiling pest v2.5.2";
         var output = BuildJsonOutputParser.Parse(ThisTestRoot, jsonOutput, L, T);
 
-        Approvals.VerifyAll(output.Select(SerializeObject), label: string.Empty);
+        Approvals.VerifyAll(output.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }
 
     [Theory]
@@ -43,7 +43,7 @@ public class BuildJsonOutputParserTests
         var jsonOutput = File.ReadAllText(Path.Combine(ThisTestRoot, dataFile));
         var output = BuildJsonOutputParser.Parse(ThisTestRoot, jsonOutput, L, T);
 
-        Approvals.VerifyAll(output.Select(SerializeObject), label: string.Empty);
+        Approvals.VerifyAll(output.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }
 
     [Theory]
@@ -59,11 +59,6 @@ public class BuildJsonOutputParserTests
         var jsonOutput = File.ReadAllText(Path.Combine(ThisTestRoot, dataFile));
         var output = BuildJsonOutputParser.Parse(@"d:\src\dpt\pls\test_app", jsonOutput, L, T);
 
-        Approvals.VerifyAll(output.Select(SerializeObject), label: string.Empty);
-    }
-
-    public static string SerializeObject(object obj)
-    {
-        return JsonConvert.SerializeObject(obj, Formatting.Indented);
+        Approvals.VerifyAll(output.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }
 }

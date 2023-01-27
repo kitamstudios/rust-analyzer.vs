@@ -1,0 +1,9 @@
+﻿[0] = {
+  "Name": "hello_lib",
+  "IsRunnable": false,
+  "TargetFileName": "hello_lib.lib",
+  "QualifiedTargetFileName": "[lib: \\] hello_lib.lib",
+  "Type": "Lib",
+  "Manifest": "<TestRoot>\\hello_library\\cargo.toml",
+  "Path": "testdata\\hello_library\\target\\debug\\hello_lib.lib"
+}

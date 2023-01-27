@@ -1,38 +1,70 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using EnsureThat;
+using AutoMapper;
+using KS.RustAnalyzer.TestAdapter.Common;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
+public enum TargetType
+{
+    Bin,
+    Lib,
+    Example,
+    Test,
+    Bench,
+}
+
+[DebuggerDisplay("{Name}, {Type}, {TargetFileName}")]
 public class Target
 {
-    public Target(Manifest manifest)
+    /// <summary>
+    /// NOTE:
+    /// - Extension: Could be .rlib, .dll, .lib as per.https://doc.rust-lang.org/reference/linkage.html. Going with the simplest for now.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<TargetType, (string SectionName, string Extension)> TargetTypeInfos =
+        new Dictionary<TargetType, (string SectionName, string Extension)>
+        {
+            [TargetType.Bin] = ("bin", ".exe"),
+            [TargetType.Lib] = ("lib", ".lib"),
+            [TargetType.Example] = ("example", ".exe"),
+            [TargetType.Test] = ("test", ".exe"),
+            [TargetType.Bench] = ("bench", ".exe"),
+        };
+
+    public Target(Manifest manifest, string name, TargetType type)
     {
         Manifest = manifest;
+        Name = name;
+        Type = type;
     }
 
     public Manifest Manifest { get; }
 
-    public bool IsRunnable => IsBinary;
+    public string Name { get; }
 
-    public string TargetFileName => $"{Manifest.GetPackageName()}{GetExtension()}";
+    public TargetType Type { get; }
 
-    public bool IsLibrary => File.Exists(Path.Combine(Path.GetDirectoryName(Manifest.FullPath), @"src\lib.rs"));
+    public bool IsRunnable => Type != TargetType.Lib;
 
-    public bool IsBinary => File.Exists(Path.Combine(Path.GetDirectoryName(Manifest.FullPath), @"src\main.rs"));
+    public string QualifiedTargetFileName => $"[{Type.ToString().ToLowerInvariant()}: {GetTargetPathRelativeToWorkspace()}] {TargetFileName}";
 
-    private string GetExtension()
+    public string TargetFileName => $"{Name}{TargetTypeInfos[Type].Extension}";
+
+    public string GetPath(string profile)
     {
-        Ensure.That(Manifest.IsPackage, nameof(Manifest.IsPackage)).IsTrue();
+        return Path.Combine(Manifest.WorkspaceRoot, Manifest.FolderNameTarget, Manifest.ProfileInfos[profile], TargetFileName);
+    }
 
-        if (IsBinary)
-        {
-            return ".exe";
-        }
-        else if (IsLibrary)
-        {
-            return ".rlib";
-        }
+    public string GetPathRelativeTo(string profile, string rootPath)
+    {
+        return PathUtilities.MakeRelativePath(Path.GetDirectoryName(rootPath), GetPath(profile));
+    }
 
-        return "._ni_";
+    private string GetTargetPathRelativeToWorkspace()
+    {
+        var relPath = Path.GetDirectoryName(PathUtilities.MakeRelativePath(Manifest.WorkspaceRoot, Manifest.FullPath));
+        return @$"{relPath}\";
     }
 }

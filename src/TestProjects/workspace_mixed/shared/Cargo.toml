@@ -1,0 +1,22 @@
+[package]
+name = "shared"
+version = "0.1.0"
+authors = ["Your Name Here"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+
+[[example]]
+name = "example1"
+path = "src/lib.rs"
+
+[[bench]]
+name = "bench1"
+path = "src/lib.rs"
+
+[[bench]]
+name = "bench2"
+path = "src/lib.rs"

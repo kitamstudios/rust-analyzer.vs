@@ -1,4 +1,4 @@
-﻿[0] = { WorkspacePath = target\debug\main._ni_, Target = <TestRoot>\hello_workspace2\target\debug\main._ni_, Context = dev, ReferenceType = 2 }
-[1] = { WorkspacePath = target\release\main._ni_, Target = <TestRoot>\hello_workspace2\target\release\main._ni_, Context = release, ReferenceType = 2 }
-[2] = { WorkspacePath = target\debug\main._ni_, Target = <TestRoot>\hello_workspace2\target\debug\main._ni_, Context = test, ReferenceType = 2 }
-[3] = { WorkspacePath = target\release\main._ni_, Target = <TestRoot>\hello_workspace2\target\release\main._ni_, Context = bench, ReferenceType = 2 }
+﻿[0] = { WorkspacePath = target\debug\main.exe, Target = <TestRoot>\hello_workspace2\target\debug\main.exe, Context = dev, ReferenceType = 2 }
+[1] = { WorkspacePath = target\release\main.exe, Target = <TestRoot>\hello_workspace2\target\release\main.exe, Context = release, ReferenceType = 2 }
+[2] = { WorkspacePath = target\debug\main.exe, Target = <TestRoot>\hello_workspace2\target\debug\main.exe, Context = test, ReferenceType = 2 }
+[3] = { WorkspacePath = target\release\main.exe, Target = <TestRoot>\hello_workspace2\target\release\main.exe, Context = bench, ReferenceType = 2 }

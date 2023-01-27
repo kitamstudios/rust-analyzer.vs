@@ -1,0 +1,19 @@
+﻿[0] = { Type = 55b77c41-9751-433c-9d5f-5e815f152562, Name = IsDefaultStartupProject, Value = { [name] = [example: shared\] example1.exe, [debugType] = native,  }, Target = , Context =  }
+[1] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\workspace_mixed\target\debug\example1.exe, Context = dev }
+[2] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\workspace_mixed\target\release\example1.exe, Context = release }
+[3] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\workspace_mixed\target\debug\example1.exe, Context = test }
+[4] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\workspace_mixed\target\release\example1.exe, Context = bench }
+[5] = { Type = 55b77c41-9751-433c-9d5f-5e815f152562, Name = IsDefaultStartupProject, Value = { [name] = [bench: shared\] bench1.exe, [debugType] = native,  }, Target = , Context =  }
+[6] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\workspace_mixed\target\debug\bench1.exe, Context = dev }
+[7] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\workspace_mixed\target\release\bench1.exe, Context = release }
+[8] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\workspace_mixed\target\debug\bench1.exe, Context = test }
+[9] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\workspace_mixed\target\release\bench1.exe, Context = bench }
+[10] = { Type = 55b77c41-9751-433c-9d5f-5e815f152562, Name = IsDefaultStartupProject, Value = { [name] = [bench: shared\] bench2.exe, [debugType] = native,  }, Target = , Context =  }
+[11] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\workspace_mixed\target\debug\bench2.exe, Context = dev }
+[12] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\workspace_mixed\target\release\bench2.exe, Context = release }
+[13] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\workspace_mixed\target\debug\bench2.exe, Context = test }
+[14] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\workspace_mixed\target\release\bench2.exe, Context = bench }
+[15] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = , Context = dev }
+[16] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = , Context = release }
+[17] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = , Context = test }
+[18] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = , Context = bench }

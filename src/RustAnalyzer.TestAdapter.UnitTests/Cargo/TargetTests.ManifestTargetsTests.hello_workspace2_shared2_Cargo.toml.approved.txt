@@ -1,0 +1,9 @@
+﻿[0] = {
+  "Name": "shared2",
+  "IsRunnable": false,
+  "TargetFileName": "shared2.lib",
+  "QualifiedTargetFileName": "[lib: shared2\\] shared2.lib",
+  "Type": "Lib",
+  "Manifest": "<TestRoot>\\hello_workspace2\\shared2\\cargo.toml",
+  "Path": "testdata\\hello_workspace2\\target\\debug\\shared2.lib"
+}

@@ -66,51 +66,12 @@
     <Compile Include="VS\FileScannerTests.cs" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="..\TestProjects\hello_library\Cargo.toml">
-      <Link>Cargo\TestData\hello_library\Cargo.toml</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\TestProjects\hello_library\src\lib.rs">
-      <Link>Cargo\TestData\hello_library\src\lib.rs</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\TestProjects\hello_workspace2\Cargo.toml">
-      <Link>Cargo\TestData\hello_workspace2\Cargo.toml</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\TestProjects\hello_workspace\Cargo.toml">
-      <Link>Cargo\TestData\hello_workspace\Cargo.toml</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\TestProjects\hello_workspace\main\Cargo.toml">
-      <Link>Cargo\TestData\hello_workspace\main\Cargo.toml</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\TestProjects\hello_workspace\main\src\main.rs">
-      <Link>Cargo\TestData\hello_workspace\main\src\main.rs</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\TestProjects\hello_workspace\shared\Cargo.toml">
-      <Link>Cargo\TestData\hello_workspace\shared\Cargo.toml</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\TestProjects\hello_workspace\shared\src\lib.rs">
-      <Link>Cargo\TestData\hello_workspace\shared\src\lib.rs</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\TestProjects\hello_world\Cargo.toml">
-      <Link>Cargo\TestData\hello_world\Cargo.toml</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\TestProjects\hello_world\src\main.rs">
-      <Link>Cargo\TestData\hello_world\src\main.rs</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\TestProjects\not_a_project\src\main.rs">
-      <Link>Cargo\TestData\not_a_project\src\main.rs</Link>
-    </None>
-  </ItemGroup>
+  <Target Name="CopyTestProjects" AfterTargets="Build">
+    <ItemGroup>
+      <TestProjectsFiles Include="..\TestProjects\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(TestProjectsFiles)" DestinationFolder="$(TargetDir)\Cargo\TestData\%(RecursiveDir)" SkipUnchangedFiles="true" />
+  </Target>
 
   <ItemGroup>
     <ProjectReference Include="..\RustAnalyzer.TestAdapter\RustAnalyzer.TestAdapter.csproj">
