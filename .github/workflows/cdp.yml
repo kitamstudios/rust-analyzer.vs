@@ -53,7 +53,7 @@ jobs:
       run: |
         $files = @("${env:OutDir}${env:TestAdapterNameNoExt}.dll", "${env:OutDir}${env:TestAdapterNameNoExt}.pdb", "${env:OutDir}Microsoft.ApplicationInsights.dll", "${env:OutDir}Microsoft.ApplicationInsights.pdb")
         $dst = "${env:OutDir}${env:TestAdapterNameNoExt}.zip"
-        Compress-Archive -Path $files -DestinationPath $dst -Verbose
+        Compress-Archive -Path $files -DestinationPath $dst
         # List contents for debugging purposes
         Add-Type -assembly "system.io.compression.filesystem"
         echo "listing files in zip..."
@@ -103,6 +103,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - uses: darenm/Setup-VSTest@v1.2
+
     - name: Download TestAdapter
       id: itdownloadta
       uses: actions/download-artifact@v3
@@ -112,35 +114,20 @@ jobs:
 
     - name: Prepare for integration tests
       run: |
-        # Install adapter
         $adapterPathNoExt = "${env:itdownloadta}\${env:TestAdapterNameNoExt}"
-        echo ">>>> $adapterPathNoExt | $env:TestAdapterLocation"
         mkdir $env:TestAdapterLocation
         Expand-Archive "${env:itdownloadta}\${env:TestAdapterNameNoExt}.zip" -DestinationPath $env:TestAdapterLocation
-        dir $env:TestAdapterLocation
-
-        # Cleanup testresults
-        rmdir -rec -force TestResults -ErrorAction SilentlyContinue
       shell: pwsh
       env:
         itdownloadta: ${{ steps.itdownloadta.outputs.download-path }}
       continue-on-error: true
 
     - name: Run integration tests
-      uses: microsoft/vstest-action@v1.0.0
-      with:
-        pathToCustomTestAdapters: ${{ env.TestAdapterLocation }}
-        testAssembly: '**\\*Cargo.toml'
-        searchFolder: '.\src\TestProjects\workspace_with_tests\'
-        runInParallel: true
-        otherConsoleOptions: /logger:console;verbosity=detailed /logger:trx;LogFileName=${{ env.TestAdapterNameNoExt }}.trx
-        resultLogsArtifactName: integration-tests-results-log
-        ifNoFilesFound: warn
-      continue-on-error: true
-
-    - name: Check integration test results
       run: |
-        $trx = dir ".\TestResults\*.trx" | % { $_.FullName }
+        vstest.console.exe .\src\TestProjects\workspace_with_tests\adder\Cargo.toml .\src\TestProjects\workspace_with_tests\add_one\Cargo.toml .\src\TestProjects\workspace_with_tests\Cargo.toml /TestAdapterPath:"$env:TestAdapterLocation" /Parallel "/logger:console;verbosity=detailed" "/logger:trx;LogFileName=$env:TestAdapterNameNoExt.trx"
+
+        # Check results
+        $trx = "$env:TestAdapterNameNoExt.trx"
         $xml = [xml] (gc $trx)
         $output = ($xml.TestRun.Results.UnitTestResult | Sort-Object -Property testName | % { "$($_.testName)=>$($_.outcome)" }) -join "; "
         echo ">>>> $output"
@@ -156,7 +143,7 @@ jobs:
       if: always()
       with:
         name: Integration Tests Results
-        path: TestResults\*.trx
+        path: TestResults\${{ env.TestAdapterNameNoExt }}.trx
         reporter: dotnet-trx
         fail-on-error: true
       continue-on-error: true

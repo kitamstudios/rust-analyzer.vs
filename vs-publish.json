@@ -6,7 +6,6 @@
     "Programming Languages"
   ],
   "identity": {
-
     "internalName": "RustAnalyzer",
     "tags": [
       "rust",
@@ -20,6 +19,6 @@
   ],
   "overview": "README.md",
   "publisher": "kitamstudios",
-  "qna": false,
-  "repo": "https://github.com/kitamstudios/rust-analyzer"
+  "qna": true,
+  "repo": "https://github.com/kitamstudios/rust-analyzer.vs"
 }
