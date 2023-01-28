@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -10,7 +11,11 @@ using Community.VisualStudio.Toolkit;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.Win32;
+using CommunityVS = Community.VisualStudio.Toolkit.VS;
 
 namespace KS.RustAnalyzer;
 
@@ -21,17 +26,17 @@ namespace KS.RustAnalyzer;
 [Guid(PackageGuids.RustAnalyzerString)]
 public sealed class RustAnalyzerPackage : ToolkitPackage
 {
-    private ILogger _logger;
+    private ILogger _l;
 
-    private ITelemetryService _telemetry;
+    private ITelemetryService _t;
 
     protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
     {
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
         var cmServiceProvider = (IComponentModel)await GetServiceAsync(typeof(SComponentModel));
-        _logger = cmServiceProvider?.GetService<ILogger>();
-        _telemetry = cmServiceProvider?.GetService<ITelemetryService>();
+        _l = cmServiceProvider?.GetService<ILogger>();
+        _t = cmServiceProvider?.GetService<ITelemetryService>();
     }
 
     protected override async Task OnAfterPackageLoadedAsync(CancellationToken cancellationToken)
@@ -40,12 +45,15 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
 
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
+        await ReleaseSummaryNotification.ShowAsync(this, _l, _t);
         await SearchAndDisableIncompatibleExtensionsAsync();
     }
 
+    #region Handling incompatible extensions
+
     private async Task SearchAndDisableIncompatibleExtensionsAsync()
     {
-        _logger?.WriteLine("Searching and disabling incompatible extensions.");
+        _l?.WriteLine("Searching and disabling incompatible extensions.");
 
         try
         {
@@ -66,7 +74,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                         $"- OK: Disable the above and restart VS. (You can enable them back later from Extensions > Manage Extensions.)\r\n- Cancel: Disable {Vsix.Name} and restart VS.");
                 if (mbRet == VSConstants.MessageBoxResult.IDOK)
                 {
-                    _telemetry?.TrackEvent("DisableIncompatExts", ("Extensions", string.Join(",", incompatibleExtensions.Select(x => x.Id))));
+                    _t?.TrackEvent("DisableIncompatExts", ("Extensions", string.Join(",", incompatibleExtensions.Select(x => x.Id))));
                     foreach (var e in incompatibleExtensions)
                     {
                         exMgr.Disable(e.Extension);
@@ -74,7 +82,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                 }
                 else
                 {
-                    _telemetry?.TrackEvent("DisableThisExt");
+                    _t?.TrackEvent("DisableThisExt");
                     var thisExtension = allExtensionIds[Vsix.Id];
                     exMgr.Disable(thisExtension);
                 }
@@ -84,8 +92,8 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
         }
         catch (Exception e)
         {
-            _logger?.WriteLine("Failed in searching and disabling incompatible extensions. Ex: {0}", e);
-            _telemetry?.TrackException(e);
+            _l?.WriteLine("Failed in searching and disabling incompatible extensions. Ex: {0}", e);
+            _t?.TrackException(e);
         }
     }
 
@@ -123,4 +131,101 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
 
         return installedIncompatibleExtensions;
     }
+
+    #endregion
+
+    #region Release summary
+
+    public static class ReleaseSummaryNotification
+    {
+        private const string ActionContextReleaseNotes = "release_notes";
+        private const string ActionContextDismiss = "dismiss";
+        private const string DismissedRegKeyName = "release_notes_dismissed";
+
+        public static async Task ShowAsync(IServiceProvider sp, ILogger l, ITelemetryService t)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            l.WriteLine("Attempting to show release notes...");
+            if (HasBeenDismissedByUser(sp))
+            {
+                l.WriteLine("... Not showing release notes as it has already been dismissed by the user.");
+                return;
+            }
+
+            var model = new InfoBarModel(
+                textSpans: new[] { new InfoBarTextSpan($"{Vsix.Name} updated: Featuring improved build & debug experience for large OSS projects + general bug fixes."), },
+                actionItems: new[] { new InfoBarHyperlink("Release notes", ActionContextReleaseNotes), new InfoBarHyperlink("Dismiss", ActionContextDismiss), },
+                image: KnownMonikers.StatusInformation,
+                isCloseButtonVisible: true);
+            var infoBar = await CommunityVS.InfoBar.CreateAsync(model);
+            infoBar.ActionItemClicked += (s, ea) => InfoBar_ActionItemClicked(s, ea, sp, t);
+            await infoBar.TryShowInfoBarUIAsync();
+        }
+
+        private static void InfoBar_ActionItemClicked(object sender, InfoBarActionItemEventArgs e, IServiceProvider sp, ITelemetryService t)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            if (e.ActionItem.ActionContext is not string actionContext)
+            {
+                return;
+            }
+
+            switch (actionContext)
+            {
+                case ActionContextReleaseNotes:
+                    VsShellUtilities.OpenSystemBrowser($"https://github.com/kitamstudios/rust-analyzer.vs/releases/{Vsix.Version}");
+                    break;
+
+                case ActionContextDismiss:
+                    MarkDismissedByUser(sp);
+                    (sender as InfoBar)?.Close();
+                    break;
+
+                default:
+                    break;
+            }
+
+            t.TrackEvent("InfoBarAction", ("Context", actionContext));
+        }
+
+        private static void MarkDismissedByUser(IServiceProvider sp)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            if (GetPackageRegistryRoot(sp, out string regRoot))
+            {
+                Registry.SetValue(regRoot, DismissedRegKeyName, Vsix.Version);
+            }
+        }
+
+        private static bool HasBeenDismissedByUser(IServiceProvider sp)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            if (GetPackageRegistryRoot(sp, out string regRoot))
+            {
+                return Registry.GetValue(regRoot, DismissedRegKeyName, null)?.ToString() == Vsix.Version;
+            }
+
+            return false;
+        }
+
+        private static bool GetPackageRegistryRoot(IServiceProvider sp, out string packageRegistryRoot)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            packageRegistryRoot = null;
+            if (sp.GetService(typeof(SLocalRegistry)) is ILocalRegistry2 localReg && ErrorHandler.Succeeded(localReg.GetLocalRegistryRoot(out var localRegRoot)))
+            {
+                packageRegistryRoot = Path.Combine("HKEY_CURRENT_USER", localRegRoot, Vsix.Name);
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    #endregion
 }
