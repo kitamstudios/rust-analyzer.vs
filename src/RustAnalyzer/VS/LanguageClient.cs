@@ -60,34 +60,43 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
 
     public async Task<Connection> ActivateAsync(CancellationToken token)
     {
-        var programPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "rust-analyzer.exe");
-        L.WriteLine("Starting rust-analyzer from path: {0}.", programPath);
-        ProcessStartInfo info = new ()
+        try
         {
-            FileName = programPath,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            WindowStyle = ProcessWindowStyle.Minimized,
-            WorkingDirectory = WorkspaceService.CurrentWorkspace?.Location ?? Path.GetDirectoryName(programPath),
-        };
+            var programPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "rust-analyzer.exe");
+            L.WriteLine("Starting rust-analyzer from path: {0}.", programPath);
+            ProcessStartInfo info = new ()
+            {
+                FileName = programPath,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Minimized,
+                WorkingDirectory = WorkspaceService.CurrentWorkspace?.Location ?? Path.GetDirectoryName(programPath),
+            };
 
-        Process process = new ()
+            Process process = new ()
+            {
+                StartInfo = info
+            };
+
+            if (process.Start())
+            {
+                L.WriteLine("Done starting rust-analyzer from path.");
+                T.TrackEvent("rust-analyzer-start", ("Path", programPath));
+
+                return await Task.FromResult(new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream));
+            }
+
+            L.WriteLine("Error starting rust-analyzer from path.");
+            T.TrackException(new InvalidOperationException(), new[] { ("ProgramPath", programPath) });
+        }
+        catch (Exception e)
         {
-            StartInfo = info
-        };
-
-        if (process.Start())
-        {
-            L.WriteLine("Done starting rust-analyzer from path.");
-            T.TrackEvent("rust-analyzer-start", ("Path", programPath));
-
-            return await Task.FromResult(new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream));
+            T.TrackException(e);
+            throw;
         }
 
-        L.WriteLine("Error starting rust-analyzer from path.");
-        T.TrackEvent("rust-analyzer-start-failure", ("Path", programPath));
         return null;
     }
 

@@ -1,9 +1,9 @@
 using System;
 using System.ComponentModel.Composition;
+using System.IO;
 using System.Linq;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
-using Microsoft.IO;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Workspace;
@@ -45,6 +45,12 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
             T.TrackEvent("Debug", ("Target", targetFQN), ("Profile", profile), ("Manifest", manifest.FullPath));
 
             var processName = target.GetPath(profile);
+            if (!File.Exists(processName))
+            {
+                L.WriteLine("Unable to find file: {0}. This indicates a bug with the Manifest parsing logic. Rest of the operation will fail silently.", processName);
+                T.TrackException(new FileNotFoundException("Bug with Manifest parsing logic.", processName));
+            }
+
             var noDebugFlag = debugLaunchActionContext.LaunchConfiguration.ContainsKey(LaunchConfigurationConstants.NoDebugKey) ? __VSDBGLAUNCHFLAGS.DBGLAUNCH_NoDebug : 0;
             var info = new VsDebugTargetInfo
             {

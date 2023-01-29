@@ -127,7 +127,7 @@ jobs:
         vstest.console.exe .\src\TestProjects\workspace_with_tests\adder\Cargo.toml .\src\TestProjects\workspace_with_tests\add_one\Cargo.toml .\src\TestProjects\workspace_with_tests\Cargo.toml /TestAdapterPath:"$env:TestAdapterLocation" /Parallel "/logger:console;verbosity=detailed" "/logger:trx;LogFileName=$env:TestAdapterNameNoExt.trx"
 
         # Check results
-        $trx = "$env:TestAdapterNameNoExt.trx"
+        $trx = ".\TestResults\$env:TestAdapterNameNoExt.trx"
         $xml = [xml] (gc $trx)
         $output = ($xml.TestRun.Results.UnitTestResult | Sort-Object -Property testName | % { "$($_.testName)=>$($_.outcome)" }) -join "; "
         echo ">>>> $output"
@@ -143,7 +143,7 @@ jobs:
       if: always()
       with:
         name: Integration Tests Results
-        path: TestResults\${{ env.TestAdapterNameNoExt }}.trx
+        path: TestResults/*${{ env.TestAdapterNameNoExt }}.trx
         reporter: dotnet-trx
         fail-on-error: true
       continue-on-error: true
