@@ -67,9 +67,13 @@ public sealed class TelemetryService : ITelemetryService
 
     public class DefaultPropertiesTelemetryInitializer : ITelemetryInitializer
     {
+        private static readonly string SessionId = Guid.NewGuid().ToString();
+
         public void Initialize(ITelemetry telemetry)
         {
             telemetry.Context.Component.Version = Vsix.Version;
+            telemetry.Context.User.Id = Environment.ExpandEnvironmentVariables("%USERNAME%@%COMPUTERNAME%.%USERDOMAIN%");
+            telemetry.Context.Session.Id = SessionId;
         }
     }
 
