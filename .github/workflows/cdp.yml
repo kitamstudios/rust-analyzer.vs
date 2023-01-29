@@ -151,7 +151,7 @@ jobs:
   publish:
     name: Publish
     if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
-    needs: run-integration-tests
+    needs: [run-integration-tests, build-test-deploy]
     runs-on: windows-2022
 
     steps:
