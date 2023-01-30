@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -87,7 +86,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                     exMgr.Disable(thisExtension);
                 }
 
-                await RestartProcessAsync();
+                await CommunityVS.Shell.RestartAsync();
             }
         }
         catch (Exception e)
@@ -95,17 +94,6 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
             _l?.WriteLine("Failed in searching and disabling incompatible extensions. Ex: {0}", e);
             _t?.TrackException(e);
         }
-    }
-
-    private async Task RestartProcessAsync()
-    {
-        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(DisposalToken);
-
-        var args = Environment.GetCommandLineArgs();
-        Process.Start(args[0], string.Join(" ", args.Skip(1)));
-        await Task.Delay(2000);
-
-        (GetGlobalService(typeof(EnvDTE.DTE)) as EnvDTE.DTE).Quit();
     }
 
     private static IReadOnlyList<(string Id, dynamic Extension)> AreIncompatibleExtensionsInstalled(IDictionary<string, dynamic> allExtensions)

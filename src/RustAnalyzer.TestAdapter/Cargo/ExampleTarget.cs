@@ -18,7 +18,6 @@ public sealed class ExampleTarget : Target
         AdditionalBuildArgs = $"--example {name}";
     }
 
-    // TODO: BUG: add message box to file not found for the silent failure while debugging.
     public static IEnumerable<Target> GetAll(Manifest manifest)
     {
         var examplesFolder = Path.Combine(Path.GetDirectoryName(manifest.FullPath), "examples");
