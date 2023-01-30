@@ -10,9 +10,10 @@ Download this extension from the [Visual Studio Marketplace][marketplace] or get
 
 ## Principles
 
-- 100% UI and behavior parity with 'Open Folder' experience for a C# solution with multiple projects.
-- Enhance with Rust community best practices e.g. fmt, clippy.
-- Killer features e.g. ChatGPT integration.
+1. Drive developer towards Rust community best practices.
+1. UI and behavior parity with 'Open Folder' experience for a C# solution with multiple projects (unless it contradicts #1).
+1. Enhance with Rust community tools sets e.g. fmt, clippy, examples, docs. etc.
+1. Killer features e.g. ChatGPT integration.
 
 ## Features
 

@@ -15,6 +15,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.Win32;
 using CommunityVS = Community.VisualStudio.Toolkit.VS;
+using Constants = KS.RustAnalyzer.TestAdapter.Constants;
 
 namespace KS.RustAnalyzer;
 
@@ -142,7 +143,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
             }
 
             var model = new InfoBarModel(
-                textSpans: new[] { new InfoBarTextSpan($"{Vsix.Name} updated: Featuring improved build & debug experience for large OSS projects + general bug fixes."), },
+                textSpans: new[] { new InfoBarTextSpan($"{Vsix.Name} updated: {Constants.ReleaseSummary}"), },
                 actionItems: new[] { new InfoBarHyperlink("Release notes", ActionContextReleaseNotes), new InfoBarHyperlink("Dismiss", ActionContextDismiss), },
                 image: KnownMonikers.StatusInformation,
                 isCloseButtonVisible: true);
