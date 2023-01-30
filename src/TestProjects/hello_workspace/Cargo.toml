@@ -3,4 +3,5 @@
 members = [
     "main",
     "shared",
+    "subfolder/shared2"
 ]

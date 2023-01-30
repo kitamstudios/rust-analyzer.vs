@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -28,35 +29,57 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
 
     public Task<IReadOnlyCollection<FileContext>> GetContextsForFileAsync(string filePath, string context, CancellationToken cancellationToken)
     {
+        // TODO: BUG: What is context?
         return GetContextsForFileAsync(filePath, cancellationToken);
     }
 
     public async Task<IReadOnlyCollection<FileContext>> GetContextsForFileAsync(string filePath, CancellationToken cancellationToken)
     {
-        var parentManifest = Manifest.GetParentManifest(_workspaceRoot, filePath);
+        var parentManifest = Manifest.GetParentManifestOrThisUnderWorkspace(_workspaceRoot, filePath);
         if (parentManifest == null)
         {
             return await Task.FromResult(FileContext.EmptyFileContexts);
         }
 
-        return parentManifest.Profiles
-            .SelectMany(
-                profile => new[]
+        var target = parentManifest.Targets.Where(t => t.Source.Equals(filePath, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+        if (target == null)
+        {
+            var message = string.Format("Could not find a target for {0}. FileContextProvider is out of sync with FileScanner.", filePath);
+            _l.WriteError(message);
+            _t.TrackException(new InvalidOperationException(message));
+            return await Task.FromResult(FileContext.EmptyFileContexts);
+        }
+
+        return parentManifest.Profiles.SelectMany(p => GetBuildActions(parentManifest, target, p)).ToList();
+    }
+
+    private IEnumerable<FileContext> GetBuildActions(Manifest parentManifest, Target target, string profile)
+    {
+        var action = new[]
+        {
+            new FileContext(
+                providerType: FileContextProviderFactory.ProviderTypeGuid,
+                contextType: BuildContextTypes.BuildContextTypeGuid,
+                context: new BuildFileContext(profile, parentManifest, target.Manifest.FullPath, target.AdditionalBuildArgs, _outputPane, _t, ShowMessageBoxAsync, _l),
+                inputFiles: new[] { target.Source },
+                displayName: profile),
+        };
+
+        if (target.Type == TargetType.Bin)
+        {
+            action.Concat(
+                new[]
                 {
                     new FileContext(
-                        FileContextProviderFactory.ProviderTypeGuid,
-                        BuildContextTypes.BuildContextTypeGuid,
-                        new BuildFileContext(profile, parentManifest, filePath, _outputPane, _t, ShowMessageBoxAsync, _l),
-                        new[] { filePath },
+                        providerType: FileContextProviderFactory.ProviderTypeGuid,
+                        contextType: BuildContextTypes.CleanContextTypeGuid,
+                        context: new CleanFileContext(profile, parentManifest, target.Manifest.FullPath, _outputPane, _t, ShowMessageBoxAsync, _l),
+                        inputFiles: new[] { target.Source },
                         displayName: profile),
-                    new FileContext(
-                        FileContextProviderFactory.ProviderTypeGuid,
-                        BuildContextTypes.CleanContextTypeGuid,
-                        new CleanFileContext(profile, parentManifest, filePath, _outputPane, _t, ShowMessageBoxAsync, _l),
-                        new[] { filePath },
-                        displayName: profile),
-                })
-            .ToList();
+                });
+        }
+
+        return action;
     }
 
     private async Task ShowMessageBoxAsync(string message)

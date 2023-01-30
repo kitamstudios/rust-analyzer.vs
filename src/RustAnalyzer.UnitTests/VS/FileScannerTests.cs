@@ -1,14 +1,13 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
 using KS.RustAnalyzer.TestAdapter.Common;
+using KS.RustAnalyzer.Tests.Common;
 using KS.RustAnalyzer.VS;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Debug;
@@ -19,32 +18,7 @@ namespace KS.RustAnalyzer.UnitTests.VS;
 
 public class FileScannerTests
 {
-    private static readonly string ThisTestRoot =
-        Path.Combine(
-            Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)),
-            @"Cargo\TestData").ToLowerInvariant();
-
-    public static IEnumerable<object[]> GetTestData()
-    {
-        return new[]
-        {
-            new[] { @"hello_library", @"Cargo.toml" },
-            new[] { @"hello_library", @"src\lib.rs" },
-            new[] { @"hello_world", @"Cargo.toml" },
-            new[] { @"hello_world", @"src\main.rs" },
-            new[] { @"hello_workspace", @"Cargo.toml" },
-            new[] { @"hello_workspace", @"main\Cargo.toml" },
-            new[] { @"hello_workspace", @"main\src\main.rs" },
-            new[] { @"hello_workspace", @"shared\Cargo.toml" },
-            new[] { @"hello_workspace", @"shared\src\lib.rs" },
-            new[] { @"hello_workspace2", @"Cargo.toml" },
-            new[] { @"workspace_mixed", @"Cargo.toml" },
-            new[] { @"workspace_mixed", @"src\libx.rs" },
-            new[] { @"workspace_mixed", @"src\main.rs" },
-            new[] { @"workspace_mixed", @"shared\Cargo.toml" },
-            new[] { @"workspace_mixed", @"shared\src\lib.rs" },
-        }.AsEnumerable();
-    }
+    public static IEnumerable<object[]> GetTestData() => TestData.Get();
 
     [Theory]
     [UseReporter(typeof(DiffReporter))]
@@ -52,7 +26,7 @@ public class FileScannerTests
     public async Task ScanContentFileRefInfoTestsAsync(string workspaceRootRel, string filePathRel)
     {
         NamerFactory.AdditionalInformation = $"{Path.Combine(workspaceRootRel, filePathRel).ReplaceInvalidChars()}";
-        string workspaceRoot = Path.Combine(ThisTestRoot, workspaceRootRel);
+        string workspaceRoot = Path.Combine(TestHelpers.ThisTestRoot, workspaceRootRel);
         var fs = new FileScanner(workspaceRoot);
         var filePath = Path.Combine(workspaceRoot, filePathRel);
 
@@ -61,7 +35,7 @@ public class FileScannerTests
             ri => new
             {
                 WorkspacePath = ri.WorkspacePath.ToLowerInvariant(),
-                Target = ri.Target.ToLowerInvariant().Replace(ThisTestRoot, "<TestRoot>"),
+                Target = ri.Target.RemoveMachineSpecificPaths(),
                 ri.Context,
                 ri.ReferenceType,
             });
@@ -74,7 +48,7 @@ public class FileScannerTests
     public async Task ScanContentFileDataValueTestsAsync(string workspaceRootRel, string filePathRel)
     {
         NamerFactory.AdditionalInformation = $"{Path.Combine(workspaceRootRel, filePathRel).ReplaceInvalidChars()}";
-        string workspaceRoot = Path.Combine(ThisTestRoot, workspaceRootRel);
+        string workspaceRoot = Path.Combine(TestHelpers.ThisTestRoot, workspaceRootRel);
         var fs = new FileScanner(workspaceRoot);
         var filePath = Path.Combine(workspaceRoot, filePathRel);
 
@@ -85,7 +59,7 @@ public class FileScannerTests
                 dv.Type,
                 dv.Name,
                 Value = NormalizeAndSerializeDataValue(dv.Value),
-                Target = dv.Target?.ToLowerInvariant().Replace(ThisTestRoot, "<TestRoot>"),
+                Target = dv.Target?.RemoveMachineSpecificPaths(),
                 dv.Context,
             });
         Approvals.VerifyAll(processedDataValues, label: string.Empty);
@@ -96,7 +70,7 @@ public class FileScannerTests
         if (value is PropertySettings ps)
         {
             ps[LaunchConfigurationConstants.ProjectKey] =
-                ps[LaunchConfigurationConstants.ProjectKey].ToString().ToLowerInvariant().Replace(ThisTestRoot, "<TestRoot>");
+                ps[LaunchConfigurationConstants.ProjectKey].ToString().RemoveMachineSpecificPaths();
 
             return ps
                 .Aggregate(new StringBuilder("{ "), (acc, e) => acc.AppendFormat("[{0}] = {1}, ", e.Key, e.Value))

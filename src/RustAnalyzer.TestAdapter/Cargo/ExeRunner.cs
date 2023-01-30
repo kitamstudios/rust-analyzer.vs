@@ -11,12 +11,12 @@ namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
 public class ExeRunner
 {
-    public static Task<bool> BuildAsync(string workspaceRoot, string filePath, string profile, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l, CancellationToken ct)
+    public static Task<bool> BuildAsync(string workspaceRoot, string filePath, string profile, string additionalArgs, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l, CancellationToken ct)
     {
         return ExecuteOperationAsync(
             "build",
             filePath,
-            arguments: $"build --manifest-path \"{filePath}\" --profile {profile} --message-format json",
+            arguments: $"build --manifest-path \"{filePath}\" {additionalArgs} --profile {profile} --message-format json",
             profile,
             ts,
             showMessageBox,
@@ -27,7 +27,7 @@ public class ExeRunner
             ct);
     }
 
-    public static Task<bool> CleanAsync(string workspaceRoot, string filePath, string profile, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l, CancellationToken ct)
+    public static Task<bool> CleanAsync(string workspaceRoot, string filePath, string profile, string additionalArgs, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l, CancellationToken ct)
     {
         return ExecuteOperationAsync(
             "clean",

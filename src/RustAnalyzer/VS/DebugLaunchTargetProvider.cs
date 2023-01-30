@@ -28,9 +28,9 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
     {
         try
         {
-            var manifest = Manifest.Create(debugLaunchActionContext.LaunchConfiguration[LaunchConfigurationConstants.ProjectKey] as string);
+            var manifest = Manifest.Create(debugLaunchActionContext.LaunchConfiguration[LaunchConfigurationConstants.ProgramKey] as string);
             var profile = debugLaunchActionContext.BuildConfiguration;
-            var targetFQN = debugLaunchActionContext.LaunchConfiguration[LaunchConfigurationConstants.ProjectTargetKey] as string;
+            var targetFQN = debugLaunchActionContext.LaunchConfiguration[LaunchConfigurationConstants.NameKey] as string;
             var target = manifest?.Targets?.FirstOrDefault(t => t.QualifiedTargetFileName == targetFQN);
 
             if (target == null)

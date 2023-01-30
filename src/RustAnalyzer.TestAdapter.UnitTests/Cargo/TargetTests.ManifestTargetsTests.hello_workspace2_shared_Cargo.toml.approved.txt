@@ -1,9 +1,11 @@
 ﻿[0] = {
   "Name": "shared",
   "IsRunnable": false,
-  "TargetFileName": "shared.lib",
-  "QualifiedTargetFileName": "[lib: shared\\] shared.lib",
+  "TargetFileName": "libshared.rlib",
+  "QualifiedTargetFileName": "[lib: shared\\] libshared.rlib",
+  "Source": "<TestRoot>\\hello_workspace2\\shared\\cargo.toml",
   "Type": "Lib",
   "Manifest": "<TestRoot>\\hello_workspace2\\shared\\cargo.toml",
-  "Path": "testdata\\hello_workspace2\\target\\debug\\shared.lib"
+  "Path": "testdata\\hello_workspace2\\target\\debug\\libshared.rlib",
+  "AdditionalBuildArgs": ""
 }

@@ -1,0 +1,9 @@
+﻿[0] = { Type = 55b77c41-9751-433c-9d5f-5e815f152562, Name = IsDefaultStartupProject, Value = { [name] = [example: lib\] eg2.exe, [debugType] = native, [project] = <TestRoot>\workspace_with_example\lib\examples\eg2\main.rs, [projectTarget] = [example: lib\] eg2.exe, [program] = d:\src\ks\rust-analyzer\src\rustanalyzer.unittests\bin\debug\cargo\testdata\workspace_with_example\lib\Cargo.toml,  }, Target = , Context =  }
+[1] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\workspace_with_example\target\debug\examples\eg2.exe, Context = dev }
+[2] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\workspace_with_example\target\release\examples\eg2.exe, Context = release }
+[3] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\workspace_with_example\target\debug\examples\eg2.exe, Context = test }
+[4] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = <TestRoot>\workspace_with_example\target\release\examples\eg2.exe, Context = bench }
+[5] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = , Context = dev }
+[6] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = , Context = release }
+[7] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = , Context = test }
+[8] = { Type = ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19, Name = BuildConfiguration, Value = , Target = , Context = bench }

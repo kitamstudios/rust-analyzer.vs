@@ -1,12 +1,11 @@
-using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using KS.RustAnalyzer.Tests.Common;
 using Moq;
 using Newtonsoft.Json;
 using Xunit;
@@ -17,17 +16,13 @@ public class BuildJsonOutputParserTests
 {
     private static readonly ILogger L = Mock.Of<ILogger>();
     private static readonly ITelemetryService T = Mock.Of<ITelemetryService>();
-    private static readonly string ThisTestRoot =
-        Path.Combine(
-            Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)),
-            @"Cargo\TestData").ToLowerInvariant();
 
     [Fact]
     [UseReporter(typeof(DiffReporter))]
     public void IfNotParsableReturnAsIs()
     {
         var jsonOutput = "   Compiling pest v2.5.2";
-        var output = BuildJsonOutputParser.Parse(ThisTestRoot, jsonOutput, L, T);
+        var output = BuildJsonOutputParser.Parse(TestHelpers.ThisTestRoot, jsonOutput, L, T);
 
         Approvals.VerifyAll(output.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }
@@ -40,8 +35,8 @@ public class BuildJsonOutputParserTests
     public void ParseCompilerArtifiacts(string dataFile)
     {
         NamerFactory.AdditionalInformation = $"datafile-{dataFile}";
-        var jsonOutput = File.ReadAllText(Path.Combine(ThisTestRoot, dataFile));
-        var output = BuildJsonOutputParser.Parse(ThisTestRoot, jsonOutput, L, T);
+        var jsonOutput = File.ReadAllText(Path.Combine(TestHelpers.ThisTestRoot, dataFile));
+        var output = BuildJsonOutputParser.Parse(TestHelpers.ThisTestRoot, jsonOutput, L, T);
 
         Approvals.VerifyAll(output.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }
@@ -56,7 +51,7 @@ public class BuildJsonOutputParserTests
     public void ParseCompilerMessages(string dataFile)
     {
         NamerFactory.AdditionalInformation = $"datafile-{dataFile}";
-        var jsonOutput = File.ReadAllText(Path.Combine(ThisTestRoot, dataFile));
+        var jsonOutput = File.ReadAllText(Path.Combine(TestHelpers.ThisTestRoot, dataFile));
         var output = BuildJsonOutputParser.Parse(@"d:\src\dpt\pls\test_app", jsonOutput, L, T);
 
         Approvals.VerifyAll(output.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);

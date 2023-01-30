@@ -62,17 +62,20 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\TestsCommon\TestHelpers.cs">
+      <Link>Common\TestHelpers.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="VS\FileContextProviderTests.cs" />
     <Compile Include="VS\FileScannerTests.cs" />
+    <Compile Include="VS\TestData.cs" />
   </ItemGroup>
-
   <Target Name="CopyTestProjects" AfterTargets="Build">
     <ItemGroup>
       <TestProjectsFiles Include="..\TestProjects\**\*.*" />
     </ItemGroup>
     <Copy SourceFiles="@(TestProjectsFiles)" DestinationFolder="$(TargetDir)\Cargo\TestData\%(RecursiveDir)" SkipUnchangedFiles="true" />
   </Target>
-
   <ItemGroup>
     <ProjectReference Include="..\RustAnalyzer.TestAdapter\RustAnalyzer.TestAdapter.csproj">
       <Project>{884a1604-99de-46dc-ae8d-f5893ce1abe1}</Project>

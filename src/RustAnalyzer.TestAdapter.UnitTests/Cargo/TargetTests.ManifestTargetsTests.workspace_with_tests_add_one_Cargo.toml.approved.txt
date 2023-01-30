@@ -1,9 +1,11 @@
 ﻿[0] = {
   "Name": "add_one",
   "IsRunnable": false,
-  "TargetFileName": "add_one.lib",
-  "QualifiedTargetFileName": "[lib: add_one\\] add_one.lib",
+  "TargetFileName": "libadd_one.rlib",
+  "QualifiedTargetFileName": "[lib: add_one\\] libadd_one.rlib",
+  "Source": "<TestRoot>\\workspace_with_tests\\add_one\\cargo.toml",
   "Type": "Lib",
   "Manifest": "<TestRoot>\\workspace_with_tests\\add_one\\cargo.toml",
-  "Path": "testdata\\workspace_with_tests\\target\\debug\\add_one.lib"
+  "Path": "testdata\\workspace_with_tests\\target\\debug\\libadd_one.rlib",
+  "AdditionalBuildArgs": ""
 }

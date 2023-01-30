@@ -1,12 +1,12 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using KS.RustAnalyzer.Tests.Common;
 using Newtonsoft.Json;
 using Xunit;
 
@@ -14,11 +14,6 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 
 public class TargetTests
 {
-    private static readonly string ThisTestRoot =
-        Path.Combine(
-            Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)),
-            @"Cargo\TestData").ToLowerInvariant();
-
     [Theory]
     [UseReporter(typeof(DiffReporter))]
     [InlineData(@"hello_library\Cargo.toml")]
@@ -37,7 +32,7 @@ public class TargetTests
     public void ManifestTargetsTests(string manifestRelPath)
     {
         NamerFactory.AdditionalInformation = manifestRelPath.ReplaceInvalidChars();
-        string manifestPath = Path.Combine(ThisTestRoot, manifestRelPath);
+        string manifestPath = Path.Combine(TestHelpers.ThisTestRoot, manifestRelPath);
 
         var manifest = Manifest.Create(manifestPath);
         var targets = manifest.Targets.Select(
@@ -47,9 +42,11 @@ public class TargetTests
                 t.IsRunnable,
                 t.TargetFileName,
                 t.QualifiedTargetFileName,
+                Source = t.Source.RemoveMachineSpecificPaths(),
                 Type = t.Type.ToString(),
-                Manifest = t.Manifest.FullPath.ToLowerInvariant().Replace(ThisTestRoot, "<TestRoot>"),
-                Path = t.GetPathRelativeTo("dev", ThisTestRoot),
+                Manifest = t.Manifest.FullPath.RemoveMachineSpecificPaths(),
+                Path = t.GetPathRelativeTo("dev", TestHelpers.ThisTestRoot),
+                t.AdditionalBuildArgs,
             });
         Approvals.VerifyAll(targets.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }

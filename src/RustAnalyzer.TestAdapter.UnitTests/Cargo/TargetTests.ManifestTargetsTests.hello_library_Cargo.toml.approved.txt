@@ -1,9 +1,11 @@
 ﻿[0] = {
   "Name": "hello_lib",
   "IsRunnable": false,
-  "TargetFileName": "hello_lib.lib",
-  "QualifiedTargetFileName": "[lib: \\] hello_lib.lib",
+  "TargetFileName": "libhello_lib.rlib",
+  "QualifiedTargetFileName": "[lib: \\] libhello_lib.rlib",
+  "Source": "<TestRoot>\\hello_library\\cargo.toml",
   "Type": "Lib",
   "Manifest": "<TestRoot>\\hello_library\\cargo.toml",
-  "Path": "testdata\\hello_library\\target\\debug\\hello_lib.lib"
+  "Path": "testdata\\hello_library\\target\\debug\\libhello_lib.rlib",
+  "AdditionalBuildArgs": ""
 }

@@ -11,6 +11,8 @@ using EnsureThat;
 
 namespace KS.RustAnalyzer.TestAdapter.Common;
 
+// TODO: NEXT: Rename to ProcessRunner
+
 /// <summary>
 /// Stolen from https://github.com/microsoft/nodejstools/blob/main/Common/Product/SharedProject/ProcessOutput.cs.
 /// </summary>

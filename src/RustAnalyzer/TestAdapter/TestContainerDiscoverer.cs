@@ -114,7 +114,7 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 
     private bool CanFileChangeTests(FileSystemEventArgs eventArgs)
     {
-        // TODO: We need to expand the check to include .rs and possibly other files as well.
+        // TODO: UT: We need to expand the check to include .rs and possibly other files as well.
         return Manifest.IsManifest(eventArgs.FullPath) && IsPathInDirectory(_currentWorkspace.Location, eventArgs.FullPath);
     }
 

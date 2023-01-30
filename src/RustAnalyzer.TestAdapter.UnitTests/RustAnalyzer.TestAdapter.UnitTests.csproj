@@ -41,7 +41,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\TestsCommon\TestHelpers.cs">
+      <Link>Common\TestHelpers.cs</Link>
+    </Compile>
     <Compile Include="Cargo\BuildJsonOutputParserTests.cs" />
+    <Compile Include="Cargo\ExampleTargetTests.cs" />
     <Compile Include="Cargo\ManifestTests.cs" />
     <Compile Include="Cargo\TargetTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -3,79 +3,64 @@
   "IsRunnable": true,
   "TargetFileName": "bin1.exe",
   "QualifiedTargetFileName": "[bin: \\] bin1.exe",
+  "Source": "<TestRoot>\\workspace_mixed\\cargo.toml",
   "Type": "Bin",
   "Manifest": "<TestRoot>\\workspace_mixed\\cargo.toml",
-  "Path": "testdata\\workspace_mixed\\target\\debug\\bin1.exe"
+  "Path": "testdata\\workspace_mixed\\target\\debug\\bin1.exe",
+  "AdditionalBuildArgs": ""
 }
 [1] = {
   "Name": "bin2",
   "IsRunnable": true,
   "TargetFileName": "bin2.exe",
   "QualifiedTargetFileName": "[bin: \\] bin2.exe",
+  "Source": "<TestRoot>\\workspace_mixed\\cargo.toml",
   "Type": "Bin",
   "Manifest": "<TestRoot>\\workspace_mixed\\cargo.toml",
-  "Path": "testdata\\workspace_mixed\\target\\debug\\bin2.exe"
+  "Path": "testdata\\workspace_mixed\\target\\debug\\bin2.exe",
+  "AdditionalBuildArgs": ""
 }
 [2] = {
   "Name": "main",
   "IsRunnable": false,
-  "TargetFileName": "main.lib",
-  "QualifiedTargetFileName": "[lib: \\] main.lib",
+  "TargetFileName": "libmain.rlib",
+  "QualifiedTargetFileName": "[lib: \\] libmain.rlib",
+  "Source": "<TestRoot>\\workspace_mixed\\cargo.toml",
   "Type": "Lib",
   "Manifest": "<TestRoot>\\workspace_mixed\\cargo.toml",
-  "Path": "testdata\\workspace_mixed\\target\\debug\\main.lib"
+  "Path": "testdata\\workspace_mixed\\target\\debug\\libmain.rlib",
+  "AdditionalBuildArgs": ""
 }
 [3] = {
-  "Name": "example1",
-  "IsRunnable": true,
-  "TargetFileName": "example1.exe",
-  "QualifiedTargetFileName": "[example: \\] example1.exe",
-  "Type": "Example",
-  "Manifest": "<TestRoot>\\workspace_mixed\\cargo.toml",
-  "Path": "testdata\\workspace_mixed\\target\\debug\\example1.exe"
-}
-[4] = {
-  "Name": "example2",
-  "IsRunnable": true,
-  "TargetFileName": "example2.exe",
-  "QualifiedTargetFileName": "[example: \\] example2.exe",
-  "Type": "Example",
-  "Manifest": "<TestRoot>\\workspace_mixed\\cargo.toml",
-  "Path": "testdata\\workspace_mixed\\target\\debug\\example2.exe"
-}
-[5] = {
-  "Name": "example3",
-  "IsRunnable": true,
-  "TargetFileName": "example3.exe",
-  "QualifiedTargetFileName": "[example: \\] example3.exe",
-  "Type": "Example",
-  "Manifest": "<TestRoot>\\workspace_mixed\\cargo.toml",
-  "Path": "testdata\\workspace_mixed\\target\\debug\\example3.exe"
-}
-[6] = {
   "Name": "test1",
-  "IsRunnable": true,
+  "IsRunnable": false,
   "TargetFileName": "test1.exe",
   "QualifiedTargetFileName": "[test: \\] test1.exe",
+  "Source": "<TestRoot>\\workspace_mixed\\cargo.toml",
   "Type": "Test",
   "Manifest": "<TestRoot>\\workspace_mixed\\cargo.toml",
-  "Path": "testdata\\workspace_mixed\\target\\debug\\test1.exe"
+  "Path": "testdata\\workspace_mixed\\target\\debug\\test1.exe",
+  "AdditionalBuildArgs": ""
 }
-[7] = {
+[4] = {
   "Name": "test2",
-  "IsRunnable": true,
+  "IsRunnable": false,
   "TargetFileName": "test2.exe",
   "QualifiedTargetFileName": "[test: \\] test2.exe",
+  "Source": "<TestRoot>\\workspace_mixed\\cargo.toml",
   "Type": "Test",
   "Manifest": "<TestRoot>\\workspace_mixed\\cargo.toml",
-  "Path": "testdata\\workspace_mixed\\target\\debug\\test2.exe"
+  "Path": "testdata\\workspace_mixed\\target\\debug\\test2.exe",
+  "AdditionalBuildArgs": ""
 }
-[8] = {
+[5] = {
   "Name": "bench1",
-  "IsRunnable": true,
+  "IsRunnable": false,
   "TargetFileName": "bench1.exe",
   "QualifiedTargetFileName": "[bench: \\] bench1.exe",
+  "Source": "<TestRoot>\\workspace_mixed\\cargo.toml",
   "Type": "Bench",
   "Manifest": "<TestRoot>\\workspace_mixed\\cargo.toml",
-  "Path": "testdata\\workspace_mixed\\target\\debug\\bench1.exe"
+  "Path": "testdata\\workspace_mixed\\target\\debug\\bench1.exe",
+  "AdditionalBuildArgs": ""
 }

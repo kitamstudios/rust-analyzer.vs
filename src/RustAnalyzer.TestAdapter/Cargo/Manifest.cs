@@ -18,7 +18,6 @@ public class Manifest
 {
     public const string KeyNamePackage = "package";
     public const string KeyNameWorkspace = "workspace";
-    public const string FolderNameTarget = "target";
     public const string ValueNameName = "name";
 
     public static readonly IReadOnlyDictionary<string, string> ProfileInfos = new Dictionary<string, string>
@@ -72,9 +71,9 @@ public class Manifest
         }
     }
 
-    public static Manifest GetParentManifest(string workspaceRoot, string filePath)
+    public static Manifest GetParentManifestOrThisUnderWorkspace(string workspaceRoot, string filePath)
     {
-        if (TryGetParentManifest(workspaceRoot, filePath, out string parentManifestPath))
+        if (TryGetParentManifestOrThisUnderWorkspace(workspaceRoot, filePath, out string parentManifestPath))
         {
             return Create(parentManifestPath);
         }
@@ -82,18 +81,28 @@ public class Manifest
         return null;
     }
 
-    public static bool TryGetParentManifest(string workspaceRoot, string filePath, out string parentCargoPath)
+    public static bool TryGetParentManifestOrThisUnderWorkspace(string workspaceRoot, string fileOrFolderPath, out string parentCargoPath)
     {
-        var parentManifestPath = Path.Combine(workspaceRoot, Constants.ManifestFileName);
-        var currentPath = filePath;
-        while ((currentPath = Path.GetDirectoryName(currentPath)) != null)
+        if (Path.GetFileName(fileOrFolderPath).Equals(Constants.ManifestFileName, StringComparison.OrdinalIgnoreCase))
         {
-            var candidateManifestPath = Path.Combine(currentPath, Constants.ManifestFileName);
-            if (File.Exists(candidateManifestPath) && candidateManifestPath.Equals(parentManifestPath, StringComparison.OrdinalIgnoreCase))
+            parentCargoPath = fileOrFolderPath;
+            return true;
+        }
+
+        var currentPath = fileOrFolderPath;
+        while (!currentPath.Equals(workspaceRoot, StringComparison.OrdinalIgnoreCase) && (currentPath = Path.GetDirectoryName(currentPath)) != null)
+        {
+            if (File.Exists(Path.Combine(currentPath, Constants.ManifestFileName)))
             {
-                parentCargoPath = candidateManifestPath;
+                parentCargoPath = Path.Combine(currentPath, Constants.ManifestFileName);
                 return true;
             }
+        }
+
+        if (File.Exists(Path.Combine(currentPath, Constants.ManifestFileName)))
+        {
+            parentCargoPath = Path.Combine(currentPath, Constants.ManifestFileName);
+            return true;
         }
 
         parentCargoPath = null;
@@ -115,11 +124,13 @@ public class Manifest
 
     private string GetDefaultTargetName() => GetPackageName().Replace("-", "_");
 
-    // TODO: Why is this recursing over folders like the function it calls TryGetParentManifest? Appears suboptimal.
+    /// <summary>
+    /// TODO: MS: Use this eventually cargo metadata --no-deps --format-version 1 --manifest-path D:\src\ks\rust-analyzer\src\TestProjects\hello_workspace\subfolder\shared2\Cargo.toml | ConvertFrom-Json.
+    /// </summary>
     private static string GetWorkspaceRoot(string fullPath)
     {
-        var currentCargoPath = fullPath;
-        while (TryGetParentManifest(Path.GetDirectoryName(currentCargoPath), currentCargoPath, out string parentCargoPath))
+        var currentPath = fullPath;
+        while (TryGetParentManifestOrThisUnderWorkspace(Path.GetDirectoryName(Path.GetDirectoryName(currentPath)), currentPath, out string parentCargoPath))
         {
             var model = Toml.ToModel(File.ReadAllText(parentCargoPath));
             if (model.ContainsKey(KeyNameWorkspace))
@@ -127,13 +138,16 @@ public class Manifest
                 return Path.GetDirectoryName(parentCargoPath);
             }
 
-            currentCargoPath = Path.GetDirectoryName(parentCargoPath);
+            currentPath = Path.GetDirectoryName(parentCargoPath);
         }
 
         // NOTE: Current cargo is the workspace.
         return Path.GetDirectoryName(fullPath);
     }
 
+    /// <summary>
+    /// TODO: MS: This should move to Target class.
+    /// </summary>
     private IEnumerable<Target> GetTargets()
     {
         if (!IsPackage)
@@ -143,7 +157,9 @@ public class Manifest
 
         var definedTargets = EnumExtensions
             .GetEnumValues<TargetType>()
-            .SelectMany(GetTargetsForOneType);
+            .Where(t => t != TargetType.Example)
+            .SelectMany(GetTargetsForOneType)
+            .Concat(ExampleTarget.GetAll(this));
 
         if (definedTargets.Any())
         {

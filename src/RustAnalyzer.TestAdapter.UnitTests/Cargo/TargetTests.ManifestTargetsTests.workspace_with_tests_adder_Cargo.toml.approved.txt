@@ -3,7 +3,9 @@
   "IsRunnable": true,
   "TargetFileName": "adder.exe",
   "QualifiedTargetFileName": "[bin: adder\\] adder.exe",
+  "Source": "<TestRoot>\\workspace_with_tests\\adder\\cargo.toml",
   "Type": "Bin",
   "Manifest": "<TestRoot>\\workspace_with_tests\\adder\\cargo.toml",
-  "Path": "testdata\\workspace_with_tests\\target\\debug\\adder.exe"
+  "Path": "testdata\\workspace_with_tests\\target\\debug\\adder.exe",
+  "AdditionalBuildArgs": ""
 }
