@@ -11,12 +11,10 @@ using EnsureThat;
 
 namespace KS.RustAnalyzer.TestAdapter.Common;
 
-// TODO: NEXT: Rename to ProcessRunner
-
 /// <summary>
 /// Stolen from https://github.com/microsoft/nodejstools/blob/main/Common/Product/SharedProject/ProcessOutput.cs.
 /// </summary>
-public sealed class ProcessOutputProcessor : IDisposable
+public sealed class ProcessRunner : IDisposable
 {
     private readonly ProcessOutputRedirector _redirector;
     private readonly CancellationToken _cancellationToken;
@@ -36,7 +34,7 @@ public sealed class ProcessOutputProcessor : IDisposable
     private static readonly char[] EolChars = new[] { '\r', '\n' };
     private static readonly char[] NeedToBeQuoted = new[] { ' ', '"' };
 
-    private ProcessOutputProcessor(Process process, ProcessOutputRedirector redirector, CancellationToken cancellationToken)
+    private ProcessRunner(Process process, ProcessOutputRedirector redirector, CancellationToken cancellationToken)
     {
         EnsureArg.IsNotNull(process, nameof(process));
 
@@ -328,12 +326,12 @@ public sealed class ProcessOutputProcessor : IDisposable
         }
     }
 
-    public static ProcessOutputProcessor RunVisible(string filename, string[] arguments, CancellationToken cancellationToken)
+    public static ProcessRunner RunVisible(string filename, string[] arguments, CancellationToken cancellationToken)
     {
         return Run(filename, arguments, null!, null!, true, null!, cancellationToken: cancellationToken);
     }
 
-    public static ProcessOutputProcessor RunHiddenAndCapture(string filename, string[] arguments, CancellationToken cancellationToken)
+    public static ProcessRunner RunHiddenAndCapture(string filename, string[] arguments, CancellationToken cancellationToken)
     {
         return Run(filename, arguments, null!, null!, false, null!, cancellationToken: cancellationToken);
     }
@@ -365,8 +363,8 @@ public sealed class ProcessOutputProcessor : IDisposable
     /// <param name="cancellationToken">
     /// Request cancellation.
     /// </param>
-    /// <returns>A <see cref="ProcessOutputProcessor"/> object.</returns>
-    public static ProcessOutputProcessor Run(
+    /// <returns>A <see cref="ProcessRunner"/> object.</returns>
+    public static ProcessRunner Run(
         string filename,
         IEnumerable<string> arguments,
         string workingDirectory,
@@ -411,7 +409,7 @@ public sealed class ProcessOutputProcessor : IDisposable
         }
 
         var process = new Process { StartInfo = psi };
-        return new ProcessOutputProcessor(process, redirector, cancellationToken);
+        return new ProcessRunner(process, redirector, cancellationToken);
     }
 
     public static string GetArguments(IEnumerable<string> arguments, bool quoteArgs)

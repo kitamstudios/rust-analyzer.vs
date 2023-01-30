@@ -30,7 +30,7 @@ public static class BuildJsonOutputParser
     private static readonly Regex CompilerArtifactMessageCracker =
         new (@"^(.*) (.*) \((.*)\+(.*)\)$", RegexOptions.Compiled);
 
-    public static BuildMessage[] Parse(string workspaceRoot, string jsonLine, ILogger l, ITelemetryService t)
+    public static BuildMessage[] Parse(string workspaceRoot, string jsonLine, TL tl)
     {
         dynamic obj;
         try
@@ -39,8 +39,8 @@ public static class BuildJsonOutputParser
         }
         catch (Exception e)
         {
-            l.WriteLine("CargoJsonOutputParser failed to parse line: {0}. Exception {1}.", jsonLine, e);
-            t.TrackException(e, new[] { ("Id", "JObjectParse"), ("Line", jsonLine) });
+            tl.L.WriteLine("CargoJsonOutputParser failed to parse line: {0}. Exception {1}.", jsonLine, e);
+            tl.T.TrackException(e, new[] { ("Id", "JObjectParse"), ("Line", jsonLine) });
             return new[] { new StringBuildMessage { Message = jsonLine } };
         }
 
@@ -57,8 +57,8 @@ public static class BuildJsonOutputParser
         }
         catch (Exception e)
         {
-            l.WriteLine("CargoJsonOutputParser failed to parse line: {0}. Exception {1}.", jsonLine, e);
-            t.TrackException(e, new[] { ("Id", "ParseCompilerX"), ("Line", jsonLine) });
+            tl.L.WriteLine("CargoJsonOutputParser failed to parse line: {0}. Exception {1}.", jsonLine, e);
+            tl.T.TrackException(e, new[] { ("Id", "ParseCompilerX"), ("Line", jsonLine) });
             return new[] { new StringBuildMessage { Message = jsonLine } };
         }
 

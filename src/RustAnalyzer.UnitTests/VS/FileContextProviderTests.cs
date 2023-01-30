@@ -25,7 +25,7 @@ public class FileContextProviderTests
     {
         NamerFactory.AdditionalInformation = $"{Path.Combine(workspaceRootRel, filePathRel).ReplaceInvalidChars()}";
         string workspaceRoot = Path.Combine(TestHelpers.ThisTestRoot, workspaceRootRel);
-        var fcp = new FileContextProvider(workspaceRoot, Mock.Of<IBuildOutputSink>(), Mock.Of<ITelemetryService>(), Mock.Of<ILogger>());
+        var fcp = new FileContextProvider(workspaceRoot, Mock.Of<IBuildOutputSink>(), TestHelpers.TL);
         var filePath = Path.Combine(workspaceRoot, filePathRel);
 
         var refInfos = await fcp.GetContextsForFileAsync(filePath, default);
@@ -37,8 +37,10 @@ public class FileContextProviderTests
                 Context = new
                 {
                     (ri.Context as BuildFileContextBase).BuildConfiguration,
-                    FilePath = (ri.Context as BuildFileContextBase).FilePath.RemoveMachineSpecificPaths(),
-                    (ri.Context as BuildFileContextBase).AdditionalBuildArgs,
+                    WorkspaceRoot = (ri.Context as BuildFileContextBase).BuildTargetInfo.WorkspaceRoot.RemoveMachineSpecificPaths(),
+                    (ri.Context as BuildFileContextBase).BuildTargetInfo.Profile,
+                    FilePath = (ri.Context as BuildFileContextBase).BuildTargetInfo.FilePath.RemoveMachineSpecificPaths(),
+                    (ri.Context as BuildFileContextBase).BuildTargetInfo.AdditionalBuildArgs,
                 },
                 InputFiles = ri.InputFiles.Select(i => i.RemoveMachineSpecificPaths()).ToArray(),
                 ri.DisplayName,

@@ -6,7 +6,6 @@ using ApprovalTests.Reporters;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
-using Moq;
 using Newtonsoft.Json;
 using Xunit;
 
@@ -14,15 +13,12 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 
 public class BuildJsonOutputParserTests
 {
-    private static readonly ILogger L = Mock.Of<ILogger>();
-    private static readonly ITelemetryService T = Mock.Of<ITelemetryService>();
-
     [Fact]
     [UseReporter(typeof(DiffReporter))]
     public void IfNotParsableReturnAsIs()
     {
         var jsonOutput = "   Compiling pest v2.5.2";
-        var output = BuildJsonOutputParser.Parse(TestHelpers.ThisTestRoot, jsonOutput, L, T);
+        var output = BuildJsonOutputParser.Parse(TestHelpers.ThisTestRoot, jsonOutput, TestHelpers.TL);
 
         Approvals.VerifyAll(output.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }
@@ -36,7 +32,7 @@ public class BuildJsonOutputParserTests
     {
         NamerFactory.AdditionalInformation = $"datafile-{dataFile}";
         var jsonOutput = File.ReadAllText(Path.Combine(TestHelpers.ThisTestRoot, dataFile));
-        var output = BuildJsonOutputParser.Parse(TestHelpers.ThisTestRoot, jsonOutput, L, T);
+        var output = BuildJsonOutputParser.Parse(TestHelpers.ThisTestRoot, jsonOutput, TestHelpers.TL);
 
         Approvals.VerifyAll(output.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }
@@ -52,7 +48,7 @@ public class BuildJsonOutputParserTests
     {
         NamerFactory.AdditionalInformation = $"datafile-{dataFile}";
         var jsonOutput = File.ReadAllText(Path.Combine(TestHelpers.ThisTestRoot, dataFile));
-        var output = BuildJsonOutputParser.Parse(@"d:\src\dpt\pls\test_app", jsonOutput, L, T);
+        var output = BuildJsonOutputParser.Parse(@"d:\src\dpt\pls\test_app", jsonOutput, TestHelpers.TL);
 
         Approvals.VerifyAll(output.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }

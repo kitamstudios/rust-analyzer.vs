@@ -6,69 +6,63 @@ using AutoMapper;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Workspace.Build;
-using BuildMessage = KS.RustAnalyzer.TestAdapter.Common.BuildMessage;
 using WorkspaceBuildMessage = Microsoft.VisualStudio.Workspace.Build.BuildMessage;
 
 namespace KS.RustAnalyzer.VS;
 
 public class BuildFileContext : BuildFileContextBase
 {
-    public BuildFileContext(string buildConfiguration, Manifest parentManifest, string filePath, string additionalBuildArgs, IBuildOutputSink outputPane, ITelemetryService telemetryService, Func<string, Task> showMessageBox, ILogger logger)
-        : base(BuildContextTypes.BuildContextTypeGuid, buildConfiguration, parentManifest, filePath, additionalBuildArgs, outputPane, telemetryService, showMessageBox, logger)
+    public BuildFileContext(BuildTargetInfo bti, IBuildOutputSink outputPane, Func<string, Task> showMessageBox, TL tl)
+        : base(BuildContextTypes.BuildContextTypeGuid, bti, outputPane, showMessageBox, tl)
     {
     }
 }
 
 public class CleanFileContext : BuildFileContextBase
 {
-    public CleanFileContext(string buildConfiguration, Manifest parentManifest, string filePath, IBuildOutputSink outputPane, ITelemetryService telemetryService, Func<string, Task> showMessageBox, ILogger logger)
-        : base(BuildContextTypes.CleanContextTypeGuid, buildConfiguration, parentManifest, filePath, string.Empty, outputPane, telemetryService, showMessageBox, logger)
+    public CleanFileContext(BuildTargetInfo bti, IBuildOutputSink outputPane, Func<string, Task> showMessageBox, TL tl)
+        : base(BuildContextTypes.CleanContextTypeGuid, bti, outputPane, showMessageBox, tl)
     {
     }
 }
 
 public abstract class BuildFileContextBase : IBuildFileContext
 {
-    private static readonly IReadOnlyDictionary<Guid, Func<string, string, string, string, IBuildOutputSink, Func<BuildMessage, Task>, ITelemetryService, Func<string, Task>, ILogger, CancellationToken, Task<bool>>> FileContextActionInfo =
-        new Dictionary<Guid, Func<string, string, string, string, IBuildOutputSink, Func<BuildMessage, Task>, ITelemetryService, Func<string, Task>, ILogger, CancellationToken, Task<bool>>>
+    private static readonly IReadOnlyDictionary<Guid, Func<BuildTargetInfo, BuildOutputSinks, TL, CancellationToken, Task<bool>>> FileContextActionInfo =
+        new Dictionary<Guid, Func<BuildTargetInfo, BuildOutputSinks, TL, CancellationToken, Task<bool>>>
         {
             [BuildContextTypes.BuildContextTypeGuid] = ExeRunner.BuildAsync,
             [BuildContextTypes.CleanContextTypeGuid] = ExeRunner.CleanAsync,
         };
 
     private readonly IMapper _buildMessageMapper = new MapperConfiguration(cfg => cfg.CreateMap<DetailedBuildMessage, WorkspaceBuildMessage>()).CreateMapper();
-    private readonly Manifest _parentManifest;
-    private readonly ITelemetryService _t;
     private readonly Func<string, Task> _showMessageBox;
-    private readonly ILogger _l;
+    private readonly Func<BuildTargetInfo, BuildOutputSinks, TL, CancellationToken, Task<bool>> _commandFunc;
+    private readonly IBuildOutputSink _outputPane;
+    private readonly TL _tl;
 
-    public BuildFileContextBase(Guid contextTypeGuid, string buildConfiguration, Manifest parentManifest, string filePath, string additionalBuildArgs, IBuildOutputSink outputPane, ITelemetryService telemetryService, Func<string, Task> showMessageBox, ILogger logger)
+    public BuildFileContextBase(Guid contextTypeGuid, BuildTargetInfo bti, IBuildOutputSink outputPane, Func<string, Task> showMessageBox, TL tl)
     {
-        BuildConfiguration = buildConfiguration;
-        _parentManifest = parentManifest;
-        FilePath = filePath;
-        AdditionalBuildArgs = additionalBuildArgs;
-        OutputPane = outputPane;
-        _t = telemetryService;
+        BuildTargetInfo = bti;
+        _outputPane = outputPane;
         _showMessageBox = showMessageBox;
-        _l = logger;
-        CommandFunc = FileContextActionInfo[contextTypeGuid];
+        _tl = tl;
+        _commandFunc = FileContextActionInfo[contextTypeGuid];
     }
 
-    public string BuildConfiguration { get; }
+    public string BuildConfiguration => BuildTargetInfo.Profile;
 
-    // TODO: Too many arguments.
-    public Func<string, string, string, string, IBuildOutputSink, Func<BuildMessage, Task>, ITelemetryService, Func<string, Task>, ILogger, CancellationToken, Task<bool>> CommandFunc { get; }
-
-    public string FilePath { get; }
-
-    public string AdditionalBuildArgs { get; }
-
-    public IBuildOutputSink OutputPane { get; }
+    public BuildTargetInfo BuildTargetInfo { get; }
 
     public async Task<bool> ExecuteBuildAsync(IBuildActionProgress progress, CancellationToken cancellationToken)
     {
-        Func<BuildMessage, Task> taskReporter = bm => progress.ReportAsync(_buildMessageMapper.Map<WorkspaceBuildMessage>(bm), null);
-        return await CommandFunc(_parentManifest.WorkspaceRoot, FilePath, BuildConfiguration, AdditionalBuildArgs, OutputPane, taskReporter, _t, _showMessageBox, _l, cancellationToken);
+        var bos = new BuildOutputSinks
+        {
+            BuildActionProgressReporter = bm => progress.ReportAsync(_buildMessageMapper.Map<WorkspaceBuildMessage>(bm), null),
+            OutputSink = _outputPane,
+            ShowMessageBox = _showMessageBox,
+        };
+
+        return await _commandFunc(BuildTargetInfo, bos, _tl, cancellationToken);
     }
 }

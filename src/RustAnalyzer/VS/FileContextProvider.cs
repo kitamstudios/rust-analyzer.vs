@@ -16,15 +16,13 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
 {
     private readonly string _workspaceRoot;
     private readonly IBuildOutputSink _outputPane;
-    private readonly ITelemetryService _t;
-    private readonly ILogger _l;
+    private readonly TL _tl;
 
-    public FileContextProvider(string workspaceRoot, IBuildOutputSink outputPane, ITelemetryService t, ILogger l)
+    public FileContextProvider(string workspaceRoot, IBuildOutputSink outputPane, TL tl)
     {
         _workspaceRoot = workspaceRoot;
         _outputPane = outputPane;
-        _t = t;
-        _l = l;
+        _tl = tl;
     }
 
     public Task<IReadOnlyCollection<FileContext>> GetContextsForFileAsync(string filePath, string context, CancellationToken cancellationToken)
@@ -45,22 +43,22 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
         if (target == null)
         {
             var message = string.Format("Could not find a target for {0}. FileContextProvider is out of sync with FileScanner.", filePath);
-            _l.WriteError(message);
-            _t.TrackException(new InvalidOperationException(message));
+            _tl.L.WriteError(message);
+            _tl.T.TrackException(new InvalidOperationException(message));
             return await Task.FromResult(FileContext.EmptyFileContexts);
         }
 
-        return parentManifest.Profiles.SelectMany(p => GetBuildActions(parentManifest, target, p)).ToList();
+        return parentManifest.Profiles.SelectMany(p => GetBuildActions(target, p)).ToList();
     }
 
-    private IEnumerable<FileContext> GetBuildActions(Manifest parentManifest, Target target, string profile)
+    private IEnumerable<FileContext> GetBuildActions(Target target, string profile)
     {
         var action = new[]
         {
             new FileContext(
                 providerType: FileContextProviderFactory.ProviderTypeGuid,
                 contextType: BuildContextTypes.BuildContextTypeGuid,
-                context: new BuildFileContext(profile, parentManifest, target.Manifest.FullPath, target.AdditionalBuildArgs, _outputPane, _t, ShowMessageBoxAsync, _l),
+                context: new BuildFileContext(new BuildTargetInfo { Profile = profile, WorkspaceRoot = _workspaceRoot, FilePath = target.Manifest.FullPath, AdditionalBuildArgs = target.AdditionalBuildArgs }, _outputPane, ShowMessageBoxAsync, _tl),
                 inputFiles: new[] { target.Source },
                 displayName: profile),
         };
@@ -73,7 +71,7 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
                     new FileContext(
                         providerType: FileContextProviderFactory.ProviderTypeGuid,
                         contextType: BuildContextTypes.CleanContextTypeGuid,
-                        context: new CleanFileContext(profile, parentManifest, target.Manifest.FullPath, _outputPane, _t, ShowMessageBoxAsync, _l),
+                        context: new CleanFileContext(new BuildTargetInfo { Profile = profile, WorkspaceRoot = _workspaceRoot, FilePath = target.Manifest.FullPath }, _outputPane, ShowMessageBoxAsync, _tl),
                         inputFiles: new[] { target.Source },
                         displayName: profile),
                 });

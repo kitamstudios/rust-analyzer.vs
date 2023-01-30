@@ -9,41 +9,61 @@ using BuildMessage = KS.RustAnalyzer.TestAdapter.Common.BuildMessage;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
+public sealed class BuildTargetInfo
+{
+    public string WorkspaceRoot { get; set; }
+
+    public string FilePath { get; set; }
+
+    public string Profile { get; set; }
+
+    public string AdditionalBuildArgs { get; set; }
+}
+
+public sealed class BuildOutputSinks
+{
+    public Func<BuildMessage, Task> BuildActionProgressReporter { get; set; }
+
+    public Func<string, Task> ShowMessageBox { get; set; }
+
+    public IBuildOutputSink OutputSink { get; set; }
+}
+
 public class ExeRunner
 {
-    public static Task<bool> BuildAsync(string workspaceRoot, string filePath, string profile, string additionalArgs, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l, CancellationToken ct)
+    public static Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, TL tl, CancellationToken ct)
     {
         return ExecuteOperationAsync(
             "build",
-            filePath,
-            arguments: $"build --manifest-path \"{filePath}\" {additionalArgs} --profile {profile} --message-format json",
-            profile,
-            ts,
-            showMessageBox,
-            outputPane,
-            buildMessageReporter,
-            l,
-            x => BuildJsonOutputParser.Parse(workspaceRoot, x, l, ts),
-            ct);
+            bti.FilePath,
+            arguments: $"build --manifest-path \"{bti.FilePath}\" {bti.AdditionalBuildArgs} --profile {bti.Profile} --message-format json",
+            profile: bti.Profile,
+            showMessageBox: bos.ShowMessageBox,
+            outputPane: bos.OutputSink,
+            buildMessageReporter: bos.BuildActionProgressReporter,
+            outputPreprocessor: x => BuildJsonOutputParser.Parse(bti.WorkspaceRoot, x, tl),
+            ts: tl.T,
+            l: tl.L,
+            ct: ct);
     }
 
-    public static Task<bool> CleanAsync(string workspaceRoot, string filePath, string profile, string additionalArgs, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, ITelemetryService ts, Func<string, Task> showMessageBox, ILogger l, CancellationToken ct)
+    public static Task<bool> CleanAsync(BuildTargetInfo bti, BuildOutputSinks bos, TL tl, CancellationToken ct)
     {
         return ExecuteOperationAsync(
             "clean",
-            filePath,
-            arguments: $"clean --manifest-path \"{filePath}\" --profile {profile}",
-            profile,
-            ts,
-            showMessageBox,
-            outputPane,
-            buildMessageReporter,
-            l,
-            x => new[] { new StringBuildMessage { Message = x } },
-            ct);
+            bti.FilePath,
+            arguments: $"clean --manifest-path \"{bti.FilePath}\" --profile {bti.Profile}",
+            profile: bti.Profile,
+            showMessageBox: bos.ShowMessageBox,
+            outputPane: bos.OutputSink,
+            buildMessageReporter: bos.BuildActionProgressReporter,
+            outputPreprocessor: x => new[] { new StringBuildMessage { Message = x } },
+            ts: tl.T,
+            l: tl.L,
+            ct: ct);
     }
 
-    private static async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, ITelemetryService ts, Func<string, Task> showMessageBox, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, ILogger l, Func<string, BuildMessage[]> outputPreprocessor, CancellationToken ct)
+    private static async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, Func<string, Task> showMessageBox, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, Func<string, BuildMessage[]> outputPreprocessor, ITelemetryService ts, ILogger l, CancellationToken ct)
     {
         if (!Manifest.IsManifest(filePath) || !Path.IsPathRooted(filePath) || true)
         {
@@ -84,7 +104,7 @@ public class ExeRunner
         redirector?.WriteLineWithoutProcessing($"   WorkingDir: {workingDir}");
         redirector?.WriteLineWithoutProcessing($"");
 
-        using (var process = ProcessOutputProcessor.Run(
+        using (var process = ProcessRunner.Run(
             cargoFullPath,
             new[] { arguments },
             workingDir,
