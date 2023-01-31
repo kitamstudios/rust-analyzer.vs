@@ -1,3 +1,5 @@
+using System;
+
 namespace KS.RustAnalyzer.TestAdapter;
 
 public static class Constants
@@ -16,4 +18,6 @@ public static class Constants
     public const string ExecutorUriString = "executor://RustTestExecutor/v1";
 
     public const string ManifestExtension = ".toml";
+
+    public static readonly Version MinimumRequiredVsVersion = new (17, 4);
 }

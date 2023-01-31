@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Community.VisualStudio.Toolkit;
 using KS.RustAnalyzer.TestAdapter.Common;
+using KS.RustAnalyzer.VS;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Imaging;
@@ -26,17 +27,18 @@ namespace KS.RustAnalyzer;
 [Guid(PackageGuids.RustAnalyzerString)]
 public sealed class RustAnalyzerPackage : ToolkitPackage
 {
-    private ILogger _l;
-
-    private ITelemetryService _t;
+    private TL _tl;
 
     protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
     {
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
         var cmServiceProvider = (IComponentModel)await GetServiceAsync(typeof(SComponentModel));
-        _l = cmServiceProvider?.GetService<ILogger>();
-        _t = cmServiceProvider?.GetService<ITelemetryService>();
+        _tl = new TL
+        {
+            L = cmServiceProvider?.GetService<ILogger>(),
+            T = cmServiceProvider?.GetService<ITelemetryService>(),
+        };
     }
 
     protected override async Task OnAfterPackageLoadedAsync(CancellationToken cancellationToken)
@@ -45,7 +47,8 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
 
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
-        await ReleaseSummaryNotification.ShowAsync(this, _l, _t);
+        await VsVersionCheck.ShowAsync(_tl);
+        await ReleaseSummaryNotification.ShowAsync(this, _tl);
         await SearchAndDisableIncompatibleExtensionsAsync();
     }
 
@@ -53,7 +56,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
 
     private async Task SearchAndDisableIncompatibleExtensionsAsync()
     {
-        _l?.WriteLine("Searching and disabling incompatible extensions.");
+        _tl.L.WriteLine("Searching and disabling incompatible extensions.");
 
         try
         {
@@ -74,7 +77,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                         $"- OK: Disable the above and restart VS. (You can enable them back later from Extensions > Manage Extensions.)\r\n- Cancel: Disable {Vsix.Name} and restart VS.");
                 if (mbRet == VSConstants.MessageBoxResult.IDOK)
                 {
-                    _t?.TrackEvent("DisableIncompatExts", ("Extensions", string.Join(",", incompatibleExtensions.Select(x => x.Id))));
+                    _tl.T.TrackEvent("DisableIncompatExts", ("Extensions", string.Join(",", incompatibleExtensions.Select(x => x.Id))));
                     foreach (var e in incompatibleExtensions)
                     {
                         exMgr.Disable(e.Extension);
@@ -82,7 +85,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                 }
                 else
                 {
-                    _t?.TrackEvent("DisableThisExt");
+                    _tl.T.TrackEvent("DisableThisExt");
                     var thisExtension = allExtensionIds[Vsix.Id];
                     exMgr.Disable(thisExtension);
                 }
@@ -92,8 +95,8 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
         }
         catch (Exception e)
         {
-            _l?.WriteLine("Failed in searching and disabling incompatible extensions. Ex: {0}", e);
-            _t?.TrackException(e);
+            _tl.L.WriteLine("Failed in searching and disabling incompatible extensions. Ex: {0}", e);
+            _tl.T.TrackException(e);
         }
     }
 
@@ -131,14 +134,14 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
         private const string ActionContextDismiss = "dismiss";
         private const string DismissedRegKeyName = "release_notes_dismissed";
 
-        public static async Task ShowAsync(IServiceProvider sp, ILogger l, ITelemetryService t)
+        public static async Task ShowAsync(IServiceProvider sp, TL tl)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            l.WriteLine("Attempting to show release notes...");
+            tl.L.WriteLine("Attempting to show release notes...");
             if (HasBeenDismissedByUser(sp))
             {
-                l.WriteLine("... Not showing release notes as it has already been dismissed by the user.");
+                tl.L.WriteLine("... Not showing release notes as it has already been dismissed by the user.");
                 return;
             }
 
@@ -148,11 +151,11 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                 image: KnownMonikers.StatusInformation,
                 isCloseButtonVisible: true);
             var infoBar = await CommunityVS.InfoBar.CreateAsync(model);
-            infoBar.ActionItemClicked += (s, ea) => InfoBar_ActionItemClicked(s, ea, sp, t);
+            infoBar.ActionItemClicked += (s, ea) => InfoBar_ActionItemClicked(s, ea, sp, tl);
             await infoBar.TryShowInfoBarUIAsync();
         }
 
-        private static void InfoBar_ActionItemClicked(object sender, InfoBarActionItemEventArgs e, IServiceProvider sp, ITelemetryService t)
+        private static void InfoBar_ActionItemClicked(object sender, InfoBarActionItemEventArgs e, IServiceProvider sp, TL tl)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -176,7 +179,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                     break;
             }
 
-            t.TrackEvent("InfoBarAction", ("Context", actionContext));
+            tl.T.TrackEvent("InfoBarAction", ("Context", actionContext));
         }
 
         private static void MarkDismissedByUser(IServiceProvider sp)
@@ -213,6 +216,35 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
             }
 
             return false;
+        }
+    }
+
+    #endregion
+
+    #region VsVersionCheck
+
+    public static class VsVersionCheck
+    {
+        public static async Task ShowAsync(TL tl)
+        {
+            tl.L.WriteLine("Doing VS version check...");
+            var version = await CommunityVS.Shell.GetVsVersionAsync();
+            if (version == null)
+            {
+                var msg = "CommunityVS.Shell.GetVsVersionAsync() returned null.";
+                tl.L.WriteError(msg);
+                tl.T.TrackException(new InvalidOperationException(msg));
+                return;
+            }
+
+            if (version <= Constants.MinimumRequiredVsVersion)
+            {
+                tl.L.WriteLine("Version check failed. Minimum {0}, found {1}.", Constants.MinimumRequiredVsVersion, version);
+                tl.T.TrackException(new InvalidOperationException("VsVersion check failed."), new[] { ("Minimum", Constants.MinimumRequiredVsVersion.ToString()), ("Found", version.ToString()) });
+                await VsCommon.ShowMessageBoxAsync(
+                    $"This package requires a minumum of Visual Studio 2022 v{Constants.MinimumRequiredVsVersion}. However current version is v{version}.",
+                    "rust-analyzer will fail randomly. Please apply the latest Visual Studio 2022 updates.");
+            }
         }
     }
 
