@@ -1,4 +1,24 @@
-﻿[0] = { WorkspacePath = ..\..\..\target\debug\examples\eg2.exe, Target = <TestRoot>\workspace_with_example\target\debug\examples\eg2.exe, Context = dev, ReferenceType = 2 }
-[1] = { WorkspacePath = ..\..\..\target\release\examples\eg2.exe, Target = <TestRoot>\workspace_with_example\target\release\examples\eg2.exe, Context = release, ReferenceType = 2 }
-[2] = { WorkspacePath = ..\..\..\target\debug\examples\eg2.exe, Target = <TestRoot>\workspace_with_example\target\debug\examples\eg2.exe, Context = test, ReferenceType = 2 }
-[3] = { WorkspacePath = ..\..\..\target\release\examples\eg2.exe, Target = <TestRoot>\workspace_with_example\target\release\examples\eg2.exe, Context = bench, ReferenceType = 2 }
+﻿[0] = {
+  "WorkspacePath": "..\\..\\..\\target\\debug\\examples\\eg2.exe",
+  "Target": "<TestRoot>\\workspace_with_example\\target\\debug\\examples\\eg2.exe",
+  "Context": "dev",
+  "ReferenceType": 2
+}
+[1] = {
+  "WorkspacePath": "..\\..\\..\\target\\release\\examples\\eg2.exe",
+  "Target": "<TestRoot>\\workspace_with_example\\target\\release\\examples\\eg2.exe",
+  "Context": "release",
+  "ReferenceType": 2
+}
+[2] = {
+  "WorkspacePath": "..\\..\\..\\target\\debug\\examples\\eg2.exe",
+  "Target": "<TestRoot>\\workspace_with_example\\target\\debug\\examples\\eg2.exe",
+  "Context": "test",
+  "ReferenceType": 2
+}
+[3] = {
+  "WorkspacePath": "..\\..\\..\\target\\release\\examples\\eg2.exe",
+  "Target": "<TestRoot>\\workspace_with_example\\target\\release\\examples\\eg2.exe",
+  "Context": "bench",
+  "ReferenceType": 2
+}

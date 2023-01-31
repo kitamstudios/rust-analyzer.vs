@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
-using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
 
@@ -27,7 +25,6 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
 
     public Task<IReadOnlyCollection<FileContext>> GetContextsForFileAsync(string filePath, string context, CancellationToken cancellationToken)
     {
-        // TODO: BUG: What is context?
         return GetContextsForFileAsync(filePath, cancellationToken);
     }
 
@@ -39,16 +36,44 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
             return await Task.FromResult(FileContext.EmptyFileContexts);
         }
 
-        var target = parentManifest.Targets.Where(t => t.Source.Equals(filePath, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
-        if (target == null)
+        if (filePath.IsManifest())
         {
-            var message = string.Format("Could not find a target for {0}. FileContextProvider is out of sync with FileScanner.", filePath);
-            _tl.L.WriteError(message);
-            _tl.T.TrackException(new InvalidOperationException(message));
-            return await Task.FromResult(FileContext.EmptyFileContexts);
+            return parentManifest.Profiles
+                .SelectMany(
+                    profile => new[]
+                    {
+                        new FileContext(
+                            FileContextProviderFactory.ProviderTypeGuid,
+                            BuildContextTypes.BuildContextTypeGuid,
+                            new BuildFileContext(new BuildTargetInfo { Profile = profile, WorkspaceRoot = _workspaceRoot, FilePath = filePath }, _outputPane, VsCommon.ShowMessageBoxAsync, _tl),
+                            new[] { filePath },
+                            displayName: profile),
+                        new FileContext(
+                            FileContextProviderFactory.ProviderTypeGuid,
+                            BuildContextTypes.CleanContextTypeGuid,
+                            new CleanFileContext(new BuildTargetInfo { Profile = profile, WorkspaceRoot = _workspaceRoot, FilePath = filePath }, _outputPane, VsCommon.ShowMessageBoxAsync, _tl),
+                            new[] { filePath },
+                            displayName: profile),
+                    })
+                .ToList();
         }
+        else if (filePath.IsRustFile())
+        {
+            var target = parentManifest.Targets.Where(t => t.Source.Equals(filePath, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+            if (target == null)
+            {
+                var message = string.Format("Could not find a target for {0}. FileContextProvider is out of sync with FileScanner.", filePath);
+                _tl.L.WriteError(message);
+                _tl.T.TrackException(new InvalidOperationException(message));
+                return await Task.FromResult(FileContext.EmptyFileContexts);
+            }
 
-        return parentManifest.Profiles.SelectMany(p => GetBuildActions(target, p)).ToList();
+            return parentManifest.Profiles.SelectMany(p => GetBuildActions(target, p)).ToList();
+        }
+        else
+        {
+            return FileContext.EmptyFileContexts;
+        }
     }
 
     private IEnumerable<FileContext> GetBuildActions(Target target, string profile)
@@ -58,32 +83,11 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
             new FileContext(
                 providerType: FileContextProviderFactory.ProviderTypeGuid,
                 contextType: BuildContextTypes.BuildContextTypeGuid,
-                context: new BuildFileContext(new BuildTargetInfo { Profile = profile, WorkspaceRoot = _workspaceRoot, FilePath = target.Manifest.FullPath, AdditionalBuildArgs = target.AdditionalBuildArgs }, _outputPane, ShowMessageBoxAsync, _tl),
+                context: new BuildFileContext(new BuildTargetInfo { Profile = profile, WorkspaceRoot = _workspaceRoot, FilePath = target.Manifest.FullPath, AdditionalBuildArgs = target.AdditionalBuildArgs }, _outputPane, VsCommon.ShowMessageBoxAsync, _tl),
                 inputFiles: new[] { target.Source },
                 displayName: profile),
         };
 
-        if (target.Type == TargetType.Bin)
-        {
-            action.Concat(
-                new[]
-                {
-                    new FileContext(
-                        providerType: FileContextProviderFactory.ProviderTypeGuid,
-                        contextType: BuildContextTypes.CleanContextTypeGuid,
-                        context: new CleanFileContext(new BuildTargetInfo { Profile = profile, WorkspaceRoot = _workspaceRoot, FilePath = target.Manifest.FullPath }, _outputPane, ShowMessageBoxAsync, _tl),
-                        inputFiles: new[] { target.Source },
-                        displayName: profile),
-                });
-        }
-
         return action;
-    }
-
-    private async Task ShowMessageBoxAsync(string message)
-    {
-        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-        MessageBox.Show(message, "rust-analyzer", MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
 }

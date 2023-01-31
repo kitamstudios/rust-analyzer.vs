@@ -12,6 +12,7 @@ using KS.RustAnalyzer.VS;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Debug;
 using Microsoft.VisualStudio.Workspace.Indexing;
+using Newtonsoft.Json;
 using Xunit;
 
 namespace KS.RustAnalyzer.UnitTests.VS;
@@ -39,7 +40,7 @@ public class FileScannerTests
                 ri.Context,
                 ri.ReferenceType,
             });
-        Approvals.VerifyAll(processedRefInfos, label: string.Empty);
+        Approvals.VerifyAll(processedRefInfos.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }
 
     [Theory]
@@ -62,7 +63,7 @@ public class FileScannerTests
                 Target = dv.Target?.RemoveMachineSpecificPaths(),
                 dv.Context,
             });
-        Approvals.VerifyAll(processedDataValues, label: string.Empty);
+        Approvals.VerifyAll(processedDataValues.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }
 
     private static object NormalizeAndSerializeDataValue(object value)
@@ -71,7 +72,8 @@ public class FileScannerTests
         {
             ps[LaunchConfigurationConstants.ProjectKey] =
                 ps[LaunchConfigurationConstants.ProjectKey].ToString().RemoveMachineSpecificPaths();
-
+            ps[LaunchConfigurationConstants.ProgramKey] =
+                ps[LaunchConfigurationConstants.ProgramKey].ToString().RemoveMachineSpecificPaths();
             return ps
                 .Aggregate(new StringBuilder("{ "), (acc, e) => acc.AppendFormat("[{0}] = {1}, ", e.Key, e.Value))
                 .Append(" }")

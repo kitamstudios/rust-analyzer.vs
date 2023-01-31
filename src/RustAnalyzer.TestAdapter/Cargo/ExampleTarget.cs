@@ -1,6 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
+using KS.RustAnalyzer.TestAdapter.Common;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
@@ -15,13 +15,13 @@ public sealed class ExampleTarget : Target
         : base(manifest, name, TargetType.Example)
     {
         Source = source;
-        AdditionalBuildArgs = $"--example {name}";
+        AdditionalBuildArgs = $"--example \"{name}\"";
     }
 
     public static IEnumerable<Target> GetAll(Manifest manifest)
     {
         var examplesFolder = Path.Combine(Path.GetDirectoryName(manifest.FullPath), "examples");
-        if (manifest.IsWorkspace || !Directory.Exists(examplesFolder))
+        if (!manifest.IsPackage || !Directory.Exists(examplesFolder))
         {
             yield break;
         }
@@ -36,8 +36,7 @@ public sealed class ExampleTarget : Target
                 yield return new ExampleTarget(manifest, Path.GetFileName(fse), source);
             }
 
-            if (File.Exists(fse)
-                && Path.GetExtension(fse).Equals(Constants.RustFileExtension, StringComparison.OrdinalIgnoreCase))
+            if (File.Exists(fse) && fse.IsRustFile())
             {
                 yield return new ExampleTarget(manifest, Path.GetFileNameWithoutExtension(fse), fse);
             }

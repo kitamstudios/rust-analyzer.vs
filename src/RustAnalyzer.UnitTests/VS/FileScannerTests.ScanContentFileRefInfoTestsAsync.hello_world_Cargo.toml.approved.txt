@@ -1,4 +1,24 @@
-﻿[0] = { WorkspacePath = target\debug\hello_world.exe, Target = <TestRoot>\hello_world\target\debug\hello_world.exe, Context = dev, ReferenceType = 2 }
-[1] = { WorkspacePath = target\release\hello_world.exe, Target = <TestRoot>\hello_world\target\release\hello_world.exe, Context = release, ReferenceType = 2 }
-[2] = { WorkspacePath = target\debug\hello_world.exe, Target = <TestRoot>\hello_world\target\debug\hello_world.exe, Context = test, ReferenceType = 2 }
-[3] = { WorkspacePath = target\release\hello_world.exe, Target = <TestRoot>\hello_world\target\release\hello_world.exe, Context = bench, ReferenceType = 2 }
+﻿[0] = {
+  "WorkspacePath": "target\\debug\\hello_world.exe",
+  "Target": "<TestRoot>\\hello_world\\target\\debug\\hello_world.exe",
+  "Context": "dev",
+  "ReferenceType": 2
+}
+[1] = {
+  "WorkspacePath": "target\\release\\hello_world.exe",
+  "Target": "<TestRoot>\\hello_world\\target\\release\\hello_world.exe",
+  "Context": "release",
+  "ReferenceType": 2
+}
+[2] = {
+  "WorkspacePath": "target\\debug\\hello_world.exe",
+  "Target": "<TestRoot>\\hello_world\\target\\debug\\hello_world.exe",
+  "Context": "test",
+  "ReferenceType": 2
+}
+[3] = {
+  "WorkspacePath": "target\\release\\hello_world.exe",
+  "Target": "<TestRoot>\\hello_world\\target\\release\\hello_world.exe",
+  "Context": "bench",
+  "ReferenceType": 2
+}

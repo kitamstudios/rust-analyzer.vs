@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using EnsureThat;
-using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
@@ -50,7 +49,7 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 
     private void TryUpdateTestContainersCache(string path, WatcherChangeTypes changeType = WatcherChangeTypes.Created)
     {
-        Ensure.That(Manifest.IsManifest(path)).IsTrue();
+        Ensure.That(path.IsManifest()).IsTrue();
 
         if (!File.Exists(path))
         {
@@ -115,7 +114,7 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
     private bool CanFileChangeTests(FileSystemEventArgs eventArgs)
     {
         // TODO: UT: We need to expand the check to include .rs and possibly other files as well.
-        return Manifest.IsManifest(eventArgs.FullPath) && IsPathInDirectory(_currentWorkspace.Location, eventArgs.FullPath);
+        return eventArgs.FullPath.IsManifest() && IsPathInDirectory(_currentWorkspace.Location, eventArgs.FullPath);
     }
 
     public class FindFilesProgress : IProgress<string>

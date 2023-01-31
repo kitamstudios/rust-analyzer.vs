@@ -2,7 +2,6 @@ using System;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
-using System.Windows.Forms;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Shell;
@@ -10,7 +9,6 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Debug;
 using static Microsoft.VisualStudio.VSConstants;
-using CommunityVS = Community.VisualStudio.Toolkit.VS;
 
 namespace KS.RustAnalyzer.VS;
 
@@ -34,13 +32,12 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
             var profile = debugLaunchActionContext.BuildConfiguration;
             var targetFQN = debugLaunchActionContext.LaunchConfiguration[LaunchConfigurationConstants.NameKey] as string;
             var target = manifest?.Targets?.FirstOrDefault(t => t.QualifiedTargetFileName == targetFQN);
-
             if (target == null)
             {
-                string message = string.Format("Cannot find target {0} in {1}, for profile {2}. This indicated a bug in the manifest parsing logic. Unable to start debugging.", targetFQN, manifest?.FullPath, profile);
+                string message = string.Format("Cannot find target '{0}' in '{1}', for profile '{2}'. This indicates a bug in the manifest parsing logic. Unable to start debugging.", targetFQN, manifest?.FullPath, profile);
                 L.WriteError(message);
                 T.TrackException(new ArgumentOutOfRangeException("target", message));
-                CommunityVS.MessageBox.Show(message, "Please file a bug.", OLEMSGICON.OLEMSGICON_CRITICAL);
+                VsCommon.ShowMessageBox(message, "Please file a bug.");
                 return;
             }
 
@@ -50,10 +47,10 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
             var processName = target.GetPath(profile);
             if (!File.Exists(processName))
             {
-                var message = string.Format("Unable to find file: {0}. This indicates a bug with the Manifest parsing logic. Unable to start debugging.", processName);
+                var message = string.Format("Unable to find file: '{0}'. This indicates a bug with the Manifest parsing logic. Unable to start debugging.", processName);
                 L.WriteLine(message);
                 T.TrackException(new FileNotFoundException(message, processName));
-                CommunityVS.MessageBox.Show(message, "Please file a bug.", OLEMSGICON.OLEMSGICON_CRITICAL);
+                VsCommon.ShowMessageBox(message, "Please file a bug.");
                 return;
             }
 

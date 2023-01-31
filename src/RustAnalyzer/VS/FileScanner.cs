@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Cargo;
+using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
 using Microsoft.VisualStudio.Workspace.Debug;
@@ -23,7 +24,7 @@ public class FileScanner : IFileScanner
     public async Task<T> ScanContentAsync<T>(string filePath, CancellationToken cancellationToken)
         where T : class
     {
-        var owningManifest = Manifest.IsManifest(filePath) ? Manifest.Create(filePath) : Manifest.GetParentManifestOrThisUnderWorkspace(_workspaceRoot, filePath);
+        var owningManifest = filePath.IsManifest() ? Manifest.Create(filePath) : Manifest.GetParentManifestOrThisUnderWorkspace(_workspaceRoot, filePath);
         if (owningManifest == null)
         {
             return (T)(IReadOnlyCollection<T>)Array.Empty<T>();
@@ -62,6 +63,7 @@ public class FileScanner : IFileScanner
                         [LaunchConfigurationConstants.DebugTypeKey] = LaunchConfigurationConstants.NativeOptionKey,
                         [LaunchConfigurationConstants.ProjectKey] = owningManifest.FullPath,
                         [LaunchConfigurationConstants.ProjectTargetKey] = target.QualifiedTargetFileName,
+                        [LaunchConfigurationConstants.ProgramKey] = owningManifest.FullPath,
                     };
 
                     allFileDataValues.Add(

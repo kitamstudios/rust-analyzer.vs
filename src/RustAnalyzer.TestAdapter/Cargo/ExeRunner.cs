@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Common;
-using BuildMessage = KS.RustAnalyzer.TestAdapter.Common.BuildMessage;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
@@ -17,7 +16,7 @@ public sealed class BuildTargetInfo
 
     public string Profile { get; set; }
 
-    public string AdditionalBuildArgs { get; set; }
+    public string AdditionalBuildArgs { get; set; } = string.Empty;
 }
 
 public sealed class BuildOutputSinks
@@ -65,14 +64,9 @@ public class ExeRunner
 
     private static async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, Func<string, Task> showMessageBox, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, Func<string, BuildMessage[]> outputPreprocessor, ITelemetryService ts, ILogger l, CancellationToken ct)
     {
-        if (!Manifest.IsManifest(filePath) || !Path.IsPathRooted(filePath) || true)
-        {
-            l.WriteLine("{0} has to be a rooted cargo file", filePath);
-        }
-
         outputPane.Clear();
 
-        var cargoFullPath = PathUtilities.SearchInPath(Constants.CargoExe);
+        var cargoFullPath = Constants.CargoExe.SearchInPath();
 
         ts.TrackEvent(
             opName,

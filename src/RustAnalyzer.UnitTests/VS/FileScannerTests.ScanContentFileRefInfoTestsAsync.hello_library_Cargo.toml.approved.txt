@@ -1,4 +1,24 @@
-﻿[0] = { WorkspacePath = target\debug\libhello_lib.rlib, Target = <TestRoot>\hello_library\target\debug\libhello_lib.rlib, Context = dev, ReferenceType = 2 }
-[1] = { WorkspacePath = target\release\libhello_lib.rlib, Target = <TestRoot>\hello_library\target\release\libhello_lib.rlib, Context = release, ReferenceType = 2 }
-[2] = { WorkspacePath = target\debug\libhello_lib.rlib, Target = <TestRoot>\hello_library\target\debug\libhello_lib.rlib, Context = test, ReferenceType = 2 }
-[3] = { WorkspacePath = target\release\libhello_lib.rlib, Target = <TestRoot>\hello_library\target\release\libhello_lib.rlib, Context = bench, ReferenceType = 2 }
+﻿[0] = {
+  "WorkspacePath": "target\\debug\\libhello_lib.rlib",
+  "Target": "<TestRoot>\\hello_library\\target\\debug\\libhello_lib.rlib",
+  "Context": "dev",
+  "ReferenceType": 2
+}
+[1] = {
+  "WorkspacePath": "target\\release\\libhello_lib.rlib",
+  "Target": "<TestRoot>\\hello_library\\target\\release\\libhello_lib.rlib",
+  "Context": "release",
+  "ReferenceType": 2
+}
+[2] = {
+  "WorkspacePath": "target\\debug\\libhello_lib.rlib",
+  "Target": "<TestRoot>\\hello_library\\target\\debug\\libhello_lib.rlib",
+  "Context": "test",
+  "ReferenceType": 2
+}
+[3] = {
+  "WorkspacePath": "target\\release\\libhello_lib.rlib",
+  "Target": "<TestRoot>\\hello_library\\target\\release\\libhello_lib.rlib",
+  "Context": "bench",
+  "ReferenceType": 2
+}

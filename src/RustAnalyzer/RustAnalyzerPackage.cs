@@ -68,7 +68,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
             var incompatibleExtensions = AreIncompatibleExtensionsInstalled(allExtensionIds);
             if (incompatibleExtensions.Count != 0)
             {
-                var mbRet = await new MessageBox()
+                var mbRet = await CommunityVS.MessageBox
                     .ShowAsync(
                         $"{Vsix.Name} has detected the followiing incompatible extensions:\r\n\r\n{string.Join("\r\n", incompatibleExtensions.Select(x => x.Id))}",
                         $"- OK: Disable the above and restart VS. (You can enable them back later from Extensions > Manage Extensions.)\r\n- Cancel: Disable {Vsix.Name} and restart VS.");

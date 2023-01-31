@@ -45,6 +45,6 @@ public class FileContextProviderTests
                 InputFiles = ri.InputFiles.Select(i => i.RemoveMachineSpecificPaths()).ToArray(),
                 ri.DisplayName,
             });
-        Approvals.VerifyAll(processedRefInfos.Select(o => o.SerializeObject(Formatting.None)), label: string.Empty);
+        Approvals.VerifyAll(processedRefInfos.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }
 }

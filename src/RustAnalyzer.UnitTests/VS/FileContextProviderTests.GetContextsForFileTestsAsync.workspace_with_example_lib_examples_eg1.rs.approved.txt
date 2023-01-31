@@ -1,4 +1,60 @@
-﻿[0] = {"ProviderType":"72d3fcef-0000-4266-b8dd-d3ed06e35a2b","ContextType":"1b8311d1-09ce-4d9f-a2a5-c885f5763a4a","Context":{"BuildConfiguration":"dev","WorkspaceRoot":"<TestRoot>\\workspace_with_example","Profile":"dev","FilePath":"<TestRoot>\\workspace_with_example\\lib\\cargo.toml","AdditionalBuildArgs":"--example eg1"},"InputFiles":["<TestRoot>\\workspace_with_example\\lib\\examples\\eg1.rs"],"DisplayName":"dev"}
-[1] = {"ProviderType":"72d3fcef-0000-4266-b8dd-d3ed06e35a2b","ContextType":"1b8311d1-09ce-4d9f-a2a5-c885f5763a4a","Context":{"BuildConfiguration":"release","WorkspaceRoot":"<TestRoot>\\workspace_with_example","Profile":"release","FilePath":"<TestRoot>\\workspace_with_example\\lib\\cargo.toml","AdditionalBuildArgs":"--example eg1"},"InputFiles":["<TestRoot>\\workspace_with_example\\lib\\examples\\eg1.rs"],"DisplayName":"release"}
-[2] = {"ProviderType":"72d3fcef-0000-4266-b8dd-d3ed06e35a2b","ContextType":"1b8311d1-09ce-4d9f-a2a5-c885f5763a4a","Context":{"BuildConfiguration":"test","WorkspaceRoot":"<TestRoot>\\workspace_with_example","Profile":"test","FilePath":"<TestRoot>\\workspace_with_example\\lib\\cargo.toml","AdditionalBuildArgs":"--example eg1"},"InputFiles":["<TestRoot>\\workspace_with_example\\lib\\examples\\eg1.rs"],"DisplayName":"test"}
-[3] = {"ProviderType":"72d3fcef-0000-4266-b8dd-d3ed06e35a2b","ContextType":"1b8311d1-09ce-4d9f-a2a5-c885f5763a4a","Context":{"BuildConfiguration":"bench","WorkspaceRoot":"<TestRoot>\\workspace_with_example","Profile":"bench","FilePath":"<TestRoot>\\workspace_with_example\\lib\\cargo.toml","AdditionalBuildArgs":"--example eg1"},"InputFiles":["<TestRoot>\\workspace_with_example\\lib\\examples\\eg1.rs"],"DisplayName":"bench"}
+﻿[0] = {
+  "ProviderType": "72d3fcef-0000-4266-b8dd-d3ed06e35a2b",
+  "ContextType": "1b8311d1-09ce-4d9f-a2a5-c885f5763a4a",
+  "Context": {
+    "BuildConfiguration": "dev",
+    "WorkspaceRoot": "<TestRoot>\\workspace_with_example",
+    "Profile": "dev",
+    "FilePath": "<TestRoot>\\workspace_with_example\\lib\\cargo.toml",
+    "AdditionalBuildArgs": "--example \"eg1\""
+  },
+  "InputFiles": [
+    "<TestRoot>\\workspace_with_example\\lib\\examples\\eg1.rs"
+  ],
+  "DisplayName": "dev"
+}
+[1] = {
+  "ProviderType": "72d3fcef-0000-4266-b8dd-d3ed06e35a2b",
+  "ContextType": "1b8311d1-09ce-4d9f-a2a5-c885f5763a4a",
+  "Context": {
+    "BuildConfiguration": "release",
+    "WorkspaceRoot": "<TestRoot>\\workspace_with_example",
+    "Profile": "release",
+    "FilePath": "<TestRoot>\\workspace_with_example\\lib\\cargo.toml",
+    "AdditionalBuildArgs": "--example \"eg1\""
+  },
+  "InputFiles": [
+    "<TestRoot>\\workspace_with_example\\lib\\examples\\eg1.rs"
+  ],
+  "DisplayName": "release"
+}
+[2] = {
+  "ProviderType": "72d3fcef-0000-4266-b8dd-d3ed06e35a2b",
+  "ContextType": "1b8311d1-09ce-4d9f-a2a5-c885f5763a4a",
+  "Context": {
+    "BuildConfiguration": "test",
+    "WorkspaceRoot": "<TestRoot>\\workspace_with_example",
+    "Profile": "test",
+    "FilePath": "<TestRoot>\\workspace_with_example\\lib\\cargo.toml",
+    "AdditionalBuildArgs": "--example \"eg1\""
+  },
+  "InputFiles": [
+    "<TestRoot>\\workspace_with_example\\lib\\examples\\eg1.rs"
+  ],
+  "DisplayName": "test"
+}
+[3] = {
+  "ProviderType": "72d3fcef-0000-4266-b8dd-d3ed06e35a2b",
+  "ContextType": "1b8311d1-09ce-4d9f-a2a5-c885f5763a4a",
+  "Context": {
+    "BuildConfiguration": "bench",
+    "WorkspaceRoot": "<TestRoot>\\workspace_with_example",
+    "Profile": "bench",
+    "FilePath": "<TestRoot>\\workspace_with_example\\lib\\cargo.toml",
+    "AdditionalBuildArgs": "--example \"eg1\""
+  },
+  "InputFiles": [
+    "<TestRoot>\\workspace_with_example\\lib\\examples\\eg1.rs"
+  ],
+  "DisplayName": "bench"
+}

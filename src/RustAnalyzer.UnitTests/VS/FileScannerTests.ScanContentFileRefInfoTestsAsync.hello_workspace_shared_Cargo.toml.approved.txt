@@ -1,4 +1,24 @@
-[0] = { WorkspacePath = ..\target\debug\libshared.rlib, Target = <TestRoot>\hello_workspace\target\debug\libshared.rlib, Context = dev, ReferenceType = 2 }
-[1] = { WorkspacePath = ..\target\release\libshared.rlib, Target = <TestRoot>\hello_workspace\target\release\libshared.rlib, Context = release, ReferenceType = 2 }
-[2] = { WorkspacePath = ..\target\debug\libshared.rlib, Target = <TestRoot>\hello_workspace\target\debug\libshared.rlib, Context = test, ReferenceType = 2 }
-[3] = { WorkspacePath = ..\target\release\libshared.rlib, Target = <TestRoot>\hello_workspace\target\release\libshared.rlib, Context = bench, ReferenceType = 2 }
+[0] = {
+  "WorkspacePath": "..\\target\\debug\\libshared.rlib",
+  "Target": "<TestRoot>\\hello_workspace\\target\\debug\\libshared.rlib",
+  "Context": "dev",
+  "ReferenceType": 2
+}
+[1] = {
+  "WorkspacePath": "..\\target\\release\\libshared.rlib",
+  "Target": "<TestRoot>\\hello_workspace\\target\\release\\libshared.rlib",
+  "Context": "release",
+  "ReferenceType": 2
+}
+[2] = {
+  "WorkspacePath": "..\\target\\debug\\libshared.rlib",
+  "Target": "<TestRoot>\\hello_workspace\\target\\debug\\libshared.rlib",
+  "Context": "test",
+  "ReferenceType": 2
+}
+[3] = {
+  "WorkspacePath": "..\\target\\release\\libshared.rlib",
+  "Target": "<TestRoot>\\hello_workspace\\target\\release\\libshared.rlib",
+  "Context": "bench",
+  "ReferenceType": 2
+}

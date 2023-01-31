@@ -83,7 +83,7 @@ public class Manifest
 
     public static bool TryGetParentManifestOrThisUnderWorkspace(string workspaceRoot, string fileOrFolderPath, out string parentCargoPath)
     {
-        if (Path.GetFileName(fileOrFolderPath).Equals(Constants.ManifestFileName, StringComparison.OrdinalIgnoreCase))
+        if (fileOrFolderPath.IsManifest())
         {
             parentCargoPath = fileOrFolderPath;
             return true;
@@ -107,12 +107,6 @@ public class Manifest
 
         parentCargoPath = null;
         return false;
-    }
-
-    public static bool IsManifest(string filePath)
-    {
-        var fileName = Path.GetFileName(filePath);
-        return StringComparer.OrdinalIgnoreCase.Equals(fileName, Constants.ManifestFileName);
     }
 
     public string GetPackageName()
