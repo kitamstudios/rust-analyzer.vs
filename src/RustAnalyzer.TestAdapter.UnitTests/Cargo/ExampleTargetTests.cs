@@ -18,6 +18,7 @@ public class ExampleTargetTests
     [InlineData(@"hello_library\Cargo.toml")]
     [InlineData(@"hello_workspace\Cargo.toml")]
     [InlineData(@"lib_with_example\Cargo.toml")]
+    [InlineData(@"bin_with_example\Cargo.toml")]
     [InlineData(@"workspace_with_example\lib\Cargo.toml")]
     public void GetAllTests(string manifestRelPath)
     {

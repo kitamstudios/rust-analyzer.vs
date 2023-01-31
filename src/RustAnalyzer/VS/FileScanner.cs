@@ -27,7 +27,7 @@ public class FileScanner : IFileScanner
         var owningManifest = filePath.IsManifest() ? Manifest.Create(filePath) : Manifest.GetParentManifestOrThisUnderWorkspace(_workspaceRoot, filePath);
         if (owningManifest == null)
         {
-            return (T)(IReadOnlyCollection<T>)Array.Empty<T>();
+            return null;
         }
 
         if (typeof(T) == FileScannerTypeConstants.FileDataValuesType)

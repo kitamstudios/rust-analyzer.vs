@@ -68,7 +68,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                 bstrRemoteMachine = null,
                 cbSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf<VsDebugTargetInfo>(),
                 grfLaunch = (uint)(noDebugFlag | __VSDBGLAUNCHFLAGS.DBGLAUNCH_Silent | __VSDBGLAUNCHFLAGS.DBGLAUNCH_StopDebuggingOnEnd),
-                fSendStdoutToOutputWindow = 1,
+                fSendStdoutToOutputWindow = 0,
                 clsidCustom = DebugEnginesGuids.NativeOnly_guid,
             };
 

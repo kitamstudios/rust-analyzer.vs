@@ -149,18 +149,17 @@ public class Manifest
             return Enumerable.Empty<Target>();
         }
 
-        var definedTargets = EnumExtensions
+        var targets = EnumExtensions
             .GetEnumValues<TargetType>()
             .Where(t => t != TargetType.Example)
-            .SelectMany(GetTargetsForOneType)
-            .Concat(ExampleTarget.GetAll(this));
+            .SelectMany(GetTargetsForOneType);
 
-        if (definedTargets.Any())
+        if (!targets.Any())
         {
-            return definedTargets;
+            targets = targets.Concat(GetAutoDiscoveredTargets());
         }
 
-        return GetAutoDiscoveredTargets();
+        return targets.Concat(ExampleTarget.GetAll(this));
     }
 
     /// <summary>

@@ -15,6 +15,8 @@ public class TargetTests
 {
     [Theory]
     [UseReporter(typeof(DiffReporter))]
+    [InlineData(@"lib_with_example\Cargo.toml")]
+    [InlineData(@"bin_with_example\Cargo.toml")]
     [InlineData(@"hello_library\Cargo.toml")]
     [InlineData(@"hello_workspace\Cargo.toml")]
     [InlineData(@"hello_workspace\main\Cargo.toml")]
@@ -28,6 +30,7 @@ public class TargetTests
     [InlineData(@"workspace_with_tests\Cargo.toml")]
     [InlineData(@"workspace_with_tests\adder\Cargo.toml")]
     [InlineData(@"workspace_with_tests\add_one\Cargo.toml")]
+    [InlineData(@"workspace_with_example\lib\Cargo.toml")]
     public void ManifestTargetsTests(string manifestRelPath)
     {
         NamerFactory.AdditionalInformation = manifestRelPath.ReplaceInvalidChars();
