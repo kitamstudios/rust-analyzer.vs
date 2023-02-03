@@ -37,7 +37,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                 string message = string.Format("Cannot find target '{0}' in '{1}', for profile '{2}'. This indicates a bug in the manifest parsing logic. Unable to start debugging.", targetFQN, manifest?.FullPath, profile);
                 L.WriteError(message);
                 T.TrackException(new ArgumentOutOfRangeException("target", message));
-                VsCommon.ShowMessageBox(message, "Please file a bug.");
+                VsCommon.ShowMessageBox(message, "Try again after deleting the .vs folder. If that does not work please file a bug.");
                 return;
             }
 
@@ -50,7 +50,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                 var message = string.Format("Unable to find file: '{0}'. This indicates a bug with the Manifest parsing logic. Unable to start debugging.", processName);
                 L.WriteLine(message);
                 T.TrackException(new FileNotFoundException(message, processName));
-                VsCommon.ShowMessageBox(message, "Please file a bug.");
+                VsCommon.ShowMessageBox(message, "Try again after deleting the .vs folder. If that does not work please file a bug.");
                 return;
             }
 

@@ -60,20 +60,13 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
         else if (filePath.IsRustFile())
         {
             var target = parentManifest.Targets.Where(t => t.Source.Equals(filePath, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
-            if (target == null)
+            if (target != null)
             {
-                var message = string.Format("Could not find a target for {0}. FileContextProvider is out of sync with FileScanner.", filePath);
-                _tl.L.WriteError(message);
-                _tl.T.TrackException(new InvalidOperationException(message));
-                return await Task.FromResult(FileContext.EmptyFileContexts);
+                return parentManifest.Profiles.SelectMany(p => GetBuildActions(target, p)).ToList();
             }
+        }
 
-            return parentManifest.Profiles.SelectMany(p => GetBuildActions(target, p)).ToList();
-        }
-        else
-        {
-            return FileContext.EmptyFileContexts;
-        }
+        return FileContext.EmptyFileContexts;
     }
 
     private IEnumerable<FileContext> GetBuildActions(Target target, string profile)
