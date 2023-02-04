@@ -58,55 +58,17 @@ public class Manifest
 
     public bool Is(string filePath) => FullPath.Equals(filePath, StringComparison.OrdinalIgnoreCase);
 
-    public static Manifest Create(string parentCargoPath)
+    public static Manifest Create(string filePath)
     {
         try
         {
-            return new (parentCargoPath);
+            return new (filePath);
         }
         catch
         {
             // NOTE: In case the toml is malformed.
             return null;
         }
-    }
-
-    public static Manifest GetParentManifestOrThisUnderWorkspace(string workspaceRoot, string filePath)
-    {
-        if (TryGetParentManifestOrThisUnderWorkspace(workspaceRoot, filePath, out string parentManifestPath))
-        {
-            return Create(parentManifestPath);
-        }
-
-        return null;
-    }
-
-    public static bool TryGetParentManifestOrThisUnderWorkspace(string workspaceRoot, string fileOrFolderPath, out string parentCargoPath)
-    {
-        if (fileOrFolderPath.IsManifest())
-        {
-            parentCargoPath = fileOrFolderPath;
-            return true;
-        }
-
-        var currentPath = fileOrFolderPath;
-        while (!currentPath.Equals(workspaceRoot, StringComparison.OrdinalIgnoreCase) && (currentPath = Path.GetDirectoryName(currentPath)) != null)
-        {
-            if (File.Exists(Path.Combine(currentPath, Constants.ManifestFileName)))
-            {
-                parentCargoPath = Path.Combine(currentPath, Constants.ManifestFileName);
-                return true;
-            }
-        }
-
-        if (currentPath != null && File.Exists(Path.Combine(currentPath, Constants.ManifestFileName)))
-        {
-            parentCargoPath = Path.Combine(currentPath, Constants.ManifestFileName);
-            return true;
-        }
-
-        parentCargoPath = null;
-        return false;
     }
 
     public string GetPackageName()
@@ -124,7 +86,7 @@ public class Manifest
     private static string GetWorkspaceRoot(string fullPath)
     {
         var currentPath = fullPath;
-        while (TryGetParentManifestOrThisUnderWorkspace(Path.GetDirectoryName(Path.GetDirectoryName(currentPath)), currentPath, out string parentCargoPath))
+        while (currentPath.TryGetParentManifestOrThisUnderWorkspace(Path.GetDirectoryName(Path.GetDirectoryName(currentPath)), out string parentCargoPath))
         {
             var model = Toml.ToModel(File.ReadAllText(parentCargoPath));
             if (model.ContainsKey(KeyNameWorkspace))

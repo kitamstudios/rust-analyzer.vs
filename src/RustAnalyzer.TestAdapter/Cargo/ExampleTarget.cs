@@ -17,7 +17,6 @@ public sealed class ExampleTarget : Target
         AdditionalBuildArgs = $"--example \"{name}\"";
     }
 
-    // TODO: DRY violation with is IsRustExample.
     public static IEnumerable<Target> GetAll(Manifest manifest)
     {
         var examplesFolder = Path.Combine(Path.GetDirectoryName(manifest.FullPath), "examples");

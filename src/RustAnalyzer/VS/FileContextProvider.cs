@@ -32,7 +32,7 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
 
     public async Task<IReadOnlyCollection<FileContext>> GetContextsForFileAsync(string filePath, CancellationToken cancellationToken)
     {
-        var parentManifest = Manifest.GetParentManifestOrThisUnderWorkspace(_workspaceRoot, filePath);
+        var parentManifest = filePath.GetParentManifestOrThisUnderWorkspace(_workspaceRoot);
         if (parentManifest == null)
         {
             return await Task.FromResult(FileContext.EmptyFileContexts);
