@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Debug;
+using static KS.RustAnalyzer.VS.NodeBrowseObjectProvider;
 using static Microsoft.VisualStudio.VSConstants;
 
 namespace KS.RustAnalyzer.VS;
@@ -17,6 +18,9 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
 {
     public const string ProviderType = "{72D3FCEF-1111-4266-B8DD-D3ED06E35A2B}";
     public static readonly Guid ProviderTypeGuid = new (ProviderType);
+
+    [Import]
+    public ISettingsService SettingsService { get; set; }
 
     [Import]
     public ILogger L { get; set; }
@@ -54,13 +58,14 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                 return;
             }
 
+            string args = GetCommandLineArgs(workspaceContext.Location, debugLaunchActionContext);
             var noDebugFlag = debugLaunchActionContext.LaunchConfiguration.ContainsKey(LaunchConfigurationConstants.NoDebugKey) ? __VSDBGLAUNCHFLAGS.DBGLAUNCH_NoDebug : 0;
             var info = new VsDebugTargetInfo
             {
                 dlo = DEBUG_LAUNCH_OPERATION.DLO_CreateProcess,
                 bstrExe = processName,
                 bstrCurDir = Path.GetDirectoryName(processName),
-                bstrArg = null,
+                bstrArg = args,
                 bstrEnv = null,
                 bstrOptions = null,
                 bstrPortName = null,
@@ -89,5 +94,12 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
         T.TrackException(e);
 
         throw new NotImplementedException();
+    }
+
+    private string GetCommandLineArgs(string location, DebugLaunchActionContext debugLaunchActionContext)
+    {
+        var projectKey = debugLaunchActionContext.LaunchConfiguration[LaunchConfigurationConstants.ProjectKey] as string;
+        var relativePath = PathUtilities.MakeRelativePath(location, projectKey);
+        return SettingsService.Get(VS.SettingsService.KindDebugger, VS.SettingsService.TypeCmdLineArgs, relativePath);
     }
 }

@@ -99,7 +99,7 @@ public class Manifest
             }
         }
 
-        if (File.Exists(Path.Combine(currentPath, Constants.ManifestFileName)))
+        if (currentPath != null && File.Exists(Path.Combine(currentPath, Constants.ManifestFileName)))
         {
             parentCargoPath = Path.Combine(currentPath, Constants.ManifestFileName);
             return true;

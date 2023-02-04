@@ -20,12 +20,6 @@ public static class PathUtilities
         !(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ||
         RuntimeInformation.IsOSPlatform(OSPlatform.OSX));
 
-    public static bool IsManifest(this string @this)
-        => Path.GetFileName(@this).Equals(Constants.ManifestFileName, StringComparison.OrdinalIgnoreCase);
-
-    public static bool IsRustFile(this string @this)
-        => Path.GetExtension(@this).Equals(Constants.RustFileExtension, StringComparison.OrdinalIgnoreCase);
-
     public static string ReplaceInvalidChars(this string filename) => string.Join("_", filename.Split(Path.GetInvalidFileNameChars()));
 
     public static bool ExistsOnPath(this string fileName) => fileName.SearchInPath() != null;

@@ -103,6 +103,7 @@ public class ManifestTests
     [InlineData(@"hello_workspace\main\src", "hello_workspace", @"hello_workspace\main\Cargo.toml", true)]
     [InlineData(@"hello_workspace\main\Cargo.toml", "hello_workspace", @"hello_workspace\main\Cargo.toml", true)]
     [InlineData(@"workspace_with_example\lib\examples\eg1.rs", "workspace_with_example", @"workspace_with_example\lib\Cargo.toml", true)]
+    [InlineData(@"c:\workspace_with_example\lib\examples\eg1.rs", "workspace_with_example", null, false)]
     public void GetContainingManifestOrThisTests(string fileOrFolder, string workspaceRootx, string parentCargoRelPath, bool foundParentManifest)
     {
         string path = Path.Combine(TestHelpers.ThisTestRoot, fileOrFolder);
