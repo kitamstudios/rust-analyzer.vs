@@ -132,6 +132,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
     {
         private const string ActionContextReleaseNotes = "release_notes";
         private const string ActionContextDismiss = "dismiss";
+        private const string ActionContextJoinChat = "join_chat";
         private const string DismissedRegKeyName = "release_notes_dismissed";
 
         public static async Task ShowAsync(IServiceProvider sp, TL tl)
@@ -145,9 +146,15 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                 return;
             }
 
+            var actionItems = new[]
+            {
+                new InfoBarHyperlink("Release notes", ActionContextReleaseNotes),
+                new InfoBarHyperlink("Join chat", ActionContextJoinChat),
+                new InfoBarHyperlink("Dismiss", ActionContextDismiss),
+            };
             var model = new InfoBarModel(
                 textSpans: new[] { new InfoBarTextSpan($"{Vsix.Name} updated: {Constants.ReleaseSummary}"), },
-                actionItems: new[] { new InfoBarHyperlink("Release notes", ActionContextReleaseNotes), new InfoBarHyperlink("Dismiss", ActionContextDismiss), },
+                actionItems,
                 image: KnownMonikers.StatusInformation,
                 isCloseButtonVisible: true);
             var infoBar = await CommunityVS.InfoBar.CreateAsync(model);
@@ -167,7 +174,11 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
             switch (actionContext)
             {
                 case ActionContextReleaseNotes:
-                    VsShellUtilities.OpenSystemBrowser($"https://github.com/kitamstudios/rust-analyzer.vs/releases/{Vsix.Version}");
+                    VsShellUtilities.OpenSystemBrowser(Constants.ReleaseNotesUrl);
+                    break;
+
+                case ActionContextJoinChat:
+                    VsShellUtilities.OpenSystemBrowser(Constants.DiscordUrl);
                     break;
 
                 case ActionContextDismiss:
