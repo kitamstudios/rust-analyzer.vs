@@ -18,6 +18,7 @@ public interface ISettingsService
 }
 
 [Export(typeof(ISettingsService))]
+[PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class SettingsService : ISettingsService
 {
     public const string KindDebugger = "Debugger";

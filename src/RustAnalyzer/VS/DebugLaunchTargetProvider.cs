@@ -8,7 +8,6 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Debug;
-using static KS.RustAnalyzer.VS.NodeBrowseObjectProvider;
 using static Microsoft.VisualStudio.VSConstants;
 
 namespace KS.RustAnalyzer.VS;

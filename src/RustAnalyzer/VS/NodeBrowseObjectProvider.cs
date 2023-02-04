@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.VSIntegration.UI;
 using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 

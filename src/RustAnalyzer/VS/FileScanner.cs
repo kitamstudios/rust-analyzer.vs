@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Cargo;
-using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
 using Microsoft.VisualStudio.Workspace.Debug;

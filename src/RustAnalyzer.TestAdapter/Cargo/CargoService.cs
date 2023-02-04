@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -8,29 +9,23 @@ using KS.RustAnalyzer.TestAdapter.Common;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
-public sealed class BuildTargetInfo
+[Export(typeof(ICargoService))]
+[PartCreationPolicy(CreationPolicy.Shared)]
+public sealed class CargoService : ICargoService
 {
-    public string WorkspaceRoot { get; set; }
+    private readonly TL _tl;
 
-    public string FilePath { get; set; }
+    [ImportingConstructor]
+    public CargoService([Import] ITelemetryService t, [Import] ILogger l)
+    {
+        _tl = new TL
+        {
+            T = t,
+            L = l,
+        };
+    }
 
-    public string Profile { get; set; }
-
-    public string AdditionalBuildArgs { get; set; } = string.Empty;
-}
-
-public sealed class BuildOutputSinks
-{
-    public Func<BuildMessage, Task> BuildActionProgressReporter { get; set; }
-
-    public Func<string, Task> ShowMessageBox { get; set; }
-
-    public IBuildOutputSink OutputSink { get; set; }
-}
-
-public class ExeRunner
-{
-    public static Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, TL tl, CancellationToken ct)
+    public Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
     {
         return ExecuteOperationAsync(
             "build",
@@ -40,13 +35,13 @@ public class ExeRunner
             showMessageBox: bos.ShowMessageBox,
             outputPane: bos.OutputSink,
             buildMessageReporter: bos.BuildActionProgressReporter,
-            outputPreprocessor: x => BuildJsonOutputParser.Parse(bti.WorkspaceRoot, x, tl),
-            ts: tl.T,
-            l: tl.L,
+            outputPreprocessor: x => BuildJsonOutputParser.Parse(bti.WorkspaceRoot, x, _tl),
+            ts: _tl.T,
+            l: _tl.L,
             ct: ct);
     }
 
-    public static Task<bool> CleanAsync(BuildTargetInfo bti, BuildOutputSinks bos, TL tl, CancellationToken ct)
+    public Task<bool> CleanAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
     {
         return ExecuteOperationAsync(
             "clean",
@@ -57,8 +52,8 @@ public class ExeRunner
             outputPane: bos.OutputSink,
             buildMessageReporter: bos.BuildActionProgressReporter,
             outputPreprocessor: x => new[] { new StringBuildMessage { Message = x } },
-            ts: tl.T,
-            l: tl.L,
+            ts: _tl.T,
+            l: _tl.L,
             ct: ct);
     }
 

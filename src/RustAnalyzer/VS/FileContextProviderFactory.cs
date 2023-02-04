@@ -26,6 +26,9 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
     [Import]
     public ITelemetryService T { get; set; }
 
+    [Import]
+    public ICargoService CargoService { get; set; }
+
     public IFileContextProvider CreateProvider(IWorkspace workspaceContext)
     {
         T.TrackEvent(
@@ -33,6 +36,6 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
             new[] { ("Location", workspaceContext.Location) });
         L.WriteLine("Creating {0}.", GetType().Name);
 
-        return new FileContextProvider(workspaceContext.Location, OutputPane, new () { L = L, T = T, });
+        return new FileContextProvider(workspaceContext.Location, CargoService, OutputPane, new () { L = L, T = T, });
     }
 }
