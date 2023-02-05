@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Common;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
@@ -13,33 +15,33 @@ public static class ManifestExtensions
     public static bool IsRustFile(this string @this)
         => Path.GetExtension(@this).Equals(Constants.RustFileExtension, StringComparison.OrdinalIgnoreCase);
 
-    public static bool CanHaveExecutableTargets(this string @this, string workspaceRoot)
+    public static async Task<bool> CanHaveExecutableTargetsAsync(this string @this, string workspaceRoot)
     {
         if (!(@this.IsNotNullOrEmpty() && File.Exists(@this) && (@this.IsManifest() || @this.IsRustFile())))
         {
-            return false;
+            return await false.ToTask();
         }
 
-        var manifest = @this.GetParentManifestOrThisUnderWorkspace(workspaceRoot);
-        return manifest != null && manifest.Targets.Where(t => t.IsRunnable && t.Source.Equals(@this, StringComparison.OrdinalIgnoreCase)).Any();
+        var manifest = await @this.GetParentManifestOrThisUnderWorkspaceAsync(workspaceRoot);
+        return manifest != null && (await manifest.GetTargets()).Where(t => t.IsRunnable && t.Source.Equals(@this, StringComparison.OrdinalIgnoreCase)).Any();
     }
 
-    public static Manifest GetParentManifestOrThisUnderWorkspace(this string filePath, string workspaceRoot)
+    public static async Task<Manifest> GetParentManifestOrThisUnderWorkspaceAsync(this string filePath, string workspaceRoot)
     {
-        if (filePath.TryGetParentManifestOrThisUnderWorkspace(workspaceRoot, out string parentManifestPath))
+        var parentManifestPath = await filePath.TryGetParentManifestOrThisUnderWorkspaceAsync(workspaceRoot);
+        if (parentManifestPath != null)
         {
-            return Manifest.Create(parentManifestPath, workspaceRoot);
+            return await Manifest.Create(parentManifestPath, workspaceRoot).ToTask();
         }
 
         return null;
     }
 
-    public static bool TryGetParentManifestOrThisUnderWorkspace(this string fileOrFolderPath, string workspaceRoot, out string parentCargoPath)
+    public static async Task<string> TryGetParentManifestOrThisUnderWorkspaceAsync(this string fileOrFolderPath, string workspaceRoot)
     {
         if (fileOrFolderPath.IsManifest())
         {
-            parentCargoPath = fileOrFolderPath;
-            return true;
+            return await fileOrFolderPath.ToTask();
         }
 
         var currentPath = fileOrFolderPath;
@@ -47,18 +49,25 @@ public static class ManifestExtensions
         {
             if (File.Exists(Path.Combine(currentPath, Constants.ManifestFileName)))
             {
-                parentCargoPath = Path.Combine(currentPath, Constants.ManifestFileName);
-                return true;
+                return Path.Combine(currentPath, Constants.ManifestFileName);
             }
         }
 
         if (currentPath != null && File.Exists(Path.Combine(currentPath, Constants.ManifestFileName)))
         {
-            parentCargoPath = Path.Combine(currentPath, Constants.ManifestFileName);
-            return true;
+            return Path.Combine(currentPath, Constants.ManifestFileName);
         }
 
-        parentCargoPath = null;
-        return false;
+        return null;
+    }
+
+    public static Task<IEnumerable<Target>> GetTargets(this Manifest @this)
+    {
+        if (@this == null)
+        {
+            return Enumerable.Empty<Target>().ToTask();
+        }
+
+        return @this.Targets.ToTask();
     }
 }

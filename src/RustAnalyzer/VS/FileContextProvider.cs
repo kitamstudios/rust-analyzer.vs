@@ -32,7 +32,7 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
 
     public async Task<IReadOnlyCollection<FileContext>> GetContextsForFileAsync(string filePath, CancellationToken cancellationToken)
     {
-        var parentManifest = filePath.GetParentManifestOrThisUnderWorkspace(_workspaceRoot);
+        var parentManifest = await filePath.GetParentManifestOrThisUnderWorkspaceAsync(_workspaceRoot);
         if (parentManifest == null)
         {
             return await Task.FromResult(FileContext.EmptyFileContexts);
@@ -61,7 +61,7 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
         }
         else if (filePath.IsRustFile())
         {
-            var target = parentManifest.Targets.Where(t => t.Source.Equals(filePath, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+            var target = (await parentManifest.GetTargets()).Where(t => t.Source.Equals(filePath, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
             if (target != null)
             {
                 return parentManifest.Profiles.SelectMany(p => GetBuildActions(target, p)).ToList();

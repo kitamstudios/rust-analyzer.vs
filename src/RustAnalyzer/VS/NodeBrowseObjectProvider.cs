@@ -40,7 +40,7 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
         }
 
         var relativePath = PathExtensions.MakeRelativePath(node.Workspace.Location, fsNode.FullPath);
-        if (fsNode.FullPath.CanHaveExecutableTargets(node.Workspace.Location))
+        if (node.Workspace.JTF.Run(async () => await fsNode.FullPath.CanHaveExecutableTargetsAsync(node.Workspace.Location)))
         {
             var cmdLineArgs = _settingsService.Get(SettingsService.KindDebugger, SettingsService.TypeCmdLineArgs, relativePath);
             _browseObject.ResetForNewNode(relativePath, cmdLineArgs);

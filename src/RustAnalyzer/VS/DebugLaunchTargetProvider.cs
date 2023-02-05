@@ -50,7 +50,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
             var manifest = Manifest.Create(debugLaunchActionContext.LaunchConfiguration[LaunchConfigurationConstants.ProgramKey] as string, workspaceContext.Location);
             var profile = debugLaunchActionContext.BuildConfiguration;
             var targetFQN = debugLaunchActionContext.LaunchConfiguration[LaunchConfigurationConstants.NameKey] as string;
-            var target = manifest?.Targets?.FirstOrDefault(t => t.QualifiedTargetFileName == targetFQN);
+            var target = (await manifest?.GetTargets())?.FirstOrDefault(t => t.QualifiedTargetFileName == targetFQN);
             if (target == null)
             {
                 string message = string.Format("Cannot find target '{0}' in '{1}', for profile '{2}'. This indicates a bug in the manifest parsing logic. Unable to start debugging.", targetFQN, manifest?.FullPath, profile);

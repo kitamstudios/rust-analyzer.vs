@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
@@ -31,14 +32,14 @@ public class TargetTests
     [InlineData(@"workspace_with_tests\adder\Cargo.toml", "workspace_with_tests")]
     [InlineData(@"workspace_with_tests\add_one\Cargo.toml", "workspace_with_tests")]
     [InlineData(@"workspace_with_example\lib\Cargo.toml", "workspace_with_example")]
-    public void ManifestTargetsTests(string manifestRelPath, string workspaceRootRel)
+    public async Task ManifestTargetsTestsAsync(string manifestRelPath, string workspaceRootRel)
     {
         NamerFactory.AdditionalInformation = manifestRelPath.ReplaceInvalidChars();
         string wkRoot = Path.Combine(TestHelpers.ThisTestRoot, workspaceRootRel);
         string manifestPath = Path.Combine(TestHelpers.ThisTestRoot, manifestRelPath);
 
         var manifest = Manifest.Create(manifestPath, wkRoot);
-        var targets = manifest.Targets.Select(
+        var targets = (await manifest.GetTargets()).Select(
             t => new
             {
                 t.Name,

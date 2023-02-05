@@ -23,7 +23,7 @@ public class FileScanner : IFileScanner
     public async Task<T> ScanContentAsync<T>(string filePath, CancellationToken cancellationToken)
         where T : class
     {
-        var owningManifest = filePath.IsManifest() ? Manifest.Create(filePath, _workspaceRoot) : filePath.GetParentManifestOrThisUnderWorkspace(_workspaceRoot);
+        var owningManifest = filePath.IsManifest() ? Manifest.Create(filePath, _workspaceRoot) : await filePath.GetParentManifestOrThisUnderWorkspaceAsync(_workspaceRoot);
         if (owningManifest == null)
         {
             return null;
@@ -31,12 +31,12 @@ public class FileScanner : IFileScanner
 
         if (typeof(T) == FileScannerTypeConstants.FileDataValuesType)
         {
-            var ret = GetFileDataValues(owningManifest, filePath);
+            var ret = await GetFileDataValuesAsync(owningManifest, filePath);
             return await Task.FromResult((T)(IReadOnlyCollection<FileDataValue>)ret);
         }
         else if (typeof(T) == FileScannerTypeConstants.FileReferenceInfoType)
         {
-            var ret = GetFileReferenceInfos(owningManifest, filePath);
+            var ret = await GetFileReferenceInfosAsync(owningManifest, filePath);
             return await Task.FromResult((T)(IReadOnlyCollection<FileReferenceInfo>)ret);
         }
         else
@@ -45,7 +45,7 @@ public class FileScanner : IFileScanner
         }
     }
 
-    private List<FileDataValue> GetFileDataValues(Manifest owningManifest, string filePath)
+    private async Task<List<FileDataValue>> GetFileDataValuesAsync(Manifest owningManifest, string filePath)
     {
         var allFileDataValues = new List<FileDataValue>();
 
@@ -54,7 +54,7 @@ public class FileScanner : IFileScanner
         {
             if (owningManifest.IsPackage)
             {
-                foreach (var target in owningManifest.Targets.Where(t => t.Type == TargetType.Bin))
+                foreach (var target in (await owningManifest.GetTargets()).Where(t => t.Type == TargetType.Bin))
                 {
                     var launchSettings = new PropertySettings
                     {
@@ -99,7 +99,7 @@ public class FileScanner : IFileScanner
         }
 
         // For examples.
-        var forExamples = owningManifest.Targets
+        var forExamples = (await owningManifest.GetTargets())
             .Where(t => t.Type == TargetType.Example)
             .Cast<ExampleTarget>()
             .Where(t => t.Source.Equals(filePath, StringComparison.OrdinalIgnoreCase))
@@ -154,15 +154,16 @@ public class FileScanner : IFileScanner
         return allFileDataValues;
     }
 
-    private static List<FileReferenceInfo> GetFileReferenceInfos(Manifest owningManifest, string filePath)
+    private static async Task<List<FileReferenceInfo>> GetFileReferenceInfosAsync(Manifest owningManifest, string filePath)
     {
         var allFileRefInfos = new List<FileReferenceInfo>();
 
         // For binaries.
         if (owningManifest.Is(filePath) && owningManifest.IsPackage)
         {
+            var targets = await owningManifest.GetTargets();
             var refInfos = owningManifest.Profiles
-                .SelectMany(p => owningManifest.Targets.Select(t => (Target: t, Profile: p)))
+                .SelectMany(p => targets.Select(t => (Target: t, Profile: p)))
                 .Where(x => x.Target.Type == TargetType.Bin || x.Target.Type == TargetType.Lib)
                 .Select(x =>
                     new FileReferenceInfo(
@@ -175,7 +176,7 @@ public class FileScanner : IFileScanner
         }
 
         // For examples.
-        var forExamples = owningManifest.Targets
+        var forExamples = (await owningManifest.GetTargets())
             .Where(t => t.Type == TargetType.Example)
             .Cast<ExampleTarget>()
             .Where(t => t.Source.Equals(filePath, StringComparison.OrdinalIgnoreCase))
