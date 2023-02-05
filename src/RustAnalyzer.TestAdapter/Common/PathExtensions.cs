@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 /// <summary>
 /// From https://stackoverflow.com/a/74747405/6196679.
 /// </summary>
-public static class PathUtilities
+public static class PathExtensions
 {
     private static StringComparison StringComparison =>
         IsCaseSensitive ?

@@ -1,5 +1,4 @@
 using System.IO;
-using System.Linq;
 using FluentAssertions;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.Tests.Common;
@@ -19,10 +18,10 @@ public class ManifestExtensionsTests
     [InlineData(@"hello_workspace\main\Cargo.toml", "hello_workspace", @"hello_workspace\main\Cargo.toml", true)]
     [InlineData(@"workspace_with_example\lib\examples\eg1.rs", "workspace_with_example", @"workspace_with_example\lib\Cargo.toml", true)]
     [InlineData(@"c:\workspace_with_example\lib\examples\eg1.rs", "workspace_with_example", null, false)]
-    public void GetContainingManifestOrThisTests(string fileOrFolder, string workspaceRootx, string parentCargoRelPath, bool foundParentManifest)
+    public void GetContainingManifestOrThisTests(string fileOrFolder, string workspaceRelRoot, string parentCargoRelPath, bool foundParentManifest)
     {
         string path = Path.Combine(TestHelpers.ThisTestRoot, fileOrFolder);
-        var workspaceRoot = Path.Combine(TestHelpers.ThisTestRoot, workspaceRootx);
+        var workspaceRoot = Path.Combine(TestHelpers.ThisTestRoot, workspaceRelRoot);
         var found = path.TryGetParentManifestOrThisUnderWorkspace(workspaceRoot, out string parentCargoPath);
 
         found.Should().Be(foundParentManifest);

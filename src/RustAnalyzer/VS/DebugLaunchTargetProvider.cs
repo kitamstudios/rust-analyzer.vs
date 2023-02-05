@@ -98,7 +98,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
     private string GetCommandLineArgs(string location, DebugLaunchActionContext debugLaunchActionContext)
     {
         var projectKey = debugLaunchActionContext.LaunchConfiguration[LaunchConfigurationConstants.ProjectKey] as string;
-        var relativePath = PathUtilities.MakeRelativePath(location, projectKey);
+        var relativePath = PathExtensions.MakeRelativePath(location, projectKey);
         return SettingsService.Get(VS.SettingsService.KindDebugger, VS.SettingsService.TypeCmdLineArgs, relativePath);
     }
 }

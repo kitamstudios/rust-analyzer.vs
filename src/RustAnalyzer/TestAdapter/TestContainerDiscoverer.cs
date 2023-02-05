@@ -18,6 +18,7 @@ using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 namespace KS.RustAnalyzer.TestAdapter;
 
 [Export(typeof(ITestContainerDiscoverer))]
+[PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 {
     private readonly ConcurrentDictionary<string, TestContainer> _testContainersCache

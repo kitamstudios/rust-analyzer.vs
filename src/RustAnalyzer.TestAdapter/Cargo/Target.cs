@@ -60,7 +60,7 @@ public class Target
     public virtual string GetPath(string profile) => Path.Combine(GetTargetDirectory(profile), TargetFileName);
 
     public string GetPathRelativeTo(string profile, string rootPath)
-        => PathUtilities.MakeRelativePath(Path.GetDirectoryName(rootPath), GetPath(profile));
+        => PathExtensions.MakeRelativePath(Path.GetDirectoryName(rootPath), GetPath(profile));
 
     // TODO: MS: This needs to be from cargo metadata output.
     protected string GetTargetDirectory(string profile)
@@ -68,7 +68,7 @@ public class Target
 
     private string GetTargetPathRelativeToWorkspace()
     {
-        var relPath = Path.GetDirectoryName(PathUtilities.MakeRelativePath(Manifest.WorkspaceRoot, Manifest.FullPath));
+        var relPath = Path.GetDirectoryName(PathExtensions.MakeRelativePath(Manifest.WorkspaceRoot, Manifest.FullPath));
         return @$"{relPath}\";
     }
 }

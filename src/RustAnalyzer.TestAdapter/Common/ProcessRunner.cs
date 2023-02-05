@@ -331,7 +331,7 @@ public sealed class ProcessRunner : IDisposable
         return Run(filename, arguments, null!, null!, true, null!, cancellationToken: cancellationToken);
     }
 
-    public static ProcessRunner RunHiddenAndCapture(string filename, string[] arguments, CancellationToken cancellationToken)
+    public static ProcessRunner Run(string filename, string[] arguments, CancellationToken cancellationToken)
     {
         return Run(filename, arguments, null!, null!, false, null!, cancellationToken: cancellationToken);
     }

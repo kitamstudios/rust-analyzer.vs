@@ -39,7 +39,7 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
             return null;
         }
 
-        var relativePath = PathUtilities.MakeRelativePath(node.Workspace.Location, fsNode.FullPath);
+        var relativePath = PathExtensions.MakeRelativePath(node.Workspace.Location, fsNode.FullPath);
         if (fsNode.FullPath.CanHaveExecutableTargets(node.Workspace.Location))
         {
             var cmdLineArgs = _settingsService.Get(SettingsService.KindDebugger, SettingsService.TypeCmdLineArgs, relativePath);
