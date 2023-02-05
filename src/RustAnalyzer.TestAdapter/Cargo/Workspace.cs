@@ -8,8 +8,10 @@ namespace KS.RustAnalyzer.TestAdapter.Cargo;
 /// <summary>
 /// Spec: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html.
 /// </summary>
-public sealed class Metadata
+public sealed class Workspace
 {
+    public Workspace() => Packages = new ChildCollection<Workspace, Package>(this);
+
     [JsonConverter(typeof(StringEnumConverter))]
     public enum Kind
     {
@@ -66,10 +68,12 @@ public sealed class Metadata
     public PathEx WorkspaceRoot { get; set; }
 
     [JsonProperty("packages")]
-    public Package[] Packages { get; set; }
+    public ChildCollection<Workspace, Package> Packages { get; set; }
 
-    public sealed class Package
+    public sealed class Package : IHasParent<Workspace>
     {
+        public Package() => Targets = new ChildCollection<Package, Target>(this);
+
         [JsonProperty("name")]
         public string Name { get; set; }
 
@@ -77,10 +81,15 @@ public sealed class Metadata
         public PathEx ManifestPath { get; set; }
 
         [JsonProperty("targets")]
-        public Target[] Targets { get; set; }
+        public ChildCollection<Package, Target> Targets { get; set; }
+
+        [JsonIgnore]
+        public Workspace Parent { get; private set; }
+
+        public void OnParentChanging(Workspace newParent) => Parent = newParent;
     }
 
-    public sealed class Target
+    public sealed class Target : IHasParent<Package>
     {
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -93,5 +102,10 @@ public sealed class Metadata
 
         [JsonProperty("crate_types")]
         public CrateType[] CrateTypes { get; set; }
+
+        [JsonIgnore]
+        public Package Parent { get; private set; }
+
+        public void OnParentChanging(Package newParent) => Parent = newParent;
     }
 }

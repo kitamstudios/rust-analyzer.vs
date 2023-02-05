@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel.Composition;
 using KS.RustAnalyzer.TestAdapter.Common;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;

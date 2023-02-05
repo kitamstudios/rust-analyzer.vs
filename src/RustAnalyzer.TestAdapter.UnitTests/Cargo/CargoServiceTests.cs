@@ -1,7 +1,9 @@
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using ApprovalTests;
 using ApprovalTests.Reporters;
+using FluentAssertions;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
@@ -26,5 +28,19 @@ public sealed class CargoServiceTests
             .SerializeObject(Formatting.Indented, new PathExJsonConverter())
             .Replace(TestHelpers.ThisTestRoot.Replace("\\", "\\\\"), "<TestRoot>");
         Approvals.Verify(normalizedStr);
+    }
+
+    [Theory]
+    [InlineData(@"workspace_mixed")]
+    [UseReporter(typeof(DiffReporter))]
+    public async Task CheckParentsTestsAsync(string workspaceRelRoot)
+    {
+        var workspaceRoot = (PathEx)Path.Combine(TestHelpers.ThisTestRoot, workspaceRelRoot);
+
+        var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetMetadata(workspaceRoot, default);
+        var targetParents = wmd.Packages.Select(p => (p, tp: p.Targets.Select(t => t.Parent)));
+
+        wmd.Packages.Should().OnlyContain(p => p.Parent == wmd);
+        targetParents.Should().OnlyContain(e => e.tp.All(p => p == e.p));
     }
 }

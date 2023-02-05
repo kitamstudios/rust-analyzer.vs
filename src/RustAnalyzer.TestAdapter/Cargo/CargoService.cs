@@ -63,7 +63,7 @@ public sealed class CargoService : ICargoService
             ct: ct);
     }
 
-    public async Task<Metadata> GetMetadata(PathEx workspaceRoot, CancellationToken ct)
+    public async Task<Workspace> GetMetadata(PathEx workspaceRoot, CancellationToken ct)
     {
         var filePath = workspaceRoot.Combine((PathEx)Constants.ManifestFileName);
         var cargoFullPath = GetCargoExePath();
@@ -75,7 +75,7 @@ public sealed class CargoService : ICargoService
             var exitCode = await proc;
             if (exitCode == 0)
             {
-                return JsonConvert.DeserializeObject<Metadata>(string.Join(string.Empty, proc.StandardOutputLines));
+                return JsonConvert.DeserializeObject<Workspace>(string.Join(string.Empty, proc.StandardOutputLines));
             }
         }
         catch (Exception e)

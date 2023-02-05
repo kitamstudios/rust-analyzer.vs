@@ -13,7 +13,7 @@ public interface ICargoService
 
     Task<bool> CleanAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct);
 
-    Task<Metadata> GetMetadata(PathEx workspaceRoot, CancellationToken ct);
+    Task<Workspace> GetMetadata(PathEx workspaceRoot, CancellationToken ct);
 }
 
 public sealed class BuildTargetInfo
