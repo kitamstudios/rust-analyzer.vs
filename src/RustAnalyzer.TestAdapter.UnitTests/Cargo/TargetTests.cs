@@ -15,28 +15,29 @@ public class TargetTests
 {
     [Theory]
     [UseReporter(typeof(DiffReporter))]
-    [InlineData(@"lib_with_example\Cargo.toml")]
-    [InlineData(@"bin_with_example\Cargo.toml")]
-    [InlineData(@"hello_library\Cargo.toml")]
-    [InlineData(@"hello_workspace\Cargo.toml")]
-    [InlineData(@"hello_workspace\main\Cargo.toml")]
-    [InlineData(@"hello_workspace\shared\Cargo.toml")]
-    [InlineData(@"hello_workspace2\Cargo.toml")]
-    [InlineData(@"hello_workspace2\shared\Cargo.toml")]
-    [InlineData(@"hello_workspace2\shared2\Cargo.toml")]
-    [InlineData(@"hello_world\Cargo.toml")]
-    [InlineData(@"workspace_mixed\Cargo.toml")]
-    [InlineData(@"workspace_mixed\shared\Cargo.toml")]
-    [InlineData(@"workspace_with_tests\Cargo.toml")]
-    [InlineData(@"workspace_with_tests\adder\Cargo.toml")]
-    [InlineData(@"workspace_with_tests\add_one\Cargo.toml")]
-    [InlineData(@"workspace_with_example\lib\Cargo.toml")]
-    public void ManifestTargetsTests(string manifestRelPath)
+    [InlineData(@"lib_with_example\Cargo.toml", "lib_with_example")]
+    [InlineData(@"bin_with_example\Cargo.toml", "bin_with_example")]
+    [InlineData(@"hello_library\Cargo.toml", "hello_library")]
+    [InlineData(@"hello_workspace\Cargo.toml", "hello_workspace")]
+    [InlineData(@"hello_workspace\main\Cargo.toml", "hello_workspace")]
+    [InlineData(@"hello_workspace\shared\Cargo.toml", "hello_workspace")]
+    [InlineData(@"hello_workspace2\Cargo.toml", "hello_workspace2")]
+    [InlineData(@"hello_workspace2\shared\Cargo.toml", "hello_workspace2")]
+    [InlineData(@"hello_workspace2\shared2\Cargo.toml", "hello_workspace2")]
+    [InlineData(@"hello_world\Cargo.toml", "hello_world")]
+    [InlineData(@"workspace_mixed\Cargo.toml", "workspace_mixed")]
+    [InlineData(@"workspace_mixed\shared\Cargo.toml", "workspace_mixed")]
+    [InlineData(@"workspace_with_tests\Cargo.toml", "workspace_with_tests")]
+    [InlineData(@"workspace_with_tests\adder\Cargo.toml", "workspace_with_tests")]
+    [InlineData(@"workspace_with_tests\add_one\Cargo.toml", "workspace_with_tests")]
+    [InlineData(@"workspace_with_example\lib\Cargo.toml", "workspace_with_example")]
+    public void ManifestTargetsTests(string manifestRelPath, string workspaceRootRel)
     {
         NamerFactory.AdditionalInformation = manifestRelPath.ReplaceInvalidChars();
+        string wkRoot = Path.Combine(TestHelpers.ThisTestRoot, workspaceRootRel);
         string manifestPath = Path.Combine(TestHelpers.ThisTestRoot, manifestRelPath);
 
-        var manifest = Manifest.Create(manifestPath);
+        var manifest = Manifest.Create(manifestPath, wkRoot);
         var targets = manifest.Targets.Select(
             t => new
             {

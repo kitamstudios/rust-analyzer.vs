@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using FluentAssertions;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Xunit;
@@ -11,10 +12,14 @@ public class PathExTests
     [InlineData(@"hello_library\Cargo.toml", "hello_library/Cargo.toml")]
     public void EqualityTests(string path, string equivalentPath)
     {
-        ((PathEx)path).Should().Be((PathEx)equivalentPath);
-        ((PathEx)path == (PathEx)equivalentPath).Should().BeTrue();
-        ((PathEx)path != (PathEx)equivalentPath).Should().BeFalse();
-        ((PathEx)path).GetHashCode().Should().Be(path.GetHashCode());
+        PathEx p = (PathEx)path;
+        PathEx eqP = (PathEx)equivalentPath;
+
+        p.Should().Be(eqP);
+        (p == eqP).Should().BeTrue();
+        (p != eqP).Should().BeFalse();
+        new Dictionary<PathEx, object> { [p] = null }.Should().ContainKey(eqP);
+        new HashSet<PathEx> { p }.Should().Contain(eqP);
     }
 
     [Theory]

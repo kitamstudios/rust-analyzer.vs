@@ -13,7 +13,8 @@ public class ManifestTests
     public void SimplestExe()
     {
         string cmPath = Path.Combine(TestHelpers.ThisTestRoot, @"hello_world\Cargo.toml");
-        var cargo = Manifest.Create(cmPath);
+        string wkRoot = Path.Combine(TestHelpers.ThisTestRoot, @"hello_world");
+        var cargo = Manifest.Create(cmPath, wkRoot);
 
         cargo.Should().BeEquivalentTo(
             new
@@ -32,7 +33,8 @@ public class ManifestTests
     public void SimplestLib()
     {
         string cmPath = Path.Combine(TestHelpers.ThisTestRoot, @"hello_library\Cargo.toml");
-        var cargo = Manifest.Create(cmPath);
+        string wkRoot = Path.Combine(TestHelpers.ThisTestRoot, @"hello_library");
+        var cargo = Manifest.Create(cmPath, wkRoot);
 
         cargo.Should().BeEquivalentTo(
             new
@@ -48,14 +50,15 @@ public class ManifestTests
     }
 
     [Theory]
-    [InlineData(@"hello_world\Cargo.toml", true, @"hello_world.exe")]
-    [InlineData(@"hello_library\Cargo.toml", false, @"libhello_lib.rlib")]
-    [InlineData(@"hello_workspace\main\Cargo.toml", true, @"main.exe")]
-    [InlineData(@"hello_workspace\shared\Cargo.toml", false, @"libshared.rlib")]
-    public void TargetFileNameTests(string cargoRelPath, bool isRunnable, string targetFileName)
+    [InlineData(@"hello_world\Cargo.toml", "hello_world", true, @"hello_world.exe")]
+    [InlineData(@"hello_library\Cargo.toml", "hello_library", false, @"libhello_lib.rlib")]
+    [InlineData(@"hello_workspace\main\Cargo.toml", "hello_workspace", true, @"main.exe")]
+    [InlineData(@"hello_workspace\shared\Cargo.toml", "hello_workspace", false, @"libshared.rlib")]
+    public void TargetFileNameTests(string cargoRelPath, string workspaceRootRel, bool isRunnable, string targetFileName)
     {
         string cmPath = Path.Combine(TestHelpers.ThisTestRoot, cargoRelPath);
-        var cargo = Manifest.Create(cmPath);
+        string wkRoot = Path.Combine(TestHelpers.ThisTestRoot, workspaceRootRel);
+        var cargo = Manifest.Create(cmPath, wkRoot);
 
         cargo.Targets.Single().Should().BeEquivalentTo(
             new
@@ -72,24 +75,29 @@ public class ManifestTests
     public void WorkspaceRootTests(string cargoRelPath, string workspaceRelPath, string targetFileRelPath)
     {
         string cmPath = Path.Combine(TestHelpers.ThisTestRoot, cargoRelPath);
-        var cargo = Manifest.Create(cmPath);
+        string wkRoot = Path.Combine(TestHelpers.ThisTestRoot, workspaceRelPath);
+        var cargo = Manifest.Create(cmPath, wkRoot);
 
-        cargo.WorkspaceRoot.Should().Be(Path.Combine(TestHelpers.ThisTestRoot, workspaceRelPath));
+        cargo.WorkspaceRoot.Should().Be(wkRoot);
         cargo.Targets.Single().GetPath("dev").Should().Be(Path.Combine(TestHelpers.ThisTestRoot, targetFileRelPath));
     }
 
     [Theory]
     [InlineData(
         @"hello_world\Cargo.toml",
+        @"hello_world",
         @"hello_world\src\main.rs",
         @"..\target\debug\hello_world.exe")]
     [InlineData(
         @"hello_world\Cargo.toml",
+        @"hello_world",
         @"hello_world\Cargo.toml",
         @"target\debug\hello_world.exe")]
-    public void GetTargetPathForProfileRelativeToPathTests(string manifestPath, string filePath, string ret)
+    public void GetTargetPathForProfileRelativeToPathTests(string manifestPathRel, string workspaceRootRel, string filePath, string ret)
     {
-        var cargo = Manifest.Create(Path.Combine(TestHelpers.ThisTestRoot, manifestPath));
+        var manifestPath = Path.Combine(TestHelpers.ThisTestRoot, manifestPathRel);
+        var wkRoot = Path.Combine(TestHelpers.ThisTestRoot, workspaceRootRel);
+        var cargo = Manifest.Create(manifestPath, wkRoot);
 
         cargo.Targets.Single().GetPathRelativeTo("dev", Path.Combine(TestHelpers.ThisTestRoot, filePath)).Should().Be(ret);
     }

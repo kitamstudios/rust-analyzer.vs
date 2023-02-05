@@ -23,7 +23,7 @@ public class FileScanner : IFileScanner
     public async Task<T> ScanContentAsync<T>(string filePath, CancellationToken cancellationToken)
         where T : class
     {
-        var owningManifest = filePath.IsManifest() ? Manifest.Create(filePath) : filePath.GetParentManifestOrThisUnderWorkspace(_workspaceRoot);
+        var owningManifest = filePath.IsManifest() ? Manifest.Create(filePath, _workspaceRoot) : filePath.GetParentManifestOrThisUnderWorkspace(_workspaceRoot);
         if (owningManifest == null)
         {
             return null;

@@ -15,17 +15,18 @@ public class ExampleTargetTests
 {
     [Theory]
     [UseReporter(typeof(DiffReporter))]
-    [InlineData(@"hello_library\Cargo.toml")]
-    [InlineData(@"hello_workspace\Cargo.toml")]
-    [InlineData(@"lib_with_example\Cargo.toml")]
-    [InlineData(@"bin_with_example\Cargo.toml")]
-    [InlineData(@"workspace_with_example\lib\Cargo.toml")]
-    public void GetAllTests(string manifestRelPath)
+    [InlineData(@"hello_library\Cargo.toml", "hello_library")]
+    [InlineData(@"hello_workspace\Cargo.toml", "hello_workspace")]
+    [InlineData(@"lib_with_example\Cargo.toml", "lib_with_example")]
+    [InlineData(@"bin_with_example\Cargo.toml", "bin_with_example")]
+    [InlineData(@"workspace_with_example\lib\Cargo.toml", "workspace_with_example")]
+    public void GetAllTests(string manifestRelPath, string workspaceRootRel)
     {
         NamerFactory.AdditionalInformation = manifestRelPath.ReplaceInvalidChars();
         string manifestPath = Path.Combine(TestHelpers.ThisTestRoot, manifestRelPath);
+        string workspaceRoot = Path.Combine(TestHelpers.ThisTestRoot, workspaceRootRel);
 
-        var targets = ExampleTarget.GetAll(Manifest.Create(manifestPath));
+        var targets = ExampleTarget.GetAll(Manifest.Create(manifestPath, workspaceRoot));
         var targetObjs = targets.Cast<ExampleTarget>().Select(
             t => new
             {

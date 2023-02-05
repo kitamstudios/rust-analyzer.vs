@@ -28,7 +28,7 @@ public static class ManifestExtensions
     {
         if (filePath.TryGetParentManifestOrThisUnderWorkspace(workspaceRoot, out string parentManifestPath))
         {
-            return Manifest.Create(parentManifestPath);
+            return Manifest.Create(parentManifestPath, workspaceRoot);
         }
 
         return null;

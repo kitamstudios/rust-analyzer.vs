@@ -30,13 +30,14 @@ public class Manifest
 
     private readonly TomlTable _model;
 
-    private Manifest(string fullPath)
+    private Manifest(string fullPath, string workspaceRoot)
     {
         FullPath = fullPath;
+        WorkspaceRoot = workspaceRoot;
         _model = Toml.ToModel(File.ReadAllText(fullPath));
     }
 
-    public string WorkspaceRoot => GetWorkspaceRoot(FullPath);
+    public string WorkspaceRoot { get; }
 
     public string FullPath { get; }
 
@@ -58,11 +59,11 @@ public class Manifest
 
     public bool Is(string filePath) => FullPath.Equals(filePath, StringComparison.OrdinalIgnoreCase);
 
-    public static Manifest Create(string filePath)
+    public static Manifest Create(string filePath, string workspaceRoot)
     {
         try
         {
-            return new (filePath);
+            return new (filePath, workspaceRoot);
         }
         catch
         {
@@ -79,27 +80,6 @@ public class Manifest
     }
 
     private string GetDefaultTargetName() => GetPackageName().Replace("-", "_");
-
-    /// <summary>
-    /// TODO: MS: Use this eventually cargo metadata --no-deps --format-version 1 --manifest-path D:\src\ks\rust-analyzer\src\TestProjects\hello_workspace\subfolder\shared2\Cargo.toml | ConvertFrom-Json.
-    /// </summary>
-    private static string GetWorkspaceRoot(string fullPath)
-    {
-        var currentPath = fullPath;
-        while (currentPath.TryGetParentManifestOrThisUnderWorkspace(Path.GetDirectoryName(Path.GetDirectoryName(currentPath)), out string parentCargoPath))
-        {
-            var model = Toml.ToModel(File.ReadAllText(parentCargoPath));
-            if (model.ContainsKey(KeyNameWorkspace))
-            {
-                return Path.GetDirectoryName(parentCargoPath);
-            }
-
-            currentPath = Path.GetDirectoryName(parentCargoPath);
-        }
-
-        // NOTE: Current cargo is the workspace.
-        return Path.GetDirectoryName(fullPath);
-    }
 
     /// <summary>
     /// TODO: MS: This should move to Target class.
