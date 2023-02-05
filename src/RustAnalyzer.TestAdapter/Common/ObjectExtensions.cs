@@ -8,4 +8,9 @@ public static class ObjectExtensions
     {
         return JsonConvert.SerializeObject(@this, formatting);
     }
+
+    public static string SerializeObject(this object @this, Formatting formatting, params JsonConverter[] converters)
+    {
+        return JsonConvert.SerializeObject(@this, formatting, converters);
+    }
 }

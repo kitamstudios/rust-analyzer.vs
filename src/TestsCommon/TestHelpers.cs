@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Moq;
+using Newtonsoft.Json;
 
 namespace KS.RustAnalyzer.Tests.Common;
 
@@ -22,4 +23,7 @@ public static class TestHelpers
 
     public static string RemoveMachineSpecificPaths(this string @this)
         => @this.ToLowerInvariant().Replace(ThisTestRoot, "<TestRoot>");
+
+    public static PathEx RemoveMachineSpecificPaths(this PathEx @this)
+        => (PathEx)@this.ToString().Replace(ThisTestRoot.ToUpperInvariant(), "<TestRoot>");
 }
