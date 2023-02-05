@@ -48,6 +48,7 @@
       <Link>Common\TestHelpers.cs</Link>
     </Compile>
     <Compile Include="Cargo\BuildJsonOutputParserTests.cs" />
+    <Compile Include="Cargo\CargoServiceTests.cs" />
     <Compile Include="Cargo\ExampleTargetTests.cs" />
     <Compile Include="Cargo\ManifestExtensionsTests.cs" />
     <Compile Include="Cargo\ManifestTests.cs" />

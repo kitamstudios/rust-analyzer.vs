@@ -1,14 +1,19 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using KS.RustAnalyzer.TestAdapter.Cargo;
 
 namespace KS.RustAnalyzer.TestAdapter.Common;
 
 public interface ICargoService
 {
+    string GetCargoExePath();
+
     Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct);
 
     Task<bool> CleanAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct);
+
+    Task<Metadata> GetMetadata(PathEx workspaceRoot, CancellationToken ct);
 }
 
 public sealed class BuildTargetInfo

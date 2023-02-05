@@ -1,0 +1,149 @@
+﻿{
+  "version": 1,
+  "target_directory": "<TestRoot>\\workspace_mixed\\target",
+  "workspace_root": "<TestRoot>\\workspace_mixed",
+  "packages": [
+    {
+      "name": "shared",
+      "manifest_path": "<TestRoot>\\workspace_mixed\\shared\\Cargo.toml",
+      "targets": [
+        {
+          "name": "shared",
+          "src_path": "<TestRoot>\\workspace_mixed\\shared\\src\\lib.rs",
+          "kind": [
+            "lib"
+          ],
+          "crate_types": [
+            "lib"
+          ]
+        },
+        {
+          "name": "example1",
+          "src_path": "<TestRoot>\\workspace_mixed\\shared\\src\\lib.rs",
+          "kind": [
+            "example"
+          ],
+          "crate_types": [
+            "bin"
+          ]
+        },
+        {
+          "name": "bench1",
+          "src_path": "<TestRoot>\\workspace_mixed\\shared\\src\\lib.rs",
+          "kind": [
+            "bench"
+          ],
+          "crate_types": [
+            "bin"
+          ]
+        },
+        {
+          "name": "bench2",
+          "src_path": "<TestRoot>\\workspace_mixed\\shared\\src\\lib.rs",
+          "kind": [
+            "bench"
+          ],
+          "crate_types": [
+            "bin"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "main",
+      "manifest_path": "<TestRoot>\\workspace_mixed\\Cargo.toml",
+      "targets": [
+        {
+          "name": "main",
+          "src_path": "<TestRoot>\\workspace_mixed\\src\\libx.rs",
+          "kind": [
+            "lib"
+          ],
+          "crate_types": [
+            "lib"
+          ]
+        },
+        {
+          "name": "bin1",
+          "src_path": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+          "kind": [
+            "bin"
+          ],
+          "crate_types": [
+            "bin"
+          ]
+        },
+        {
+          "name": "bin2",
+          "src_path": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+          "kind": [
+            "bin"
+          ],
+          "crate_types": [
+            "bin"
+          ]
+        },
+        {
+          "name": "example1",
+          "src_path": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+          "kind": [
+            "example"
+          ],
+          "crate_types": [
+            "bin"
+          ]
+        },
+        {
+          "name": "example2",
+          "src_path": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+          "kind": [
+            "example"
+          ],
+          "crate_types": [
+            "bin"
+          ]
+        },
+        {
+          "name": "example3",
+          "src_path": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+          "kind": [
+            "example"
+          ],
+          "crate_types": [
+            "bin"
+          ]
+        },
+        {
+          "name": "test1",
+          "src_path": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+          "kind": [
+            "test"
+          ],
+          "crate_types": [
+            "bin"
+          ]
+        },
+        {
+          "name": "test2",
+          "src_path": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+          "kind": [
+            "test"
+          ],
+          "crate_types": [
+            "bin"
+          ]
+        },
+        {
+          "name": "bench1",
+          "src_path": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+          "kind": [
+            "bench"
+          ],
+          "crate_types": [
+            "bin"
+          ]
+        }
+      ]
+    }
+  ]
+}

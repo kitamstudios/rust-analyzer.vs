@@ -3,7 +3,6 @@ using System.IO;
 using System.Reflection;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Moq;
-using Newtonsoft.Json;
 
 namespace KS.RustAnalyzer.Tests.Common;
 

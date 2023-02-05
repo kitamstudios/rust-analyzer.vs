@@ -39,6 +39,15 @@ jobs:
         sdk: 'false'
         msbuild: 'true'
 
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        target: x86_64-pc-windows-msvc
+        default: true
+        components: rustfmt, clippy
+
     - name: Increment VSIX version
       id: vsix_version
       uses: timheuer/vsix-version-stamp@v1

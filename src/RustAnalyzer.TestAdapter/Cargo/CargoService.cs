@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Newtonsoft.Json;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
@@ -23,6 +24,11 @@ public sealed class CargoService : ICargoService
             T = t,
             L = l,
         };
+    }
+
+    public string GetCargoExePath()
+    {
+        return Constants.CargoExe.SearchInPath();
     }
 
     public Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
@@ -57,11 +63,34 @@ public sealed class CargoService : ICargoService
             ct: ct);
     }
 
-    private static async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, Func<string, Task> showMessageBox, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, Func<string, BuildMessage[]> outputPreprocessor, ITelemetryService ts, ILogger l, CancellationToken ct)
+    public async Task<Metadata> GetMetadata(PathEx workspaceRoot, CancellationToken ct)
+    {
+        var filePath = workspaceRoot.Combine((PathEx)Constants.ManifestFileName);
+        var cargoFullPath = GetCargoExePath();
+
+        _tl.T.TrackEvent("GetMetaata", ("WorkspaceRoot", workspaceRoot));
+        try
+        {
+            using var proc = ProcessRunner.Run(cargoFullPath, new[] { "metadata", "--no-deps", "--format-version", "1", "--manifest-path", filePath, "--offline" }, ct);
+            var exitCode = await proc;
+            if (exitCode == 0)
+            {
+                return JsonConvert.DeserializeObject<Metadata>(string.Join(string.Empty, proc.StandardOutputLines));
+            }
+        }
+        catch (Exception e)
+        {
+            _tl.L.WriteLine("Unable to obtain metadata for file {0}. Ex: {1}", filePath, e);
+        }
+
+        return null;
+    }
+
+    private async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, Func<string, Task> showMessageBox, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, Func<string, BuildMessage[]> outputPreprocessor, ITelemetryService ts, ILogger l, CancellationToken ct)
     {
         outputPane.Clear();
 
-        var cargoFullPath = Constants.CargoExe.SearchInPath();
+        var cargoFullPath = GetCargoExePath();
 
         ts.TrackEvent(
             opName,
