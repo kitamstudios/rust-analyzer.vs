@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Reflection;
+using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Moq;
 
@@ -13,6 +15,8 @@ public static class TestHelpers
             Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)),
             @"Cargo\TestData").ToLowerInvariant();
 
+    public static readonly PathEx ThisTestRoot2 = (PathEx)ThisTestRoot;
+
     public static readonly TL TL =
         new ()
         {
@@ -20,9 +24,18 @@ public static class TestHelpers
             T = Mock.Of<ITelemetryService>(),
         };
 
+    private static readonly ConcurrentDictionary<PathEx, IMetadataService> MetadataServices = new ConcurrentDictionary<PathEx, IMetadataService>();
+
+    // TODO: MS: Remove this.
     public static string RemoveMachineSpecificPaths(this string @this)
         => @this.ToLowerInvariant().Replace(ThisTestRoot, "<TestRoot>");
 
     public static PathEx RemoveMachineSpecificPaths(this PathEx @this)
-        => (PathEx)@this.ToString().Replace(ThisTestRoot.ToUpperInvariant(), "<TestRoot>");
+        => (PathEx)((string)@this).ToLowerInvariant().Replace(ThisTestRoot, "<TestRoot>");
+
+    // TODO: MS: test for malformed toml.
+    public static IMetadataService MS(this PathEx @this)
+    {
+        return MetadataServices.GetOrAdd(@this, (wr) => new MetadataService(new CargoService(TL.T, TL.L), wr, TL));
+    }
 }

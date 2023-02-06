@@ -32,7 +32,7 @@ public class TargetTests
     [InlineData(@"workspace_with_tests\adder\Cargo.toml", "workspace_with_tests")]
     [InlineData(@"workspace_with_tests\add_one\Cargo.toml", "workspace_with_tests")]
     [InlineData(@"workspace_with_example\lib\Cargo.toml", "workspace_with_example")]
-    public async Task ManifestTargetsTestsAsync(string manifestRelPath, string workspaceRootRel)
+    public async Task ManifestTargetsTests1Async(string manifestRelPath, string workspaceRootRel)
     {
         NamerFactory.AdditionalInformation = manifestRelPath.ReplaceInvalidChars();
         string wkRoot = Path.Combine(TestHelpers.ThisTestRoot, workspaceRootRel);
@@ -53,5 +53,46 @@ public class TargetTests
                 t.AdditionalBuildArgs,
             });
         Approvals.VerifyAll(targets.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
+    }
+
+    [Theory]
+    [UseReporter(typeof(DiffReporter))]
+    [InlineData(@"lib_with_example\Cargo.toml", "lib_with_example")]
+    [InlineData(@"bin_with_example\Cargo.toml", "bin_with_example")]
+    [InlineData(@"hello_library\Cargo.toml", "hello_library")]
+    [InlineData(@"hello_workspace\Cargo.toml", "hello_workspace")]
+    [InlineData(@"hello_workspace\main\Cargo.toml", "hello_workspace")]
+    [InlineData(@"hello_workspace\shared\Cargo.toml", "hello_workspace")]
+    [InlineData(@"hello_workspace2\Cargo.toml", "hello_workspace2")]
+    [InlineData(@"hello_workspace2\shared\Cargo.toml", "hello_workspace2")]
+    [InlineData(@"hello_workspace2\shared2\Cargo.toml", "hello_workspace2")]
+    [InlineData(@"hello_world\Cargo.toml", "hello_world")]
+    [InlineData(@"workspace_mixed\Cargo.toml", "workspace_mixed")]
+    [InlineData(@"workspace_mixed\shared\Cargo.toml", "workspace_mixed")]
+    [InlineData(@"workspace_with_tests\Cargo.toml", "workspace_with_tests")]
+    [InlineData(@"workspace_with_tests\adder\Cargo.toml", "workspace_with_tests")]
+    [InlineData(@"workspace_with_tests\add_one\Cargo.toml", "workspace_with_tests")]
+    [InlineData(@"workspace_with_example\lib\Cargo.toml", "workspace_with_example")]
+    public async Task ManifestTargetsTestsAsync(string manifestRelPath, string workspaceRootRel)
+    {
+        NamerFactory.AdditionalInformation = manifestRelPath.ReplaceInvalidChars();
+        var wkRoot = TestHelpers.ThisTestRoot2.Combine((PathEx)workspaceRootRel);
+        var manifestPath = TestHelpers.ThisTestRoot2.Combine((PathEx)manifestRelPath);
+
+        var manifest = await wkRoot.MS().GetPackageAsync(manifestPath, default);
+        var targets = manifest.GetTargets().Select(
+            t => new
+            {
+                t.Name,
+                t.IsRunnable,
+                t.TargetFileName,
+                t.QualifiedTargetFileName,
+                Source = t.SourcePath.RemoveMachineSpecificPaths(),
+                Type = t.Kinds[0].ToString(),
+                Manifest = t.Parent.FullPath.RemoveMachineSpecificPaths(),
+                Path = t.GetPathRelativeTo("dev", TestHelpers.ThisTestRoot),
+                t.AdditionalBuildArgs,
+            });
+        Approvals.VerifyAll(targets.Select(o => o.SerializeObject(Formatting.Indented, new PathExJsonConverter())), label: string.Empty);
     }
 }

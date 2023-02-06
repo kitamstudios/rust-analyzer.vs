@@ -5,7 +5,6 @@ using KS.RustAnalyzer.TestAdapter.Common;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
-// TODO: MS: This enum needs to go.
 public enum TargetType
 {
     Bin,
@@ -15,6 +14,7 @@ public enum TargetType
     Bench,
 }
 
+// TODO: MS: Delete this.
 [DebuggerDisplay("{QualifiedTargetFileName}")]
 public class Target
 {
@@ -62,7 +62,6 @@ public class Target
     public string GetPathRelativeTo(string profile, string rootPath)
         => PathExtensions.MakeRelativePath(Path.GetDirectoryName(rootPath), GetPath(profile));
 
-    // TODO: MS: This needs to be from cargo metadata output.
     protected string GetTargetDirectory(string profile)
         => Path.Combine(Manifest.WorkspaceRoot, "target", Manifest.ProfileInfos[profile]);
 

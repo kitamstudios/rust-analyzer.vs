@@ -22,7 +22,7 @@ public sealed class CargoServiceTests
     {
         var workspaceRoot = (PathEx)Path.Combine(TestHelpers.ThisTestRoot, workspaceRelRoot);
 
-        var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetMetadata(workspaceRoot, default);
+        var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(workspaceRoot, default);
 
         var normalizedStr = wmd
             .SerializeObject(Formatting.Indented, new PathExJsonConverter())
@@ -37,7 +37,7 @@ public sealed class CargoServiceTests
     {
         var workspaceRoot = (PathEx)Path.Combine(TestHelpers.ThisTestRoot, workspaceRelRoot);
 
-        var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetMetadata(workspaceRoot, default);
+        var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(workspaceRoot, default);
         var targetParents = wmd.Packages.Select(p => (p, tp: p.Targets.Select(t => t.Parent)));
 
         wmd.Packages.Should().OnlyContain(p => p.Parent == wmd);

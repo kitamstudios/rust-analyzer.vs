@@ -3,7 +3,7 @@
   "IsRunnable": false,
   "TargetFileName": "libshared.rlib",
   "QualifiedTargetFileName": "[lib: shared\\] libshared.rlib",
-  "Source": "<TestRoot>\\hello_workspace2\\shared\\src\\lib.rs",
+  "Source": "<TestRoot>\\hello_workspace2\\shared\\cargo.toml",
   "Type": "Lib",
   "Manifest": "<TestRoot>\\hello_workspace2\\shared\\cargo.toml",
   "Path": "testdata\\hello_workspace2\\target\\debug\\libshared.rlib",

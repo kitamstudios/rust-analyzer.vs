@@ -1,15 +1,4 @@
 ﻿[0] = {
-  "Name": "lib_with_example",
-  "IsRunnable": false,
-  "TargetFileName": "liblib_with_example.rlib",
-  "QualifiedTargetFileName": "[lib: \\] liblib_with_example.rlib",
-  "Source": "<TestRoot>\\lib_with_example\\src\\lib.rs",
-  "Type": "Lib",
-  "Manifest": "<TestRoot>\\lib_with_example\\cargo.toml",
-  "Path": "testdata\\lib_with_example\\target\\debug\\liblib_with_example.rlib",
-  "AdditionalBuildArgs": ""
-}
-[1] = {
   "Name": "eg1",
   "IsRunnable": true,
   "TargetFileName": "eg1.exe",
@@ -20,7 +9,7 @@
   "Path": "testdata\\lib_with_example\\target\\debug\\examples\\eg1.exe",
   "AdditionalBuildArgs": "--example \"eg1\""
 }
-[2] = {
+[1] = {
   "Name": "eg2",
   "IsRunnable": true,
   "TargetFileName": "eg2.exe",

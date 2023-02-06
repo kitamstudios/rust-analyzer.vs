@@ -15,7 +15,11 @@
           ],
           "crate_types": [
             "lib"
-          ]
+          ],
+          "TargetFileName": "libshared.rlib",
+          "IsRunnable": false,
+          "QualifiedTargetFileName": "[lib: shared\\] libshared.rlib",
+          "AdditionalBuildArgs": ""
         },
         {
           "name": "example1",
@@ -25,7 +29,11 @@
           ],
           "crate_types": [
             "bin"
-          ]
+          ],
+          "TargetFileName": "example1.exe",
+          "IsRunnable": true,
+          "QualifiedTargetFileName": "[example: shared\\] example1.exe",
+          "AdditionalBuildArgs": "--example \"example1\""
         },
         {
           "name": "bench1",
@@ -35,7 +43,11 @@
           ],
           "crate_types": [
             "bin"
-          ]
+          ],
+          "TargetFileName": "bench1.exe",
+          "IsRunnable": true,
+          "QualifiedTargetFileName": "[benchmark: shared\\] bench1.exe",
+          "AdditionalBuildArgs": ""
         },
         {
           "name": "bench2",
@@ -45,9 +57,15 @@
           ],
           "crate_types": [
             "bin"
-          ]
+          ],
+          "TargetFileName": "bench2.exe",
+          "IsRunnable": true,
+          "QualifiedTargetFileName": "[benchmark: shared\\] bench2.exe",
+          "AdditionalBuildArgs": ""
         }
-      ]
+      ],
+      "WorkspaceRoot": "<TestRoot>\\workspace_mixed",
+      "FullPath": "<TestRoot>\\workspace_mixed\\shared\\Cargo.toml"
     },
     {
       "name": "main",
@@ -61,7 +79,11 @@
           ],
           "crate_types": [
             "lib"
-          ]
+          ],
+          "TargetFileName": "libmain.rlib",
+          "IsRunnable": false,
+          "QualifiedTargetFileName": "[lib: \\] libmain.rlib",
+          "AdditionalBuildArgs": ""
         },
         {
           "name": "bin1",
@@ -71,7 +93,11 @@
           ],
           "crate_types": [
             "bin"
-          ]
+          ],
+          "TargetFileName": "bin1.exe",
+          "IsRunnable": true,
+          "QualifiedTargetFileName": "[bin: \\] bin1.exe",
+          "AdditionalBuildArgs": ""
         },
         {
           "name": "bin2",
@@ -81,7 +107,11 @@
           ],
           "crate_types": [
             "bin"
-          ]
+          ],
+          "TargetFileName": "bin2.exe",
+          "IsRunnable": true,
+          "QualifiedTargetFileName": "[bin: \\] bin2.exe",
+          "AdditionalBuildArgs": ""
         },
         {
           "name": "example1",
@@ -91,7 +121,11 @@
           ],
           "crate_types": [
             "bin"
-          ]
+          ],
+          "TargetFileName": "example1.exe",
+          "IsRunnable": true,
+          "QualifiedTargetFileName": "[example: \\] example1.exe",
+          "AdditionalBuildArgs": "--example \"example1\""
         },
         {
           "name": "example2",
@@ -101,7 +135,11 @@
           ],
           "crate_types": [
             "bin"
-          ]
+          ],
+          "TargetFileName": "example2.exe",
+          "IsRunnable": true,
+          "QualifiedTargetFileName": "[example: \\] example2.exe",
+          "AdditionalBuildArgs": "--example \"example2\""
         },
         {
           "name": "example3",
@@ -111,7 +149,11 @@
           ],
           "crate_types": [
             "bin"
-          ]
+          ],
+          "TargetFileName": "example3.exe",
+          "IsRunnable": true,
+          "QualifiedTargetFileName": "[example: \\] example3.exe",
+          "AdditionalBuildArgs": "--example \"example3\""
         },
         {
           "name": "test1",
@@ -121,7 +163,11 @@
           ],
           "crate_types": [
             "bin"
-          ]
+          ],
+          "TargetFileName": "test1.exe",
+          "IsRunnable": true,
+          "QualifiedTargetFileName": "[test: \\] test1.exe",
+          "AdditionalBuildArgs": ""
         },
         {
           "name": "test2",
@@ -131,7 +177,11 @@
           ],
           "crate_types": [
             "bin"
-          ]
+          ],
+          "TargetFileName": "test2.exe",
+          "IsRunnable": true,
+          "QualifiedTargetFileName": "[test: \\] test2.exe",
+          "AdditionalBuildArgs": ""
         },
         {
           "name": "bench1",
@@ -141,9 +191,15 @@
           ],
           "crate_types": [
             "bin"
-          ]
+          ],
+          "TargetFileName": "bench1.exe",
+          "IsRunnable": true,
+          "QualifiedTargetFileName": "[benchmark: \\] bench1.exe",
+          "AdditionalBuildArgs": ""
         }
-      ]
+      ],
+      "WorkspaceRoot": "<TestRoot>\\workspace_mixed",
+      "FullPath": "<TestRoot>\\workspace_mixed\\Cargo.toml"
     }
   ]
 }

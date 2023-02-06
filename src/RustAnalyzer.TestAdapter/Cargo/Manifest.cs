@@ -12,6 +12,7 @@ namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
 /// <summary>
 /// NOTE: Assuming defaults to start with. Gradually TDD in the common and then lesser common cases.
+/// TODO: MS: Delete this class.
 /// </summary>
 [DebuggerDisplay("{FullPath}, IsWorkspace = {IsWorkspace}, IsPackage = {IsPackage}")]
 public class Manifest
@@ -81,9 +82,6 @@ public class Manifest
 
     private string GetDefaultTargetName() => GetPackageName().Replace("-", "_");
 
-    /// <summary>
-    /// TODO: MS: This should move to Target class.
-    /// </summary>
     private IEnumerable<Target> GetTargets()
     {
         if (!IsPackage)

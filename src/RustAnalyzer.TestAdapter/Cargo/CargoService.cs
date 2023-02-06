@@ -63,7 +63,7 @@ public sealed class CargoService : ICargoService
             ct: ct);
     }
 
-    public async Task<Workspace> GetMetadata(PathEx workspaceRoot, CancellationToken ct)
+    public async Task<Workspace> GetWorkspaceAsync(PathEx workspaceRoot, CancellationToken ct)
     {
         var filePath = workspaceRoot.Combine((PathEx)Constants.ManifestFileName);
         var cargoFullPath = GetCargoExePath();
@@ -73,17 +73,19 @@ public sealed class CargoService : ICargoService
         {
             using var proc = ProcessRunner.Run(cargoFullPath, new[] { "metadata", "--no-deps", "--format-version", "1", "--manifest-path", filePath, "--offline" }, ct);
             var exitCode = await proc;
-            if (exitCode == 0)
+            if (exitCode != 0)
             {
-                return JsonConvert.DeserializeObject<Workspace>(string.Join(string.Empty, proc.StandardOutputLines));
+                throw new InvalidOperationException($"{exitCode}\n{string.Join("\n", proc.StandardErrorLines)}");
             }
+
+            return JsonConvert.DeserializeObject<Workspace>(string.Join(string.Empty, proc.StandardOutputLines));
         }
         catch (Exception e)
         {
             _tl.L.WriteLine("Unable to obtain metadata for file {0}. Ex: {1}", filePath, e);
+            _tl.T.TrackException(e);
+            throw;
         }
-
-        return null;
     }
 
     private async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, Func<string, Task> showMessageBox, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, Func<string, BuildMessage[]> outputPreprocessor, ITelemetryService ts, ILogger l, CancellationToken ct)

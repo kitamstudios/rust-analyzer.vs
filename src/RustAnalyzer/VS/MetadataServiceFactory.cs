@@ -20,7 +20,6 @@ public class MetadataServiceFactory : IWorkspaceServiceFactory
 
     public object CreateService(IWorkspace workspaceContext)
     {
-        // TODO: MS: Ensure Cargo.toml is present at the root.
         return new MetadataService(CargoService, (PathEx)workspaceContext.Location, new TL { T = T, L = L, });
     }
 }

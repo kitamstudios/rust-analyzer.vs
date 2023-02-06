@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.Serialization;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Newtonsoft.Json;
@@ -8,6 +9,7 @@ namespace KS.RustAnalyzer.TestAdapter.Cargo;
 /// <summary>
 /// Spec: https://doc.rust-lang.org/cargo/commands/cargo-metadata.html.
 /// </summary>
+[DebuggerDisplay("{WorkspaceRoot} [#packages = {Packages.Count}]")]
 public sealed class Workspace
 {
     public Workspace() => Packages = new ChildCollection<Workspace, Package>(this);
@@ -70,9 +72,13 @@ public sealed class Workspace
     [JsonProperty("packages")]
     public ChildCollection<Workspace, Package> Packages { get; set; }
 
+    [DebuggerDisplay("{Name} - {ManifestPath} [#targets = {Targets.Count}]")]
     public sealed class Package : IHasParent<Workspace>
     {
         public Package() => Targets = new ChildCollection<Package, Target>(this);
+
+        [JsonIgnore]
+        public Workspace Parent { get; private set; }
 
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -83,14 +89,19 @@ public sealed class Workspace
         [JsonProperty("targets")]
         public ChildCollection<Package, Target> Targets { get; set; }
 
-        [JsonIgnore]
-        public Workspace Parent { get; private set; }
+        public PathEx WorkspaceRoot => Parent.WorkspaceRoot;
+
+        public PathEx FullPath => ManifestPath;
 
         public void OnParentChanging(Workspace newParent) => Parent = newParent;
     }
 
+    [DebuggerDisplay("{Name} {Kinds[0]} - {SourcePath}")]
     public sealed class Target : IHasParent<Package>
     {
+        [JsonIgnore]
+        public Package Parent { get; private set; }
+
         [JsonProperty("name")]
         public string Name { get; set; }
 
@@ -103,8 +114,13 @@ public sealed class Workspace
         [JsonProperty("crate_types")]
         public CrateType[] CrateTypes { get; set; }
 
-        [JsonIgnore]
-        public Package Parent { get; private set; }
+        public PathEx TargetFileName => this.CreateTargetFileName();
+
+        public bool IsRunnable => CrateTypes[0] == CrateType.Bin;
+
+        public string QualifiedTargetFileName => $"[{Kinds[0].ToString().ToLower()}: {(string)this.GetTargetPathRelativeToWorkspace()}] {(string)TargetFileName}";
+
+        public string AdditionalBuildArgs => Kinds[0] == Kind.Example ? $"--example \"{Name}\"" : string.Empty;
 
         public void OnParentChanging(Package newParent) => Parent = newParent;
     }

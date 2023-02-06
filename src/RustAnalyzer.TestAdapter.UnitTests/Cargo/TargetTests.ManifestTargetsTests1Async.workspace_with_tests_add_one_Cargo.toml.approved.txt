@@ -3,7 +3,7 @@
   "IsRunnable": false,
   "TargetFileName": "libadd_one.rlib",
   "QualifiedTargetFileName": "[lib: add_one\\] libadd_one.rlib",
-  "Source": "<TestRoot>\\workspace_with_tests\\add_one\\src\\lib.rs",
+  "Source": "<TestRoot>\\workspace_with_tests\\add_one\\cargo.toml",
   "Type": "Lib",
   "Manifest": "<TestRoot>\\workspace_with_tests\\add_one\\cargo.toml",
   "Path": "testdata\\workspace_with_tests\\target\\debug\\libadd_one.rlib",

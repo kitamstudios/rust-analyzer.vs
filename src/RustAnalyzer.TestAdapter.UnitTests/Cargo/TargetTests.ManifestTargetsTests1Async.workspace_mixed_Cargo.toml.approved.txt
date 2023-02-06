@@ -1,0 +1,66 @@
+﻿[0] = {
+  "Name": "bin1",
+  "IsRunnable": true,
+  "TargetFileName": "bin1.exe",
+  "QualifiedTargetFileName": "[bin: \\] bin1.exe",
+  "Source": "<TestRoot>\\workspace_mixed\\cargo.toml",
+  "Type": "Bin",
+  "Manifest": "<TestRoot>\\workspace_mixed\\cargo.toml",
+  "Path": "testdata\\workspace_mixed\\target\\debug\\bin1.exe",
+  "AdditionalBuildArgs": ""
+}
+[1] = {
+  "Name": "bin2",
+  "IsRunnable": true,
+  "TargetFileName": "bin2.exe",
+  "QualifiedTargetFileName": "[bin: \\] bin2.exe",
+  "Source": "<TestRoot>\\workspace_mixed\\cargo.toml",
+  "Type": "Bin",
+  "Manifest": "<TestRoot>\\workspace_mixed\\cargo.toml",
+  "Path": "testdata\\workspace_mixed\\target\\debug\\bin2.exe",
+  "AdditionalBuildArgs": ""
+}
+[2] = {
+  "Name": "main",
+  "IsRunnable": false,
+  "TargetFileName": "libmain.rlib",
+  "QualifiedTargetFileName": "[lib: \\] libmain.rlib",
+  "Source": "<TestRoot>\\workspace_mixed\\cargo.toml",
+  "Type": "Lib",
+  "Manifest": "<TestRoot>\\workspace_mixed\\cargo.toml",
+  "Path": "testdata\\workspace_mixed\\target\\debug\\libmain.rlib",
+  "AdditionalBuildArgs": ""
+}
+[3] = {
+  "Name": "test1",
+  "IsRunnable": false,
+  "TargetFileName": "test1.exe",
+  "QualifiedTargetFileName": "[test: \\] test1.exe",
+  "Source": "<TestRoot>\\workspace_mixed\\cargo.toml",
+  "Type": "Test",
+  "Manifest": "<TestRoot>\\workspace_mixed\\cargo.toml",
+  "Path": "testdata\\workspace_mixed\\target\\debug\\test1.exe",
+  "AdditionalBuildArgs": ""
+}
+[4] = {
+  "Name": "test2",
+  "IsRunnable": false,
+  "TargetFileName": "test2.exe",
+  "QualifiedTargetFileName": "[test: \\] test2.exe",
+  "Source": "<TestRoot>\\workspace_mixed\\cargo.toml",
+  "Type": "Test",
+  "Manifest": "<TestRoot>\\workspace_mixed\\cargo.toml",
+  "Path": "testdata\\workspace_mixed\\target\\debug\\test2.exe",
+  "AdditionalBuildArgs": ""
+}
+[5] = {
+  "Name": "bench1",
+  "IsRunnable": false,
+  "TargetFileName": "bench1.exe",
+  "QualifiedTargetFileName": "[bench: \\] bench1.exe",
+  "Source": "<TestRoot>\\workspace_mixed\\cargo.toml",
+  "Type": "Bench",
+  "Manifest": "<TestRoot>\\workspace_mixed\\cargo.toml",
+  "Path": "testdata\\workspace_mixed\\target\\debug\\bench1.exe",
+  "AdditionalBuildArgs": ""
+}

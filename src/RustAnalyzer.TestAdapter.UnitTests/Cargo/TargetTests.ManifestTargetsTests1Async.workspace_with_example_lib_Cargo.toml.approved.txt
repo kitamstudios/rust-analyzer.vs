@@ -3,7 +3,7 @@
   "IsRunnable": false,
   "TargetFileName": "liblib.rlib",
   "QualifiedTargetFileName": "[lib: lib\\] liblib.rlib",
-  "Source": "<TestRoot>\\workspace_with_example\\lib\\src\\lib.rs",
+  "Source": "<TestRoot>\\workspace_with_example\\lib\\cargo.toml",
   "Type": "Lib",
   "Manifest": "<TestRoot>\\workspace_with_example\\lib\\cargo.toml",
   "Path": "testdata\\workspace_with_example\\target\\debug\\liblib.rlib",

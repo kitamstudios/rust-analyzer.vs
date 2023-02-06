@@ -3,7 +3,7 @@
   "IsRunnable": true,
   "TargetFileName": "hello_world.exe",
   "QualifiedTargetFileName": "[bin: \\] hello_world.exe",
-  "Source": "<TestRoot>\\bin_with_example\\src\\main.rs",
+  "Source": "<TestRoot>\\bin_with_example\\cargo.toml",
   "Type": "Bin",
   "Manifest": "<TestRoot>\\bin_with_example\\cargo.toml",
   "Path": "testdata\\bin_with_example\\target\\debug\\hello_world.exe",
