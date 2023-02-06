@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -12,16 +11,13 @@ namespace KS.RustAnalyzer.VS;
 
 public sealed class FileContextProvider : IFileContextProvider, IFileContextProvider<string>
 {
-    // TODO: MS: workspaceroot should not be needed.
-    private readonly string _workspaceRoot;
     private readonly IMetadataService _mds;
     private readonly ICargoService _cargoService;
     private readonly IBuildOutputSink _outputPane;
     private readonly TL _tl;
 
-    public FileContextProvider(string workspaceRoot, IMetadataService mds, ICargoService cargoService, IBuildOutputSink outputPane, TL tl)
+    public FileContextProvider(IMetadataService mds, ICargoService cargoService, IBuildOutputSink outputPane, TL tl)
     {
-        _workspaceRoot = workspaceRoot;
         _mds = mds;
         _cargoService = cargoService;
         _outputPane = outputPane;
@@ -35,28 +31,28 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
 
     public async Task<IReadOnlyCollection<FileContext>> GetContextsForFileAsync(string filePath, CancellationToken cancellationToken)
     {
-        var parentManifest = await filePath.GetParentManifestOrThisUnderWorkspaceAsync(_workspaceRoot);
-        if (parentManifest == null)
+        var package = await _mds.GetContainingPackageAsync((PathEx)filePath, cancellationToken);
+        if (package == null)
         {
             return await Task.FromResult(FileContext.EmptyFileContexts);
         }
 
         if (filePath.IsManifest())
         {
-            return parentManifest.Profiles
+            return Manifest.ProfileInfos.Keys
                 .SelectMany(
                     profile => new[]
                     {
                         new FileContext(
                             FileContextProviderFactory.ProviderTypeGuid,
                             BuildContextTypes.BuildContextTypeGuid,
-                            new BuildFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = _workspaceRoot, FilePath = filePath }, _outputPane, VsCommon.ShowMessageBoxAsync, _tl),
+                            new BuildFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = package.WorkspaceRoot, FilePath = filePath }, _outputPane, VsCommon.ShowMessageBoxAsync, _tl),
                             new[] { filePath },
                             displayName: profile),
                         new FileContext(
                             FileContextProviderFactory.ProviderTypeGuid,
                             BuildContextTypes.CleanContextTypeGuid,
-                            new CleanFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = _workspaceRoot, FilePath = filePath }, _outputPane, VsCommon.ShowMessageBoxAsync, _tl),
+                            new CleanFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = package.WorkspaceRoot, FilePath = filePath }, _outputPane, VsCommon.ShowMessageBoxAsync, _tl),
                             new[] { filePath },
                             displayName: profile),
                     })
@@ -64,25 +60,25 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
         }
         else if (filePath.IsRustFile())
         {
-            var target = (await parentManifest.GetTargets()).Where(t => t.Source.Equals(filePath, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+            var target = package.GetTargets().Where(t => t.SourcePath == (PathEx)filePath && t.IsRunnable).FirstOrDefault();
             if (target != null)
             {
-                return parentManifest.Profiles.SelectMany(p => GetBuildActions(target, p)).ToList();
+                return Manifest.ProfileInfos.Keys.SelectMany(p => GetBuildActions(target, p)).ToList();
             }
         }
 
         return FileContext.EmptyFileContexts;
     }
 
-    private IEnumerable<FileContext> GetBuildActions(Target target, string profile)
+    private IEnumerable<FileContext> GetBuildActions(Workspace.Target target, string profile)
     {
         var action = new[]
         {
             new FileContext(
                 providerType: FileContextProviderFactory.ProviderTypeGuid,
                 contextType: BuildContextTypes.BuildContextTypeGuid,
-                context: new BuildFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = _workspaceRoot, FilePath = target.Manifest.FullPath, AdditionalBuildArgs = target.AdditionalBuildArgs }, _outputPane, VsCommon.ShowMessageBoxAsync, _tl),
-                inputFiles: new[] { target.Source },
+                context: new BuildFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = target.Parent.WorkspaceRoot, FilePath = target.Parent.ManifestPath, AdditionalBuildArgs = target.AdditionalBuildArgs }, _outputPane, VsCommon.ShowMessageBoxAsync, _tl),
+                inputFiles: new[] { (string)target.SourcePath },
                 displayName: profile),
         };
 

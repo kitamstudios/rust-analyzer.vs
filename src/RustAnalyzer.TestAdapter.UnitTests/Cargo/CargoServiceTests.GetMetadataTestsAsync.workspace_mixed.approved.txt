@@ -65,7 +65,8 @@
         }
       ],
       "WorkspaceRoot": "<TestRoot>\\workspace_mixed",
-      "FullPath": "<TestRoot>\\workspace_mixed\\shared\\Cargo.toml"
+      "FullPath": "<TestRoot>\\workspace_mixed\\shared\\Cargo.toml",
+      "IsPackage": true
     },
     {
       "name": "main",
@@ -199,7 +200,8 @@
         }
       ],
       "WorkspaceRoot": "<TestRoot>\\workspace_mixed",
-      "FullPath": "<TestRoot>\\workspace_mixed\\Cargo.toml"
+      "FullPath": "<TestRoot>\\workspace_mixed\\Cargo.toml",
+      "IsPackage": true
     }
   ]
 }

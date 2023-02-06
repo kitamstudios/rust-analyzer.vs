@@ -1,0 +1,76 @@
+﻿{
+  "version": 1,
+  "target_directory": "<TestRoot>\\hello_workspace\\target",
+  "workspace_root": "<TestRoot>\\hello_workspace",
+  "packages": [
+    {
+      "name": "main",
+      "manifest_path": "<TestRoot>\\hello_workspace\\main\\Cargo.toml",
+      "targets": [
+        {
+          "name": "main",
+          "src_path": "<TestRoot>\\hello_workspace\\main\\src\\main.rs",
+          "kind": [
+            "bin"
+          ],
+          "crate_types": [
+            "bin"
+          ],
+          "TargetFileName": "main.exe",
+          "IsRunnable": true,
+          "QualifiedTargetFileName": "[bin: main\\] main.exe",
+          "AdditionalBuildArgs": ""
+        }
+      ],
+      "WorkspaceRoot": "<TestRoot>\\hello_workspace",
+      "FullPath": "<TestRoot>\\hello_workspace\\main\\Cargo.toml",
+      "IsPackage": true
+    },
+    {
+      "name": "shared",
+      "manifest_path": "D:\\src\\ks\\rust-analyzer\\src\\rustanalyzer.testadapter.unittests\\bin\\debug\\cargo\\testdata\\hello_workspace\\shared\\Cargo.toml",
+      "targets": [
+        {
+          "name": "shared",
+          "src_path": "D:\\src\\ks\\rust-analyzer\\src\\rustanalyzer.testadapter.unittests\\bin\\debug\\cargo\\testdata\\hello_workspace\\shared\\src\\lib.rs",
+          "kind": [
+            "lib"
+          ],
+          "crate_types": [
+            "lib"
+          ],
+          "TargetFileName": "libshared.rlib",
+          "IsRunnable": false,
+          "QualifiedTargetFileName": "[lib: shared\\] libshared.rlib",
+          "AdditionalBuildArgs": ""
+        }
+      ],
+      "WorkspaceRoot": "<TestRoot>\\hello_workspace",
+      "FullPath": "D:\\src\\ks\\rust-analyzer\\src\\rustanalyzer.testadapter.unittests\\bin\\debug\\cargo\\testdata\\hello_workspace\\shared\\Cargo.toml",
+      "IsPackage": true
+    },
+    {
+      "name": "shared2",
+      "manifest_path": "<TestRoot>\\hello_workspace\\subfolder\\shared2\\Cargo.toml",
+      "targets": [
+        {
+          "name": "shared2",
+          "src_path": "<TestRoot>\\hello_workspace\\subfolder\\shared2\\src\\lib.rs",
+          "kind": [
+            "lib"
+          ],
+          "crate_types": [
+            "lib"
+          ],
+          "TargetFileName": "libshared2.rlib",
+          "IsRunnable": false,
+          "QualifiedTargetFileName": "[lib: subfolder\\shared2\\] libshared2.rlib",
+          "AdditionalBuildArgs": ""
+        }
+      ],
+      "WorkspaceRoot": "<TestRoot>\\hello_workspace",
+      "FullPath": "<TestRoot>\\hello_workspace\\subfolder\\shared2\\Cargo.toml",
+      "IsPackage": true
+    }
+  ]
+}

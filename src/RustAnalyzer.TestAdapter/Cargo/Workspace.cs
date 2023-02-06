@@ -116,7 +116,7 @@ public sealed class Workspace
 
         public PathEx TargetFileName => this.CreateTargetFileName();
 
-        public bool IsRunnable => CrateTypes[0] == CrateType.Bin;
+        public bool IsRunnable => Kinds[0] == Kind.Bin || Kinds[0] == Kind.Example;
 
         public string QualifiedTargetFileName => $"[{Kinds[0].ToString().ToLower()}: {(string)this.GetTargetPathRelativeToWorkspace()}] {(string)TargetFileName}";
 

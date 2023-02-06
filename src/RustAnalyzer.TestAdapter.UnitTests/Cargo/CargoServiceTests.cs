@@ -1,7 +1,7 @@
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using ApprovalTests;
+using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
 using FluentAssertions;
 using KS.RustAnalyzer.TestAdapter.Cargo;
@@ -16,10 +16,12 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 public sealed class CargoServiceTests
 {
     [Theory]
+    [InlineData(@"hello_workspace")]
     [InlineData(@"workspace_mixed")]
     [UseReporter(typeof(DiffReporter))]
     public async Task GetMetadataTestsAsync(string workspaceRelRoot)
     {
+        NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
         var manifestPath = TestHelpers.ThisTestRoot2.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
 
         var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
@@ -31,10 +33,12 @@ public sealed class CargoServiceTests
     }
 
     [Theory]
+    [InlineData(@"hello_workspace")]
     [InlineData(@"workspace_mixed")]
     [UseReporter(typeof(DiffReporter))]
     public async Task CheckParentsTestsAsync(string workspaceRelRoot)
     {
+        NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
         var manifestPath = TestHelpers.ThisTestRoot2.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
 
         var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
