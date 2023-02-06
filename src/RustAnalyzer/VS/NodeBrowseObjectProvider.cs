@@ -1,11 +1,14 @@
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.VSIntegration.UI;
 using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 
@@ -39,15 +42,22 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
             return null;
         }
 
-        var relativePath = PathExtensions.MakeRelativePath(node.Workspace.Location, fsNode.FullPath);
-        if (node.Workspace.JTF.Run(async () => await fsNode.FullPath.CanHaveExecutableTargetsAsync(node.Workspace.Location)))
+        if (node.Workspace.JTF.Run(async () => await CanHaveExecutableTargetsAsync(node.Workspace, (PathEx)fsNode.FullPath, default)))
         {
+            var relativePath = PathExtensions.MakeRelativePath(node.Workspace.Location, fsNode.FullPath);
             var cmdLineArgs = _settingsService.Get(SettingsService.KindDebugger, SettingsService.TypeCmdLineArgs, relativePath);
             _browseObject.ResetForNewNode(relativePath, cmdLineArgs);
             return _browseObject;
         }
 
         return null;
+    }
+
+    private async Task<bool> CanHaveExecutableTargetsAsync(IWorkspace workspace, PathEx filePath, CancellationToken ct)
+    {
+        var mds = workspace.GetService<IMetadataService>();
+        var p = await mds?.GetContainingPackageAsync(filePath, ct);
+        return p != null && p.Targets.Any(t => t.SourcePath == filePath);
     }
 
     private void BrowseObject_PropertyChanged(object sender, PropertyChangedEventArgs e)
