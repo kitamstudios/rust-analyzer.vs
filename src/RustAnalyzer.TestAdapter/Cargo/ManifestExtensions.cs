@@ -9,8 +9,12 @@ namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
 public static class ManifestExtensions
 {
+    public static bool IsManifest(this PathEx @this) => ((string)@this).IsManifest();
+
     public static bool IsManifest(this string @this)
         => Path.GetFileName(@this).Equals(Constants.ManifestFileName, StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsRustFile(this PathEx @this) => ((string)@this).IsRustFile();
 
     public static bool IsRustFile(this string @this)
         => Path.GetExtension(@this).Equals(Constants.RustFileExtension, StringComparison.OrdinalIgnoreCase);
@@ -28,8 +32,8 @@ public static class ManifestExtensions
 
     public static async Task<Manifest> GetParentManifestOrThisUnderWorkspaceAsync(this string filePath, string workspaceRoot)
     {
-        var parentManifestPath = await filePath.TryGetParentManifestOrThisUnderWorkspaceAsync(workspaceRoot);
-        if (parentManifestPath != null)
+        var found = ((PathEx)filePath).TryGetParentManifestOrThisUnderWorkspace((PathEx)workspaceRoot, out PathEx? parentManifestPath);
+        if (found)
         {
             return await Manifest.Create(parentManifestPath, workspaceRoot).ToTask();
         }
@@ -37,28 +41,39 @@ public static class ManifestExtensions
         return null;
     }
 
-    public static async Task<string> TryGetParentManifestOrThisUnderWorkspaceAsync(this string fileOrFolderPath, string workspaceRoot)
+    public static bool TryGetParentManifestOrThisUnderWorkspace(this PathEx fileOrFolderPath, PathEx workspaceRoot, out PathEx? parentManifest)
     {
         if (fileOrFolderPath.IsManifest())
         {
-            return await fileOrFolderPath.ToTask();
+            parentManifest = fileOrFolderPath;
+            return true;
+        }
+
+        if (!fileOrFolderPath.IsContainedIn(workspaceRoot))
+        {
+            parentManifest = default;
+            return false;
         }
 
         var currentPath = fileOrFolderPath;
-        while (!currentPath.Equals(workspaceRoot, StringComparison.OrdinalIgnoreCase) && (currentPath = Path.GetDirectoryName(currentPath)) != null)
+        while (currentPath != workspaceRoot)
         {
-            if (File.Exists(Path.Combine(currentPath, Constants.ManifestFileName)))
+            currentPath = currentPath.GetDirectoryName();
+            if (currentPath.Combine(Constants.ManifestFileName2).FileExists())
             {
-                return Path.Combine(currentPath, Constants.ManifestFileName);
+                parentManifest = currentPath.Combine(Constants.ManifestFileName2);
+                return true;
             }
         }
 
-        if (currentPath != null && File.Exists(Path.Combine(currentPath, Constants.ManifestFileName)))
+        if (currentPath.Combine(Constants.ManifestFileName2).FileExists())
         {
-            return Path.Combine(currentPath, Constants.ManifestFileName);
+            parentManifest = currentPath.Combine(Constants.ManifestFileName2);
+            return true;
         }
 
-        return null;
+        parentManifest = null;
+        return false;
     }
 
     public static Task<IEnumerable<Target>> GetTargets(this Manifest @this)

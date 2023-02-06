@@ -2,6 +2,7 @@ using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
 using KS.RustAnalyzer.TestAdapter.Cargo;
+using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
 using Xunit;
 
@@ -10,23 +11,34 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 public class ManifestExtensionsTests
 {
     [Theory]
-    [InlineData(@"not_a_project\src\main.rs", "not_a_project", @"not_a_project\Cargo.toml")]
-    [InlineData(@"not_a_project\src", "not_a_project", @"not_a_project\Cargo.toml")]
     [InlineData(@"hello_library\src\lib.rs", "hello_library", @"hello_library\Cargo.toml")]
     [InlineData(@"hello_library\Cargo.toml", "hello_library", @"hello_library\Cargo.toml")]
     [InlineData(@"hello_workspace\main\src\main.rs", "hello_workspace", @"hello_workspace\main\Cargo.toml")]
     [InlineData(@"hello_workspace\main\src", "hello_workspace", @"hello_workspace\main\Cargo.toml")]
     [InlineData(@"hello_workspace\main\Cargo.toml", "hello_workspace", @"hello_workspace\main\Cargo.toml")]
     [InlineData(@"workspace_with_example\lib\examples\eg1.rs", "workspace_with_example", @"workspace_with_example\lib\Cargo.toml")]
-    [InlineData(@"c:\workspace_with_example\lib\examples\eg1.rs", "workspace_with_example", null)]
-    public async Task GetContainingManifestOrThisTestsAsync(string fileOrFolder, string workspaceRelRoot, string parentCargoRelPath)
+    public void GetContainingManifestOrThisTests(string fileOrFolder, string workspaceRelRoot, string parentCargoRelPath)
     {
-        string path = Path.Combine(TestHelpers.ThisTestRoot, fileOrFolder);
-        var workspaceRoot = Path.Combine(TestHelpers.ThisTestRoot, workspaceRelRoot);
-        var parentCargoPath = await path.TryGetParentManifestOrThisUnderWorkspaceAsync(workspaceRoot);
+        var path = TestHelpers.ThisTestRoot2.Combine((PathEx)fileOrFolder);
+        var workspaceRoot = TestHelpers.ThisTestRoot2.Combine((PathEx)workspaceRelRoot);
+        var found = path.TryGetParentManifestOrThisUnderWorkspace(workspaceRoot, out PathEx? parentCargoPath);
 
-        var expectedParentManifestpath = parentCargoPath != null ? Path.Combine(TestHelpers.ThisTestRoot, parentCargoRelPath) : null;
-        parentCargoPath.Should().Be(expectedParentManifestpath);
+        found.Should().BeTrue();
+        parentCargoPath.Should().Be(TestHelpers.ThisTestRoot2.Combine((PathEx)parentCargoRelPath));
+    }
+
+    [Theory]
+    [InlineData(@"c:\workspace_with_example\lib\examples\eg1.rs", "workspace_with_example")]
+    [InlineData(@"not_a_project\src\main.rs", "not_a_project")]
+    [InlineData(@"not_a_project\src", "not_a_project")]
+    public void GetContainingManifestOrThisForInvalidTests(string fileOrFolder, string workspaceRelRoot)
+    {
+        var path = TestHelpers.ThisTestRoot2.Combine((PathEx)fileOrFolder);
+        var workspaceRoot = TestHelpers.ThisTestRoot2.Combine((PathEx)workspaceRelRoot);
+        var found = path.TryGetParentManifestOrThisUnderWorkspace(workspaceRoot, out PathEx? parentCargoPath);
+
+        parentCargoPath.Should().BeNull();
+        found.Should().BeFalse();
     }
 
     [Theory]

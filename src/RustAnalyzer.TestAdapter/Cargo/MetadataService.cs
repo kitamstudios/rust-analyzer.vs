@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
@@ -54,10 +55,22 @@ public sealed class MetadataService : IMetadataService, IDisposable
         }
     }
 
+    public async Task<Workspace.Package> GetContainingPackageAsync(PathEx filePath, CancellationToken ct)
+    {
+        if (!filePath.TryGetParentManifestOrThisUnderWorkspace(_workspaceRoot, out PathEx? manifest))
+        {
+            return null;
+        }
+
+        Ensure.That(manifest).IsNotNull();
+        return await GetPackageAsync(manifest.Value, ct);
+    }
+
     private async Task<Workspace.Package> GetPackageAsyncCore(PathEx manifestPath, CancellationToken ct)
     {
+        // TODO: _workspaceRoot may not have a Cargo.toml file if a folder with multiple workspaces are opened.
         // TODO: w is null when running under the debugger. some timing issue for sure.
-        var w = await _cargoService.GetWorkspaceAsync(_workspaceRoot, ct);
+        var w = await _cargoService.GetWorkspaceAsync(manifestPath, ct);
         var p = w.Packages.FirstOrDefault(p => p.ManifestPath == manifestPath);
         if (p != null)
         {

@@ -7,4 +7,6 @@ namespace KS.RustAnalyzer.TestAdapter.Common;
 public interface IMetadataService
 {
     Task<Workspace.Package> GetPackageAsync(PathEx manifestPath, CancellationToken ct);
+
+    Task<Workspace.Package> GetContainingPackageAsync(PathEx filePath, CancellationToken ct);
 }

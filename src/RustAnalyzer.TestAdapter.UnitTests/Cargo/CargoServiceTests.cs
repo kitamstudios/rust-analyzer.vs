@@ -20,9 +20,9 @@ public sealed class CargoServiceTests
     [UseReporter(typeof(DiffReporter))]
     public async Task GetMetadataTestsAsync(string workspaceRelRoot)
     {
-        var workspaceRoot = (PathEx)Path.Combine(TestHelpers.ThisTestRoot, workspaceRelRoot);
+        var manifestPath = TestHelpers.ThisTestRoot2.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
 
-        var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(workspaceRoot, default);
+        var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
 
         var normalizedStr = wmd
             .SerializeObject(Formatting.Indented, new PathExJsonConverter())
@@ -35,9 +35,9 @@ public sealed class CargoServiceTests
     [UseReporter(typeof(DiffReporter))]
     public async Task CheckParentsTestsAsync(string workspaceRelRoot)
     {
-        var workspaceRoot = (PathEx)Path.Combine(TestHelpers.ThisTestRoot, workspaceRelRoot);
+        var manifestPath = TestHelpers.ThisTestRoot2.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
 
-        var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(workspaceRoot, default);
+        var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
         var targetParents = wmd.Packages.Select(p => (p, tp: p.Targets.Select(t => t.Parent)));
 
         wmd.Packages.Should().OnlyContain(p => p.Parent == wmd);

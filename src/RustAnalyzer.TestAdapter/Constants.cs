@@ -1,4 +1,5 @@
 using System;
+using KS.RustAnalyzer.TestAdapter.Common;
 
 namespace KS.RustAnalyzer.TestAdapter;
 
@@ -22,4 +23,6 @@ public static class Constants
     public const string ManifestExtension = ".toml";
 
     public static readonly Version MinimumRequiredVsVersion = new (17, 4);
+
+    public static readonly PathEx ManifestFileName2 = (PathEx)ManifestFileName;
 }

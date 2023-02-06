@@ -36,6 +36,8 @@ public static class TestHelpers
     // TODO: MS: test for malformed toml.
     public static IMetadataService MS(this PathEx @this)
     {
-        return MetadataServices.GetOrAdd(@this, (wr) => new MetadataService(new CargoService(TL.T, TL.L), wr, TL));
+        // NOTE: This simulates the case when a folder with multiple workspaces is opened.
+        var root = @this.GetDirectoryName();
+        return MetadataServices.GetOrAdd(root, (wr) => new MetadataService(new CargoService(TL.T, TL.L), wr, TL));
     }
 }

@@ -7,8 +7,8 @@ namespace KS.RustAnalyzer.TestAdapter.Common;
 [DebuggerDisplay("{_path}")]
 public readonly struct PathEx : IEquatable<PathEx>
 {
-    private const StringComparison DefaultComparison = StringComparison.OrdinalIgnoreCase;
-    private static readonly StringComparer DefaultComparer = StringComparer.OrdinalIgnoreCase;
+    public const StringComparison DefaultComparison = StringComparison.OrdinalIgnoreCase;
+    public static readonly StringComparer DefaultComparer = StringComparer.OrdinalIgnoreCase;
 
     private readonly string _path;
 
@@ -19,9 +19,11 @@ public readonly struct PathEx : IEquatable<PathEx>
         _path = path.Replace("/", @"\");
     }
 
+    // TODO: MS: make his explicit otherwise it is randomly opting into string functions.
     public static implicit operator string(PathEx p) => p._path;
 
     // NOTE: No implicit cast as it can throw.
+    // TODO: MS: Should this be an implicit nullable?
     public static explicit operator PathEx(string p) => new (p);
 
     public static bool operator ==(PathEx left, PathEx right) => left.Equals(right);

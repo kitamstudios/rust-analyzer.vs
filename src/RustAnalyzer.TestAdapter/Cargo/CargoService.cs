@@ -63,15 +63,14 @@ public sealed class CargoService : ICargoService
             ct: ct);
     }
 
-    public async Task<Workspace> GetWorkspaceAsync(PathEx workspaceRoot, CancellationToken ct)
+    public async Task<Workspace> GetWorkspaceAsync(PathEx manifestPath, CancellationToken ct)
     {
-        var filePath = workspaceRoot.Combine((PathEx)Constants.ManifestFileName);
         var cargoFullPath = GetCargoExePath();
 
-        _tl.T.TrackEvent("GetMetaata", ("WorkspaceRoot", workspaceRoot));
+        _tl.T.TrackEvent("GetWorkspaceAsync", ("FilePath", manifestPath));
         try
         {
-            using var proc = ProcessRunner.Run(cargoFullPath, new[] { "metadata", "--no-deps", "--format-version", "1", "--manifest-path", filePath, "--offline" }, ct);
+            using var proc = ProcessRunner.Run(cargoFullPath, new[] { "metadata", "--no-deps", "--format-version", "1", "--manifest-path", manifestPath, "--offline" }, ct);
             var exitCode = await proc;
             if (exitCode != 0)
             {
@@ -82,7 +81,7 @@ public sealed class CargoService : ICargoService
         }
         catch (Exception e)
         {
-            _tl.L.WriteLine("Unable to obtain metadata for file {0}. Ex: {1}", filePath, e);
+            _tl.L.WriteLine("Unable to obtain metadata for file {0}. Ex: {1}", manifestPath, e);
             _tl.T.TrackException(e);
             throw;
         }
