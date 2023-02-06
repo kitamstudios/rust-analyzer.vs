@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -77,7 +78,8 @@ public sealed class CargoService : ICargoService
                 throw new InvalidOperationException($"{exitCode}\n{string.Join("\n", proc.StandardErrorLines)}");
             }
 
-            return JsonConvert.DeserializeObject<Workspace>(string.Join(string.Empty, proc.StandardOutputLines));
+            var w = JsonConvert.DeserializeObject<Workspace>(string.Join(string.Empty, proc.StandardOutputLines));
+            return AddRootPackageIfNecessary(w, manifestPath);
         }
         catch (Exception e)
         {
@@ -85,6 +87,24 @@ public sealed class CargoService : ICargoService
             _tl.T.TrackException(e);
             throw;
         }
+    }
+
+    private static Workspace AddRootPackageIfNecessary(Workspace w, PathEx manifestPath)
+    {
+        var p = w.Packages.FirstOrDefault(p => p.ManifestPath == manifestPath);
+        if (p == null)
+        {
+            // NOTE: Means this is the root Workspace Cargo.toml that is not a package.
+            var p1 =
+                new Workspace.Package
+                {
+                    ManifestPath = manifestPath,
+                    Name = Workspace.Package.RootPackageName,
+                };
+            w.Packages.Add(p1);
+        }
+
+        return w;
     }
 
     private async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, Func<string, Task> showMessageBox, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, Func<string, BuildMessage[]> outputPreprocessor, ITelemetryService ts, ILogger l, CancellationToken ct)

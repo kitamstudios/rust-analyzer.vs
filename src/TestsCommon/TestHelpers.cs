@@ -40,4 +40,22 @@ public static class TestHelpers
         var root = @this.GetDirectoryName();
         return MetadataServices.GetOrAdd(root, (wr) => new MetadataService(new CargoService(TL.T, TL.L), wr, TL));
     }
+
+    public static string Replace(this string str, string old, string @new, StringComparison comparison)
+    {
+        @new = @new ?? string.Empty;
+        if (string.IsNullOrEmpty(str) || string.IsNullOrEmpty(old) || old.Equals(@new, comparison))
+        {
+            return str;
+        }
+
+        int foundAt = 0;
+        while ((foundAt = str.IndexOf(old, foundAt, comparison)) != -1)
+        {
+            str = str.Remove(foundAt, old.Length).Insert(foundAt, @new);
+            foundAt += @new.Length;
+        }
+
+        return str;
+    }
 }

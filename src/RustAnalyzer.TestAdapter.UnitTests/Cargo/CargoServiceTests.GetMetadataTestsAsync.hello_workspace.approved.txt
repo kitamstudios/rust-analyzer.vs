@@ -28,11 +28,11 @@
     },
     {
       "name": "shared",
-      "manifest_path": "D:\\src\\ks\\rust-analyzer\\src\\rustanalyzer.testadapter.unittests\\bin\\debug\\cargo\\testdata\\hello_workspace\\shared\\Cargo.toml",
+      "manifest_path": "<TestRoot>\\hello_workspace\\shared\\Cargo.toml",
       "targets": [
         {
           "name": "shared",
-          "src_path": "D:\\src\\ks\\rust-analyzer\\src\\rustanalyzer.testadapter.unittests\\bin\\debug\\cargo\\testdata\\hello_workspace\\shared\\src\\lib.rs",
+          "src_path": "<TestRoot>\\hello_workspace\\shared\\src\\lib.rs",
           "kind": [
             "lib"
           ],
@@ -46,7 +46,7 @@
         }
       ],
       "WorkspaceRoot": "<TestRoot>\\hello_workspace",
-      "FullPath": "D:\\src\\ks\\rust-analyzer\\src\\rustanalyzer.testadapter.unittests\\bin\\debug\\cargo\\testdata\\hello_workspace\\shared\\Cargo.toml",
+      "FullPath": "<TestRoot>\\hello_workspace\\shared\\Cargo.toml",
       "IsPackage": true
     },
     {
@@ -71,6 +71,14 @@
       "WorkspaceRoot": "<TestRoot>\\hello_workspace",
       "FullPath": "<TestRoot>\\hello_workspace\\subfolder\\shared2\\Cargo.toml",
       "IsPackage": true
+    },
+    {
+      "name": "<root>",
+      "manifest_path": "<TestRoot>\\hello_workspace\\Cargo.toml",
+      "targets": [],
+      "WorkspaceRoot": "<TestRoot>\\hello_workspace",
+      "FullPath": "<TestRoot>\\hello_workspace\\Cargo.toml",
+      "IsPackage": false
     }
   ]
 }

@@ -69,25 +69,12 @@ public sealed class MetadataService : IMetadataService, IDisposable
 
     private async Task<Workspace.Package> GetPackageAsyncCore(PathEx manifestPath, CancellationToken ct)
     {
-        // TODO: _workspaceRoot may not have a Cargo.toml file if a folder with multiple workspaces are opened.
         // TODO: w is null when running under the debugger. some timing issue for sure.
         var w = await _cargoService.GetWorkspaceAsync(manifestPath, ct);
         var p = w.Packages.FirstOrDefault(p => p.ManifestPath == manifestPath);
-        if (p != null)
-        {
-            return p;
-        }
 
-        // TODO: MS: Move this to cargoservice.
-        // NOTE: Means this is the root Workspace Cargo.toml that is not a package.
-        var p1 =
-            new Workspace.Package
-            {
-                ManifestPath = manifestPath,
-                Name = Workspace.Package.RootPackageName,
-            };
-        w.Packages.Add(p1);
-        return p1;
+        Ensure.That(p).IsNotNull();
+        return p;
     }
 
     private void Dispose(bool disposing)

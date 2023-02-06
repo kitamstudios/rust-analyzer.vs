@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using ApprovalTests;
@@ -28,7 +29,7 @@ public sealed class CargoServiceTests
 
         var normalizedStr = wmd
             .SerializeObject(Formatting.Indented, new PathExJsonConverter())
-            .Replace(TestHelpers.ThisTestRoot.Replace("\\", "\\\\"), "<TestRoot>");
+            .Replace(TestHelpers.ThisTestRoot.Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase);
         Approvals.Verify(normalizedStr);
     }
 
