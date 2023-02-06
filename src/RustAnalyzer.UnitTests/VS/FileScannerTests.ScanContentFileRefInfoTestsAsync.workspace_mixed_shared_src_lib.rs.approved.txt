@@ -1,1 +1,24 @@
-﻿ is empty
+﻿[0] = {
+  "WorkspacePath": "..\\..\\target\\debug\\examples\\example1.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\examples\\example1.exe",
+  "Context": "dev",
+  "ReferenceType": 2
+}
+[1] = {
+  "WorkspacePath": "..\\..\\target\\release\\examples\\example1.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\examples\\example1.exe",
+  "Context": "release",
+  "ReferenceType": 2
+}
+[2] = {
+  "WorkspacePath": "..\\..\\target\\debug\\examples\\example1.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\examples\\example1.exe",
+  "Context": "test",
+  "ReferenceType": 2
+}
+[3] = {
+  "WorkspacePath": "..\\..\\target\\release\\examples\\example1.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\examples\\example1.exe",
+  "Context": "bench",
+  "ReferenceType": 2
+}

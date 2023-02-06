@@ -1,72 +1,144 @@
 ﻿[0] = {
-  "WorkspacePath": "target\\debug\\bin1.exe",
-  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\bin1.exe",
+  "WorkspacePath": "target\\debug\\libmain.rlib",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\libmain.rlib",
   "Context": "dev",
   "ReferenceType": 2
 }
 [1] = {
+  "WorkspacePath": "target\\debug\\bin1.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\bin1.exe",
+  "Context": "dev",
+  "ReferenceType": 2
+}
+[2] = {
   "WorkspacePath": "target\\debug\\bin2.exe",
   "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\bin2.exe",
   "Context": "dev",
   "ReferenceType": 2
 }
-[2] = {
-  "WorkspacePath": "target\\debug\\libmain.rlib",
-  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\libmain.rlib",
+[3] = {
+  "WorkspacePath": "target\\debug\\test1.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\test1.exe",
   "Context": "dev",
   "ReferenceType": 2
 }
-[3] = {
-  "WorkspacePath": "target\\release\\bin1.exe",
-  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\bin1.exe",
-  "Context": "release",
-  "ReferenceType": 2
-}
 [4] = {
-  "WorkspacePath": "target\\release\\bin2.exe",
-  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\bin2.exe",
-  "Context": "release",
+  "WorkspacePath": "target\\debug\\test2.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\test2.exe",
+  "Context": "dev",
   "ReferenceType": 2
 }
 [5] = {
+  "WorkspacePath": "target\\debug\\bench1.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\bench1.exe",
+  "Context": "dev",
+  "ReferenceType": 2
+}
+[6] = {
   "WorkspacePath": "target\\release\\libmain.rlib",
   "Target": "<TestRoot>\\workspace_mixed\\target\\release\\libmain.rlib",
   "Context": "release",
   "ReferenceType": 2
 }
-[6] = {
+[7] = {
+  "WorkspacePath": "target\\release\\bin1.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\bin1.exe",
+  "Context": "release",
+  "ReferenceType": 2
+}
+[8] = {
+  "WorkspacePath": "target\\release\\bin2.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\bin2.exe",
+  "Context": "release",
+  "ReferenceType": 2
+}
+[9] = {
+  "WorkspacePath": "target\\release\\test1.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\test1.exe",
+  "Context": "release",
+  "ReferenceType": 2
+}
+[10] = {
+  "WorkspacePath": "target\\release\\test2.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\test2.exe",
+  "Context": "release",
+  "ReferenceType": 2
+}
+[11] = {
+  "WorkspacePath": "target\\release\\bench1.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\bench1.exe",
+  "Context": "release",
+  "ReferenceType": 2
+}
+[12] = {
+  "WorkspacePath": "target\\debug\\libmain.rlib",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\libmain.rlib",
+  "Context": "test",
+  "ReferenceType": 2
+}
+[13] = {
   "WorkspacePath": "target\\debug\\bin1.exe",
   "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\bin1.exe",
   "Context": "test",
   "ReferenceType": 2
 }
-[7] = {
+[14] = {
   "WorkspacePath": "target\\debug\\bin2.exe",
   "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\bin2.exe",
   "Context": "test",
   "ReferenceType": 2
 }
-[8] = {
-  "WorkspacePath": "target\\debug\\libmain.rlib",
-  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\libmain.rlib",
+[15] = {
+  "WorkspacePath": "target\\debug\\test1.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\test1.exe",
   "Context": "test",
   "ReferenceType": 2
 }
-[9] = {
+[16] = {
+  "WorkspacePath": "target\\debug\\test2.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\test2.exe",
+  "Context": "test",
+  "ReferenceType": 2
+}
+[17] = {
+  "WorkspacePath": "target\\debug\\bench1.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\bench1.exe",
+  "Context": "test",
+  "ReferenceType": 2
+}
+[18] = {
+  "WorkspacePath": "target\\release\\libmain.rlib",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\libmain.rlib",
+  "Context": "bench",
+  "ReferenceType": 2
+}
+[19] = {
   "WorkspacePath": "target\\release\\bin1.exe",
   "Target": "<TestRoot>\\workspace_mixed\\target\\release\\bin1.exe",
   "Context": "bench",
   "ReferenceType": 2
 }
-[10] = {
+[20] = {
   "WorkspacePath": "target\\release\\bin2.exe",
   "Target": "<TestRoot>\\workspace_mixed\\target\\release\\bin2.exe",
   "Context": "bench",
   "ReferenceType": 2
 }
-[11] = {
-  "WorkspacePath": "target\\release\\libmain.rlib",
-  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\libmain.rlib",
+[21] = {
+  "WorkspacePath": "target\\release\\test1.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\test1.exe",
+  "Context": "bench",
+  "ReferenceType": 2
+}
+[22] = {
+  "WorkspacePath": "target\\release\\test2.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\test2.exe",
+  "Context": "bench",
+  "ReferenceType": 2
+}
+[23] = {
+  "WorkspacePath": "target\\release\\bench1.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\bench1.exe",
   "Context": "bench",
   "ReferenceType": 2
 }

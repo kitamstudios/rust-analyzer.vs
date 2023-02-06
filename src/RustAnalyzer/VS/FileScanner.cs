@@ -14,33 +14,30 @@ namespace KS.RustAnalyzer.VS;
 
 public class FileScanner : IFileScanner
 {
-    // TODO: MS: workspaceroot should not be needed.
-    private readonly string _workspaceRoot;
     private readonly IMetadataService _mds;
 
-    public FileScanner(string workspaceRoot, IMetadataService mds)
+    public FileScanner(IMetadataService mds)
     {
-        _workspaceRoot = workspaceRoot;
         _mds = mds;
     }
 
     public async Task<T> ScanContentAsync<T>(string filePath, CancellationToken cancellationToken)
         where T : class
     {
-        var owningManifest = filePath.IsManifest() ? Manifest.Create(filePath, _workspaceRoot) : await filePath.GetParentManifestOrThisUnderWorkspaceAsync(_workspaceRoot);
-        if (owningManifest == null)
+        var package = await _mds.GetContainingPackageAsync((PathEx)filePath, cancellationToken);
+        if (package == null)
         {
             return null;
         }
 
         if (typeof(T) == FileScannerTypeConstants.FileDataValuesType)
         {
-            var ret = await GetFileDataValuesAsync(owningManifest, filePath);
+            var ret = GetFileDataValues(package, (PathEx)filePath);
             return await Task.FromResult((T)(IReadOnlyCollection<FileDataValue>)ret);
         }
         else if (typeof(T) == FileScannerTypeConstants.FileReferenceInfoType)
         {
-            var ret = await GetFileReferenceInfosAsync(owningManifest, filePath);
+            var ret = GetFileReferenceInfos(package, (PathEx)filePath);
             return await Task.FromResult((T)(IReadOnlyCollection<FileReferenceInfo>)ret);
         }
         else
@@ -49,24 +46,24 @@ public class FileScanner : IFileScanner
         }
     }
 
-    private async Task<List<FileDataValue>> GetFileDataValuesAsync(Manifest owningManifest, string filePath)
+    private List<FileDataValue> GetFileDataValues(Workspace.Package package, PathEx filePath)
     {
         var allFileDataValues = new List<FileDataValue>();
 
         // For binaries.
-        if (owningManifest.Is(filePath))
+        if (package.ManifestPath == filePath)
         {
-            if (owningManifest.IsPackage)
+            if (package.IsPackage)
             {
-                foreach (var target in (await owningManifest.GetTargets()).Where(t => t.Type == TargetType.Bin))
+                foreach (var target in package.GetTargets().Where(t => t.IsRunnable))
                 {
                     var launchSettings = new PropertySettings
                     {
                         [LaunchConfigurationConstants.NameKey] = target.QualifiedTargetFileName,
                         [LaunchConfigurationConstants.DebugTypeKey] = LaunchConfigurationConstants.NativeOptionKey,
-                        [LaunchConfigurationConstants.ProjectKey] = owningManifest.FullPath,
+                        [LaunchConfigurationConstants.ProjectKey] = (string)package.FullPath,
                         [LaunchConfigurationConstants.ProjectTargetKey] = target.QualifiedTargetFileName,
-                        [LaunchConfigurationConstants.ProgramKey] = owningManifest.FullPath,
+                        [LaunchConfigurationConstants.ProgramKey] = (string)package.FullPath,
                     };
 
                     allFileDataValues.Add(
@@ -77,7 +74,7 @@ public class FileScanner : IFileScanner
                             target: null,
                             context: null));
 
-                    var fileDataValuesForAllProfiles1 = owningManifest.Profiles.Select(
+                    var fileDataValuesForAllProfiles1 = Manifest.ProfileInfos.Keys.Select(
                         profile =>
                             new FileDataValue(
                                 type: BuildConfigurationContext.ContextTypeGuid,
@@ -90,7 +87,7 @@ public class FileScanner : IFileScanner
                 }
             }
 
-            var fileDataValuesForAllProfiles = owningManifest.Profiles.Select(
+            var fileDataValuesForAllProfiles = Manifest.ProfileInfos.Keys.Select(
             profile =>
                 new FileDataValue(
                     type: BuildConfigurationContext.ContextTypeGuid,
@@ -102,11 +99,12 @@ public class FileScanner : IFileScanner
             allFileDataValues.AddRange(fileDataValuesForAllProfiles);
         }
 
+        // TODO: MS: Should not need separate blocks for examples and others.
+
         // For examples.
-        var forExamples = (await owningManifest.GetTargets())
-            .Where(t => t.Type == TargetType.Example)
-            .Cast<ExampleTarget>()
-            .Where(t => t.Source.Equals(filePath, StringComparison.OrdinalIgnoreCase))
+        var forExamples = package.GetTargets()
+            .Where(t => t.Kinds[0] == Workspace.Kind.Example)
+            .Where(t => t.SourcePath == filePath)
             .SelectMany(
                 t =>
                 {
@@ -116,9 +114,9 @@ public class FileScanner : IFileScanner
                     {
                         [LaunchConfigurationConstants.NameKey] = t.QualifiedTargetFileName,
                         [LaunchConfigurationConstants.DebugTypeKey] = LaunchConfigurationConstants.NativeOptionKey,
-                        [LaunchConfigurationConstants.ProjectKey] = t.Source,
+                        [LaunchConfigurationConstants.ProjectKey] = (string)t.SourcePath,
                         [LaunchConfigurationConstants.ProjectTargetKey] = t.QualifiedTargetFileName,
-                        [LaunchConfigurationConstants.ProgramKey] = owningManifest.FullPath,
+                        [LaunchConfigurationConstants.ProgramKey] = (string)package.FullPath,
                     };
 
                     allFileDataValues.Add(
@@ -129,7 +127,7 @@ public class FileScanner : IFileScanner
                             target: null,
                             context: null));
 
-                    var fileDataValuesForAllProfiles1 = owningManifest.Profiles.Select(
+                    var fileDataValuesForAllProfiles1 = Manifest.ProfileInfos.Keys.Select(
                         profile =>
                             new FileDataValue(
                                 type: BuildConfigurationContext.ContextTypeGuid,
@@ -140,7 +138,7 @@ public class FileScanner : IFileScanner
 
                     allFileDataValues.AddRange(fileDataValuesForAllProfiles1);
 
-                    var fileDataValuesForAllProfiles = owningManifest.Profiles.Select(
+                    var fileDataValuesForAllProfiles = Manifest.ProfileInfos.Keys.Select(
                     profile =>
                         new FileDataValue(
                             type: BuildConfigurationContext.ContextTypeGuid,
@@ -158,17 +156,17 @@ public class FileScanner : IFileScanner
         return allFileDataValues;
     }
 
-    private static async Task<List<FileReferenceInfo>> GetFileReferenceInfosAsync(Manifest owningManifest, string filePath)
+    private static List<FileReferenceInfo> GetFileReferenceInfos(Workspace.Package package, PathEx filePath)
     {
         var allFileRefInfos = new List<FileReferenceInfo>();
 
         // For binaries.
-        if (owningManifest.Is(filePath) && owningManifest.IsPackage)
+        if (package.ManifestPath == filePath && package.IsPackage)
         {
-            var targets = await owningManifest.GetTargets();
-            var refInfos = owningManifest.Profiles
+            var targets = package.GetTargets();
+            var refInfos = Manifest.ProfileInfos.Keys
                 .SelectMany(p => targets.Select(t => (Target: t, Profile: p)))
-                .Where(x => x.Target.Type == TargetType.Bin || x.Target.Type == TargetType.Lib)
+                .Where(x => x.Target.Kinds[0] != Workspace.Kind.Example)
                 .Select(x =>
                     new FileReferenceInfo(
                         relativePath: x.Target.GetPathRelativeTo(x.Profile, filePath),
@@ -179,12 +177,15 @@ public class FileScanner : IFileScanner
             allFileRefInfos.AddRange(refInfos);
         }
 
+        // TODO: MS: search for all StringComparison.OrdinalIgnoreCase.
+
+        // TODO: MS: Should not need separate blocks for examples and others.
+
         // For examples.
-        var forExamples = (await owningManifest.GetTargets())
-            .Where(t => t.Type == TargetType.Example)
-            .Cast<ExampleTarget>()
-            .Where(t => t.Source.Equals(filePath, StringComparison.OrdinalIgnoreCase))
-            .SelectMany(t => owningManifest.Profiles.Select(p => (Target: t, Profile: p)))
+        var forExamples = package.GetTargets()
+            .Where(t => t.Kinds[0] == Workspace.Kind.Example)
+            .Where(t => t.SourcePath == filePath)
+            .SelectMany(t => Manifest.ProfileInfos.Keys.Select(p => (Target: t, Profile: p)))
             .Select(x =>
                 new FileReferenceInfo(
                     relativePath: x.Target.GetPathRelativeTo(x.Profile, filePath),

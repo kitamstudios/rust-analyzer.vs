@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.Runtime.Serialization;
 using KS.RustAnalyzer.TestAdapter.Common;
@@ -75,6 +76,8 @@ public sealed class Workspace
     [DebuggerDisplay("{Name} - {ManifestPath} [#targets = {Targets.Count}]")]
     public sealed class Package : IHasParent<Workspace>
     {
+        public const string RootPackageName = "<root>";
+
         public Package() => Targets = new ChildCollection<Package, Target>(this);
 
         [JsonIgnore]
@@ -92,6 +95,8 @@ public sealed class Workspace
         public PathEx WorkspaceRoot => Parent.WorkspaceRoot;
 
         public PathEx FullPath => ManifestPath;
+
+        public bool IsPackage => !RootPackageName.Equals(Name, StringComparison.Ordinal);
 
         public void OnParentChanging(Workspace newParent) => Parent = newParent;
     }
@@ -116,7 +121,7 @@ public sealed class Workspace
 
         public PathEx TargetFileName => this.CreateTargetFileName();
 
-        public bool IsRunnable => Kinds[0] == Kind.Bin || Kinds[0] == Kind.Example;
+        public bool IsRunnable => CrateTypes[0] == CrateType.Bin;
 
         public string QualifiedTargetFileName => $"[{Kinds[0].ToString().ToLower()}: {(string)this.GetTargetPathRelativeToWorkspace()}] {(string)TargetFileName}";
 

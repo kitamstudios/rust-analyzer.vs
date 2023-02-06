@@ -78,12 +78,13 @@ public sealed class MetadataService : IMetadataService, IDisposable
             return p;
         }
 
-        // NOTE: Means this is the root Workspace Cargo.toml.
+        // TODO: MS: Move this to cargoservice.
+        // NOTE: Means this is the root Workspace Cargo.toml that is not a package.
         var p1 =
             new Workspace.Package
             {
                 ManifestPath = manifestPath,
-                Name = "<root>",
+                Name = Workspace.Package.RootPackageName,
             };
         w.Packages.Add(p1);
         return p1;

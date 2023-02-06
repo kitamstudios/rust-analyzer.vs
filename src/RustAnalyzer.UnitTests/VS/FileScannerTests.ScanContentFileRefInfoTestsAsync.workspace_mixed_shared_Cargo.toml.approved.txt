@@ -1,1 +1,72 @@
-﻿ is empty
+﻿[0] = {
+  "WorkspacePath": "..\\target\\debug\\libshared.rlib",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\libshared.rlib",
+  "Context": "dev",
+  "ReferenceType": 2
+}
+[1] = {
+  "WorkspacePath": "..\\target\\debug\\bench1.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\bench1.exe",
+  "Context": "dev",
+  "ReferenceType": 2
+}
+[2] = {
+  "WorkspacePath": "..\\target\\debug\\bench2.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\bench2.exe",
+  "Context": "dev",
+  "ReferenceType": 2
+}
+[3] = {
+  "WorkspacePath": "..\\target\\release\\libshared.rlib",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\libshared.rlib",
+  "Context": "release",
+  "ReferenceType": 2
+}
+[4] = {
+  "WorkspacePath": "..\\target\\release\\bench1.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\bench1.exe",
+  "Context": "release",
+  "ReferenceType": 2
+}
+[5] = {
+  "WorkspacePath": "..\\target\\release\\bench2.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\bench2.exe",
+  "Context": "release",
+  "ReferenceType": 2
+}
+[6] = {
+  "WorkspacePath": "..\\target\\debug\\libshared.rlib",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\libshared.rlib",
+  "Context": "test",
+  "ReferenceType": 2
+}
+[7] = {
+  "WorkspacePath": "..\\target\\debug\\bench1.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\bench1.exe",
+  "Context": "test",
+  "ReferenceType": 2
+}
+[8] = {
+  "WorkspacePath": "..\\target\\debug\\bench2.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\bench2.exe",
+  "Context": "test",
+  "ReferenceType": 2
+}
+[9] = {
+  "WorkspacePath": "..\\target\\release\\libshared.rlib",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\libshared.rlib",
+  "Context": "bench",
+  "ReferenceType": 2
+}
+[10] = {
+  "WorkspacePath": "..\\target\\release\\bench1.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\bench1.exe",
+  "Context": "bench",
+  "ReferenceType": 2
+}
+[11] = {
+  "WorkspacePath": "..\\target\\release\\bench2.exe",
+  "Target": "<TestRoot>\\workspace_mixed\\target\\release\\bench2.exe",
+  "Context": "bench",
+  "ReferenceType": 2
+}

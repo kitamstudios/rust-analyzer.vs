@@ -25,8 +25,8 @@ public class FileContextProviderTests
     {
         NamerFactory.AdditionalInformation = $"{Path.Combine(workspaceRootRel, filePathRel).ReplaceInvalidChars()}";
         var workspaceRoot = TestHelpers.ThisTestRoot2.Combine((PathEx)workspaceRootRel);
-        var fcp = new FileContextProvider(workspaceRoot, TestHelpers.MS(workspaceRoot), Mock.Of<ICargoService>(), Mock.Of<IBuildOutputSink>(), TestHelpers.TL);
-        var filePath = Path.Combine(workspaceRoot, filePathRel);
+        var fcp = new FileContextProvider(TestHelpers.MS(workspaceRoot), Mock.Of<ICargoService>(), Mock.Of<IBuildOutputSink>(), TestHelpers.TL);
+        var filePath = workspaceRoot.Combine((PathEx)filePathRel);
 
         var refInfos = await fcp.GetContextsForFileAsync(filePath, default);
         var processedRefInfos = refInfos.Select(

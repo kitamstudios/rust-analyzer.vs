@@ -28,8 +28,8 @@ public class FileScannerTests
     {
         NamerFactory.AdditionalInformation = $"{Path.Combine(workspaceRootRel, filePathRel).ReplaceInvalidChars()}";
         var workspaceRoot = TestHelpers.ThisTestRoot2.Combine((PathEx)workspaceRootRel);
-        var fs = new FileScanner(workspaceRoot, TestHelpers.MS(workspaceRoot));
-        var filePath = Path.Combine(workspaceRoot, filePathRel);
+        var fs = new FileScanner(TestHelpers.MS(workspaceRoot));
+        var filePath = workspaceRoot.Combine((PathEx)filePathRel);
 
         var refInfos = await fs.ScanContentAsync<IReadOnlyCollection<FileReferenceInfo>>(filePath, default);
         var processedRefInfos = refInfos.Select(
@@ -50,8 +50,8 @@ public class FileScannerTests
     {
         NamerFactory.AdditionalInformation = $"{Path.Combine(workspaceRootRel, filePathRel).ReplaceInvalidChars()}";
         var workspaceRoot = TestHelpers.ThisTestRoot2.Combine((PathEx)workspaceRootRel);
-        var fs = new FileScanner(workspaceRoot, TestHelpers.MS(workspaceRoot));
-        var filePath = Path.Combine(workspaceRoot, filePathRel);
+        var fs = new FileScanner(TestHelpers.MS(workspaceRoot));
+        var filePath = workspaceRoot.Combine((PathEx)filePathRel);
 
         var dataValues = await fs.ScanContentAsync<IReadOnlyCollection<FileDataValue>>(filePath, default);
         var processedDataValues = dataValues.Select(
