@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Cargo;
+using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
 using Microsoft.VisualStudio.Workspace.Debug;
@@ -13,11 +14,14 @@ namespace KS.RustAnalyzer.VS;
 
 public class FileScanner : IFileScanner
 {
+    // TODO: MS: workspaceroot should not be needed.
     private readonly string _workspaceRoot;
+    private readonly IMetadataService _mds;
 
-    public FileScanner(string workspaceRoot)
+    public FileScanner(string workspaceRoot, IMetadataService mds)
     {
         _workspaceRoot = workspaceRoot;
+        _mds = mds;
     }
 
     public async Task<T> ScanContentAsync<T>(string filePath, CancellationToken cancellationToken)

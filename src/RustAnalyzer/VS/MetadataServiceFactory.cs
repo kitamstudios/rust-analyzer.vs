@@ -7,7 +7,7 @@ namespace KS.RustAnalyzer.VS;
 
 [ExportWorkspaceServiceFactory(WorkspaceServiceFactoryOptions.None, typeof(IMetadataService))]
 [PartCreationPolicy(CreationPolicy.Shared)]
-public class MetadataServiceFactory : IWorkspaceServiceFactory
+public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
 {
     [Import]
     public ITelemetryService T { get; set; }
@@ -20,6 +20,7 @@ public class MetadataServiceFactory : IWorkspaceServiceFactory
 
     public object CreateService(IWorkspace workspaceContext)
     {
+        // TODO: MS: Wireup file changed event handlers
         return new MetadataService(CargoService, (PathEx)workspaceContext.Location, new TL { T = T, L = L, });
     }
 }

@@ -27,8 +27,8 @@ public class FileScannerTests
     public async Task ScanContentFileRefInfoTestsAsync(string workspaceRootRel, string filePathRel)
     {
         NamerFactory.AdditionalInformation = $"{Path.Combine(workspaceRootRel, filePathRel).ReplaceInvalidChars()}";
-        string workspaceRoot = Path.Combine(TestHelpers.ThisTestRoot, workspaceRootRel);
-        var fs = new FileScanner(workspaceRoot);
+        var workspaceRoot = TestHelpers.ThisTestRoot2.Combine((PathEx)workspaceRootRel);
+        var fs = new FileScanner(workspaceRoot, TestHelpers.MS(workspaceRoot));
         var filePath = Path.Combine(workspaceRoot, filePathRel);
 
         var refInfos = await fs.ScanContentAsync<IReadOnlyCollection<FileReferenceInfo>>(filePath, default);
@@ -49,8 +49,8 @@ public class FileScannerTests
     public async Task ScanContentFileDataValueTestsAsync(string workspaceRootRel, string filePathRel)
     {
         NamerFactory.AdditionalInformation = $"{Path.Combine(workspaceRootRel, filePathRel).ReplaceInvalidChars()}";
-        string workspaceRoot = Path.Combine(TestHelpers.ThisTestRoot, workspaceRootRel);
-        var fs = new FileScanner(workspaceRoot);
+        var workspaceRoot = TestHelpers.ThisTestRoot2.Combine((PathEx)workspaceRootRel);
+        var fs = new FileScanner(workspaceRoot, TestHelpers.MS(workspaceRoot));
         var filePath = Path.Combine(workspaceRoot, filePathRel);
 
         var dataValues = await fs.ScanContentAsync<IReadOnlyCollection<FileDataValue>>(filePath, default);

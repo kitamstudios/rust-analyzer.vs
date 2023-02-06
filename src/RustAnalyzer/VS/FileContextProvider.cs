@@ -12,14 +12,17 @@ namespace KS.RustAnalyzer.VS;
 
 public sealed class FileContextProvider : IFileContextProvider, IFileContextProvider<string>
 {
+    // TODO: MS: workspaceroot should not be needed.
     private readonly string _workspaceRoot;
+    private readonly IMetadataService _mds;
     private readonly ICargoService _cargoService;
     private readonly IBuildOutputSink _outputPane;
     private readonly TL _tl;
 
-    public FileContextProvider(string workspaceRoot, ICargoService cargoService, IBuildOutputSink outputPane, TL tl)
+    public FileContextProvider(string workspaceRoot, IMetadataService mds, ICargoService cargoService, IBuildOutputSink outputPane, TL tl)
     {
         _workspaceRoot = workspaceRoot;
+        _mds = mds;
         _cargoService = cargoService;
         _outputPane = outputPane;
         _tl = tl;

@@ -54,6 +54,7 @@
     </Compile>
     <Compile Include="TestAdapter\TestContainerDiscoverer.cs" />
     <Compile Include="TestAdapter\TestContainer.cs" />
+    <Compile Include="VS\MetadataServiceFactory.cs" />
     <Compile Include="VS\NodeBrowseObjectProvider.cs" />
     <Compile Include="VS\SettingsService.cs" />
     <Compile Include="VS\VsCommon.cs" />

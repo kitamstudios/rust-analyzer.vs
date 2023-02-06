@@ -8,12 +8,13 @@ using KS.RustAnalyzer.TestAdapter.Common;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
+// TODO: MS: Implement change detection for the _loadedPackages.
 public sealed class MetadataService : IMetadataService, IDisposable
 {
     private readonly ICargoService _cargoService;
     private readonly PathEx _workspaceRoot;
     private readonly TL _tl;
-    private readonly SemaphoreSlim _loadedPackagesLocker = new SemaphoreSlim(1, 1);
+    private readonly SemaphoreSlim _loadedPackagesLocker = new (1, 1);
     private IDictionary<PathEx, Workspace.Package> _loadedPackages = new Dictionary<PathEx, Workspace.Package>();
     private bool _disposedValue;
 

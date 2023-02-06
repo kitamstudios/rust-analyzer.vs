@@ -32,6 +32,6 @@ public class FileScannerFactory : IWorkspaceProviderFactory<IFileScanner>
             new[] { ("Location", workspaceContext.Location) });
         L.WriteLine("Creating {0}.", GetType().Name);
 
-        return new FileScanner(workspaceContext.Location);
+        return new FileScanner(workspaceContext.Location, workspaceContext.GetService<IMetadataService>());
     }
 }
