@@ -47,13 +47,14 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
     {
         try
         {
-            var manifest = Manifest.Create(debugLaunchActionContext.LaunchConfiguration[LaunchConfigurationConstants.ProgramKey] as string, workspaceContext.Location);
+            var mds = workspaceContext.GetService<IMetadataService>();
+            var package = await mds.GetContainingPackageAsync((PathEx)(debugLaunchActionContext.LaunchConfiguration[LaunchConfigurationConstants.ProgramKey] as string), default);
             var profile = debugLaunchActionContext.BuildConfiguration;
             var targetFQN = debugLaunchActionContext.LaunchConfiguration[LaunchConfigurationConstants.NameKey] as string;
-            var target = (await manifest?.GetTargets())?.FirstOrDefault(t => t.QualifiedTargetFileName == targetFQN);
+            var target = package.GetTargets().FirstOrDefault(t => t.QualifiedTargetFileName == targetFQN);
             if (target == null)
             {
-                string message = string.Format("Cannot find target '{0}' in '{1}', for profile '{2}'. This indicates a bug in the manifest parsing logic. Unable to start debugging.", targetFQN, manifest?.FullPath, profile);
+                string message = string.Format("Cannot find target '{0}' in '{1}', for profile '{2}'. This indicates a bug in the manifest parsing logic. Unable to start debugging.", targetFQN, package?.FullPath, profile);
                 L.WriteError(message);
                 T.TrackException(new ArgumentOutOfRangeException("target", message));
                 await VsCommon.ShowMessageBoxAsync(message, "Try again after deleting the .vs folder. If that does not work please file a bug.");
@@ -61,7 +62,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
             }
 
             L.WriteLine("LaunchDebugTarget with profile: {0}, launchConfiguration: {1}", profile, debugLaunchActionContext.LaunchConfiguration.SerializeObject());
-            T.TrackEvent("Debug", ("Target", targetFQN), ("Profile", profile), ("Manifest", manifest.FullPath));
+            T.TrackEvent("Debug", ("Target", targetFQN), ("Profile", profile), ("Manifest", package.FullPath));
 
             var processName = target.GetPath(profile);
             if (!File.Exists(processName))
