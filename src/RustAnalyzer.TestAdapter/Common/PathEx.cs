@@ -19,12 +19,12 @@ public readonly struct PathEx : IEquatable<PathEx>
         _path = path.Replace("/", @"\");
     }
 
-    // TODO: MS: make his explicit otherwise it is randomly opting into string functions.
+    // -TODO: MS: make his explicit otherwise it is randomly opting into string functions.
     public static implicit operator string(PathEx p) => p._path;
 
     // NOTE: No implicit cast as it can throw.
-    // TODO: MS: Should this be an implicit nullable?
-    public static explicit operator PathEx(string p) => new (p);
+    // -TODO: Make this explicit nullable.
+    public static explicit operator PathEx(string p) => p != null ? new (p) : default;
 
     public static bool operator ==(PathEx left, PathEx right) => left.Equals(right);
 

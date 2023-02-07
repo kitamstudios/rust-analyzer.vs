@@ -1,4 +1,3 @@
-using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
 using KS.RustAnalyzer.TestAdapter.Cargo;
@@ -8,7 +7,7 @@ using Xunit;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 
-public class ManifestExtensionsTests
+public class WorkspaceExtensionsTests
 {
     [Theory]
     [InlineData(@"hello_library\src\lib.rs", "hello_library", @"hello_library\Cargo.toml")]
@@ -45,7 +44,8 @@ public class ManifestExtensionsTests
     [InlineData(@"not_a_project\src\main.rs", "not_a_project", false)]
     [InlineData(@"hello_library\src\lib.rs", "hello_library", false)]
     [InlineData(@"hello_library\Cargo.toml", "hello_library", false)]
-    [InlineData(@"hello_workspace\main\src\main.rs", "hello_workspace", false)]
+    [InlineData(@"hello_workspace\main\src\main.rs", "hello_workspace", true)]
+    [InlineData(@"hello_workspace\main\src\main.txt", "hello_workspace", false)]
     [InlineData(@"hello_workspace\main\Cargo.toml", "hello_workspace", true)]
     [InlineData(@"workspace_with_example\lib\examples\eg1.rs", "workspace_with_example", true)]
     [InlineData(@"workspace_with_example\lib\examples\eg2\main.rs", "workspace_with_example", true)]
@@ -53,10 +53,10 @@ public class ManifestExtensionsTests
     [InlineData(@"does_not_exist\workspace_with_example\lib\examples\eg1.rs", "does_not_exist", false)]
     public async Task CanHaveExecutableTargetsTestsAsync(string relativePath, string relWorkspaceRoot, bool canHaveExecutableTargets)
     {
-        var filePath = Path.Combine(TestHelpers.ThisTestRoot, relativePath);
-        var workspaceRoot = Path.Combine(TestHelpers.ThisTestRoot, relWorkspaceRoot);
+        var filePath = TestHelpers.ThisTestRoot2.Combine((PathEx)relativePath);
+        var workspaceRoot = TestHelpers.ThisTestRoot2.Combine((PathEx)relWorkspaceRoot);
 
-        var res = await filePath.CanHaveExecutableTargetsAsync(workspaceRoot);
+        var res = await TestHelpers.MS(workspaceRoot).CanHaveExecutableTargetsAsync(filePath, default);
 
         res.Should().Be(canHaveExecutableTargets);
     }

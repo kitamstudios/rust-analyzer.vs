@@ -49,10 +49,7 @@
     </Compile>
     <Compile Include="Cargo\BuildJsonOutputParserTests.cs" />
     <Compile Include="Cargo\CargoServiceTests.cs" />
-    <Compile Include="Cargo\ExampleTargetTests.cs" />
-    <Compile Include="Cargo\ManifestExtensionsTests.cs" />
-    <Compile Include="Cargo\ManifestTests.cs" />
-    <Compile Include="Cargo\TargetTests.cs" />
+    <Compile Include="Cargo\WorkspaceExtensionsTests.cs" />
     <Compile Include="Common\PathExTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

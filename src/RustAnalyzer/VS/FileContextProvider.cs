@@ -39,7 +39,7 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
 
         if (filePath.IsManifest())
         {
-            return Manifest.ProfileInfos.Keys
+            return package.GetProfiles()
                 .SelectMany(
                     profile => new[]
                     {
@@ -63,7 +63,7 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
             var target = package.GetTargets().Where(t => t.SourcePath == (PathEx)filePath && t.IsRunnable).FirstOrDefault();
             if (target != null)
             {
-                return Manifest.ProfileInfos.Keys.SelectMany(p => GetBuildActions(target, p)).ToList();
+                return package.GetProfiles().SelectMany(p => GetBuildActions(target, p)).ToList();
             }
         }
 

@@ -74,7 +74,7 @@ public class FileScanner : IFileScanner
                             target: null,
                             context: null));
 
-                    var fileDataValuesForAllProfiles1 = Manifest.ProfileInfos.Keys.Select(
+                    var fileDataValuesForAllProfiles1 = package.GetProfiles().Select(
                         profile =>
                             new FileDataValue(
                                 type: BuildConfigurationContext.ContextTypeGuid,
@@ -87,7 +87,7 @@ public class FileScanner : IFileScanner
                 }
             }
 
-            var fileDataValuesForAllProfiles = Manifest.ProfileInfos.Keys.Select(
+            var fileDataValuesForAllProfiles = package.GetProfiles().Select(
             profile =>
                 new FileDataValue(
                     type: BuildConfigurationContext.ContextTypeGuid,
@@ -127,7 +127,7 @@ public class FileScanner : IFileScanner
                             target: null,
                             context: null));
 
-                    var fileDataValuesForAllProfiles1 = Manifest.ProfileInfos.Keys.Select(
+                    var fileDataValuesForAllProfiles1 = package.GetProfiles().Select(
                         profile =>
                             new FileDataValue(
                                 type: BuildConfigurationContext.ContextTypeGuid,
@@ -138,7 +138,7 @@ public class FileScanner : IFileScanner
 
                     allFileDataValues.AddRange(fileDataValuesForAllProfiles1);
 
-                    var fileDataValuesForAllProfiles = Manifest.ProfileInfos.Keys.Select(
+                    var fileDataValuesForAllProfiles = package.GetProfiles().Select(
                     profile =>
                         new FileDataValue(
                             type: BuildConfigurationContext.ContextTypeGuid,
@@ -164,7 +164,7 @@ public class FileScanner : IFileScanner
         if (package.ManifestPath == filePath && package.IsPackage)
         {
             var targets = package.GetTargets();
-            var refInfos = Manifest.ProfileInfos.Keys
+            var refInfos = package.GetProfiles()
                 .SelectMany(p => targets.Select(t => (Target: t, Profile: p)))
                 .Where(x => x.Target.Kinds[0] != Workspace.Kind.Example)
                 .Select(x =>
@@ -177,7 +177,7 @@ public class FileScanner : IFileScanner
             allFileRefInfos.AddRange(refInfos);
         }
 
-        // TODO: MS: search for all StringComparison.OrdinalIgnoreCase.
+        // -TODO: MS: search for all StringComparison.OrdinalIgnoreCase.
 
         // TODO: MS: Should not need separate blocks for examples and others.
 
@@ -185,7 +185,7 @@ public class FileScanner : IFileScanner
         var forExamples = package.GetTargets()
             .Where(t => t.Kinds[0] == Workspace.Kind.Example)
             .Where(t => t.SourcePath == filePath)
-            .SelectMany(t => Manifest.ProfileInfos.Keys.Select(p => (Target: t, Profile: p)))
+            .SelectMany(t => package.GetProfiles().Select(p => (Target: t, Profile: p)))
             .Select(x =>
                 new FileReferenceInfo(
                     relativePath: x.Target.GetPathRelativeTo(x.Profile, filePath),

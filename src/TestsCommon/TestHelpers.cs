@@ -26,7 +26,7 @@ public static class TestHelpers
 
     private static readonly ConcurrentDictionary<PathEx, IMetadataService> MetadataServices = new ConcurrentDictionary<PathEx, IMetadataService>();
 
-    // TODO: MS: Remove this.
+    // -TODO: MS: Remove this.
     public static string RemoveMachineSpecificPaths(this string @this)
         => @this.ToLowerInvariant().Replace(ThisTestRoot, "<TestRoot>");
 
