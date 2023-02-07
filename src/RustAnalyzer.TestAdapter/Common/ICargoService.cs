@@ -8,7 +8,7 @@ namespace KS.RustAnalyzer.TestAdapter.Common;
 // TODO: MS: Graceful handling of rust compiler sources - root manifest is incomplete without running the x tool.
 public interface ICargoService
 {
-    string GetCargoExePath();
+    PathEx GetCargoExePath();
 
     Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct);
 
@@ -19,9 +19,9 @@ public interface ICargoService
 
 public sealed class BuildTargetInfo
 {
-    public string WorkspaceRoot { get; set; }
+    public PathEx WorkspaceRoot { get; set; }
 
-    public string FilePath { get; set; }
+    public PathEx FilePath { get; set; }
 
     public string Profile { get; set; }
 

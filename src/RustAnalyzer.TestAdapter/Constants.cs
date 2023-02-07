@@ -25,4 +25,5 @@ public static class Constants
     public static readonly Version MinimumRequiredVsVersion = new (17, 4);
 
     public static readonly PathEx ManifestFileName2 = (PathEx)ManifestFileName;
+    public static readonly PathEx RustFileExtension2 = (PathEx)".rs";
 }

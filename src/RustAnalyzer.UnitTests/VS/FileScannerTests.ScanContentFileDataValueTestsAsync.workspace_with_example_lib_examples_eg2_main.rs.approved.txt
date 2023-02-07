@@ -1,7 +1,13 @@
 ﻿[0] = {
   "Type": "55b77c41-9751-433c-9d5f-5e815f152562",
   "Name": "IsDefaultStartupProject",
-  "Value": "{ [name] = [example: lib\\] eg2.exe, [debugType] = native, [project] = <TestRoot>\\workspace_with_example\\lib\\examples\\eg2\\main.rs, [projectTarget] = [example: lib\\] eg2.exe, [program] = <TestRoot>\\workspace_with_example\\lib\\cargo.toml,  }",
+  "Value": {
+    "name": "[example: lib\\] eg2.exe",
+    "debugType": "native",
+    "project": "<TestRoot>\\workspace_with_example\\lib\\examples\\eg2\\main.rs",
+    "projectTarget": "[example: lib\\] eg2.exe",
+    "program": "<TestRoot>\\workspace_with_example\\lib\\Cargo.toml"
+  },
   "Target": null,
   "Context": null
 }

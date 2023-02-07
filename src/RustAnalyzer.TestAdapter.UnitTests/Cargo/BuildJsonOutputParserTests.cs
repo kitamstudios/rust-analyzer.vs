@@ -31,7 +31,7 @@ public class BuildJsonOutputParserTests
     public void ParseCompilerArtifiacts(string dataFile)
     {
         NamerFactory.AdditionalInformation = $"datafile-{dataFile}";
-        var jsonOutput = File.ReadAllText(Path.Combine(TestHelpers.ThisTestRoot, dataFile));
+        var jsonOutput = File.ReadAllText(TestHelpers.ThisTestRoot.Combine((PathEx)dataFile));
         var output = BuildJsonOutputParser.Parse(TestHelpers.ThisTestRoot, jsonOutput, TestHelpers.TL);
 
         Approvals.VerifyAll(output.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
@@ -47,8 +47,8 @@ public class BuildJsonOutputParserTests
     public void ParseCompilerMessages(string dataFile)
     {
         NamerFactory.AdditionalInformation = $"datafile-{dataFile}";
-        var jsonOutput = File.ReadAllText(Path.Combine(TestHelpers.ThisTestRoot, dataFile));
-        var output = BuildJsonOutputParser.Parse(@"d:\src\dpt\pls\test_app", jsonOutput, TestHelpers.TL);
+        var jsonOutput = File.ReadAllText(TestHelpers.ThisTestRoot.Combine((PathEx)dataFile));
+        var output = BuildJsonOutputParser.Parse((PathEx)@"d:\src\dpt\pls\test_app", jsonOutput, TestHelpers.TL);
 
         Approvals.VerifyAll(output.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }

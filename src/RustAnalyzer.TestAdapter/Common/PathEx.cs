@@ -19,12 +19,9 @@ public readonly struct PathEx : IEquatable<PathEx>
         _path = path.Replace("/", @"\");
     }
 
-    // -TODO: MS: make his explicit otherwise it is randomly opting into string functions.
     public static implicit operator string(PathEx p) => p._path;
 
-    // NOTE: No implicit cast as it can throw.
-    // -TODO: Make this explicit nullable.
-    public static explicit operator PathEx(string p) => p != null ? new (p) : default;
+    public static implicit operator PathEx?(string p) => p != null ? new (p) : null;
 
     public static bool operator ==(PathEx left, PathEx right) => left.Equals(right);
 
@@ -39,8 +36,5 @@ public readonly struct PathEx : IEquatable<PathEx>
 
     public override string ToString() => _path.ToUpperInvariant();
 
-    public bool Equals(PathEx other)
-    {
-        return _path.Equals(other._path, DefaultComparison);
-    }
+    public bool Equals(PathEx other) => _path.Equals(other._path, DefaultComparison);
 }

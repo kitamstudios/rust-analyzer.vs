@@ -23,13 +23,13 @@ public sealed class CargoServiceTests
     public async Task GetMetadataTestsAsync(string workspaceRelRoot)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
-        var manifestPath = TestHelpers.ThisTestRoot2.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
+        var manifestPath = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
 
         var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
 
         var normalizedStr = wmd
             .SerializeObject(Formatting.Indented, new PathExJsonConverter())
-            .Replace(TestHelpers.ThisTestRoot.Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase);
+            .Replace(((string)TestHelpers.ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase);
         Approvals.Verify(normalizedStr);
     }
 
@@ -40,7 +40,7 @@ public sealed class CargoServiceTests
     public async Task CheckParentsTestsAsync(string workspaceRelRoot)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
-        var manifestPath = TestHelpers.ThisTestRoot2.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
+        var manifestPath = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
 
         var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
         var targetParents = wmd.Packages.Select(p => (p, tp: p.Targets.Select(t => t.Parent)));

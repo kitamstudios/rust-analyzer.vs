@@ -1,7 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using ApprovalTests;
 using ApprovalTests.Namers;
@@ -9,8 +9,6 @@ using ApprovalTests.Reporters;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
 using KS.RustAnalyzer.VS;
-using Microsoft.VisualStudio.Workspace;
-using Microsoft.VisualStudio.Workspace.Debug;
 using Microsoft.VisualStudio.Workspace.Indexing;
 using Newtonsoft.Json;
 using Xunit;
@@ -27,7 +25,7 @@ public class FileScannerTests
     public async Task ScanContentFileRefInfoTestsAsync(string workspaceRootRel, string filePathRel)
     {
         NamerFactory.AdditionalInformation = $"{Path.Combine(workspaceRootRel, filePathRel).ReplaceInvalidChars()}";
-        var workspaceRoot = TestHelpers.ThisTestRoot2.Combine((PathEx)workspaceRootRel);
+        var workspaceRoot = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRootRel);
         var fs = new FileScanner(TestHelpers.MS(workspaceRoot));
         var filePath = workspaceRoot.Combine((PathEx)filePathRel);
 
@@ -36,11 +34,16 @@ public class FileScannerTests
             ri => new
             {
                 WorkspacePath = ri.WorkspacePath.ToLowerInvariant(),
-                Target = ri.Target.RemoveMachineSpecificPaths(),
+                Target = (PathEx)ri.Target,
                 ri.Context,
                 ri.ReferenceType,
             });
-        Approvals.VerifyAll(processedRefInfos.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
+        Approvals.VerifyAll(
+            processedRefInfos.Select(
+                o => o
+                    .SerializeObject(Formatting.Indented, new PathExJsonConverter())
+                    .Replace(((string)TestHelpers.ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase)),
+            label: string.Empty);
     }
 
     [Theory]
@@ -49,7 +52,7 @@ public class FileScannerTests
     public async Task ScanContentFileDataValueTestsAsync(string workspaceRootRel, string filePathRel)
     {
         NamerFactory.AdditionalInformation = $"{Path.Combine(workspaceRootRel, filePathRel).ReplaceInvalidChars()}";
-        var workspaceRoot = TestHelpers.ThisTestRoot2.Combine((PathEx)workspaceRootRel);
+        var workspaceRoot = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRootRel);
         var fs = new FileScanner(TestHelpers.MS(workspaceRoot));
         var filePath = workspaceRoot.Combine((PathEx)filePathRel);
 
@@ -59,27 +62,15 @@ public class FileScannerTests
             {
                 dv.Type,
                 dv.Name,
-                Value = NormalizeAndSerializeDataValue(dv.Value),
-                Target = dv.Target?.RemoveMachineSpecificPaths(),
+                dv.Value,
+                dv.Target,
                 dv.Context,
             });
-        Approvals.VerifyAll(processedDataValues.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
-    }
-
-    private static object NormalizeAndSerializeDataValue(object value)
-    {
-        if (value is PropertySettings ps)
-        {
-            ps[LaunchConfigurationConstants.ProjectKey] =
-                ps[LaunchConfigurationConstants.ProjectKey].ToString().RemoveMachineSpecificPaths();
-            ps[LaunchConfigurationConstants.ProgramKey] =
-                ps[LaunchConfigurationConstants.ProgramKey].ToString().RemoveMachineSpecificPaths();
-            return ps
-                .Aggregate(new StringBuilder("{ "), (acc, e) => acc.AppendFormat("[{0}] = {1}, ", e.Key, e.Value))
-                .Append(" }")
-                .ToString();
-        }
-
-        return value;
+        Approvals.VerifyAll(
+            processedDataValues.Select(
+                o => o
+                    .SerializeObject(Formatting.Indented, new PathExJsonConverter())
+                    .Replace(((string)TestHelpers.ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase)),
+            label: string.Empty);
     }
 }

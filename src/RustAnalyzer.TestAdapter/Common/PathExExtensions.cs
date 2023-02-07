@@ -6,6 +6,10 @@ public static class PathExExtensions
 {
     public static bool FileExists(this PathEx @this) => File.Exists(@this);
 
+    public static PathEx GetExtension(this PathEx @this) => (PathEx)Path.GetExtension(@this);
+
+    public static PathEx GetFileName(this PathEx @this) => (PathEx)Path.GetFileName(@this);
+
     public static PathEx Combine(this PathEx path1, PathEx path2) => (PathEx)Path.Combine(path1, path2);
 
     public static PathEx Combine(this PathEx path1, PathEx path2, PathEx path3) => (PathEx)Path.Combine(path1, path2, path3);

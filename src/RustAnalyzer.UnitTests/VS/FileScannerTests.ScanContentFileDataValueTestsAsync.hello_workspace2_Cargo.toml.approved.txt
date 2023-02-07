@@ -1,7 +1,13 @@
 ﻿[0] = {
   "Type": "55b77c41-9751-433c-9d5f-5e815f152562",
   "Name": "IsDefaultStartupProject",
-  "Value": "{ [name] = [bin: \\] main.exe, [debugType] = native, [project] = <TestRoot>\\hello_workspace2\\cargo.toml, [projectTarget] = [bin: \\] main.exe, [program] = <TestRoot>\\hello_workspace2\\cargo.toml,  }",
+  "Value": {
+    "name": "[bin: \\] main.exe",
+    "debugType": "native",
+    "project": "<TestRoot>\\hello_workspace2\\Cargo.toml",
+    "projectTarget": "[bin: \\] main.exe",
+    "program": "<TestRoot>\\hello_workspace2\\Cargo.toml"
+  },
   "Target": null,
   "Context": null
 }

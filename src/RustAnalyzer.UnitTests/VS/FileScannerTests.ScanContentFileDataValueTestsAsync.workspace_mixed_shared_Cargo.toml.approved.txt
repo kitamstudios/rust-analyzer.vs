@@ -1,7 +1,13 @@
 ﻿[0] = {
   "Type": "55b77c41-9751-433c-9d5f-5e815f152562",
   "Name": "IsDefaultStartupProject",
-  "Value": "{ [name] = [example: shared\\] example1.exe, [debugType] = native, [project] = <TestRoot>\\workspace_mixed\\shared\\cargo.toml, [projectTarget] = [example: shared\\] example1.exe, [program] = <TestRoot>\\workspace_mixed\\shared\\cargo.toml,  }",
+  "Value": {
+    "name": "[example: shared\\] example1.exe",
+    "debugType": "native",
+    "project": "<TestRoot>\\workspace_mixed\\shared\\Cargo.toml",
+    "projectTarget": "[example: shared\\] example1.exe",
+    "program": "<TestRoot>\\workspace_mixed\\shared\\Cargo.toml"
+  },
   "Target": null,
   "Context": null
 }
@@ -36,7 +42,13 @@
 [5] = {
   "Type": "55b77c41-9751-433c-9d5f-5e815f152562",
   "Name": "IsDefaultStartupProject",
-  "Value": "{ [name] = [benchmark: shared\\] bench1.exe, [debugType] = native, [project] = <TestRoot>\\workspace_mixed\\shared\\cargo.toml, [projectTarget] = [benchmark: shared\\] bench1.exe, [program] = <TestRoot>\\workspace_mixed\\shared\\cargo.toml,  }",
+  "Value": {
+    "name": "[benchmark: shared\\] bench1.exe",
+    "debugType": "native",
+    "project": "<TestRoot>\\workspace_mixed\\shared\\Cargo.toml",
+    "projectTarget": "[benchmark: shared\\] bench1.exe",
+    "program": "<TestRoot>\\workspace_mixed\\shared\\Cargo.toml"
+  },
   "Target": null,
   "Context": null
 }
@@ -71,7 +83,13 @@
 [10] = {
   "Type": "55b77c41-9751-433c-9d5f-5e815f152562",
   "Name": "IsDefaultStartupProject",
-  "Value": "{ [name] = [benchmark: shared\\] bench2.exe, [debugType] = native, [project] = <TestRoot>\\workspace_mixed\\shared\\cargo.toml, [projectTarget] = [benchmark: shared\\] bench2.exe, [program] = <TestRoot>\\workspace_mixed\\shared\\cargo.toml,  }",
+  "Value": {
+    "name": "[benchmark: shared\\] bench2.exe",
+    "debugType": "native",
+    "project": "<TestRoot>\\workspace_mixed\\shared\\Cargo.toml",
+    "projectTarget": "[benchmark: shared\\] bench2.exe",
+    "program": "<TestRoot>\\workspace_mixed\\shared\\Cargo.toml"
+  },
   "Target": null,
   "Context": null
 }

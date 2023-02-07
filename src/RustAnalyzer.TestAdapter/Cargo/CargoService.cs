@@ -27,9 +27,9 @@ public sealed class CargoService : ICargoService
         };
     }
 
-    public string GetCargoExePath()
+    public PathEx GetCargoExePath()
     {
-        return Constants.CargoExe.SearchInPath();
+        return (PathEx)Constants.CargoExe.SearchInPath();
     }
 
     public Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)

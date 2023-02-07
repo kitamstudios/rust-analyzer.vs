@@ -49,7 +49,7 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 
     public IEnumerable<ITestContainer> TestContainers => _testContainersCache.Values;
 
-    private void TryUpdateTestContainersCache(string path, WatcherChangeTypes changeType = WatcherChangeTypes.Created)
+    private void TryUpdateTestContainersCache(PathEx path, WatcherChangeTypes changeType = WatcherChangeTypes.Created)
     {
         Ensure.That(path.IsManifest()).IsTrue();
 
@@ -107,7 +107,7 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
     {
         foreach (var fsea in eventArgs.FileSystemEvents.Where(CanFileChangeTests))
         {
-            TryUpdateTestContainersCache(fsea.FullPath, fsea.ChangeType);
+            TryUpdateTestContainersCache((PathEx)fsea.FullPath, fsea.ChangeType);
         }
 
         return Task.CompletedTask;
@@ -116,21 +116,21 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
     private bool CanFileChangeTests(FileSystemEventArgs eventArgs)
     {
         // TODO: UT: We need to expand the check to include .rs and possibly other files as well.
-        return eventArgs.FullPath.IsManifest() && IsPathInDirectory(_currentWorkspace.Location, eventArgs.FullPath);
+        return ((PathEx)eventArgs.FullPath).IsManifest() && IsPathInDirectory(_currentWorkspace.Location, eventArgs.FullPath);
     }
 
     public class FindFilesProgress : IProgress<string>
     {
-        private readonly Action<string, WatcherChangeTypes> _tryUpdateTestContainersCache;
+        private readonly Action<PathEx, WatcherChangeTypes> _tryUpdateTestContainersCache;
 
-        public FindFilesProgress(Action<string, WatcherChangeTypes> tryUpdateTestContainersCache)
+        public FindFilesProgress(Action<PathEx, WatcherChangeTypes> tryUpdateTestContainersCache)
         {
             _tryUpdateTestContainersCache = tryUpdateTestContainersCache;
         }
 
         public void Report(string value)
         {
-            _tryUpdateTestContainersCache(value, WatcherChangeTypes.Created);
+            _tryUpdateTestContainersCache((PathEx)value, WatcherChangeTypes.Created);
         }
     }
 }

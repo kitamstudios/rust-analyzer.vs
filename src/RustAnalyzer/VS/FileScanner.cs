@@ -177,8 +177,6 @@ public class FileScanner : IFileScanner
             allFileRefInfos.AddRange(refInfos);
         }
 
-        // -TODO: MS: search for all StringComparison.OrdinalIgnoreCase.
-
         // TODO: MS: Should not need separate blocks for examples and others.
 
         // For examples.

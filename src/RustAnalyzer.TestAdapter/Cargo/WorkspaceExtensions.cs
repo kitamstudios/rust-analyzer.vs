@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -100,15 +99,9 @@ public static class WorkspaceExtensions
         return false;
     }
 
-    public static bool IsManifest(this PathEx @this) => ((string)@this).IsManifest();
+    public static bool IsManifest(this PathEx @this) => @this.GetFileName() == Constants.ManifestFileName2;
 
-    public static bool IsManifest(this string @this)
-        => Path.GetFileName(@this).Equals(Constants.ManifestFileName, StringComparison.OrdinalIgnoreCase);
-
-    public static bool IsRustFile(this PathEx @this) => ((string)@this).IsRustFile();
-
-    public static bool IsRustFile(this string @this)
-        => Path.GetExtension(@this).Equals(Constants.RustFileExtension, StringComparison.OrdinalIgnoreCase);
+    public static bool IsRustFile(this PathEx @this) => @this.GetExtension() == Constants.RustFileExtension2;
 
     public static async Task<bool> CanHaveExecutableTargetsAsync(this IMetadataService @this, PathEx filePath, CancellationToken ct)
     {

@@ -1,7 +1,13 @@
 ﻿[0] = {
   "Type": "55b77c41-9751-433c-9d5f-5e815f152562",
   "Name": "IsDefaultStartupProject",
-  "Value": "{ [name] = [example: \\] example1.exe, [debugType] = native, [project] = <TestRoot>\\workspace_mixed\\src\\main.rs, [projectTarget] = [example: \\] example1.exe, [program] = <TestRoot>\\workspace_mixed\\cargo.toml,  }",
+  "Value": {
+    "name": "[example: \\] example1.exe",
+    "debugType": "native",
+    "project": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+    "projectTarget": "[example: \\] example1.exe",
+    "program": "<TestRoot>\\workspace_mixed\\Cargo.toml"
+  },
   "Target": null,
   "Context": null
 }
@@ -64,7 +70,13 @@
 [9] = {
   "Type": "55b77c41-9751-433c-9d5f-5e815f152562",
   "Name": "IsDefaultStartupProject",
-  "Value": "{ [name] = [example: \\] example2.exe, [debugType] = native, [project] = <TestRoot>\\workspace_mixed\\src\\main.rs, [projectTarget] = [example: \\] example2.exe, [program] = <TestRoot>\\workspace_mixed\\cargo.toml,  }",
+  "Value": {
+    "name": "[example: \\] example2.exe",
+    "debugType": "native",
+    "project": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+    "projectTarget": "[example: \\] example2.exe",
+    "program": "<TestRoot>\\workspace_mixed\\Cargo.toml"
+  },
   "Target": null,
   "Context": null
 }
@@ -127,7 +139,13 @@
 [18] = {
   "Type": "55b77c41-9751-433c-9d5f-5e815f152562",
   "Name": "IsDefaultStartupProject",
-  "Value": "{ [name] = [example: \\] example3.exe, [debugType] = native, [project] = <TestRoot>\\workspace_mixed\\src\\main.rs, [projectTarget] = [example: \\] example3.exe, [program] = <TestRoot>\\workspace_mixed\\cargo.toml,  }",
+  "Value": {
+    "name": "[example: \\] example3.exe",
+    "debugType": "native",
+    "project": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+    "projectTarget": "[example: \\] example3.exe",
+    "program": "<TestRoot>\\workspace_mixed\\Cargo.toml"
+  },
   "Target": null,
   "Context": null
 }

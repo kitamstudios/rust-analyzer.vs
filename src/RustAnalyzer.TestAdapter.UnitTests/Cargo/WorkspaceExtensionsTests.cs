@@ -18,12 +18,12 @@ public class WorkspaceExtensionsTests
     [InlineData(@"workspace_with_example\lib\examples\eg1.rs", "workspace_with_example", @"workspace_with_example\lib\Cargo.toml")]
     public void GetContainingManifestOrThisTests(string fileOrFolder, string workspaceRelRoot, string parentCargoRelPath)
     {
-        var path = TestHelpers.ThisTestRoot2.Combine((PathEx)fileOrFolder);
-        var workspaceRoot = TestHelpers.ThisTestRoot2.Combine((PathEx)workspaceRelRoot);
+        var path = TestHelpers.ThisTestRoot.Combine((PathEx)fileOrFolder);
+        var workspaceRoot = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot);
         var found = path.TryGetParentManifestOrThisUnderWorkspace(workspaceRoot, out PathEx? parentCargoPath);
 
         found.Should().BeTrue();
-        parentCargoPath.Should().Be(TestHelpers.ThisTestRoot2.Combine((PathEx)parentCargoRelPath));
+        parentCargoPath.Should().Be(TestHelpers.ThisTestRoot.Combine((PathEx)parentCargoRelPath));
     }
 
     [Theory]
@@ -32,8 +32,8 @@ public class WorkspaceExtensionsTests
     [InlineData(@"not_a_project\src", "not_a_project")]
     public void GetContainingManifestOrThisForInvalidTests(string fileOrFolder, string workspaceRelRoot)
     {
-        var path = TestHelpers.ThisTestRoot2.Combine((PathEx)fileOrFolder);
-        var workspaceRoot = TestHelpers.ThisTestRoot2.Combine((PathEx)workspaceRelRoot);
+        var path = TestHelpers.ThisTestRoot.Combine((PathEx)fileOrFolder);
+        var workspaceRoot = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot);
         var found = path.TryGetParentManifestOrThisUnderWorkspace(workspaceRoot, out PathEx? parentCargoPath);
 
         parentCargoPath.Should().BeNull();
@@ -53,8 +53,8 @@ public class WorkspaceExtensionsTests
     [InlineData(@"does_not_exist\workspace_with_example\lib\examples\eg1.rs", "does_not_exist", false)]
     public async Task CanHaveExecutableTargetsTestsAsync(string relativePath, string relWorkspaceRoot, bool canHaveExecutableTargets)
     {
-        var filePath = TestHelpers.ThisTestRoot2.Combine((PathEx)relativePath);
-        var workspaceRoot = TestHelpers.ThisTestRoot2.Combine((PathEx)relWorkspaceRoot);
+        var filePath = TestHelpers.ThisTestRoot.Combine((PathEx)relativePath);
+        var workspaceRoot = TestHelpers.ThisTestRoot.Combine((PathEx)relWorkspaceRoot);
 
         var res = await TestHelpers.MS(workspaceRoot).CanHaveExecutableTargetsAsync(filePath, default);
 

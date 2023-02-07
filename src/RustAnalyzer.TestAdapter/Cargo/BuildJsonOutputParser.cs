@@ -30,7 +30,7 @@ public static class BuildJsonOutputParser
     private static readonly Regex CompilerArtifactMessageCracker =
         new (@"^(.*) (.*) \((.*)\+(.*)\)$", RegexOptions.Compiled);
 
-    public static BuildMessage[] Parse(string workspaceRoot, string jsonLine, TL tl)
+    public static BuildMessage[] Parse(PathEx workspaceRoot, string jsonLine, TL tl)
     {
         dynamic obj;
         try
@@ -65,7 +65,7 @@ public static class BuildJsonOutputParser
         return Array.Empty<BuildMessage>();
     }
 
-    private static BuildMessage[] ParseCompilerMessage(string workspaceRoot, dynamic obj)
+    private static BuildMessage[] ParseCompilerMessage(PathEx workspaceRoot, dynamic obj)
     {
         if (obj.message.spans == null || obj.message.spans.Count == 0)
         {
@@ -88,7 +88,7 @@ public static class BuildJsonOutputParser
             : defaultValue;
     }
 
-    private static DetailedBuildMessage CreateBuildMessage(string workspaceRoot, dynamic obj, dynamic fileInfo = null, dynamic lineInfo = null, dynamic colInfo = null)
+    private static DetailedBuildMessage CreateBuildMessage(PathEx workspaceRoot, dynamic obj, dynamic fileInfo = null, dynamic lineInfo = null, dynamic colInfo = null)
     {
         var msg = new DetailedBuildMessage
         {

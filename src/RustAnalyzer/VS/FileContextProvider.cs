@@ -31,13 +31,14 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
 
     public async Task<IReadOnlyCollection<FileContext>> GetContextsForFileAsync(string filePath, CancellationToken cancellationToken)
     {
-        var package = await _mds.GetContainingPackageAsync((PathEx)filePath, cancellationToken);
+        var fp = (PathEx)filePath;
+        var package = await _mds.GetContainingPackageAsync((PathEx)fp, cancellationToken);
         if (package == null)
         {
             return await Task.FromResult(FileContext.EmptyFileContexts);
         }
 
-        if (filePath.IsManifest())
+        if (fp.IsManifest())
         {
             return package.GetProfiles()
                 .SelectMany(
@@ -46,21 +47,21 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
                         new FileContext(
                             FileContextProviderFactory.ProviderTypeGuid,
                             BuildContextTypes.BuildContextTypeGuid,
-                            new BuildFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = package.WorkspaceRoot, FilePath = filePath }, _outputPane, VsCommon.ShowMessageBoxAsync, _tl),
-                            new[] { filePath },
+                            new BuildFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = package.WorkspaceRoot, FilePath = fp }, _outputPane, VsCommon.ShowMessageBoxAsync, _tl),
+                            new[] { (string)fp },
                             displayName: profile),
                         new FileContext(
                             FileContextProviderFactory.ProviderTypeGuid,
                             BuildContextTypes.CleanContextTypeGuid,
-                            new CleanFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = package.WorkspaceRoot, FilePath = filePath }, _outputPane, VsCommon.ShowMessageBoxAsync, _tl),
-                            new[] { filePath },
+                            new CleanFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = package.WorkspaceRoot, FilePath = fp }, _outputPane, VsCommon.ShowMessageBoxAsync, _tl),
+                            new[] { (string)fp },
                             displayName: profile),
                     })
                 .ToList();
         }
-        else if (filePath.IsRustFile())
+        else if (fp.IsRustFile())
         {
-            var target = package.GetTargets().Where(t => t.SourcePath == (PathEx)filePath && t.IsRunnable).FirstOrDefault();
+            var target = package.GetTargets().Where(t => t.SourcePath == (PathEx)fp && t.IsRunnable).FirstOrDefault();
             if (target != null)
             {
                 return package.GetProfiles().SelectMany(p => GetBuildActions(target, p)).ToList();

@@ -1,7 +1,13 @@
 ﻿[0] = {
   "Type": "55b77c41-9751-433c-9d5f-5e815f152562",
   "Name": "IsDefaultStartupProject",
-  "Value": "{ [name] = [example: shared\\] example1.exe, [debugType] = native, [project] = <TestRoot>\\workspace_mixed\\shared\\src\\lib.rs, [projectTarget] = [example: shared\\] example1.exe, [program] = <TestRoot>\\workspace_mixed\\shared\\cargo.toml,  }",
+  "Value": {
+    "name": "[example: shared\\] example1.exe",
+    "debugType": "native",
+    "project": "<TestRoot>\\workspace_mixed\\shared\\src\\lib.rs",
+    "projectTarget": "[example: shared\\] example1.exe",
+    "program": "<TestRoot>\\workspace_mixed\\shared\\Cargo.toml"
+  },
   "Target": null,
   "Context": null
 }
