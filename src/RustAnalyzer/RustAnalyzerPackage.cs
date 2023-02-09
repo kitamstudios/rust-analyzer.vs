@@ -128,11 +128,12 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
 
     #region Release summary
 
+    // TODO: MS: how does a folder without root cargo.toml work?
     public static class ReleaseSummaryNotification
     {
         private const string ActionContextReleaseNotes = "release_notes";
         private const string ActionContextDismiss = "dismiss";
-        private const string ActionContextJoinChat = "join_chat";
+        private const string ActionContextGetHelp = "get_help";
         private const string DismissedRegKeyName = "release_notes_dismissed";
 
         public static async Task ShowAsync(IServiceProvider sp, TL tl)
@@ -149,7 +150,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
             var actionItems = new[]
             {
                 new InfoBarHyperlink("Release notes", ActionContextReleaseNotes),
-                new InfoBarHyperlink("Join chat", ActionContextJoinChat),
+                new InfoBarHyperlink("Get help!", ActionContextGetHelp),
                 new InfoBarHyperlink("Dismiss", ActionContextDismiss),
             };
             var model = new InfoBarModel(
@@ -177,7 +178,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                     VsShellUtilities.OpenSystemBrowser(Constants.ReleaseNotesUrl);
                     break;
 
-                case ActionContextJoinChat:
+                case ActionContextGetHelp:
                     VsShellUtilities.OpenSystemBrowser(Constants.DiscordUrl);
                     break;
 

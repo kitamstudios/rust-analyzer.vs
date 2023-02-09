@@ -34,7 +34,7 @@ public readonly struct PathEx : IEquatable<PathEx>
         return 2090457805 + DefaultComparer.GetHashCode(_path);
     }
 
-    public override string ToString() => _path.ToUpperInvariant();
+    public override string ToString() => _path;
 
     public bool Equals(PathEx other) => _path.Equals(other._path, DefaultComparison);
 }

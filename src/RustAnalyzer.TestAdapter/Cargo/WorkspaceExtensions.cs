@@ -118,4 +118,6 @@ public static class WorkspaceExtensions
 
         return p.Targets.Any(t => t.IsRunnable && (t.SourcePath == filePath || t.Parent.ManifestPath == filePath));
     }
+
+    public static bool IsExample(this Workspace.Target @this) => @this.Kinds[0] == Workspace.Kind.Example;
 }

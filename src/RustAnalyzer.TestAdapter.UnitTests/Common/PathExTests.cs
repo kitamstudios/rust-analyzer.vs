@@ -23,8 +23,8 @@ public class PathExTests
     }
 
     [Theory]
-    [InlineData(@"abc", "ABC")]
-    [InlineData(@"abc/a", "ABC\\A")]
+    [InlineData(@"abc", "abc")]
+    [InlineData(@"abc/A", "abc\\A")]
     public void TostringTests(string path, string equivalentPath)
     {
         ((PathEx)path).ToString().Should().Be(equivalentPath);

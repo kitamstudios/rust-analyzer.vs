@@ -103,7 +103,7 @@ public class FileScanner : IFileScanner
 
         // For examples.
         var forExamples = package.GetTargets()
-            .Where(t => t.Kinds[0] == Workspace.Kind.Example)
+            .Where(t => t.IsExample())
             .Where(t => t.SourcePath == filePath)
             .SelectMany(
                 t =>
@@ -166,7 +166,7 @@ public class FileScanner : IFileScanner
             var targets = package.GetTargets();
             var refInfos = package.GetProfiles()
                 .SelectMany(p => targets.Select(t => (Target: t, Profile: p)))
-                .Where(x => x.Target.Kinds[0] != Workspace.Kind.Example)
+                .Where(x => !x.Target.IsExample())
                 .Select(x =>
                     new FileReferenceInfo(
                         relativePath: x.Target.GetPathRelativeTo(x.Profile, filePath),
@@ -181,7 +181,7 @@ public class FileScanner : IFileScanner
 
         // For examples.
         var forExamples = package.GetTargets()
-            .Where(t => t.Kinds[0] == Workspace.Kind.Example)
+            .Where(t => t.IsExample())
             .Where(t => t.SourcePath == filePath)
             .SelectMany(t => package.GetProfiles().Select(p => (Target: t, Profile: p)))
             .Select(x =>
