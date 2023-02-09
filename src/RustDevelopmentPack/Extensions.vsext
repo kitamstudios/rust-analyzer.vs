@@ -1,0 +1,26 @@
+{
+  "description": "Setup a smooth Rust development environment. A collection of top rated extensions from the marketplace.",
+  "version": "1.0.0.0",
+  "extensions": [
+    {
+      "vsixId": "KS.RustAnalyzer.3a91e56b-fb28-4d85-b572-ec964abf8e31",
+      "name": "rust-analyzer (Kitam Studios)"
+    },
+    {
+      "vsixId": "TomlEditor.4e804652-a783-473b-827f-6e41f5a48b9b",
+      "name": "TOML Editor (Mads Kristensen)"
+    },
+    {
+      "vsixId": "RainbowBraces.1dff1bc5-a8e4-477b-9054-2b9ec6bb88d1",
+      "name": "Rainbow Braces (Mads Kristensen)"
+    },
+    {
+      "vsixId": "VSOutputEnhancer.Nikolay Balakin.a06be4c3-f97e-425c-8a0d-bdef08ac2abb",
+      "name": "Output enhancer (Nikolay Balakin)"
+    },
+    {
+      "vsixId": "3a7b4930-a5fb-46ec-a9b8-9610c8f953b8",
+      "name": "File Icons (Mads Kristensen)"
+    }
+  ]
+}
