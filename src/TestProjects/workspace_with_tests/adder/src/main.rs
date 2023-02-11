@@ -1,8 +1,15 @@
+use std;
 use add_one;
 
 fn main() {
     let num = 10;
     println!("Hello, world! {num} plus one is {}!", add_one::add_one(num));
+
+    let args: Vec<String> = std::env::args().collect();
+    println!("command line: {:?}", args);
+
+    let mut user_input = String::new();
+    std::io::stdin().read_line(&mut user_input);
 }
 
 #[cfg(test)]

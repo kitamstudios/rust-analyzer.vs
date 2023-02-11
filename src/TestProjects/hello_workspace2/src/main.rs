@@ -1,3 +1,4 @@
+use std;
 use shared::models::ModelA;
 use shared2::models::ModelA2;
 // use shared::systems::system_a:: { do_stuff_from_system_a }; // or (1)
@@ -23,4 +24,11 @@ fn main() {
     // println!("must be 42 {}", do_stuff_from_system_a()); // (1)
     println!("42 is equal to {}", system_a::do_stuff_from_system_a()); // (2)
     println!("42 is equal to {}", system_a2::do_stuff_from_system_a2()); // (2)
+
+
+    let args: Vec<String> = std::env::args().collect();
+    println!("command line: {:?}", args);
+
+    let mut user_input = String::new();
+    std::io::stdin().read_line(&mut user_input);
 }
