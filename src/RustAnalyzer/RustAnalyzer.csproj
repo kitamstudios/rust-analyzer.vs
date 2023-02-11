@@ -141,7 +141,6 @@
       <Version>11.0.61030</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.0.5232" />
-    <PackageReference Include="Tomlyn" Version="0.16.2" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.4.33103.184" ExcludeAssets="runtime">
@@ -150,9 +149,6 @@
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.4.2119" />
     <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client">
       <Version>17.4.1068</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.1.32210.191" ExcludeAssets="runtime">
-      <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Workspace">
       <Version>17.1.11-preview-0002</Version>

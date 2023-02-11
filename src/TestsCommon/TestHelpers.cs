@@ -27,7 +27,6 @@ public static class TestHelpers
     public static PathEx RemoveMachineSpecificPaths(this PathEx @this)
         => (PathEx)((string)@this).ToLowerInvariant().Replace(ThisTestRoot, "<TestRoot>");
 
-    // TODO: MS: test for malformed toml.
     public static IMetadataService MS(this PathEx @this)
     {
         // NOTE: This simulates the case when a folder with multiple workspaces is opened.

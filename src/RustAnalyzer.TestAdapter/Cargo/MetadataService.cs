@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -8,23 +9,26 @@ using KS.RustAnalyzer.TestAdapter.Common;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
-// TODO: MS: Implement change detection for the _loadedPackages.
 public sealed class MetadataService : IMetadataService, IDisposable
 {
     private readonly ICargoService _cargoService;
     private readonly PathEx _workspaceRoot;
     private readonly TL _tl;
-    private readonly SemaphoreSlim _loadedPackagesLocker = new (1, 1);
-    private IDictionary<PathEx, Workspace.Package> _loadedPackages = new Dictionary<PathEx, Workspace.Package>();
+    private readonly SemaphoreSlim _packageCacheLocker = new (1, 1);
+    private ConcurrentDictionary<PathEx, Workspace.Package> _packageCache = new ConcurrentDictionary<PathEx, Workspace.Package>();
     private bool _disposedValue;
 
     public MetadataService(ICargoService cargoService, PathEx workspaceRoot, TL tl)
     {
-        // TODO: MS: subscribe to file chagne notifications and outdating caches.
         _cargoService = cargoService;
         _workspaceRoot = workspaceRoot;
         _tl = tl;
+
+        _tl.L.WriteLine("Creating MDS. Workspace root: {0}.", workspaceRoot);
+        _tl.T.TrackEvent("CreatingMDS", ("WorkspaceRoot", $"{workspaceRoot}"));
     }
+
+    public Action DisconnectEvents { get; set; } = () => { };
 
     public void Dispose()
     {
@@ -35,31 +39,16 @@ public sealed class MetadataService : IMetadataService, IDisposable
 
     public async Task<Workspace.Package> GetPackageAsync(PathEx manifestPath, CancellationToken ct)
     {
-        if (_loadedPackages.TryGetValue(manifestPath, out var package))
-        {
-            return package;
-        }
-
-        await _loadedPackagesLocker.WaitAsync(ct);
-        try
-        {
-            if (_loadedPackages.TryGetValue(manifestPath, out package))
-            {
-                return package;
-            }
-
-            return _loadedPackages[manifestPath] = await GetPackageAsyncCore(manifestPath, ct);
-        }
-        finally
-        {
-            _loadedPackagesLocker.Release();
-        }
+        _tl.L.WriteLine("GetPackageAsync. Manifest path: {0}.", manifestPath);
+        return await ProtectPackageCacheAndRunAsync((ct) => GetCachedPackageAsync(manifestPath, ct), ct);
     }
 
     public async Task<Workspace.Package> GetContainingPackageAsync(PathEx filePath, CancellationToken ct)
     {
+        _tl.L.WriteLine("GetContainingPackageAsync. File path: {0}.", filePath);
         if (!filePath.TryGetParentManifestOrThisUnderWorkspace(_workspaceRoot, out PathEx? manifest))
         {
+            _tl.L.WriteLine("GetContainingPackageAsync. No containing package found.");
             return null;
         }
 
@@ -67,11 +56,52 @@ public sealed class MetadataService : IMetadataService, IDisposable
         return await GetPackageAsync(manifest.Value, ct);
     }
 
+    public Task<int> OnWorkspaceUpdateAsync(IEnumerable<PathEx> filePaths, CancellationToken ct)
+    {
+        _tl.L.WriteLine("OnWorkspaceUpdateAsync. Count of files updated: {0}.", filePaths.Count());
+        return ProtectPackageCacheAndRunAsync(
+            (ct) =>
+            {
+                foreach (var filePath in filePaths.Where(fp => fp.IsManifest() || fp.IsRustFile()))
+                {
+                    if (filePath.TryGetParentManifestOrThisUnderWorkspace(_workspaceRoot, out PathEx? manifest))
+                    {
+                        _packageCache.TryRemove(manifest.Value, out var _);
+                    }
+                }
+
+                return Task.FromResult(filePaths.Count());
+            },
+            ct);
+    }
+
+    private async Task<T> ProtectPackageCacheAndRunAsync<T>(Func<CancellationToken, Task<T>> f, CancellationToken ct)
+    {
+        await _packageCacheLocker.WaitAsync(ct);
+        try
+        {
+            return await f(ct);
+        }
+        finally
+        {
+            _packageCacheLocker.Release();
+        }
+    }
+
+    private async Task<Workspace.Package> GetCachedPackageAsync(PathEx manifestPath, CancellationToken ct)
+    {
+        if (_packageCache.TryGetValue(manifestPath, out var package))
+        {
+            return package;
+        }
+
+        return _packageCache[manifestPath] = await GetPackageAsyncCore(manifestPath, ct);
+    }
+
     private async Task<Workspace.Package> GetPackageAsyncCore(PathEx manifestPath, CancellationToken ct)
     {
-        // TODO: w is null when running under the debugger. some timing issue for sure.
         var w = await _cargoService.GetWorkspaceAsync(manifestPath, ct);
-        var p = w.Packages.FirstOrDefault(p => p.ManifestPath == manifestPath);
+        var p = w.Packages.FirstOrDefault(p => p.ManifestPath.GetFullPath() == manifestPath.GetFullPath());
 
         Ensure.That(p).IsNotNull();
         return p;
@@ -79,6 +109,8 @@ public sealed class MetadataService : IMetadataService, IDisposable
 
     private void Dispose(bool disposing)
     {
+        _tl.L.WriteLine("Disposing MDS. Package cache has {0} entries.", _packageCache.Count);
+        _tl.T.TrackEvent("DisposeMDS", ("PackageCount", $"{_packageCache.Count}"));
         if (!_disposedValue)
         {
             if (disposing)
@@ -86,7 +118,8 @@ public sealed class MetadataService : IMetadataService, IDisposable
                 // NOTE: Dispose managed state (managed objects).
             }
 
-            _loadedPackages = null;
+            DisconnectEvents();
+            _packageCache = null;
             _disposedValue = true;
         }
     }

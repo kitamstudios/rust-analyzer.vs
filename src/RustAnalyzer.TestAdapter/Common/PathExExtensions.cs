@@ -10,6 +10,8 @@ public static class PathExExtensions
 
     public static PathEx GetFileName(this PathEx @this) => (PathEx)Path.GetFileName(@this);
 
+    public static PathEx GetFullPath(this PathEx @this) => (PathEx)Path.GetFullPath(@this);
+
     public static PathEx Combine(this PathEx path1, PathEx path2) => (PathEx)Path.Combine(path1, path2);
 
     public static PathEx Combine(this PathEx path1, PathEx path2, PathEx path3) => (PathEx)Path.Combine(path1, path2, path3);

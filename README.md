@@ -8,6 +8,8 @@
 
 Download this extension from the [Visual Studio Marketplace][marketplace] or get the [CI build][vsixgallery].
 
+**For a superior Rust development experience install the [Rust Development Pack](https://marketplace.visualstudio.com/items?itemName=kitamstudios.RustDevelopmentPack).**
+
 ## Principles
 
 1. Drive developer towards Rust community best practices.

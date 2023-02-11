@@ -9,7 +9,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Tomlyn" Version="0.16.2" />
     <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.4.1" />
   </ItemGroup>
 

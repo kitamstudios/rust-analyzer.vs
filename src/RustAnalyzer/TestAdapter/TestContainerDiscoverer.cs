@@ -98,7 +98,7 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 
         _currentWorkspace = _workspaceFactory.CurrentWorkspace;
         L.WriteLine("TestContainerDiscoverer loading new workspace at {0}", _currentWorkspace.Location);
-        T.TrackEvent("TestContainerDiscoverer.LoadWorkspace", ("Location", _currentWorkspace.Location));
+        T.TrackEvent("TcdLoadWorkspace", ("Location", _currentWorkspace.Location));
         _currentWorkspace.GetFileWatcherService().OnBatchFileSystemChanged += BatchFileSystemChangedEventHandlerAsync;
         await _currentWorkspace.GetFindFilesService().FindFilesAsync(Constants.ManifestFileName, new FindFilesProgress(TryUpdateTestContainersCache));
     }

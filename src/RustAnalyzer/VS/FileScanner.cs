@@ -99,8 +99,6 @@ public class FileScanner : IFileScanner
             allFileDataValues.AddRange(fileDataValuesForAllProfiles);
         }
 
-        // TODO: MS: Should not need separate blocks for examples and others.
-
         // For examples.
         var forExamples = package.GetTargets()
             .Where(t => t.IsExample())
@@ -176,8 +174,6 @@ public class FileScanner : IFileScanner
 
             allFileRefInfos.AddRange(refInfos);
         }
-
-        // TODO: MS: Should not need separate blocks for examples and others.
 
         // For examples.
         var forExamples = package.GetTargets()

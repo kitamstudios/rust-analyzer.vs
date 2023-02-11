@@ -29,7 +29,9 @@ public sealed class CargoService : ICargoService
 
     public PathEx GetCargoExePath()
     {
-        return (PathEx)Constants.CargoExe.SearchInPath();
+        var c = (PathEx)Constants.CargoExe.SearchInPath();
+        _tl.L.WriteLine("Using {0} from {1}.", Constants.CargoExe, c);
+        return c;
     }
 
     public Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
@@ -66,13 +68,14 @@ public sealed class CargoService : ICargoService
 
     public async Task<Workspace> GetWorkspaceAsync(PathEx manifestPath, CancellationToken ct)
     {
-        var cargoFullPath = GetCargoExePath();
-
-        _tl.T.TrackEvent("GetWorkspaceAsync", ("FilePath", manifestPath));
+        _tl.T.TrackEvent("GetWorkspaceA", ("FilePath", manifestPath));
         try
         {
+            var cargoFullPath = GetCargoExePath();
             using var proc = ProcessRunner.Run(cargoFullPath, new[] { "metadata", "--no-deps", "--format-version", "1", "--manifest-path", manifestPath, "--offline" }, ct);
+            _tl.L.WriteLine("Started PID:{0} with args: {1}...", proc.ProcessId, proc.Arguments);
             var exitCode = await proc;
+            _tl.L.WriteLine("... Finished PID {0} with exit code {1}.", proc.ProcessId, proc.ExitCode);
             if (exitCode != 0)
             {
                 throw new InvalidOperationException($"{exitCode}\n{string.Join("\n", proc.StandardErrorLines)}");
@@ -91,7 +94,7 @@ public sealed class CargoService : ICargoService
 
     private static Workspace AddRootPackageIfNecessary(Workspace w, PathEx manifestPath)
     {
-        var p = w.Packages.FirstOrDefault(p => p.ManifestPath == manifestPath);
+        var p = w.Packages.FirstOrDefault(p => p.ManifestPath.GetFullPath() == manifestPath.GetFullPath());
         if (p == null)
         {
             // NOTE: Means this is the root Workspace Cargo.toml that is not a package.
@@ -124,7 +127,6 @@ public sealed class CargoService : ICargoService
             return false;
         }
 
-        l.WriteLine("Using {0} from {1}.", Constants.CargoExe, cargoFullPath);
         return await RunAsync(
             cargoFullPath,
             arguments,

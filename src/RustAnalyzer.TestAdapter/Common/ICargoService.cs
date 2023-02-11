@@ -5,7 +5,6 @@ using KS.RustAnalyzer.TestAdapter.Cargo;
 
 namespace KS.RustAnalyzer.TestAdapter.Common;
 
-// TODO: MS: Graceful handling of rust compiler sources - root manifest is incomplete without running the x tool.
 public interface ICargoService
 {
     PathEx GetCargoExePath();

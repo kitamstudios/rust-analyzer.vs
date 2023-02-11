@@ -1,0 +1,30 @@
+﻿{
+  "version": 1,
+  "target_directory": "<TestRoot>\\hello_world\\target",
+  "workspace_root": "<TestRoot>\\hello_world",
+  "packages": [
+    {
+      "name": "hello_world",
+      "manifest_path": "<TestRoot>\\hello_world\\Cargo.toml",
+      "targets": [
+        {
+          "name": "hello_world",
+          "src_path": "<TestRoot>\\hello_world\\src\\main.rs",
+          "kind": [
+            "bin"
+          ],
+          "crate_types": [
+            "bin"
+          ],
+          "TargetFileName": "hello_world.exe",
+          "IsRunnable": true,
+          "QualifiedTargetFileName": "[bin: \\] hello_world.exe",
+          "AdditionalBuildArgs": ""
+        }
+      ],
+      "WorkspaceRoot": "<TestRoot>\\hello_world",
+      "FullPath": "<TestRoot>\\hello_world\\Cargo.toml",
+      "IsPackage": true
+    }
+  ]
+}

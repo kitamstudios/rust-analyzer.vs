@@ -13,10 +13,10 @@ using Xunit;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 
-// TODO: MS: check for all crate-types in workspace_mixed.
 public sealed class CargoServiceTests
 {
     [Theory]
+    [InlineData(@"hello_world")]
     [InlineData(@"hello_workspace")]
     [InlineData(@"workspace_mixed")]
     [UseReporter(typeof(DiffReporter))]
@@ -34,12 +34,12 @@ public sealed class CargoServiceTests
     }
 
     [Theory]
+    [InlineData(@"hello_world")]
+    [InlineData(@"hello_library")]
     [InlineData(@"hello_workspace")]
     [InlineData(@"workspace_mixed")]
-    [UseReporter(typeof(DiffReporter))]
     public async Task CheckParentsTestsAsync(string workspaceRelRoot)
     {
-        NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
         var manifestPath = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
 
         var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
@@ -47,5 +47,32 @@ public sealed class CargoServiceTests
 
         wmd.Packages.Should().OnlyContain(p => p.Parent == wmd);
         targetParents.Should().OnlyContain(e => e.tp.All(p => p == e.p));
+    }
+
+    [Theory]
+    [InlineData(@"hello_world")]
+    [InlineData(@"hello_world/src/..")]
+    [InlineData(@"hello_library")]
+    [InlineData(@"workspace_mixed")]
+    public async Task RootPackageIsNotAddedAsync(string workspaceRelRoot)
+    {
+        var manifestPath = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
+
+        var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
+
+        wmd.Packages.Should().NotContain(p => p.Name == Workspace.Package.RootPackageName || !p.IsPackage);
+        wmd.Packages.Should().OnlyContain(p => p.IsPackage);
+    }
+
+    [Theory]
+    [InlineData(@"hello_workspace")]
+    [InlineData(@"hello_workspace/main/..")]
+    public async Task RootPackageIsAddedAsync(string workspaceRelRoot)
+    {
+        var manifestPath = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
+
+        var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
+
+        wmd.Packages.Should().ContainSingle(p => p.Name == Workspace.Package.RootPackageName && !p.IsPackage);
     }
 }

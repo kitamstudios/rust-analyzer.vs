@@ -128,7 +128,6 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
 
     #region Release summary
 
-    // TODO: MS: how does a folder without root cargo.toml work?
     public static class ReleaseSummaryNotification
     {
         private const string ActionContextReleaseNotes = "release_notes";

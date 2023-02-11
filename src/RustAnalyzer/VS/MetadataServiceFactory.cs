@@ -1,4 +1,7 @@
+using System;
 using System.ComponentModel.Composition;
+using System.Linq;
+using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Workspace;
@@ -20,7 +23,21 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
 
     public object CreateService(IWorkspace workspaceContext)
     {
-        // TODO: MS: Wireup file changed event handlers
-        return new MetadataService(CargoService, (PathEx)workspaceContext.Location, new TL { T = T, L = L, });
+        var mds = new MetadataService(
+            CargoService,
+            (PathEx)workspaceContext.Location,
+            new TL { T = T, L = L, });
+
+        Func<object, BatchFileSystemEventArgs, Task> eh = async (_, e) => await BatchFileSystemChangedEventHandlerAsync(e, mds);
+        workspaceContext.GetFileWatcherService().OnBatchFileSystemChanged += eh;
+        mds.DisconnectEvents = () => { workspaceContext.GetFileWatcherService().OnBatchFileSystemChanged -= eh; };
+
+        return mds;
+    }
+
+    private async Task BatchFileSystemChangedEventHandlerAsync(BatchFileSystemEventArgs eventArgs, IMetadataService mds)
+    {
+        var filePaths = eventArgs.FileSystemEvents.Select(fse => (PathEx?)fse.FullPath).Where(x => x.HasValue).Select(x => x.Value).Distinct();
+        await mds.OnWorkspaceUpdateAsync(filePaths, default);
     }
 }
