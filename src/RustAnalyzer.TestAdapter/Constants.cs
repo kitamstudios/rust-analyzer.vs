@@ -5,7 +5,7 @@ namespace KS.RustAnalyzer.TestAdapter;
 
 public static class Constants
 {
-    public const string ReleaseSummary = "Right click on Cargo.toml or examples .rs files and set command line arguments for debugging.";
+    public const string ReleaseSummary = "Significant refactoring to Cargo.toml parser resulting in overall correctness & simpler code. NOTE: Please report any issues you face.";
     public const string ReleaseNotesUrl = $"https://github.com/kitamstudios/rust-analyzer.vs/releases/{Vsix.Version}";
     public const string DiscordUrl = "https://discord.gg/JyK55EsACr";
 
