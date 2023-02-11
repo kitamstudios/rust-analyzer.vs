@@ -57,7 +57,7 @@ public sealed class OutputWindowLogger : ILogger
         ThreadHelper.ThrowIfNotOnUIThread();
         if (EnsurePane())
         {
-            _pane.OutputStringThreadSafe($"{DateTime.Now:yyyyMMdd.HH.mm.ss} - {string.Format(format, args)}\n");
+            _pane.OutputStringThreadSafe($"{DateTime.Now:yyMMdd.HH.mm.ss.fff} - {string.Format(format, args)}\n");
         }
     }
 

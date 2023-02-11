@@ -58,7 +58,6 @@ public sealed class MetadataService : IMetadataService, IDisposable
 
     public Task<int> OnWorkspaceUpdateAsync(IEnumerable<PathEx> filePaths, CancellationToken ct)
     {
-        _tl.L.WriteLine("OnWorkspaceUpdateAsync. Count of files updated: {0}.", filePaths.Count());
         return ProtectPackageCacheAndRunAsync(
             (ct) =>
             {
@@ -66,6 +65,7 @@ public sealed class MetadataService : IMetadataService, IDisposable
                 {
                     if (filePath.TryGetParentManifestOrThisUnderWorkspace(_workspaceRoot, out PathEx? manifest))
                     {
+                        _tl.L.WriteLine("OnWorkspaceUpdateAsync: Removing from cache: {0}", manifest);
                         _packageCache.TryRemove(manifest.Value, out var _);
                     }
                 }
@@ -95,6 +95,7 @@ public sealed class MetadataService : IMetadataService, IDisposable
             return package;
         }
 
+        _tl.L.WriteLine("... Cache miss: {0}.", manifestPath);
         return _packageCache[manifestPath] = await GetPackageAsyncCore(manifestPath, ct);
     }
 
