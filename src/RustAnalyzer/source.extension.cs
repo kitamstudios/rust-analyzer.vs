@@ -13,6 +13,6 @@ namespace KS.RustAnalyzer
         public const string Language = "en-US";
         public const string Version = "1.6";
         public const string Author = "Kitam Studios";
-        public const string Tags = "Rust;Cargo;RustAnalyser";
+        public const string Tags = "Rust;Cargo;RustAnalyzer";
     }
 }

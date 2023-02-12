@@ -12,7 +12,7 @@
     <ReleaseNotes>https://github.com/kitamstudios/rust-analyzer/releases</ReleaseNotes>
     <Icon>Resources\Icon.png</Icon>
     <PreviewImage>Resources\Icon.png</PreviewImage>
-    <Tags>Rust;Cargo;RustAnalyser</Tags>
+    <Tags>Rust;Cargo;RustAnalyzer</Tags>
   </Metadata>
   <Installation>
     <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 18.0)">

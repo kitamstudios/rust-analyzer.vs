@@ -21,13 +21,15 @@ Download this extension from the [Visual Studio Marketplace][marketplace] or get
 
 - Build, Clean (errors in Error list with details in output window).
 - Debug & Run without debugging.
-- Workspace support (continuing to get enhanced as I find more examples).
+- Workspaces fully supported, including opening folder contain multiple cargo workspaces.
 - Intellisense / Auto-complete / Goto definition / Code actions / Find references etc. all features from Rust language server.
 - Examples support (run & debug).
+- Set additional properties for build / debug / run (e.g. command line arguments).
 - Tested above features with top Rust OSS projects like [cargo](https://github.com/rust-lang/cargo), [ruffle](https://github.com/ruffle-rs/ruffle), [iced](https://github.com/iced-rs/iced), [geo](https://github.com/georust/geo), [ruff](https://github.com/charliermarsh/ruff), [reqwest](https://github.com/seanmonstar/reqwest), [wasmtime](https://github.com/bytecodealliance/wasmtime).
 
 ### Upcoming
 
+- Cross compilation (wasm, linux, etc.)
 - Clippy / Fmt integration.
 - Test integration - 1 (unit / integration, run & debug)
 - Folder enhancements (icons, context menus).

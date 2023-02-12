@@ -68,7 +68,6 @@ public sealed class CargoService : ICargoService
 
     public async Task<Workspace> GetWorkspaceAsync(PathEx manifestPath, CancellationToken ct)
     {
-        _tl.T.TrackEvent("GetWorkspaceA", ("FilePath", manifestPath));
         try
         {
             var cargoFullPath = GetCargoExePath();
