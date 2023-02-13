@@ -46,6 +46,6 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
             return null;
         }
 
-        return new FileContextProvider(workspaceContext.GetService<IMetadataService>(), CargoService, OutputPane);
+        return new FileContextProvider(workspaceContext.GetService<IMetadataService>(), CargoService, OutputPane, workspaceContext.GetService<ISettingsService>());
     }
 }

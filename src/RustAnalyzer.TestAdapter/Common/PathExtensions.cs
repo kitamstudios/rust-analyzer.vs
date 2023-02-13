@@ -44,7 +44,7 @@ public static class PathExtensions
         return null;
     }
 
-    public static string MakeRelativePath(string relativeTo, string path)
+    public static string MakeRelativePath(this string relativeTo, string path)
     {
 #if NETCOREAPP2_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER
         return Path.GetRelativePath(relativeTo, path);

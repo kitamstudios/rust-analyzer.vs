@@ -51,6 +51,7 @@
     <Compile Include="Cargo\MetadataServiceTests.cs" />
     <Compile Include="Cargo\CargoServiceTests.cs" />
     <Compile Include="Cargo\WorkspaceExtensionsTests.cs" />
+    <Compile Include="Common\StringExtensionTests.cs" />
     <Compile Include="Common\PathExTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

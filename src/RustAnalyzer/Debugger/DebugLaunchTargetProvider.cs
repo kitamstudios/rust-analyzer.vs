@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Debug;
 using static Microsoft.VisualStudio.VSConstants;
+using RaSettingsService = KS.RustAnalyzer.Infrastructure.SettingsService;
 
 namespace KS.RustAnalyzer.Debugger;
 
@@ -19,9 +20,6 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
 {
     public const string ProviderType = "{72D3FCEF-1111-4266-B8DD-D3ED06E35A2B}";
     public static readonly Guid ProviderTypeGuid = new (ProviderType);
-
-    [Import]
-    public ISettingsService SettingsService { get; set; }
 
     [Import]
     public ILogger L { get; set; }
@@ -75,7 +73,8 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                 return;
             }
 
-            string args = GetCommandLineArgs(workspaceContext.Location, debugLaunchActionContext);
+            var args = GetSettings(RaSettingsService.TypeCommandLineArguments, workspaceContext.GetService<ISettingsService>(), debugLaunchActionContext);
+            var env = GetSettings(RaSettingsService.TypeDebuggerEnvironment, workspaceContext.GetService<ISettingsService>(), debugLaunchActionContext);
             var noDebugFlag = debugLaunchActionContext.LaunchConfiguration.ContainsKey(LaunchConfigurationConstants.NoDebugKey) ? __VSDBGLAUNCHFLAGS.DBGLAUNCH_NoDebug : 0;
             var info = new VsDebugTargetInfo
             {
@@ -83,7 +82,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                 bstrExe = processName,
                 bstrCurDir = Path.GetDirectoryName(processName),
                 bstrArg = args,
-                bstrEnv = null,
+                bstrEnv = env.GetEnvironmentBlock(),
                 bstrOptions = null,
                 bstrPortName = null,
                 bstrMdmRegisteredName = null,
@@ -103,10 +102,9 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
         }
     }
 
-    private string GetCommandLineArgs(string location, DebugLaunchActionContext debugLaunchActionContext)
+    private string GetSettings(string type, ISettingsService settingsService, DebugLaunchActionContext debugLaunchActionContext)
     {
         var projectKey = debugLaunchActionContext.LaunchConfiguration[LaunchConfigurationConstants.ProjectKey] as string;
-        var relativePath = PathExtensions.MakeRelativePath(location, projectKey);
-        return SettingsService.Get(Infrastructure.SettingsService.KindDebugger, Infrastructure.SettingsService.TypeCmdLineArgs, relativePath);
+        return settingsService.Get(type, (PathEx)projectKey);
     }
 }

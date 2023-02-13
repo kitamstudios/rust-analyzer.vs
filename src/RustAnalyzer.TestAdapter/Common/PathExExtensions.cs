@@ -20,6 +20,8 @@ public static class PathExExtensions
 
     public static PathEx GetDirectoryName(this PathEx @this) => (PathEx)Path.GetDirectoryName(@this);
 
+    public static PathEx MakeRelativePath(this PathEx relativeTo, PathEx path) => (PathEx)((string)relativeTo).MakeRelativePath(path);
+
     public static bool IsContainedIn(this PathEx @this, PathEx potentialParent)
     {
         var pp = ((string)potentialParent).TrimEnd(Path.DirectorySeparatorChar);

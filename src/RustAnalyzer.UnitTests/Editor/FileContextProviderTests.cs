@@ -6,6 +6,7 @@ using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
 using KS.RustAnalyzer.Editor;
+using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
 using Moq;
@@ -25,7 +26,7 @@ public class FileContextProviderTests
     {
         NamerFactory.AdditionalInformation = $"{Path.Combine(workspaceRootRel, filePathRel).ReplaceInvalidChars()}";
         var workspaceRoot = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRootRel);
-        var fcp = new FileContextProvider(TestHelpers.MS(workspaceRoot), Mock.Of<ICargoService>(), Mock.Of<IBuildOutputSink>());
+        var fcp = new FileContextProvider(TestHelpers.MS(workspaceRoot), Mock.Of<ICargoService>(), Mock.Of<IBuildOutputSink>(), GetSettingsService());
         var filePath = workspaceRoot.Combine((PathEx)filePathRel);
 
         var refInfos = await fcp.GetContextsForFileAsync(filePath, default);
@@ -46,5 +47,13 @@ public class FileContextProviderTests
                 ri.DisplayName,
             });
         Approvals.VerifyAll(processedRefInfos.Select(o => o.SerializeObject(Formatting.Indented, new PathExJsonConverter())), label: string.Empty);
+    }
+
+    private static ISettingsService GetSettingsService()
+    {
+        var ss = new Mock<ISettingsService>();
+        ss.Setup(cs => cs.Get(It.IsAny<string>(), It.IsAny<PathEx>())).Returns(string.Empty);
+
+        return ss.Object;
     }
 }
