@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Newtonsoft.Json;
 
@@ -27,10 +28,10 @@ public sealed class CargoService : ICargoService
         };
     }
 
-    public PathEx GetCargoExePath()
+    public PathEx? GetCargoExePath()
     {
-        var c = (PathEx)Constants.CargoExe.SearchInPath();
-        _tl.L.WriteLine("Using {0} from {1}.", Constants.CargoExe, c);
+        var c = (PathEx?)Constants.CargoExe.SearchInPath();
+        _tl.L.WriteLine("Using {0}.", c);
         return c;
     }
 
@@ -41,7 +42,6 @@ public sealed class CargoService : ICargoService
             bti.FilePath,
             arguments: $"build --manifest-path \"{bti.FilePath}\" {bti.AdditionalBuildArgs} --profile {bti.Profile} --message-format json",
             profile: bti.Profile,
-            showMessageBox: bos.ShowMessageBox,
             outputPane: bos.OutputSink,
             buildMessageReporter: bos.BuildActionProgressReporter,
             outputPreprocessor: x => BuildJsonOutputParser.Parse(bti.WorkspaceRoot, x, _tl),
@@ -57,7 +57,6 @@ public sealed class CargoService : ICargoService
             bti.FilePath,
             arguments: $"clean --manifest-path \"{bti.FilePath}\" --profile {bti.Profile}",
             profile: bti.Profile,
-            showMessageBox: bos.ShowMessageBox,
             outputPane: bos.OutputSink,
             buildMessageReporter: bos.BuildActionProgressReporter,
             outputPreprocessor: x => new[] { new StringBuildMessage { Message = x } },
@@ -68,9 +67,13 @@ public sealed class CargoService : ICargoService
 
     public async Task<Workspace> GetWorkspaceAsync(PathEx manifestPath, CancellationToken ct)
     {
+        var cargoFullPath = GetCargoExePath();
+
+        // NOTE: We should not come here as the prereq checking should have disabled the entry points.
+        Ensure.That(cargoFullPath).IsNotNull();
+
         try
         {
-            var cargoFullPath = GetCargoExePath();
             using var proc = ProcessRunner.Run(cargoFullPath, new[] { "metadata", "--no-deps", "--format-version", "1", "--manifest-path", manifestPath, "--offline" }, ct);
             _tl.L.WriteLine("Started PID:{0} with args: {1}...", proc.ProcessId, proc.Arguments);
             var exitCode = await proc;
@@ -109,32 +112,28 @@ public sealed class CargoService : ICargoService
         return w;
     }
 
-    private async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, Func<string, Task> showMessageBox, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, Func<string, BuildMessage[]> outputPreprocessor, ITelemetryService ts, ILogger l, CancellationToken ct)
+    private async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, Func<string, BuildMessage[]> outputPreprocessor, ITelemetryService ts, ILogger l, CancellationToken ct)
     {
         outputPane.Clear();
 
         var cargoFullPath = GetCargoExePath();
 
+        // NOTE: We should not come here as the prereq checking should have disabled the entry points.
+        Ensure.That(cargoFullPath).IsNotNull();
+
         ts.TrackEvent(
             opName,
-            new[] { ("FilePath", filePath), ("Profile", profile), ("CargoPath", cargoFullPath), ("Arguments", arguments) });
-
-        if (string.IsNullOrEmpty(cargoFullPath))
-        {
-            l.WriteLine($"{Constants.CargoExe} not found in path.");
-            await showMessageBox($"Unable to perform '{opName}'.\r\n\r\n{Constants.CargoExe} is not found in path.\r\n\r\nInstall from https://www.rust-lang.org/tools/install and try again.");
-            return false;
-        }
+            new[] { ("FilePath", filePath), ("Profile", profile), ("CargoPath", cargoFullPath.Value), ("Arguments", arguments) });
 
         return await RunAsync(
-            cargoFullPath,
+            cargoFullPath.Value,
             arguments,
             workingDir: Path.GetDirectoryName(filePath),
             redirector: new BuildOutputRedirector(outputPane, buildMessageReporter, outputPreprocessor),
             ct: ct);
     }
 
-    private static async Task<bool> RunAsync(string cargoFullPath, string arguments, string workingDir, ProcessOutputRedirector redirector, CancellationToken ct)
+    private static async Task<bool> RunAsync(PathEx cargoFullPath, string arguments, string workingDir, ProcessOutputRedirector redirector, CancellationToken ct)
     {
         Debug.Assert(!string.IsNullOrEmpty(arguments), $"{nameof(arguments)} should not be empty.");
 
@@ -144,7 +143,7 @@ public sealed class CargoService : ICargoService
         redirector?.WriteLineWithoutProcessing($"   WorkingDir: {workingDir}");
         redirector?.WriteLineWithoutProcessing($"");
 
-        using (var process = ProcessRunner.Run(
+        using var process = ProcessRunner.Run(
             cargoFullPath,
             new[] { arguments },
             workingDir,
@@ -153,38 +152,36 @@ public sealed class CargoService : ICargoService
             redirector: redirector,
             quoteArgs: false,
             outputEncoding: Encoding.UTF8,
-            cancellationToken: ct))
+            cancellationToken: ct);
+        var whnd = process.WaitHandle;
+        if (whnd == null)
         {
-            var whnd = process.WaitHandle;
-            if (whnd == null)
+            // Process failed to start, and any exception message has
+            // already been sent through the redirector
+            redirector.WriteErrorLineWithoutProcessing(string.Format("Error - Failed to start '{0}'", cargoFullPath));
+            return false;
+        }
+        else
+        {
+            var finished = await Task.Run(() => whnd.WaitOne());
+            if (finished)
             {
-                // Process failed to start, and any exception message has
-                // already been sent through the redirector
-                redirector.WriteErrorLineWithoutProcessing(string.Format("Error - Failed to start '{0}'", cargoFullPath));
-                return false;
+                Debug.Assert(process.ExitCode.HasValue, "cargo.exe process has not really exited");
+
+                // there seems to be a case when we're signalled as completed, but the
+                // process hasn't actually exited
+                process.Wait();
+
+                redirector.WriteLineWithoutProcessing($"==== Cargo completed ====");
+
+                return process.ExitCode == 0;
             }
             else
             {
-                var finished = await Task.Run(() => whnd.WaitOne());
-                if (finished)
-                {
-                    Debug.Assert(process.ExitCode.HasValue, "cargo.exe process has not really exited");
+                process.Kill();
+                redirector.WriteErrorLineWithoutProcessing($"====  Cargo canceled ====");
 
-                    // there seems to be a case when we're signalled as completed, but the
-                    // process hasn't actually exited
-                    process.Wait();
-
-                    redirector.WriteLineWithoutProcessing($"==== Cargo completed ====");
-
-                    return process.ExitCode == 0;
-                }
-                else
-                {
-                    process.Kill();
-                    redirector.WriteErrorLineWithoutProcessing($"====  Cargo canceled ====");
-
-                    return false;
-                }
+                return false;
             }
         }
     }

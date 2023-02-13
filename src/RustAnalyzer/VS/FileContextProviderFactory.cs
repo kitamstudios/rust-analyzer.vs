@@ -29,6 +29,9 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
     [Import]
     public ICargoService CargoService { get; set; }
 
+    [Import]
+    public IPreReqsCheckService PreReqs { get; set; }
+
     public IFileContextProvider CreateProvider(IWorkspace workspaceContext)
     {
         T.TrackEvent(
@@ -36,6 +39,12 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
             new[] { ("Location", workspaceContext.Location) });
         L.WriteLine("Creating {0}.", GetType().Name);
 
-        return new FileContextProvider(workspaceContext.GetService<IMetadataService>(), CargoService, OutputPane, new () { L = L, T = T, });
+        if (!PreReqs.Satisfied())
+        {
+            L.WriteLine("... Pre-requisites not satisfied. Returning null.");
+            return null;
+        }
+
+        return new FileContextProvider(workspaceContext.GetService<IMetadataService>(), CargoService, OutputPane);
     }
 }

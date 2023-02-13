@@ -25,12 +25,21 @@ public class FileScannerFactory : IWorkspaceProviderFactory<IFileScanner>
     [Import]
     public ITelemetryService T { get; set; }
 
+    [Import]
+    public IPreReqsCheckService PreReqs { get; set; }
+
     public IFileScanner CreateProvider(IWorkspace workspaceContext)
     {
         T.TrackEvent(
             "Create Scanner",
             new[] { ("Location", workspaceContext.Location) });
         L.WriteLine("Creating {0}.", GetType().Name);
+
+        if (!PreReqs.Satisfied())
+        {
+            L.WriteLine("... Pre-requisites not satisfied. Returning null.");
+            return null;
+        }
 
         return new FileScanner(workspaceContext.GetService<IMetadataService>());
     }

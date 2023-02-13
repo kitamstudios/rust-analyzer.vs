@@ -8,7 +8,7 @@
 
 Download this extension from the [Visual Studio Marketplace][marketplace] or get the [CI build][vsixgallery].
 
-**For a superior Rust development experience install the [Rust Development Pack](https://marketplace.visualstudio.com/items?itemName=kitamstudios.RustDevelopmentPack).**
+**For a superior Rust development experience install the [Rust Development Pack](https://marketplace.visualstudio.com/items?itemName=kitamstudios.RustDevelopmentPack) (includes this extension along with few other usefull extensions).**
 
 ## Principles
 

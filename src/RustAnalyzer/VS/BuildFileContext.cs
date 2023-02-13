@@ -10,16 +10,16 @@ namespace KS.RustAnalyzer.VS;
 
 public class BuildFileContext : BuildFileContextBase
 {
-    public BuildFileContext(ICargoService cs, BuildTargetInfo bti, IBuildOutputSink outputPane, Func<string, Task> showMessageBox, TL tl)
-        : base(bti, outputPane, showMessageBox, tl, cs.BuildAsync)
+    public BuildFileContext(ICargoService cs, BuildTargetInfo bti, IBuildOutputSink outputPane)
+        : base(bti, outputPane, cs.BuildAsync)
     {
     }
 }
 
 public class CleanFileContext : BuildFileContextBase
 {
-    public CleanFileContext(ICargoService cs, BuildTargetInfo bti, IBuildOutputSink outputPane, Func<string, Task> showMessageBox, TL tl)
-        : base(bti, outputPane, showMessageBox, tl, cs.CleanAsync)
+    public CleanFileContext(ICargoService cs, BuildTargetInfo bti, IBuildOutputSink outputPane)
+        : base(bti, outputPane, cs.CleanAsync)
     {
     }
 }
@@ -28,16 +28,12 @@ public abstract class BuildFileContextBase : IBuildFileContext
 {
     private readonly Func<BuildTargetInfo, BuildOutputSinks, CancellationToken, Task<bool>> _commandFunc;
     private readonly IMapper _buildMessageMapper = new MapperConfiguration(cfg => cfg.CreateMap<DetailedBuildMessage, WorkspaceBuildMessage>()).CreateMapper();
-    private readonly Func<string, Task> _showMessageBox;
     private readonly IBuildOutputSink _outputPane;
-    private readonly TL _tl;
 
-    public BuildFileContextBase(BuildTargetInfo bti, IBuildOutputSink outputPane, Func<string, Task> showMessageBox, TL tl, Func<BuildTargetInfo, BuildOutputSinks, CancellationToken, Task<bool>> commandFunc)
+    public BuildFileContextBase(BuildTargetInfo bti, IBuildOutputSink outputPane, Func<BuildTargetInfo, BuildOutputSinks, CancellationToken, Task<bool>> commandFunc)
     {
         BuildTargetInfo = bti;
         _outputPane = outputPane;
-        _showMessageBox = showMessageBox;
-        _tl = tl;
         _commandFunc = commandFunc;
     }
 
@@ -51,7 +47,6 @@ public abstract class BuildFileContextBase : IBuildFileContext
         {
             BuildActionProgressReporter = bm => progress.ReportAsync(_buildMessageMapper.Map<WorkspaceBuildMessage>(bm), null),
             OutputSink = _outputPane,
-            ShowMessageBox = _showMessageBox,
         };
 
         return await _commandFunc(BuildTargetInfo, bos, cancellationToken);

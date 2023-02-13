@@ -18,9 +18,10 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
     private readonly TL _tl;
     private readonly FileSystemBrowseObject _browseObject = new ();
     private readonly ISettingsService _settingsService;
+    private readonly IPreReqsCheckService _preReqs;
 
     [ImportingConstructor]
-    public NodeBrowseObjectProvider([Import] ISettingsService settingsService, [Import] ITelemetryService t, [Import] ILogger l)
+    public NodeBrowseObjectProvider([Import] ISettingsService settingsService, [Import] IPreReqsCheckService preReqs, [Import] ITelemetryService t, [Import] ILogger l)
     {
         _tl = new TL
         {
@@ -30,11 +31,19 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
 
         _browseObject.PropertyChanged += BrowseObject_PropertyChanged;
         _settingsService = settingsService;
+        _preReqs = preReqs;
     }
 
     public object ProvideBrowseObject(WorkspaceVisualNodeBase node)
     {
         _tl.L.WriteLine("Getting browse object for {0}.", node.NodeFullMoniker);
+
+        if (!_preReqs.Satisfied())
+        {
+            _tl.L.WriteLine("... Pre-requisites not satisfied. Returning null.");
+            return null;
+        }
+
         if (node is not IFileSystemNode fsNode || !File.Exists(fsNode.FullPath))
         {
             return null;

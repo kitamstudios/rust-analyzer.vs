@@ -14,14 +14,12 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
     private readonly IMetadataService _mds;
     private readonly ICargoService _cargoService;
     private readonly IBuildOutputSink _outputPane;
-    private readonly TL _tl;
 
-    public FileContextProvider(IMetadataService mds, ICargoService cargoService, IBuildOutputSink outputPane, TL tl)
+    public FileContextProvider(IMetadataService mds, ICargoService cargoService, IBuildOutputSink outputPane)
     {
         _mds = mds;
         _cargoService = cargoService;
         _outputPane = outputPane;
-        _tl = tl;
     }
 
     public Task<IReadOnlyCollection<FileContext>> GetContextsForFileAsync(string filePath, string context, CancellationToken cancellationToken)
@@ -47,13 +45,13 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
                         new FileContext(
                             FileContextProviderFactory.ProviderTypeGuid,
                             BuildContextTypes.BuildContextTypeGuid,
-                            new BuildFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = package.WorkspaceRoot, FilePath = fp }, _outputPane, VsCommon.ShowMessageBoxAsync, _tl),
+                            new BuildFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = package.WorkspaceRoot, FilePath = fp }, _outputPane),
                             new[] { (string)fp },
                             displayName: profile),
                         new FileContext(
                             FileContextProviderFactory.ProviderTypeGuid,
                             BuildContextTypes.CleanContextTypeGuid,
-                            new CleanFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = package.WorkspaceRoot, FilePath = fp }, _outputPane, VsCommon.ShowMessageBoxAsync, _tl),
+                            new CleanFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = package.WorkspaceRoot, FilePath = fp }, _outputPane),
                             new[] { (string)fp },
                             displayName: profile),
                     })
@@ -78,7 +76,7 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
             new FileContext(
                 providerType: FileContextProviderFactory.ProviderTypeGuid,
                 contextType: BuildContextTypes.BuildContextTypeGuid,
-                context: new BuildFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = target.Parent.WorkspaceRoot, FilePath = target.Parent.ManifestPath, AdditionalBuildArgs = target.AdditionalBuildArgs }, _outputPane, VsCommon.ShowMessageBoxAsync, _tl),
+                context: new BuildFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = target.Parent.WorkspaceRoot, FilePath = target.Parent.ManifestPath, AdditionalBuildArgs = target.AdditionalBuildArgs }, _outputPane),
                 inputFiles: new[] { (string)target.SourcePath },
                 displayName: profile),
         };

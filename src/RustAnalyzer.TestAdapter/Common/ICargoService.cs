@@ -7,7 +7,7 @@ namespace KS.RustAnalyzer.TestAdapter.Common;
 
 public interface ICargoService
 {
-    PathEx GetCargoExePath();
+    PathEx? GetCargoExePath();
 
     Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct);
 
@@ -30,8 +30,6 @@ public sealed class BuildTargetInfo
 public sealed class BuildOutputSinks
 {
     public Func<BuildMessage, Task> BuildActionProgressReporter { get; set; }
-
-    public Func<string, Task> ShowMessageBox { get; set; }
 
     public IBuildOutputSink OutputSink { get; set; }
 }

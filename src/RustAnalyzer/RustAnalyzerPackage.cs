@@ -28,6 +28,7 @@ namespace KS.RustAnalyzer;
 public sealed class RustAnalyzerPackage : ToolkitPackage
 {
     private TL _tl;
+    private IPreReqsCheckService _preReqs;
 
     protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
     {
@@ -39,6 +40,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
             L = cmServiceProvider?.GetService<ILogger>(),
             T = cmServiceProvider?.GetService<ITelemetryService>(),
         };
+        _preReqs = cmServiceProvider?.GetService<IPreReqsCheckService>();
     }
 
     protected override async Task OnAfterPackageLoadedAsync(CancellationToken cancellationToken)
@@ -47,9 +49,10 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
 
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
-        await VsVersionCheck.ShowAsync(_tl);
         await ReleaseSummaryNotification.ShowAsync(this, _tl);
+        await VsVersionCheck.ShowAsync(_tl);
         await SearchAndDisableIncompatibleExtensionsAsync();
+        await CargoCheck.ShowAsync(_preReqs, _tl);
     }
 
     #region Handling incompatible extensions
@@ -255,6 +258,29 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                 await VsCommon.ShowMessageBoxAsync(
                     $"This package requires a minumum of Visual Studio 2022 v{Constants.MinimumRequiredVsVersion}. However current version is v{version}.",
                     "rust-analyzer will fail randomly. Please apply the latest Visual Studio 2022 updates.");
+            }
+        }
+    }
+
+    #endregion
+
+    #region CargoCheck
+
+    public static class CargoCheck
+    {
+        private const string RustInstallUrl = "https://www.rust-lang.org/tools/install";
+
+        public static async Task ShowAsync(IPreReqsCheckService preReqs, TL tl)
+        {
+            tl.L.WriteLine("Doing Cargo check...");
+
+            if (!preReqs.Satisfied())
+            {
+                tl.T.TrackException(new InvalidOperationException("Cargo check failed."));
+                await VsCommon.ShowMessageBoxAsync(
+                    $"{Constants.CargoExe} is not found in path. Install from {RustInstallUrl}.", "Pressing OK will open the url and restart the IDE.");
+                VsShellUtilities.OpenSystemBrowser(RustInstallUrl);
+                await CommunityVS.Shell.RestartAsync();
             }
         }
     }
