@@ -6,7 +6,7 @@ using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Workspace;
 
-namespace KS.RustAnalyzer.VS;
+namespace KS.RustAnalyzer.Infrastructure;
 
 [ExportWorkspaceServiceFactory(WorkspaceServiceFactoryOptions.None, typeof(IMetadataService))]
 [PartCreationPolicy(CreationPolicy.Shared)]

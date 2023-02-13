@@ -1,6 +1,6 @@
 using System;
 
-namespace KS.RustAnalyzer.VS;
+namespace KS.RustAnalyzer.Infrastructure;
 
 public static class PredefinedCmdGuid
 {

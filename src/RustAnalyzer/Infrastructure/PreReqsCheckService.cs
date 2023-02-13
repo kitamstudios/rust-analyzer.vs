@@ -1,7 +1,7 @@
 using System.ComponentModel.Composition;
 using KS.RustAnalyzer.TestAdapter.Common;
 
-namespace KS.RustAnalyzer.VS;
+namespace KS.RustAnalyzer.Infrastructure;
 
 public interface IPreReqsCheckService
 {

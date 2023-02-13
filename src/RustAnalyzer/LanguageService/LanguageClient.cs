@@ -16,7 +16,7 @@ using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
-namespace KS.RustAnalyzer.VS;
+namespace KS.RustAnalyzer.LanguageService;
 
 [ContentType(Constants.RustLanguageContentType)]
 [Export(typeof(ILanguageClient))]

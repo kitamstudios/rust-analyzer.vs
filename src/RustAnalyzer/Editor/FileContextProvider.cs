@@ -7,7 +7,7 @@ using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
 
-namespace KS.RustAnalyzer.VS;
+namespace KS.RustAnalyzer.Editor;
 
 public sealed class FileContextProvider : IFileContextProvider, IFileContextProvider<string>
 {
@@ -30,7 +30,7 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
     public async Task<IReadOnlyCollection<FileContext>> GetContextsForFileAsync(string filePath, CancellationToken cancellationToken)
     {
         var fp = (PathEx)filePath;
-        var package = await _mds.GetContainingPackageAsync((PathEx)fp, cancellationToken);
+        var package = await _mds.GetContainingPackageAsync(fp, cancellationToken);
         if (package == null)
         {
             return await Task.FromResult(FileContext.EmptyFileContexts);
@@ -59,7 +59,7 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
         }
         else if (fp.IsRustFile())
         {
-            var target = package.GetTargets().Where(t => t.SourcePath == (PathEx)fp && t.IsRunnable).FirstOrDefault();
+            var target = package.GetTargets().Where(t => t.SourcePath == fp && t.IsRunnable).FirstOrDefault();
             if (target != null)
             {
                 return package.GetProfiles().SelectMany(p => GetBuildActions(target, p)).ToList();

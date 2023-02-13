@@ -1,10 +1,11 @@
 using System;
 using System.ComponentModel.Composition;
+using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
 
-namespace KS.RustAnalyzer.VS;
+namespace KS.RustAnalyzer.Editor;
 
 [ExportFileContextProvider(
     type: ProviderType,

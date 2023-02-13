@@ -3,6 +3,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Shell;
@@ -10,7 +11,7 @@ using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.VSIntegration.UI;
 using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 
-namespace KS.RustAnalyzer.VS;
+namespace KS.RustAnalyzer.NodeEnhancements;
 
 [Export(typeof(INodeBrowseObjectProvider))]
 public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider

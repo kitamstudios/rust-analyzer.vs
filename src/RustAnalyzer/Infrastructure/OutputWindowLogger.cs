@@ -4,7 +4,7 @@ using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace KS.RustAnalyzer.VS;
+namespace KS.RustAnalyzer.Infrastructure;
 
 [Export(typeof(ILogger))]
 [PartCreationPolicy(CreationPolicy.Shared)]

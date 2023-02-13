@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
+using KS.RustAnalyzer.Editor;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
-using KS.RustAnalyzer.VS;
 using Microsoft.VisualStudio.Workspace.Indexing;
 using Newtonsoft.Json;
 using Xunit;
 
-namespace KS.RustAnalyzer.UnitTests.VS;
+namespace KS.RustAnalyzer.UnitTests.Editor;
 
 public class FileScannerTests
 {

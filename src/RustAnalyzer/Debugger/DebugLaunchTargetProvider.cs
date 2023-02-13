@@ -3,6 +3,7 @@ using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Shell;
@@ -11,7 +12,7 @@ using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Debug;
 using static Microsoft.VisualStudio.VSConstants;
 
-namespace KS.RustAnalyzer.VS;
+namespace KS.RustAnalyzer.Debugger;
 
 [ExportLaunchDebugTarget(ProviderType, new[] { ".exe" })]
 public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
@@ -106,6 +107,6 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
     {
         var projectKey = debugLaunchActionContext.LaunchConfiguration[LaunchConfigurationConstants.ProjectKey] as string;
         var relativePath = PathExtensions.MakeRelativePath(location, projectKey);
-        return SettingsService.Get(VS.SettingsService.KindDebugger, VS.SettingsService.TypeCmdLineArgs, relativePath);
+        return SettingsService.Get(Infrastructure.SettingsService.KindDebugger, Infrastructure.SettingsService.TypeCmdLineArgs, relativePath);
     }
 }

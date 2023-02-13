@@ -1,8 +1,3 @@
-; Registers the language grammar files with Visual Studio
-; Replace "TextmateSample" with a name of your choice.
-[$RootKey$\TextMate\Repositories]
-"toml-rust-analyzer"="$PackageFolder$\VS\toml"
-
 [$RootKey$\ShellFileAssociations\.rs]
 "DefaultIconMoniker"="C622248C-8545-475A-99B2-201AF73752BD:0"
 

@@ -3,7 +3,7 @@ using KS.RustAnalyzer.TestAdapter;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Utilities;
 
-namespace KS.RustAnalyzer.VS;
+namespace KS.RustAnalyzer.LanguageService;
 
 public class ContentDefinition
 {

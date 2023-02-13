@@ -10,7 +10,7 @@ using Microsoft.VisualStudio.Workspace.Build;
 using Microsoft.VisualStudio.Workspace.Debug;
 using Microsoft.VisualStudio.Workspace.Indexing;
 
-namespace KS.RustAnalyzer.VS;
+namespace KS.RustAnalyzer.Editor;
 
 public class FileScanner : IFileScanner
 {

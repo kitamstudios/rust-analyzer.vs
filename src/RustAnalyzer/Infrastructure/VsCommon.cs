@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using CommunityVS = Community.VisualStudio.Toolkit.VS;
 
-namespace KS.RustAnalyzer.VS;
+namespace KS.RustAnalyzer.Infrastructure;
 
 public static class VsCommon
 {

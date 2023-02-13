@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Indexing;
 
-namespace KS.RustAnalyzer.VS;
+namespace KS.RustAnalyzer.Editor;
 
 [ExportFileScanner(
     type: ProviderType,

@@ -5,10 +5,10 @@ using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Settings;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
-using static KS.RustAnalyzer.VS.NodeBrowseObjectProvider;
+using static KS.RustAnalyzer.NodeEnhancements.NodeBrowseObjectProvider;
 using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 
-namespace KS.RustAnalyzer.VS;
+namespace KS.RustAnalyzer.Infrastructure;
 
 public interface ISettingsService
 {

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace KS.RustAnalyzer.UnitTests.VS;
+namespace KS.RustAnalyzer.UnitTests.Editor;
 public static class TestData
 {
     public static IEnumerable<object[]> Get()

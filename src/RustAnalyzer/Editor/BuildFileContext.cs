@@ -6,7 +6,7 @@ using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Workspace.Build;
 using WorkspaceBuildMessage = Microsoft.VisualStudio.Workspace.Build.BuildMessage;
 
-namespace KS.RustAnalyzer.VS;
+namespace KS.RustAnalyzer.Editor;
 
 public class BuildFileContext : BuildFileContextBase
 {
