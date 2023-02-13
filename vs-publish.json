@@ -12,7 +12,7 @@
       "cargo",
       "rust-analyzer"
     ],
-    "displayName": "rust-analyzer",
+    "displayName": "rust-analyzer.vs",
     "description": "Rust language support for Visual Studio"
   },
   "assetFiles": [

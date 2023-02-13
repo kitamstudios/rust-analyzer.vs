@@ -239,6 +239,8 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
 
     public static class VsVersionCheck
     {
+        private const string VsUpdateUrl = "https://learn.microsoft.com/en-us/visualstudio/releases/2022/release-history";
+
         public static async Task ShowAsync(TL tl)
         {
             tl.L.WriteLine("Doing VS version check...");
@@ -256,8 +258,10 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                 tl.L.WriteLine("Version check failed. Minimum {0}, found {1}.", Constants.MinimumRequiredVsVersion, version);
                 tl.T.TrackException(new InvalidOperationException("VsVersion check failed."), new[] { ("Minimum", Constants.MinimumRequiredVsVersion.ToString()), ("Found", version.ToString()) });
                 await VsCommon.ShowMessageBoxAsync(
-                    $"This package requires a minumum of Visual Studio 2022 v{Constants.MinimumRequiredVsVersion}. However current version is v{version}.",
-                    "rust-analyzer will fail randomly. Please apply the latest Visual Studio 2022 updates.");
+                    $"This package requires a minumum of Visual Studio 2022 v{Constants.MinimumRequiredVsVersion}. However current version is v{version}. Please apply the latest Visual Studio 2022 updates.",
+                    $"Pressing OK will open the update url and restart the IDE.");
+                VsShellUtilities.OpenSystemBrowser(VsUpdateUrl);
+                await CommunityVS.Shell.RestartAsync();
             }
         }
     }

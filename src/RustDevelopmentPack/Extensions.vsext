@@ -4,7 +4,7 @@
   "extensions": [
     {
       "vsixId": "KS.RustAnalyzer.3a91e56b-fb28-4d85-b572-ec964abf8e31",
-      "name": "rust-analyzer (Kitam Studios)"
+      "name": "rust-analyzer.vs (Kitam Studios)"
     },
     {
       "vsixId": "TomlEditor.4e804652-a783-473b-827f-6e41f5a48b9b",

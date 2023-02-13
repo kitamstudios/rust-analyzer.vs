@@ -8,7 +8,7 @@
     <AssemblyName>KS.$(MSBuildProjectName)</AssemblyName>
     <RootNamespace>KS.$(MSBuildProjectName)</RootNamespace>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Product>rust-analyzer - Rust language support for Visual Studio.</Product>
+    <Product>rust-analyzer.vs - Rust language support for Visual Studio.</Product>
     <StrictCodeAnalysisEnabled>true</StrictCodeAnalysisEnabled> <!-- On by default -->
     <StrictCodeAnalysisEnabled Condition="'$(BuildingForLiveUnitTesting)' == 'true' Or '$(Configuration)' != 'Release'">false</StrictCodeAnalysisEnabled>
     <NoWarn>$(NoWarn);NU1603</NoWarn>

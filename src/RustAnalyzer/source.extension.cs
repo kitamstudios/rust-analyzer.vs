@@ -8,7 +8,7 @@ namespace KS.RustAnalyzer
     internal sealed partial class Vsix
     {
         public const string Id = "KS.RustAnalyzer.3a91e56b-fb28-4d85-b572-ec964abf8e31";
-        public const string Name = "rust-analyzer";
+        public const string Name = "rust-analyzer.vs";
         public const string Description = @"Rust language support for Visual Studio";
         public const string Language = "en-US";
         public const string Version = "1.6";

@@ -8,8 +8,8 @@
     <Description xml:space="preserve">Setup a smooth Rust development environment. A collection of top rated extensions from the marketplace.</Description>
     <MoreInfo>https://github.com/kitamstudios/rust-analyzer.vs</MoreInfo>
     <License>LICENSE.txt</License>
-    <GettingStartedGuide>https://github.com/kitamstudios/rust-analyzer/blob/master/README.md</GettingStartedGuide>
-    <ReleaseNotes>https://github.com/kitamstudios/rust-analyzer/releases</ReleaseNotes>
+    <GettingStartedGuide>https://github.com/kitamstudios/rust-analyzer.vs/blob/master/README.md</GettingStartedGuide>
+    <ReleaseNotes>https://github.com/kitamstudios/rust-analyzer.vs/releases</ReleaseNotes>
     <Icon>Resources\Icon.png</Icon>
     <PreviewImage>Resources\Icon.png</PreviewImage>
     <Tags>Rust;Development;Testing;Debugging</Tags>

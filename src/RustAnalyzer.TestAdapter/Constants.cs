@@ -16,7 +16,7 @@ public static class Constants
 
     public const string CargoExe = "cargo.exe";
 
-    public const string ConfigurationSectionName = "rust-analyzer";
+    public const string ConfigurationSectionName = "rust-analyzer.vs";
 
     public const string ExecutorUriString = "executor://RustTestExecutor/v1";
 

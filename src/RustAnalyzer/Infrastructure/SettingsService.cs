@@ -114,6 +114,6 @@ public sealed class SettingsService : ISettingsService
 
         var relItemPath = _location.MakeRelativePath(fullItemPath);
 
-        return $"rust-analyzer.vs-{kind}-{type}-{relItemPath}";
+        return $"{Vsix.Name}-{kind}-{type}-{relItemPath}";
     }
 }
