@@ -1,10 +1,10 @@
 using System;
 using System.ComponentModel.Composition;
 using System.Threading.Tasks;
+using KS.RustAnalyzer.NodeEnhancements;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Settings;
-using static KS.RustAnalyzer.NodeEnhancements.NodeBrowseObjectProvider;
 using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 
 namespace KS.RustAnalyzer.Infrastructure;
@@ -36,9 +36,9 @@ public sealed class SettingsService : ISettingsService
 {
     public const string KindDebugger = "Debugger";
     public const string KindBuild = "Build";
-    public const string TypeCommandLineArguments = nameof(BrowseObject.CommandLineArguments);
-    public const string TypeDebuggerEnvironment = nameof(BrowseObject.DebuggerEnvironment);
-    public const string TypeAdditionalBuildArgs = nameof(BrowseObject.AdditionalBuildArguments);
+    public const string TypeCommandLineArguments = nameof(NodeBrowseObject.CommandLineArguments);
+    public const string TypeDebuggerEnvironment = nameof(NodeBrowseObject.DebuggerEnvironment);
+    public const string TypeAdditionalBuildArgs = nameof(NodeBrowseObject.AdditionalBuildArguments);
     private readonly PathEx _location;
     private readonly IWorkspaceSettingsManager _settingsManager;
     private readonly TL _tl;

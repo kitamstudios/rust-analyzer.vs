@@ -12,10 +12,10 @@ using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 namespace KS.RustAnalyzer.NodeEnhancements;
 
 [Export(typeof(INodeBrowseObjectProvider))]
-public sealed partial class NodeBrowseObjectProvider : INodeBrowseObjectProvider
+public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
 {
     private readonly TL _tl;
-    private readonly BrowseObject _browseObject = new ();
+    private readonly NodeBrowseObject _browseObject = new ();
     private readonly IPreReqsCheckService _preReqs;
 
     [ImportingConstructor]
@@ -65,7 +65,7 @@ public sealed partial class NodeBrowseObjectProvider : INodeBrowseObjectProvider
 
     private void BrowseObject_PropertyChanged(object sender, PropertyChangedEventArgs e)
     {
-        if (sender is not BrowseObject fsob)
+        if (sender is not NodeBrowseObject fsob)
         {
             return;
         }

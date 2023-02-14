@@ -1,13 +1,9 @@
 {
   "recommendations": [
     "EditorConfig.EditorConfig",
-    "esbenp.prettier-vscode",
-    "dbaeumer.vscode-eslint",
-    "msjsdiag.debugger-for-chrome",
     "oderwat.indent-rainbow",
     "aaron-bond.better-comments",
-    "coenraads.bracket-pair-colorizer",
-    "rosshamish.kuskus-kusto-language-server",
-    "rosshamish.kuskus-kusto-syntax-highlighting"
+    "rust-lang.rust-analyzer",
+    "swellaby.vscode-rust-test-adapter"
   ]
 }
