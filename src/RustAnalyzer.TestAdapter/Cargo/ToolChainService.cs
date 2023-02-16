@@ -3,6 +3,7 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,11 +29,24 @@ public sealed class ToolChainService : IToolChainService
         };
     }
 
+    public PathEx? GetRustUpExePath()
+    {
+        var c = (PathEx?)Constants.RustUpExe.SearchInPath();
+        _tl.L.WriteLine("... using {0} from '{1}'.", Constants.RustUpExe, c);
+        return c;
+    }
+
     public PathEx? GetCargoExePath()
     {
         var c = (PathEx?)Constants.CargoExe.SearchInPath();
-        _tl.L.WriteLine("Using {0}.", c);
+        _tl.L.WriteLine("... using {0} from '{1}'.", Constants.CargoExe, c);
         return c;
+    }
+
+    public Task<PathEx> GetRustAnalyzerExePath()
+    {
+        var path = (PathEx)Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "rust-analyzer.exe");
+        return path.ToTask();
     }
 
     public Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)

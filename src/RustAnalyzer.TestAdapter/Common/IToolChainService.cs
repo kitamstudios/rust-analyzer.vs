@@ -7,7 +7,11 @@ namespace KS.RustAnalyzer.TestAdapter.Common;
 
 public interface IToolChainService
 {
+    PathEx? GetRustUpExePath();
+
     PathEx? GetCargoExePath();
+
+    Task<PathEx> GetRustAnalyzerExePath();
 
     Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct);
 
