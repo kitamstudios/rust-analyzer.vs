@@ -12,14 +12,14 @@ using Newtonsoft.Json;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
-[Export(typeof(ICargoService))]
+[Export(typeof(IToolChainService))]
 [PartCreationPolicy(CreationPolicy.Shared)]
-public sealed class CargoService : ICargoService
+public sealed class ToolChainService : IToolChainService
 {
     private readonly TL _tl;
 
     [ImportingConstructor]
-    public CargoService([Import] ITelemetryService t, [Import] ILogger l)
+    public ToolChainService([Import] ITelemetryService t, [Import] ILogger l)
     {
         _tl = new TL
         {

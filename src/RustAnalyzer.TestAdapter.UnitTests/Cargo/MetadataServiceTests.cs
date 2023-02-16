@@ -71,9 +71,9 @@ public sealed class MetadataServiceTests
         cs.Verify(x => x.GetWorkspaceAsync(manifestPath, default), Times.Exactly(2)); // NOTE: Just 2 calls to ICS for 3 MDS calls.
     }
 
-    private static void CreateMDS(PathEx workspaceRoot, PathEx manifestPath, out Mock<ICargoService> cs, out MetadataService mds)
+    private static void CreateMDS(PathEx workspaceRoot, PathEx manifestPath, out Mock<IToolChainService> cs, out MetadataService mds)
     {
-        cs = new Mock<ICargoService>();
+        cs = new Mock<IToolChainService>();
         cs.Setup(cs => cs.GetWorkspaceAsync(It.IsAny<PathEx>(), It.IsAny<CancellationToken>()))
             .Returns(CreateWorkspace(manifestPath).ToTask());
         mds = new MetadataService(cs.Object, workspaceRoot, TestHelpers.TL);

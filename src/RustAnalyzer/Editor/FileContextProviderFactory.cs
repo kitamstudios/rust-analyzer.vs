@@ -28,7 +28,7 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
     public ITelemetryService T { get; set; }
 
     [Import]
-    public ICargoService CargoService { get; set; }
+    public IToolChainService CargoService { get; set; }
 
     [Import]
     public IPreReqsCheckService PreReqs { get; set; }

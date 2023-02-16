@@ -22,11 +22,11 @@ public interface IPreReqsCheckService
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class PreReqsCheckService : IPreReqsCheckService
 {
-    private readonly ICargoService _cargoService;
+    private readonly IToolChainService _cargoService;
     private readonly TL _tl;
 
-    private readonly IReadOnlyDictionary<string, Func<ICargoService, Task<(bool, string)>>> _preReqChecks =
-        new Dictionary<string, Func<ICargoService, Task<(bool, string)>>>
+    private readonly IReadOnlyDictionary<string, Func<IToolChainService, Task<(bool, string)>>> _preReqChecks =
+        new Dictionary<string, Func<IToolChainService, Task<(bool, string)>>>
         {
             [nameof(VsVersionCheck)] = VsVersionCheck.CheckAsync,
             [nameof(CheckCargoAsync)] = CheckCargoAsync,
@@ -36,7 +36,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         };
 
     [ImportingConstructor]
-    public PreReqsCheckService([Import] ICargoService cargoService, [Import] ITelemetryService t, [Import] ILogger l)
+    public PreReqsCheckService([Import] IToolChainService cargoService, [Import] ITelemetryService t, [Import] ILogger l)
     {
         _cargoService = cargoService;
         _tl = new TL
@@ -91,7 +91,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         return results;
     }
 
-    private static async Task<(bool, string)> CheckCargoAsync(ICargoService cargoService)
+    private static async Task<(bool, string)> CheckCargoAsync(IToolChainService cargoService)
     {
         if (!cargoService.GetCargoExePath().HasValue)
         {
@@ -105,7 +105,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
 
     public static class VsVersionCheck
     {
-        public static async Task<(bool, string)> CheckAsync(ICargoService cs)
+        public static async Task<(bool, string)> CheckAsync(IToolChainService cs)
         {
             var version = await CommunityVS.Shell.GetVsVersionAsync();
             if (version == null)

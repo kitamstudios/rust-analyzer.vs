@@ -13,7 +13,7 @@ using Xunit;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 
-public sealed class CargoServiceTests
+public sealed class ToolChainServiceTests
 {
     [Theory]
     [InlineData(@"hello_world")]
@@ -25,7 +25,7 @@ public sealed class CargoServiceTests
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
         var manifestPath = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
 
-        var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
+        var wmd = await new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
 
         var normalizedStr = wmd
             .SerializeObject(Formatting.Indented, new PathExJsonConverter())
@@ -42,7 +42,7 @@ public sealed class CargoServiceTests
     {
         var manifestPath = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
 
-        var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
+        var wmd = await new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
         var targetParents = wmd.Packages.Select(p => (p, tp: p.Targets.Select(t => t.Parent)));
 
         wmd.Packages.Should().OnlyContain(p => p.Parent == wmd);
@@ -58,7 +58,7 @@ public sealed class CargoServiceTests
     {
         var manifestPath = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
 
-        var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
+        var wmd = await new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
 
         wmd.Packages.Should().NotContain(p => p.Name == Workspace.Package.RootPackageName || !p.IsPackage);
         wmd.Packages.Should().OnlyContain(p => p.IsPackage);
@@ -71,7 +71,7 @@ public sealed class CargoServiceTests
     {
         var manifestPath = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
 
-        var wmd = await new CargoService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
+        var wmd = await new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
 
         wmd.Packages.Should().ContainSingle(p => p.Name == Workspace.Package.RootPackageName && !p.IsPackage);
     }

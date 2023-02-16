@@ -11,14 +11,14 @@ namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
 public sealed class MetadataService : IMetadataService, IDisposable
 {
-    private readonly ICargoService _cargoService;
+    private readonly IToolChainService _cargoService;
     private readonly PathEx _workspaceRoot;
     private readonly TL _tl;
     private readonly SemaphoreSlim _packageCacheLocker = new (1, 1);
     private ConcurrentDictionary<PathEx, Workspace.Package> _packageCache = new ConcurrentDictionary<PathEx, Workspace.Package>();
     private bool _disposedValue;
 
-    public MetadataService(ICargoService cargoService, PathEx workspaceRoot, TL tl)
+    public MetadataService(IToolChainService cargoService, PathEx workspaceRoot, TL tl)
     {
         _cargoService = cargoService;
         _workspaceRoot = workspaceRoot;

@@ -13,11 +13,11 @@ namespace KS.RustAnalyzer.Editor;
 public sealed class FileContextProvider : IFileContextProvider, IFileContextProvider<string>
 {
     private readonly IMetadataService _mds;
-    private readonly ICargoService _cargoService;
+    private readonly IToolChainService _cargoService;
     private readonly IBuildOutputSink _outputPane;
     private readonly ISettingsService _settingsService;
 
-    public FileContextProvider(IMetadataService mds, ICargoService cargoService, IBuildOutputSink outputPane, ISettingsService settingsService)
+    public FileContextProvider(IMetadataService mds, IToolChainService cargoService, IBuildOutputSink outputPane, ISettingsService settingsService)
     {
         _mds = mds;
         _cargoService = cargoService;
