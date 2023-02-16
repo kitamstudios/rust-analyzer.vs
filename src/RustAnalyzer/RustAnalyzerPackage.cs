@@ -50,9 +50,8 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
         await ReleaseSummaryNotification.ShowAsync(this, _tl);
-        await VsVersionCheck.ShowAsync(_tl);
         await SearchAndDisableIncompatibleExtensionsAsync();
-        await CargoCheck.ShowAsync(_preReqs, _tl);
+        await _preReqs.SatisfyAsync();
     }
 
     #region Handling incompatible extensions
@@ -230,62 +229,6 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
             }
 
             return false;
-        }
-    }
-
-    #endregion
-
-    #region VsVersionCheck
-
-    public static class VsVersionCheck
-    {
-        private const string VsUpdateUrl = "https://learn.microsoft.com/en-us/visualstudio/releases/2022/release-history";
-
-        public static async Task ShowAsync(TL tl)
-        {
-            tl.L.WriteLine("Doing VS version check...");
-            var version = await CommunityVS.Shell.GetVsVersionAsync();
-            if (version == null)
-            {
-                var msg = "CommunityVS.Shell.GetVsVersionAsync() returned null.";
-                tl.L.WriteError(msg);
-                tl.T.TrackException(new InvalidOperationException(msg));
-                return;
-            }
-
-            if (version <= Constants.MinimumRequiredVsVersion)
-            {
-                tl.L.WriteLine("Version check failed. Minimum {0}, found {1}.", Constants.MinimumRequiredVsVersion, version);
-                tl.T.TrackException(new InvalidOperationException("VsVersion check failed."), new[] { ("Minimum", Constants.MinimumRequiredVsVersion.ToString()), ("Found", version.ToString()) });
-                await VsCommon.ShowMessageBoxAsync(
-                    $"This package requires a minumum of Visual Studio 2022 v{Constants.MinimumRequiredVsVersion}. However current version is v{version}. Please apply the latest Visual Studio 2022 updates.",
-                    $"Pressing OK will open the update url and restart the IDE.");
-                VsShellUtilities.OpenSystemBrowser(VsUpdateUrl);
-                await CommunityVS.Shell.RestartAsync();
-            }
-        }
-    }
-
-    #endregion
-
-    #region CargoCheck
-
-    public static class CargoCheck
-    {
-        private const string RustInstallUrl = "https://www.rust-lang.org/tools/install";
-
-        public static async Task ShowAsync(IPreReqsCheckService preReqs, TL tl)
-        {
-            tl.L.WriteLine("Doing Cargo check...");
-
-            if (!preReqs.Satisfied())
-            {
-                tl.T.TrackException(new InvalidOperationException("Cargo check failed."));
-                await VsCommon.ShowMessageBoxAsync(
-                    $"{Constants.CargoExe} is not found in path. Install from {RustInstallUrl}.", "Pressing OK will open the url and restart the IDE.");
-                VsShellUtilities.OpenSystemBrowser(RustInstallUrl);
-                await CommunityVS.Shell.RestartAsync();
-            }
         }
     }
 

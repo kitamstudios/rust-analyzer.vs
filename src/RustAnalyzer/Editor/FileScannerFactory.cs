@@ -36,7 +36,7 @@ public class FileScannerFactory : IWorkspaceProviderFactory<IFileScanner>
             new[] { ("Location", workspaceContext.Location) });
         L.WriteLine("Creating {0}.", GetType().Name);
 
-        if (!PreReqs.Satisfied())
+        if (!workspaceContext.JTF.Run(() => PreReqs.SatisfySilentAsync()))
         {
             L.WriteLine("... Pre-requisites not satisfied. Returning null.");
             return null;

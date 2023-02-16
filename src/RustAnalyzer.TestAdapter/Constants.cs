@@ -8,6 +8,7 @@ public static class Constants
     public const string ReleaseSummary = $"Significant refactoring of the {ManifestFileName} parser module resulting in simpler code & robust handling of various crates and workspaces scenarios. Please report any issues you face.";
     public const string ReleaseNotesUrl = $"https://github.com/kitamstudios/rust-analyzer.vs/releases/{Vsix.Version}";
     public const string DiscordUrl = "https://discord.gg/JyK55EsACr";
+    public const string PrerequisitesUrl = "https://github.com/kitamstudios/rust-analyzer.vs/blob/master/PREREQUISITES.md";
 
     public const string RustLanguageContentType = "rust";
     public const string RustFileExtension = ".rs";

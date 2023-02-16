@@ -22,7 +22,7 @@ Download this extension from the [Visual Studio Marketplace][marketplace] or get
 
 - Build, Clean (errors in Error list with details in output window).
 - Debug & Run without debugging.
-- Workspaces fully supported, including opening folder contain multiple cargo workspaces.
+- Workspaces & super workspaces both fully supported (super workspace is a folder with multiple multiple cargo workspaces).
 - Intellisense / Auto-complete / Goto definition / Code actions / Find references etc. all features from Rust language server.
 - Examples support (run & debug).
 - Set additional properties for build / debug / run (e.g. command line arguments).

@@ -35,7 +35,7 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
     {
         _tl.L.WriteLine("Getting browse object for {0}.", node.NodeFullMoniker);
 
-        if (!_preReqs.Satisfied())
+        if (!node.Workspace.JTF.Run(() => _preReqs.SatisfySilentAsync()))
         {
             _tl.L.WriteLine("... Pre-requisites not satisfied. Returning null.");
             return null;
