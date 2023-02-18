@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
@@ -29,7 +30,8 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
 
     public void LaunchDebugTarget(IWorkspace workspaceContext, IServiceProvider serviceProvider, DebugLaunchActionContext debugLaunchActionContext)
     {
-        workspaceContext.JTF.Run(async () => await LaunchDebugTargetAsync(workspaceContext, serviceProvider, debugLaunchActionContext));
+        var lcw = new LaunchConfigWrapper(debugLaunchActionContext.LaunchConfiguration, new TL { T = T, L = L, });
+        workspaceContext.JTF.Run(async () => await LaunchDebugTargetAsync(workspaceContext, serviceProvider, debugLaunchActionContext.BuildConfiguration, lcw));
     }
 
     public bool SupportsContext(IWorkspace workspaceContext, string targetFilePath)
@@ -42,14 +44,13 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
         throw e;
     }
 
-    private async Task LaunchDebugTargetAsync(IWorkspace workspaceContext, IServiceProvider serviceProvider, DebugLaunchActionContext debugLaunchActionContext)
+    private async Task LaunchDebugTargetAsync(IWorkspace workspaceContext, IServiceProvider serviceProvider, string profile, LaunchConfigWrapper lcw)
     {
         try
         {
             var mds = workspaceContext.GetService<IMetadataService>();
-            var package = await mds.GetContainingPackageAsync((PathEx)(debugLaunchActionContext.LaunchConfiguration[LaunchConfigurationConstants.ProgramKey] as string), default);
-            var profile = debugLaunchActionContext.BuildConfiguration;
-            var targetFQN = debugLaunchActionContext.LaunchConfiguration[LaunchConfigurationConstants.NameKey] as string;
+            var package = await mds.GetContainingPackageAsync((PathEx)lcw[LaunchConfigurationConstants.ProgramKey], default);
+            var targetFQN = lcw[LaunchConfigurationConstants.NameKey];
             var target = package.GetTargets().FirstOrDefault(t => t.QualifiedTargetFileName == targetFQN);
             if (target == null)
             {
@@ -60,7 +61,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                 return;
             }
 
-            L.WriteLine("LaunchDebugTarget with profile: {0}, launchConfiguration: {1}", profile, debugLaunchActionContext.LaunchConfiguration.SerializeObject());
+            L.WriteLine("LaunchDebugTarget with profile: {0}, launchConfiguration: {1}", profile, lcw.SerializeObject());
             T.TrackEvent("Debug", ("Target", targetFQN), ("Profile", profile), ("Manifest", package.FullPath));
 
             var processName = target.GetPath(profile);
@@ -73,9 +74,9 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                 return;
             }
 
-            var args = GetSettings(RaSettingsService.TypeCommandLineArguments, workspaceContext.GetService<ISettingsService>(), debugLaunchActionContext);
-            var env = GetSettings(RaSettingsService.TypeDebuggerEnvironment, workspaceContext.GetService<ISettingsService>(), debugLaunchActionContext);
-            var noDebugFlag = debugLaunchActionContext.LaunchConfiguration.ContainsKey(LaunchConfigurationConstants.NoDebugKey) ? __VSDBGLAUNCHFLAGS.DBGLAUNCH_NoDebug : 0;
+            var args = GetSettings(RaSettingsService.TypeCommandLineArguments, workspaceContext.GetService<ISettingsService>(), lcw);
+            var env = GetSettings(RaSettingsService.TypeDebuggerEnvironment, workspaceContext.GetService<ISettingsService>(), lcw);
+            var noDebugFlag = lcw.ContainsKey(LaunchConfigurationConstants.NoDebugKey) ? __VSDBGLAUNCHFLAGS.DBGLAUNCH_NoDebug : 0;
             var info = new VsDebugTargetInfo
             {
                 dlo = DEBUG_LAUNCH_OPERATION.DLO_CreateProcess,
@@ -95,6 +96,12 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
 
             VsShellUtilities.LaunchDebugger(serviceProvider, info);
         }
+        catch (KeyNotFoundException knfe)
+        {
+            await VsCommon.ShowMessageBoxAsync(
+                knfe.Message,
+                "Debugger will not be launched. Please report the repro steps + this message as this issue is hard to track down. 🙏");
+        }
         catch (Exception e)
         {
             T.TrackException(e);
@@ -102,9 +109,43 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
         }
     }
 
-    private string GetSettings(string type, ISettingsService settingsService, DebugLaunchActionContext debugLaunchActionContext)
+    private string GetSettings(string type, ISettingsService settingsService, LaunchConfigWrapper lcw)
     {
-        var projectKey = debugLaunchActionContext.LaunchConfiguration[LaunchConfigurationConstants.ProjectKey] as string;
+        var projectKey = lcw[LaunchConfigurationConstants.ProjectKey];
         return settingsService.Get(type, (PathEx)projectKey);
+    }
+
+    /// <summary>
+    /// Wrapper to track a number of KeyNotFoundExceptions being thrown on users' machines.
+    /// </summary>
+    public sealed class LaunchConfigWrapper
+    {
+        private readonly IPropertySettings _lc;
+        private readonly TL _tl;
+
+        public LaunchConfigWrapper(IPropertySettings lc, TL tl)
+        {
+            _lc = lc;
+            _tl = tl;
+        }
+
+        public string this[string key]
+        {
+            get
+            {
+                if (!_lc.ContainsKey(key) || _lc[key].GetType() != typeof(string))
+                {
+                    var msg = $"Key '{key}' is not set in launch configuration and / or is not a string.";
+                    var e = new KeyNotFoundException(msg);
+                    _tl.T.TrackException(e, new[] { ("Key", key) });
+                    _tl.L.WriteError(msg);
+                    throw e;
+                }
+
+                return _lc[key] as string;
+            }
+        }
+
+        public bool ContainsKey(string noDebugKey) => _lc.ContainsKey(noDebugKey);
     }
 }

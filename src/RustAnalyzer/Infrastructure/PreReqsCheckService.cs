@@ -50,7 +50,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
     {
         var results = await DoChecksAsync();
 
-        return results.Any(x => !x.success);
+        return results.All(x => x.success);
     }
 
     public async Task SatisfyAsync()
