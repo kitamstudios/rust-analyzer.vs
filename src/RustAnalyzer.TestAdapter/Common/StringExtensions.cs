@@ -12,6 +12,11 @@ public static class StringExtensions
         return new MemoryStream(Encoding.UTF8.GetBytes(s));
     }
 
+    public static Uri ToUri(this string s)
+    {
+        return new Uri(s);
+    }
+
     public static bool IsNullOrEmpty(this string s)
     {
         return string.IsNullOrEmpty(s);

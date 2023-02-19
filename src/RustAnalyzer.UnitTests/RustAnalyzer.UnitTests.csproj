@@ -68,6 +68,7 @@
     <Compile Include="..\TestsCommon\TestHelpers.cs">
       <Link>Common\TestHelpers.cs</Link>
     </Compile>
+    <Compile Include="RAExeRelease.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Editor\FileContextProviderTests.cs" />
     <Compile Include="Editor\FileScannerTests.cs" />
