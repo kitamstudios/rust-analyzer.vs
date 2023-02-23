@@ -30,9 +30,6 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         {
             [nameof(VsVersionCheck)] = VsVersionCheck.CheckAsync,
             [nameof(CheckCargoAsync)] = CheckCargoAsync,
-
-            // rustup check
-            // rls check
         };
 
     [ImportingConstructor]
