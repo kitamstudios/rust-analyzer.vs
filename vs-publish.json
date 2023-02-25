@@ -12,6 +12,7 @@
       "cargo",
       "rust-analyzer"
     ],
+    "icon": ".\\src\\RustAnalyzer\\Resources\\icon.png",
     "displayName": "rust-analyzer.vs",
     "description": "Rust language support for Visual Studio"
   },

@@ -30,7 +30,9 @@ Download this extension from the [Visual Studio Marketplace][marketplace] or get
 
 ### Upcoming
 
+- CMake integration + Debug / Run on WSL.
 - Cross compilation (wasm, linux, etc.)
+- Docker build.
 - Clippy / Fmt integration.
 - Test integration - 1 (unit / integration, run & debug)
 - Folder enhancements (icons, context menus).
