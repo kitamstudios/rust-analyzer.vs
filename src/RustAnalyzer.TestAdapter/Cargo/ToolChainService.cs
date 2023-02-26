@@ -86,11 +86,12 @@ public sealed class ToolChainService : IToolChainService
         // NOTE: We should not come here as the prereq checking should have disabled the entry points.
         Ensure.That(cargoFullPath).IsNotNull();
 
+        var exitCode = 0;
         try
         {
             using var proc = ProcessRunner.Run(cargoFullPath, new[] { "metadata", "--no-deps", "--format-version", "1", "--manifest-path", manifestPath, "--offline" }, ct);
             _tl.L.WriteLine("Started PID:{0} with args: {1}...", proc.ProcessId, proc.Arguments);
-            var exitCode = await proc;
+            exitCode = await proc;
             _tl.L.WriteLine("... Finished PID {0} with exit code {1}.", proc.ProcessId, proc.ExitCode);
             if (exitCode != 0)
             {
@@ -103,7 +104,11 @@ public sealed class ToolChainService : IToolChainService
         catch (Exception e)
         {
             _tl.L.WriteLine("Unable to obtain metadata for file {0}. Ex: {1}", manifestPath, e);
-            _tl.T.TrackException(e);
+            if (exitCode != 101)
+            {
+                _tl.T.TrackException(e);
+            }
+
             throw;
         }
     }
