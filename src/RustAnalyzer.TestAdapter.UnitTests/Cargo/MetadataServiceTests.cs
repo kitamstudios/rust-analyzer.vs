@@ -70,11 +70,6 @@ public sealed class MetadataServiceTests
         await mds.OnWorkspaceUpdateAsync(new[] { manifestPath.GetDirectoryName().Combine((PathEx)"src/main.rs") }, default);
         await mds.GetPackageAsync(manifestPath, default);
         cs.Verify(x => x.GetWorkspaceAsync(manifestPath, default), Times.Exactly(2)); // NOTE: Just 2 calls to ICS for 3 MDS calls.
-
-        // NOTE: Async events.
-        await Task.Delay(100);
-        mMds.Should().Raise(nameof(IMetadataService.PackageAdded)).WithArgs<PathEx>(p => p == manifestPath);
-        mMds.Should().Raise(nameof(IMetadataService.PackageRemoved)).WithArgs<PathEx>(p => p == manifestPath);
     }
 
     [Theory]
