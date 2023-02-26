@@ -1,8 +1,8 @@
 using FluentAssertions;
-using KS.RustAnalyzer.TestAdapter.Common;
+using KS.RustAnalyzer.Infrastructure;
 using Xunit;
 
-namespace KS.RustAnalyzer.TestAdapter.UnitTests.Common;
+namespace KS.RustAnalyzer.UnitTests.Infrastructure;
 
 public class StringExtensionTests
 {
@@ -17,6 +17,7 @@ public class StringExtensionTests
     [InlineData(@"a=x=1 abc=x", "abc=x\0\0")]
     [InlineData(@"a=x abc=x", "a=x\0abc=x\0\0")]
     [InlineData(@" a=x   abc=x ", "a=x\0abc=x\0\0")]
+    [InlineData("\"A B=this\"\" is a\"\"b\" \"XX=this is xx\" A=a", "A B=this\" is a\"b\0XX=this is xx\0A=a\0\0")]
     public void GetEnvironmentBlockTests(string str, string envBlock)
     {
         str.GetEnvironmentBlock().Should().Be(envBlock);

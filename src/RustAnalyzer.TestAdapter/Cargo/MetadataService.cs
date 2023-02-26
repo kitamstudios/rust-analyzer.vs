@@ -9,24 +9,34 @@ using KS.RustAnalyzer.TestAdapter.Common;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
-public sealed class MetadataService : IMetadataService, IDisposable
+public class MetadataService : IMetadataService, IDisposable
 {
     private readonly IToolChainService _cargoService;
     private readonly PathEx _workspaceRoot;
     private readonly TL _tl;
+    private readonly bool _synchronousEvents;
     private readonly SemaphoreSlim _packageCacheLocker = new (1, 1);
-    private ConcurrentDictionary<PathEx, Workspace.Package> _packageCache = new ConcurrentDictionary<PathEx, Workspace.Package>();
+    private ConcurrentDictionary<PathEx, Workspace.Package> _packageCache = new ();
     private bool _disposedValue;
 
     public MetadataService(IToolChainService cargoService, PathEx workspaceRoot, TL tl)
+        : this(cargoService, workspaceRoot, tl, syncEvents: false)
+    {
+    }
+
+    protected MetadataService(IToolChainService cargoService, PathEx workspaceRoot, TL tl, bool syncEvents = false)
     {
         _cargoService = cargoService;
         _workspaceRoot = workspaceRoot;
         _tl = tl;
-
+        _synchronousEvents = syncEvents;
         _tl.L.WriteLine("Creating MDS. Workspace root: {0}.", workspaceRoot);
         _tl.T.TrackEvent("CreatingMDS", ("WorkspaceRoot", $"{workspaceRoot}"));
     }
+
+    public event EventHandler<PathEx> PackageAdded;
+
+    public event EventHandler<PathEx> PackageRemoved;
 
     public Action DisconnectEvents { get; set; } = () => { };
 
@@ -37,10 +47,10 @@ public sealed class MetadataService : IMetadataService, IDisposable
         GC.SuppressFinalize(this);
     }
 
-    public async Task<Workspace.Package> GetPackageAsync(PathEx manifestPath, CancellationToken ct)
+    public Task<Workspace.Package> GetPackageAsync(PathEx manifestPath, CancellationToken ct)
     {
         _tl.L.WriteLine("GetPackageAsync. Manifest path: {0}.", manifestPath);
-        return await ProtectPackageCacheAndRunAsync((ct) => GetCachedPackageAsync(manifestPath, ct), ct);
+        return ProtectPackageCacheAndRunAsync((ct) => GetCachedPackageAsync(manifestPath, ct), ct);
     }
 
     public async Task<Workspace.Package> GetContainingPackageAsync(PathEx filePath, CancellationToken ct)
@@ -66,7 +76,10 @@ public sealed class MetadataService : IMetadataService, IDisposable
                     if (filePath.TryGetParentManifestOrThisUnderWorkspace(_workspaceRoot, out PathEx? manifest))
                     {
                         _tl.L.WriteLine("OnWorkspaceUpdateAsync: Removing from cache: {0}", manifest);
-                        _packageCache.TryRemove(manifest.Value, out var _);
+                        if (_packageCache.TryRemove(manifest.Value, out var _))
+                        {
+                            OnPackageRemoved(manifest.Value);
+                        }
                     }
                 }
 
@@ -96,7 +109,9 @@ public sealed class MetadataService : IMetadataService, IDisposable
         }
 
         _tl.L.WriteLine("... Cache miss: {0}.", manifestPath);
-        return _packageCache[manifestPath] = await GetPackageAsyncCore(manifestPath, ct);
+        _packageCache[manifestPath] = await GetPackageAsyncCore(manifestPath, ct);
+        OnPackageAdded(manifestPath);
+        return _packageCache[manifestPath];
     }
 
     private async Task<Workspace.Package> GetPackageAsyncCore(PathEx manifestPath, CancellationToken ct)
@@ -120,8 +135,52 @@ public sealed class MetadataService : IMetadataService, IDisposable
             }
 
             DisconnectEvents();
+            PackageRemoved = null;
+            PackageAdded = null;
             _packageCache = null;
             _disposedValue = true;
+        }
+    }
+
+    // NOTE: This fire-n-forget ensure we dont hold the lock for longer than necessary.
+    private void OnPackageAdded(PathEx package)
+    {
+        var t = Task.Run(
+            async () =>
+            {
+                PackageAdded?.Invoke(this, package);
+                await Task.CompletedTask;
+            });
+
+        if (_synchronousEvents)
+        {
+            // NOTE: Testability hook.
+            t.Wait();
+        }
+        else
+        {
+            t.Forget();
+        }
+    }
+
+    // NOTE: This fire-n-forget ensure we dont hold the lock for longer than necessary.
+    private void OnPackageRemoved(PathEx package)
+    {
+        var t = Task.Run(
+            async () =>
+            {
+                PackageRemoved?.Invoke(this, package);
+                await Task.CompletedTask;
+            });
+
+        if (_synchronousEvents)
+        {
+            // NOTE: Testability hook.
+            t.Wait();
+        }
+        else
+        {
+            t.Forget();
         }
     }
 }

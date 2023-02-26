@@ -4,6 +4,7 @@ using KS.RustAnalyzer.Infrastructure;
 
 namespace KS.RustAnalyzer.NodeEnhancements;
 
+// TODO: XC: Add proper examples for cross compilation.
 public class NodeBrowseObject : INotifyPropertyChanged
 {
     private string _commandLineArguments;
@@ -20,7 +21,7 @@ public class NodeBrowseObject : INotifyPropertyChanged
 
     [Category(SettingsService.KindDebugger)]
     [DisplayName("Command line arguments")]
-    [Description("Command line arguments passed to executable during F5 & CTRL+F5. Example: Arg1 arg2 arg3")]
+    [Description("Command line arguments passed to executable during F5 & CTRL+F5. Example: \"Arg 1\" arg2 arg3")]
     public string CommandLineArguments
     {
         get
@@ -40,7 +41,7 @@ public class NodeBrowseObject : INotifyPropertyChanged
 
     [Category(SettingsService.KindDebugger)]
     [DisplayName("Environment")]
-    [Description("Environment passed to executable during F5 & CTRL+F5. Example: ENVVAR1=VAL1 ENVVAR2=VAL2")]
+    [Description("Environment passed to executable during F5 & CTRL+F5. Example: \"ENV VAR1=VAL 1\" ENVVAR2=VAL2")]
     public string DebuggerEnvironment
     {
         get
@@ -60,7 +61,7 @@ public class NodeBrowseObject : INotifyPropertyChanged
 
     [Category(SettingsService.KindBuild)]
     [DisplayName("Additional arguments")]
-    [Description($"Additional build arguments passed Cargo.exe. Example: --features=blocking")]
+    [Description($"Additional build arguments passed Cargo.exe. Example: --features=blocking --config http.proxy=\\\"http://example.com\\\"")]
     public string AdditionalBuildArguments
     {
         get

@@ -3,6 +3,10 @@ use std;
 fn main() {
     println!("Hello, world!");
 
+    println!("A B = {}", std::env::var_os("A B").unwrap_or(std::ffi::OsString::from("NOT FOUND!")).to_str().unwrap());
+    println!("XX = {}", std::env::var("XX").unwrap_or("NOT FOUND!".to_string()));
+    println!("A = {}", std::env::var("A").unwrap_or("NOT FOUND!".to_string()));
+
     let args: Vec<String> = std::env::args().collect();
     println!("command line: {:?}", args);
 
