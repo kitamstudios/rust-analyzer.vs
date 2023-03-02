@@ -12,7 +12,7 @@ public partial class OptionsProvider
     }
 }
 
-public class Options : BaseOptionModel<Options>, IRatingConfig
+public class Options : BaseOptionModel<Options>
 {
     [DisplayName("Default Clippy Arguments")]
     [Description("Command line arguments passed to cargo clippy. Default is: --all-targets --all-features -- -D warnings")]
@@ -21,7 +21,4 @@ public class Options : BaseOptionModel<Options>, IRatingConfig
     [DisplayName("Default Cargo Arguments")]
     [Description("Command line arguments passed to cargo fmt. Default is: --all")]
     public string DefailtCargoFmtArgs { get; set; } = "--all";
-
-    [Browsable(false)]
-    public int RatingRequests { get; set; }
 }

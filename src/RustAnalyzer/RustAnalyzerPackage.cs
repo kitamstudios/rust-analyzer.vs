@@ -38,15 +38,12 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
 {
     private TL _tl;
     private IPreReqsCheckService _preReqs;
-    private RatingPrompt _ratingPrompt;
 
     protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
     {
         await this.RegisterCommandsAsync();
 
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
-
-        _ratingPrompt = new RatingPrompt("kitamstudios.RustAnalyzer", Vsix.Name, Options.Instance);
 
         var cmServiceProvider = (IComponentModel)await GetServiceAsync(typeof(SComponentModel));
         _tl = new TL
@@ -66,8 +63,6 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
         await ReleaseSummaryNotification.ShowAsync(this, _tl);
         await SearchAndDisableIncompatibleExtensionsAsync();
         await _preReqs.SatisfyAsync();
-
-        _ratingPrompt.RegisterSuccessfulUsage();
     }
 
     #region Handling incompatible extensions
@@ -151,6 +146,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
         private const string ActionContextReleaseNotes = "release_notes";
         private const string ActionContextDismiss = "dismiss";
         private const string ActionContextGetHelp = "get_help";
+        private const string ActionContextRateExtension = "rate_extension";
         private const string DismissedRegKeyName = "release_notes_dismissed";
 
         public static async Task ShowAsync(IServiceProvider sp, TL tl)
@@ -166,7 +162,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
 
             var actionItems = new[]
             {
-                new InfoBarHyperlink("Release notes", ActionContextReleaseNotes),
+                new InfoBarHyperlink("Rate Extension", ActionContextRateExtension),
                 new InfoBarHyperlink("Get help!", ActionContextGetHelp),
                 new InfoBarHyperlink("Dismiss", ActionContextDismiss),
             };
@@ -191,8 +187,8 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
 
             switch (actionContext)
             {
-                case ActionContextReleaseNotes:
-                    VsShellUtilities.OpenSystemBrowser(Constants.ReleaseNotesUrl);
+                case ActionContextRateExtension:
+                    VsShellUtilities.OpenSystemBrowser(Constants.RateExtensionUrl);
                     break;
 
                 case ActionContextGetHelp:
