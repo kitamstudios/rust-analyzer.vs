@@ -50,13 +50,13 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
                         new FileContext(
                             FileContextProviderFactory.ProviderTypeGuid,
                             BuildContextTypes.BuildContextTypeGuid,
-                            new BuildFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = package.WorkspaceRoot, FilePath = fp, AdditionalBuildArgs = additionalBuildArgs }, _outputPane),
+                            new BuildFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = package.WorkspaceRoot, ManifestPath = fp, AdditionalBuildArgs = additionalBuildArgs }, _outputPane),
                             new[] { (string)fp },
                             displayName: profile),
                         new FileContext(
                             FileContextProviderFactory.ProviderTypeGuid,
                             BuildContextTypes.CleanContextTypeGuid,
-                            new CleanFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = package.WorkspaceRoot, FilePath = fp }, _outputPane),
+                            new CleanFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = package.WorkspaceRoot, ManifestPath = fp }, _outputPane),
                             new[] { (string)fp },
                             displayName: profile),
                     })
@@ -88,7 +88,7 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
                         {
                             Profile = profile,
                             WorkspaceRoot = target.Parent.WorkspaceRoot,
-                            FilePath = target.Parent.ManifestPath,
+                            ManifestPath = target.Parent.ManifestPath,
                             AdditionalBuildArgs = $"{target.AdditionalBuildArgs} {additionalBuildArgs}".Trim()
                         },
                         _outputPane),

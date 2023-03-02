@@ -17,6 +17,10 @@ public interface IToolChainService
 
     Task<bool> CleanAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct);
 
+    Task<bool> RunClippyAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct);
+
+    Task<bool> RunFmtAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct);
+
     Task<Workspace> GetWorkspaceAsync(PathEx manifestPath, CancellationToken ct);
 }
 
@@ -24,7 +28,7 @@ public sealed class BuildTargetInfo
 {
     public PathEx WorkspaceRoot { get; set; }
 
-    public PathEx FilePath { get; set; }
+    public PathEx ManifestPath { get; set; }
 
     public string Profile { get; set; }
 

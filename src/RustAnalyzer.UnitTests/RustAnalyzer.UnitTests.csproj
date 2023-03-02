@@ -68,6 +68,7 @@
     <Compile Include="..\TestsCommon\TestHelpers.cs">
       <Link>Common\TestHelpers.cs</Link>
     </Compile>
+    <Compile Include="Infrastructure\StringBuildMessagePreprocessorTests.cs" />
     <Compile Include="Infrastructure\StringExtensionTests.cs" />
     <Compile Include="RAExeRelease.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

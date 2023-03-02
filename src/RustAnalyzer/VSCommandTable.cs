@@ -6,20 +6,39 @@
 namespace KS.RustAnalyzer
 {
     using System;
-
+    
     /// <summary>
     /// Helper class that exposes all GUIDs used across VS Package.
     /// </summary>
     internal sealed partial class PackageGuids
     {
-        public const string RustAnalyzerString = "d879ab25-bd3e-4e01-8b2a-cc60649c016c";
-        public static Guid RustAnalyzer = new Guid(RustAnalyzerString);
+        public const string guidRustAnalyzerPackageString = "d879ab25-bd3e-4e01-8b2a-cc60649c016c";
+        public static Guid guidRustAnalyzerPackage = new Guid(guidRustAnalyzerPackageString);
+
+        public const string guidWorkspaceExplorerBuildActionCmdSetString = "16537f6e-cb14-44da-b087-d1387ce3bf57";
+        public static Guid guidWorkspaceExplorerBuildActionCmdSet = new Guid(guidWorkspaceExplorerBuildActionCmdSetString);
+
+        public const string guidWorkspaceExplorerToolWindowPackageCmdSetString = "cfb400f1-5c60-4f3c-856e-180d28def0b7";
+        public static Guid guidWorkspaceExplorerToolWindowPackageCmdSet = new Guid(guidWorkspaceExplorerToolWindowPackageCmdSetString);
     }
     /// <summary>
     /// Helper class that encapsulates all CommandIDs uses across VS Package.
     /// </summary>
     internal sealed partial class PackageIds
     {
-
+        public const int CargoClippy = 0x2001;
+        public const int CargoFmt = 0x2002;
+        public const int BuildActionContext = 0x1000;
+        public const int RebuildActionContext = 0x1010;
+        public const int CleanActionContext = 0x1020;
+        public const int idmWSE_ContextMenu = 0x0002;
+        public const int idgWSE_ContextMenu_ItemActions = 0x0010;
+        public const int idgWSE_ContextMenu_CollectionActions = 0x0011;
+        public const int idgWSE_ContextMenu_Adding = 0x0012;
+        public const int idgWSE_ContextMenu_SccCommands = 0x0013;
+        public const int idgWSE_ContextMenu_BuildDebugActions = 0x0014;
+        public const int idgWSE_ContextMenu_ShellActions = 0x0015;
+        public const int idgWSE_ContextMenu_ScopeActions = 0x0016;
+        public const int idgWSE_ContextMenu_FileContextActions = 0x0017;
     }
 }

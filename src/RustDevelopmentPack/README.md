@@ -8,5 +8,5 @@ Includes the following:
 - [rust-analyzer.vs (Kitam Studios)](https://marketplace.visualstudio.com/items?itemName=kitamstudios.RustAnalyzer)
 - [TOML Editor (Mads Kristensen)](https://marketplace.visualstudio.com/items?itemName=MadsKristensen.TomlEditor)
 - [Rainbow Braces (Mads Kristensen)](https://marketplace.visualstudio.com/items?itemName=MadsKristensen.RainbowBraces)
-- [Output enhancer (Nikolay Balakin)](https://marketplace.visualstudio.com/items?itemName=NikolayBalakin.Outputenhancer)
+- [VSColorOutput64 (Mike Ward - Ann Arbor)](https://marketplace.visualstudio.com/items?itemName=MikeWard-AnnArbor.VSColorOutput64)
 - [File Icons (Mads Kristensen)](https://marketplace.visualstudio.com/items?itemName=MadsKristensen.FileIcons)

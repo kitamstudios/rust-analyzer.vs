@@ -3,7 +3,7 @@
   xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011"
   xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="KS.RustDevelopmentPack.1f78866a-270d-437e-9180-f627bbae970a" Version="1.0" Language="en-US" Publisher="Kitam Studios" />
+    <Identity Id="KS.RustDevelopmentPack.1f78866a-270d-437e-9180-f627bbae970a" Version="2.0" Language="en-US" Publisher="Kitam Studios" />
     <DisplayName>Rust Development Pack</DisplayName>
     <Description xml:space="preserve">Setup a smooth Rust development environment. A collection of top rated extensions from the marketplace.</Description>
     <MoreInfo>https://github.com/kitamstudios/rust-analyzer.vs</MoreInfo>

@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  NOTE:
+  - Annotated reference at https://github.com/microsoft/VSSDK-Extensibility-Samples/blob/master/Menu_And_Commands/C%23/PkgCmd.vsct.
+  - Guids and IDs: https://learn.microsoft.com/en-us/visualstudio/extensibility/internals/guids-and-ids-of-visual-studio-menus?view=vs-2022
+-->
+
 <CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
 
   <Extern href="stdidcmd.h"/>
@@ -6,12 +13,61 @@
   <Include href="KnownImageIds.vsct"/>
   <Include href="VSGlobals.vsct"/>
 
-  <Commands package="RustAnalyzer">
+  <Commands package="guidRustAnalyzerPackage">
+    <Buttons>
+      <Button guid="guidRustAnalyzerPackage" id="CargoFmt" type="Button">
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultDisabled</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText>cargo fm&amp;t</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidRustAnalyzerPackage" id="CargoClippy" type="Button">
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultDisabled</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText>cargo clipp&amp;y</ButtonText>
+        </Strings>
+      </Button>
+    </Buttons>
   </Commands>
 
-  <Symbols>
-    <GuidSymbol name="RustAnalyzer" value="{d879ab25-bd3e-4e01-8b2a-cc60649c016c}">
+  <CommandPlacements>
+    <CommandPlacement guid="guidRustAnalyzerPackage" id="CargoClippy" priority="0x0300">
+      <Parent guid="guidWorkspaceExplorerToolWindowPackageCmdSet" id="idgWSE_ContextMenu_BuildDebugActions"/>
+    </CommandPlacement>
+    <CommandPlacement guid="guidRustAnalyzerPackage" id="CargoFmt" priority="0x0301">
+      <Parent guid="guidWorkspaceExplorerToolWindowPackageCmdSet" id="idgWSE_ContextMenu_BuildDebugActions"/>
+    </CommandPlacement>
+  </CommandPlacements>
 
+  <Symbols>
+    <GuidSymbol name="guidRustAnalyzerPackage" value="{d879ab25-bd3e-4e01-8b2a-cc60649c016c}">
+      <IDSymbol name="CargoClippy" value="0x2001" />
+      <IDSymbol name="CargoFmt" value="0x2002" />
     </GuidSymbol>
-  </Symbols>
+
+    <GuidSymbol name="guidWorkspaceExplorerBuildActionCmdSet" value="{16537f6e-cb14-44da-b087-d1387ce3bf57}">
+      <IDSymbol name="BuildActionContext" value="0x1000"/>
+      <IDSymbol name="RebuildActionContext" value="0x1010"/>
+      <IDSymbol name="CleanActionContext" value="0x1020"/>
+    </GuidSymbol>
+
+    <!-- This is the command set from the Open Folder / Workspace context menu. Let's us put our context menu inside theirs -->
+    <GuidSymbol name="guidWorkspaceExplorerToolWindowPackageCmdSet" value="{cfb400f1-5c60-4f3c-856e-180d28def0b7}">
+      <IDSymbol name="idmWSE_ContextMenu" value="0x0002"/>
+      <IDSymbol name="idgWSE_ContextMenu_ItemActions" value="0x0010"/>
+      <IDSymbol name="idgWSE_ContextMenu_CollectionActions" value="0x011"/>
+      <IDSymbol name="idgWSE_ContextMenu_Adding" value="0x012"/>
+      <IDSymbol name="idgWSE_ContextMenu_SccCommands" value="0x013"/>
+      <IDSymbol name="idgWSE_ContextMenu_BuildDebugActions" value="0x014"/>
+      <IDSymbol name="idgWSE_ContextMenu_ShellActions" value="0x015"/>
+      <IDSymbol name="idgWSE_ContextMenu_ScopeActions" value="0x016"/>
+      <IDSymbol name="idgWSE_ContextMenu_FileContextActions" value="0x017" />
+    </GuidSymbol>
+
+  </Symbols>  
+
 </CommandTable>

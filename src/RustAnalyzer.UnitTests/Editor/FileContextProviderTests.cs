@@ -40,7 +40,7 @@ public class FileContextProviderTests
                     (ri.Context as BuildFileContextBase).BuildConfiguration,
                     WorkspaceRoot = (ri.Context as BuildFileContextBase).BuildTargetInfo.WorkspaceRoot.RemoveMachineSpecificPaths(),
                     (ri.Context as BuildFileContextBase).BuildTargetInfo.Profile,
-                    FilePath = (ri.Context as BuildFileContextBase).BuildTargetInfo.FilePath.RemoveMachineSpecificPaths(),
+                    FilePath = (ri.Context as BuildFileContextBase).BuildTargetInfo.ManifestPath.RemoveMachineSpecificPaths(),
                     (ri.Context as BuildFileContextBase).BuildTargetInfo.AdditionalBuildArgs,
                 },
                 InputFiles = ri.InputFiles.Select(i => ((PathEx)i).RemoveMachineSpecificPaths()).ToArray(),

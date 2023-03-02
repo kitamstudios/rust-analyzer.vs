@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Newtonsoft.Json;
 
@@ -53,8 +52,8 @@ public sealed class ToolChainService : IToolChainService
     {
         return ExecuteOperationAsync(
             "build",
-            bti.FilePath,
-            arguments: $"build --manifest-path \"{bti.FilePath}\" {bti.AdditionalBuildArgs} --profile {bti.Profile} --message-format json",
+            bti.ManifestPath,
+            arguments: $"build --manifest-path \"{bti.ManifestPath}\" --profile {bti.Profile} --message-format json {bti.AdditionalBuildArgs}",
             profile: bti.Profile,
             outputPane: bos.OutputSink,
             buildMessageReporter: bos.BuildActionProgressReporter,
@@ -68,8 +67,38 @@ public sealed class ToolChainService : IToolChainService
     {
         return ExecuteOperationAsync(
             "clean",
-            bti.FilePath,
-            arguments: $"clean --manifest-path \"{bti.FilePath}\" --profile {bti.Profile}",
+            bti.ManifestPath,
+            arguments: $"clean --manifest-path \"{bti.ManifestPath}\" --profile {bti.Profile}",
+            profile: bti.Profile,
+            outputPane: bos.OutputSink,
+            buildMessageReporter: bos.BuildActionProgressReporter,
+            outputPreprocessor: x => new[] { new StringBuildMessage { Message = x } },
+            ts: _tl.T,
+            l: _tl.L,
+            ct: ct);
+    }
+
+    public Task<bool> RunClippyAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
+    {
+        return ExecuteOperationAsync(
+            "Clippy",
+            bti.ManifestPath,
+            arguments: $"clippy --manifest-path \"{bti.ManifestPath}\" --profile {bti.Profile} {bti.AdditionalBuildArgs}",
+            profile: bti.Profile,
+            outputPane: bos.OutputSink,
+            buildMessageReporter: bos.BuildActionProgressReporter,
+            outputPreprocessor: x => new[] { new StringBuildMessage { Message = x } },
+            ts: _tl.T,
+            l: _tl.L,
+            ct: ct);
+    }
+
+    public Task<bool> RunFmtAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
+    {
+        return ExecuteOperationAsync(
+            "Fmt",
+            bti.ManifestPath,
+            arguments: $"fmt --manifest-path \"{bti.ManifestPath}\" {bti.AdditionalBuildArgs}",
             profile: bti.Profile,
             outputPane: bos.OutputSink,
             buildMessageReporter: bos.BuildActionProgressReporter,
@@ -82,9 +111,6 @@ public sealed class ToolChainService : IToolChainService
     public async Task<Workspace> GetWorkspaceAsync(PathEx manifestPath, CancellationToken ct)
     {
         var cargoFullPath = GetCargoExePath();
-
-        // NOTE: We should not come here as the prereq checking should have disabled the entry points.
-        Ensure.That(cargoFullPath).IsNotNull();
 
         var exitCode = 0;
         try
@@ -137,18 +163,16 @@ public sealed class ToolChainService : IToolChainService
 
         var cargoFullPath = GetCargoExePath();
 
-        // NOTE: We should not come here as the prereq checking should have disabled the entry points.
-        Ensure.That(cargoFullPath).IsNotNull();
-
         ts.TrackEvent(
             opName,
             new[] { ("FilePath", filePath), ("Profile", profile), ("CargoPath", cargoFullPath.Value), ("Arguments", arguments) });
 
+        string workingDir = Path.GetDirectoryName(filePath);
         return await RunAsync(
             cargoFullPath.Value,
             arguments,
-            workingDir: Path.GetDirectoryName(filePath),
-            redirector: new BuildOutputRedirector(outputPane, buildMessageReporter, outputPreprocessor),
+            workingDir,
+            redirector: new BuildOutputRedirector(outputPane, (PathEx)workingDir, buildMessageReporter, outputPreprocessor),
             ct: ct);
     }
 
@@ -208,12 +232,14 @@ public sealed class ToolChainService : IToolChainService
     private sealed class BuildOutputRedirector : ProcessOutputRedirector
     {
         private readonly IBuildOutputSink _outputPane;
+        private readonly PathEx _rootPath;
         private readonly Func<BuildMessage, Task> _buildMessageReporter;
         private readonly Func<string, BuildMessage[]> _jsonProcessor;
 
-        public BuildOutputRedirector(IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, Func<string, BuildMessage[]> jsonProcessor)
+        public BuildOutputRedirector(IBuildOutputSink outputPane, PathEx rootPath, Func<BuildMessage, Task> buildMessageReporter, Func<string, BuildMessage[]> jsonProcessor)
         {
             _outputPane = outputPane;
+            _rootPath = rootPath;
             _buildMessageReporter = buildMessageReporter;
             _jsonProcessor = jsonProcessor;
         }
@@ -245,7 +271,7 @@ public sealed class ToolChainService : IToolChainService
                 lines,
                 l =>
                 {
-                    _outputPane.WriteLine(_buildMessageReporter, l);
+                    _outputPane.WriteLine(_rootPath, _buildMessageReporter, l);
                 });
         }
     }

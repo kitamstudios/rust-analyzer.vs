@@ -7,7 +7,7 @@ public interface IBuildOutputSink
 {
     void Clear();
 
-    void WriteLine(Func<BuildMessage, Task> buildOutputTaskReporter, BuildMessage message);
+    void WriteLine(PathEx rootPath, Func<BuildMessage, Task> buildOutputTaskReporter, BuildMessage message);
 }
 
 public abstract class BuildMessage

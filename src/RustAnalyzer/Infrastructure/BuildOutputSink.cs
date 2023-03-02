@@ -14,15 +14,16 @@ namespace KS.RustAnalyzer.Infrastructure;
 public sealed class BuildOutputSink : IBuildOutputSink
 {
     private static readonly Guid BuildOutputPaneGuid = VSConstants.OutputWindowPaneGuid.BuildOutputPane_guid;
+    private static readonly StringBuildMessagePreprocessor SbmPreprocessor = new ();
     private IVsOutputWindowPane _buildOutputPane;
 
     [Import]
-    public ITelemetryService T { get; set; }
+    private ITelemetryService T { get; set; }
 
     [Import]
     private SVsServiceProvider ServiceProvider { get; set; }
 
-    public void WriteLine(Func<BuildMessage, Task> buildOutputTaskReporter, BuildMessage message)
+    public void WriteLine(PathEx rootPath, Func<BuildMessage, Task> buildOutputTaskReporter, BuildMessage message)
     {
         try
         {
@@ -39,8 +40,11 @@ public sealed class BuildOutputSink : IBuildOutputSink
                     }
 
                     _buildOutputPane.Activate();
-                    var hr = _buildOutputPane.OutputStringThreadSafe(sm.Message + Environment.NewLine);
-                    Ensure.That(ErrorHandler.Succeeded(hr));
+                    foreach (var msg in SbmPreprocessor.Preprocess(rootPath, sm.Message))
+                    {
+                        var hr = _buildOutputPane.OutputStringThreadSafe(msg + Environment.NewLine);
+                        Ensure.That(ErrorHandler.Succeeded(hr));
+                    }
                 }
                 else if (message is DetailedBuildMessage bm)
                 {

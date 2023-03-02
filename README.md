@@ -6,7 +6,6 @@
 
 > This extension is not affiliated with [rust-lang/rust-analyzer](https://github.com/rust-lang/rust-analyzer/), and just uses rust-analyzer as an LSP server, together with the installed Rust toolchain. For a list of features, please see the [official site and manual](https://rust-analyzer.github.io/manual.html).
 
-
 [![Discord](https://img.shields.io/discord/1060697970426773584?color=5965F2&label=ask%20for%20help)](https://discord.gg/JyK55EsACr) [![CDP](https://github.com/kitamstudios/rust-analyzer.vs/actions/workflows/cdp.yml/badge.svg)](https://github.com/kitamstudios/rust-analyzer.vs/actions/workflows/cdp.yml) [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg?label=license)](https://creativecommons.org/licenses/by-nc-sa/4.0/) [![Release](https://img.shields.io/github/release/kitamstudios/rust-analyzer.vs.svg?label=release)](https://github.com/kitamstudios/rust-analyzer.vs/releases) [![Visual Studio Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/i/kitamstudios.RustAnalyzer?color=A0A22A)](https://marketplace.visualstudio.com/items?itemName=kitamstudios.RustAnalyzer) [![Visual Studio Marketplace Rating](https://img.shields.io/visual-studio-marketplace/r/kitamstudios.RustAnalyzer?color=C0442E)](https://marketplace.visualstudio.com/items?itemName=kitamstudios.RustAnalyzer&ssr=false\#review-details) [![Repo stars](https://img.shields.io/github/stars/kitamstudios/rust-analyzer.vs?label=repo%20stars&style=flat)](https://github.com/kitamstudios/rust-analyzer.vs/stargazers)
 
 
@@ -29,20 +28,21 @@ Download this extension from the [Visual Studio Marketplace][marketplace] or get
 - Intellisense / Auto-complete / Goto definition / Code actions / Find references etc. all features from Rust language server.
 - Examples support (run & debug).
 - Set additional properties for build / debug / run (e.g. command line arguments).
+- Clippy / Fmt integration.
 - Tested above features with top Rust OSS projects like [cargo](https://github.com/rust-lang/cargo), [ruffle](https://github.com/ruffle-rs/ruffle), [iced](https://github.com/iced-rs/iced), [geo](https://github.com/georust/geo), [ruff](https://github.com/charliermarsh/ruff), [reqwest](https://github.com/seanmonstar/reqwest), [wasmtime](https://github.com/bytecodealliance/wasmtime).
 
 ### Upcoming
 
-- CMake integration + Debug / Run on WSL.
-- Cross compilation (wasm, linux, etc.)
-- Docker build.
-- Clippy / Fmt integration.
-- Test integration - 1 (unit / integration, run & debug)
-- Folder enhancements (icons, context menus).
+- Cross compilation (wasm, linux, etc.) / build & run on WSL2 / leverage docker
+- Test integration (unit / integration / document, run & debug)
+- Basic project templates
+
+### Probably never
+
 - ChatGPT integration.
-- Test integration - 2 (documents).
-- Basic crates.io integration.
-- Basic cargo management.
+- Folder enhancements (icons, context menus).
+- crates.io integration.
+- cargo management.
 
 ## Demo
 

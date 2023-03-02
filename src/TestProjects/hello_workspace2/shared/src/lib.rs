@@ -6,9 +6,7 @@ pub struct A {
 
 impl A {
     pub fn new(value: u8) -> A {
-        A {
-            value,
-        }
+        A { value }
     }
 
     pub fn get_value(&self) -> u8 {

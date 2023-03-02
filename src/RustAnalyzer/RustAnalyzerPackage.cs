@@ -24,15 +24,29 @@ namespace KS.RustAnalyzer;
 [InstalledProductRegistration(Vsix.Name, Vsix.Description, Vsix.Version)]
 [ProvideMenuResource("Menus.ctmenu", 1)]
 [ProvideAutoLoad(VSConstants.UICONTEXT.FolderOpened_string, PackageAutoLoadFlags.BackgroundLoad)]
-[Guid(PackageGuids.RustAnalyzerString)]
+[ProvideOptionPage(
+    pageType: typeof(OptionsProvider.GeneralOptions),
+    categoryName: Vsix.Name,
+    pageName: "General",
+    categoryResourceID: 0,
+    pageNameResourceID: 0,
+    supportsAutomation: false,
+    SupportsProfiles = true,
+    ProvidesLocalizedCategoryName = false)]
+[Guid(PackageGuids.guidRustAnalyzerPackageString)]
 public sealed class RustAnalyzerPackage : ToolkitPackage
 {
     private TL _tl;
     private IPreReqsCheckService _preReqs;
+    private RatingPrompt _ratingPrompt;
 
     protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
     {
+        await this.RegisterCommandsAsync();
+
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+        _ratingPrompt = new RatingPrompt("kitamstudios.RustAnalyzer", Vsix.Name, Options.Instance);
 
         var cmServiceProvider = (IComponentModel)await GetServiceAsync(typeof(SComponentModel));
         _tl = new TL
@@ -52,6 +66,8 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
         await ReleaseSummaryNotification.ShowAsync(this, _tl);
         await SearchAndDisableIncompatibleExtensionsAsync();
         await _preReqs.SatisfyAsync();
+
+        _ratingPrompt.RegisterSuccessfulUsage();
     }
 
     #region Handling incompatible extensions
