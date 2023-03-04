@@ -29,6 +29,7 @@ Download this extension from the [Visual Studio Marketplace][marketplace] or get
 - Examples support (run & debug).
 - Set additional properties for build / debug / run (e.g. command line arguments).
 - Clippy / Fmt integration.
+- Comment (Ctrl+K Ctrl+C) & Uncomment (Ctrl+K Ctrl+U)
 - Tested above features with top Rust OSS projects like [cargo](https://github.com/rust-lang/cargo), [ruffle](https://github.com/ruffle-rs/ruffle), [iced](https://github.com/iced-rs/iced), [geo](https://github.com/georust/geo), [ruff](https://github.com/charliermarsh/ruff), [reqwest](https://github.com/seanmonstar/reqwest), [wasmtime](https://github.com/bytecodealliance/wasmtime).
 
 ### Upcoming

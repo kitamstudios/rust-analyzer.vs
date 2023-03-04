@@ -7,14 +7,14 @@ using Newtonsoft.Json.Converters;
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
 [DebuggerDisplay("[{Type}] {FQN}")]
-public sealed class Test
+public sealed class TestInfo
 {
     [JsonConverter(typeof(StringEnumConverter))]
     public enum TestType
     {
         [EnumMember(Value = "test")]
         Test,
-        [EnumMember(Value = "bench")]
+        [EnumMember(Value = "benchmark")]
         Benchmark,
     }
 

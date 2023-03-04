@@ -15,7 +15,7 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests;
 
 public class TestDiscovererTests
 {
-    [Theory]
+    [Theory(Skip = "rustc changes not in nightlies yet.")]
     [InlineData(@"hello_world")] // No tests.
     [InlineData(@"hello_library")] // Has tests.
     [UseReporter(typeof(DiffReporter))]

@@ -24,7 +24,7 @@ public interface IToolChainService
 
     Task<Workspace> GetWorkspaceAsync(PathEx manifestPath, CancellationToken ct);
 
-    Task<IEnumerable<Test>> GetTestSuiteAsync(PathEx manifestPath, CancellationToken ct);
+    Task<IEnumerable<TestInfo>> GetTestSuiteAsync(PathEx manifestPath, CancellationToken ct);
 }
 
 public sealed class BuildTargetInfo

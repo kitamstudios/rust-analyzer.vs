@@ -143,7 +143,7 @@ public sealed class ToolChainService : IToolChainService
         }
     }
 
-    public async Task<IEnumerable<Test>> GetTestSuiteAsync(PathEx manifestPath, CancellationToken ct)
+    public async Task<IEnumerable<TestInfo>> GetTestSuiteAsync(PathEx manifestPath, CancellationToken ct)
     {
         var cargoFullPath = GetCargoExePath();
 
@@ -197,9 +197,9 @@ public sealed class ToolChainService : IToolChainService
         }
     }
 
-    private static Test DeserializeTest(PathEx manifestLocation, string serializedVal)
+    private static TestInfo DeserializeTest(PathEx manifestLocation, string serializedVal)
     {
-        var test = JsonConvert.DeserializeObject<Test>(serializedVal);
+        var test = JsonConvert.DeserializeObject<TestInfo>(serializedVal);
         test.SourcePath = manifestLocation.Combine(test.SourcePath);
 
         return test;

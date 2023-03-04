@@ -43,7 +43,7 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: stable
+        toolchain: nightly
         target: x86_64-pc-windows-msvc
         default: true
         components: rustfmt, clippy
@@ -101,6 +101,7 @@ jobs:
         if-no-files-found: warn
 
   run-integration-tests:
+    if: ${{ false }}  # rustc changes not in nightlies yet.
     name: Integration tests
     needs: build-test-deploy
     runs-on: windows-2022
@@ -109,6 +110,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        target: x86_64-pc-windows-msvc
+        default: true
+        components: rustfmt, clippy
 
     - uses: darenm/Setup-VSTest@v1.2
 

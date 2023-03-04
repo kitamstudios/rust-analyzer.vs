@@ -45,6 +45,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="LanguageService\CommentHelper.cs" />
+    <Compile Include="LanguageService\CommentSelectionCommandHandler.cs" />
     <Compile Include="Infrastructure\StringBuildMessagePreprocessor.cs" />
     <Compile Include="NodeEnhancements\Commands.cs" />
     <Compile Include="Infrastructure\Options.cs" />

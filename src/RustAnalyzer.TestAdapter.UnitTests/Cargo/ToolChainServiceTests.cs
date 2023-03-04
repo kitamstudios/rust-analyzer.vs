@@ -76,7 +76,7 @@ public sealed class ToolChainServiceTests
         wmd.Packages.Should().ContainSingle(p => p.Name == Workspace.Package.RootPackageName && !p.IsPackage);
     }
 
-    [Theory]
+    [Theory(Skip = "rustc changes not in nightlies yet.")]
     [InlineData(@"hello_world")] // No tests.
     [InlineData(@"hello_library")] // Has tests.
     [UseReporter(typeof(DiffReporter))]

@@ -67,7 +67,7 @@ public class TestDiscoverer : ITestDiscoverer
         await Task.CompletedTask;
     }
 
-    private static TestCase CreateTestCaseFromTest(string source, Test test)
+    private static TestCase CreateTestCaseFromTest(string source, TestInfo test)
     {
         var fqnParts = test.FQN.Split(new[] { "::" }, StringSplitOptions.RemoveEmptyEntries);
         return new TestCase
@@ -81,7 +81,7 @@ public class TestDiscoverer : ITestDiscoverer
         };
     }
 
-    private Task<IEnumerable<Test>> FindTestsInSourceAsync(string source, ILogger l, CancellationToken ct)
+    private Task<IEnumerable<TestInfo>> FindTestsInSourceAsync(string source, ILogger l, CancellationToken ct)
     {
         return new ToolChainService(_t, l).GetTestSuiteAsync((PathEx)source, ct);
     }
