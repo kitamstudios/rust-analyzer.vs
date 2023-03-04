@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Cargo;
@@ -22,6 +23,8 @@ public interface IToolChainService
     Task<bool> RunFmtAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct);
 
     Task<Workspace> GetWorkspaceAsync(PathEx manifestPath, CancellationToken ct);
+
+    Task<IEnumerable<Test>> GetTestSuiteAsync(PathEx manifestPath, CancellationToken ct);
 }
 
 public sealed class BuildTargetInfo

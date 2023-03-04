@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Common;
@@ -16,6 +18,8 @@ namespace KS.RustAnalyzer.TestAdapter.Cargo;
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class ToolChainService : IToolChainService
 {
+    private static readonly Regex TestExecutablePathCracker = new (@"^\s*Executable unittests (.*) \((.*)\)$", RegexOptions.Compiled);
+
     private readonly TL _tl;
 
     [ImportingConstructor]
@@ -137,6 +141,68 @@ public sealed class ToolChainService : IToolChainService
 
             throw;
         }
+    }
+
+    public async Task<IEnumerable<Test>> GetTestSuiteAsync(PathEx manifestPath, CancellationToken ct)
+    {
+        var cargoFullPath = GetCargoExePath();
+
+        var exitCode = 0;
+        try
+        {
+            using var proc = ProcessRunner.Run(cargoFullPath, new[] { "test", "--no-run", "--manifest-path", manifestPath }, ct);
+            _tl.L.WriteLine("Started PID:{0} with args: {1}...", proc.ProcessId, proc.Arguments);
+            exitCode = await proc;
+            _tl.L.WriteLine("... Finished PID {0} with exit code {1}.", proc.ProcessId, proc.ExitCode);
+            if (exitCode != 0)
+            {
+                throw new InvalidOperationException($"{exitCode}\n{string.Join("\n", proc.StandardErrorLines)}");
+            }
+
+            // TODO: this assumes there will be only one testexe listed.
+            var lastLine = proc.StandardErrorLines.Last(StringExtensions.IsNotNullOrEmpty);
+            var matches = TestExecutablePathCracker.Matches(lastLine);
+            if (!(matches.Count > 0 && matches[0].Groups.Count == 3))
+            {
+                throw new InvalidOperationException($"Couldn't extract the test exe name. Invalid format of last line: {lastLine}");
+            }
+
+            var testExePath = matches[0].Groups[2].Value;
+            using var testExeProc = ProcessRunner.Run(testExePath, new[] { "--list", "--format", "json", "-Zunstable-options" }, ct);
+            _tl.L.WriteLine("Started PID:{0}, with args: {1}...", testExeProc.ProcessId, testExeProc.Arguments);
+            var testExeExitCode = await testExeProc;
+            _tl.L.WriteLine("... Finished PID {0} with exit code {1}.", testExeProc.ProcessId, testExeProc.ExitCode);
+            if (testExeExitCode != 0)
+            {
+                throw new InvalidOperationException($"{testExeExitCode}\n{string.Join("\n", testExeProc.StandardErrorLines)}");
+            }
+
+            var manifestLoc = manifestPath.GetDirectoryName();
+            var testSuites = testExeProc.StandardOutputLines
+                .Skip(1)
+                .Take(testExeProc.StandardOutputLines.Count() - 2)
+                .Select(l => DeserializeTest(manifestLoc, l));
+
+            return testSuites;
+        }
+        catch (Exception e)
+        {
+            _tl.L.WriteLine("Unable to obtain metadata for file {0}. Ex: {1}", manifestPath, e);
+            if (exitCode != 101)
+            {
+                _tl.T.TrackException(e);
+            }
+
+            throw;
+        }
+    }
+
+    private static Test DeserializeTest(PathEx manifestLocation, string serializedVal)
+    {
+        var test = JsonConvert.DeserializeObject<Test>(serializedVal);
+        test.SourcePath = manifestLocation.Combine(test.SourcePath);
+
+        return test;
     }
 
     private static Workspace AddRootPackageIfNecessary(Workspace w, PathEx manifestPath)

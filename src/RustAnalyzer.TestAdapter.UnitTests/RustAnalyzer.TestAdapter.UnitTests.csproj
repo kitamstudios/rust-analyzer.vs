@@ -51,6 +51,10 @@
     <Compile Include="Cargo\MetadataServiceTests.cs" />
     <Compile Include="Cargo\ToolChainServiceTests.cs" />
     <Compile Include="Cargo\WorkspaceExtensionsTests.cs" />
+    <Compile Include="SpyFrameworkHandle.cs" />
+    <Compile Include="SpyTestCaseDiscoverySink.cs" />
+    <Compile Include="TestExecutorTests.cs" />
+    <Compile Include="TestDiscovererTests.cs" />
     <Compile Include="Common\PathExTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

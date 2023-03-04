@@ -78,11 +78,31 @@ public class TestExecutor : ITestExecutor
     {
         var testResults = testCases.Select(t => new TestResult(t)
         {
-            Outcome = t.FullyQualifiedName.IndexOf("fail", StringComparison.OrdinalIgnoreCase) <= 0 ? TestOutcome.Passed : TestOutcome.Failed,
+            Outcome = GetOutcome(t),
         });
 
         t.TrackEvent("RunTestsFromOneSourceAsync", ("Results", $"{testResults.Count()}"));
 
         return Task.FromResult(testResults);
+    }
+
+    private static TestOutcome GetOutcome(TestCase t)
+    {
+        if (t.FullyQualifiedName.IndexOf("fail", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return TestOutcome.Failed;
+        }
+        else if (t.FullyQualifiedName.IndexOf("skip", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return TestOutcome.Skipped;
+        }
+        else if (t.FullyQualifiedName.IndexOf("ignore", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return TestOutcome.Skipped;
+        }
+        else
+        {
+            return TestOutcome.Passed;
+        }
     }
 }

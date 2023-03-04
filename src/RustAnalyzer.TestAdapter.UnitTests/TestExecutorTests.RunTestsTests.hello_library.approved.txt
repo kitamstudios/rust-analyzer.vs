@@ -1,0 +1,10 @@
+[0] = tests.fibonacci_test.case_1 - Passed
+[1] = tests.fibonacci_test.case_2 - Passed
+[2] = tests.fibonacci_test.case_3 - Passed
+[3] = tests.it_works - Passed
+[4] = tests.it_works245_ignored - Skipped
+[5] = tests.multiplication_tests.when_both_operands_are_negative - Passed
+[6] = tests.multiplication_tests.when_both_operands_are_positive - Passed
+[7] = tests.multiplication_tests.when_operands_are_swapped - Passed
+[8] = tests.should_fail - Failed
+[9] = tests.should_success - Passed

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
@@ -37,7 +37,7 @@ public class TestDiscoverer : ITestDiscoverer
     {
         l.WriteLine("Starting discovery of tests from {0}.", source);
 
-        var testCaseInfos = (await FindTestsInSourceAsync(source, ct)).Select(t => CreateTestCaseFromTestCaseInfo(source, t));
+        var testCaseInfos = (await FindTestsInSourceAsync(source, l, ct)).Select(t => CreateTestCaseFromTest(source, t));
         _t.TrackEvent("DiscoverTestsFromOneSource", ("Source", source), ("NumberOfTests", $"{testCaseInfos.Count()}"));
 
         return testCaseInfos;
@@ -49,11 +49,11 @@ public class TestDiscoverer : ITestDiscoverer
         {
             l.WriteLine("Starting discovery of tests from {0}.", source);
 
-            var testCaseInfos = await FindTestsInSourceAsync(source, default);
+            var testCaseInfos = await FindTestsInSourceAsync(source, l, default);
             _t.TrackEvent("DiscoverTestsFromOneSource", ("NumberOfTests", "{testCaseInfos.Count()}"));
             foreach (var testCaseInfo in testCaseInfos)
             {
-                var testCase = CreateTestCaseFromTestCaseInfo(source, testCaseInfo);
+                var testCase = CreateTestCaseFromTest(source, testCaseInfo);
                 discoverySink.SendTestCase(testCase);
             }
         }
@@ -67,33 +67,22 @@ public class TestDiscoverer : ITestDiscoverer
         await Task.CompletedTask;
     }
 
-    private static TestCase CreateTestCaseFromTestCaseInfo(string source, string testcaseInfo)
+    private static TestCase CreateTestCaseFromTest(string source, Test test)
     {
+        var fqnParts = test.FQN.Split(new[] { "::" }, StringSplitOptions.RemoveEmptyEntries);
         return new TestCase
         {
-            CodeFilePath = source,
-            LineNumber = 0,
-            DisplayName = testcaseInfo,
+            CodeFilePath = test.SourcePath,
+            LineNumber = test.StartLine,
+            DisplayName = fqnParts[fqnParts.Length - 1],
             ExecutorUri = new Uri(Constants.ExecutorUriString),
-            FullyQualifiedName = testcaseInfo,
+            FullyQualifiedName = string.Join(".", fqnParts),
             Source = source,
         };
     }
 
-    private static async Task<IEnumerable<string>> FindTestsInSourceAsync(string source, CancellationToken ct)
+    private Task<IEnumerable<Test>> FindTestsInSourceAsync(string source, ILogger l, CancellationToken ct)
     {
-        if (!new FileInfo(source.ToUpperInvariant()).FullName.EndsWith(@"TestProjects\workspace_with_tests\adder\Cargo.toml".ToUpperInvariant()))
-        {
-            return Enumerable.Empty<string>();
-        }
-
-        var tests = new[]
-        {
-            "tests::it_works_failing",
-            "tests::it_works_passing",
-            "tests::it_works_skipped",
-        }.AsEnumerable().Select(x => x?.Replace("::", "."));
-
-        return await Task.FromResult(tests);
+        return new ToolChainService(_t, l).GetTestSuiteAsync((PathEx)source, ct);
     }
 }

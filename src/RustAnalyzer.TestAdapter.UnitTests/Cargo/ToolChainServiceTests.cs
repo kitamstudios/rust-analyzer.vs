@@ -75,4 +75,22 @@ public sealed class ToolChainServiceTests
 
         wmd.Packages.Should().ContainSingle(p => p.Name == Workspace.Package.RootPackageName && !p.IsPackage);
     }
+
+    [Theory]
+    [InlineData(@"hello_world")] // No tests.
+    [InlineData(@"hello_library")] // Has tests.
+    [UseReporter(typeof(DiffReporter))]
+    public async Task GetTestSuiteTestsAsync(string workspaceRelRoot)
+    {
+        NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
+        var manifestPath = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
+
+        var testSuite = await new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L).GetTestSuiteAsync(manifestPath, default);
+
+        var normalizedStr = testSuite
+            .OrderBy(x => x.FQN).ThenBy(x => x.StartLine)
+            .SerializeObject(Formatting.Indented, new PathExJsonConverter())
+            .Replace(((string)TestHelpers.ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase);
+        Approvals.Verify(normalizedStr);
+    }
 }

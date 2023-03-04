@@ -1,0 +1,102 @@
+[
+  {
+    "Id": "23c73008-b15a-18fe-14ce-2ca2b5020e53",
+    "FullyQualifiedName": "tests.fibonacci_test.case_1",
+    "DisplayName": "case_1",
+    "ExecutorUri": "executor://RustTestExecutor/v1",
+    "Source": "<TestRoot>\\hello_library\\Cargo.toml",
+    "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+    "LineNumber": 30,
+    "Properties": []
+  },
+  {
+    "Id": "69dc2692-5ed6-c180-d1a3-3b4d97a2ce26",
+    "FullyQualifiedName": "tests.fibonacci_test.case_2",
+    "DisplayName": "case_2",
+    "ExecutorUri": "executor://RustTestExecutor/v1",
+    "Source": "<TestRoot>\\hello_library\\Cargo.toml",
+    "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+    "LineNumber": 30,
+    "Properties": []
+  },
+  {
+    "Id": "5612f637-714d-a6fe-6c21-289517f6033b",
+    "FullyQualifiedName": "tests.fibonacci_test.case_3",
+    "DisplayName": "case_3",
+    "ExecutorUri": "executor://RustTestExecutor/v1",
+    "Source": "<TestRoot>\\hello_library\\Cargo.toml",
+    "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+    "LineNumber": 30,
+    "Properties": []
+  },
+  {
+    "Id": "d74f5042-81b2-2b55-1296-0bd22ff86afd",
+    "FullyQualifiedName": "tests.it_works",
+    "DisplayName": "it_works",
+    "ExecutorUri": "executor://RustTestExecutor/v1",
+    "Source": "<TestRoot>\\hello_library\\Cargo.toml",
+    "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+    "LineNumber": 16,
+    "Properties": []
+  },
+  {
+    "Id": "cb618cd6-7a4c-5325-06b4-9dbbafdf8a9d",
+    "FullyQualifiedName": "tests.it_works245_ignored",
+    "DisplayName": "it_works245_ignored",
+    "ExecutorUri": "executor://RustTestExecutor/v1",
+    "Source": "<TestRoot>\\hello_library\\Cargo.toml",
+    "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+    "LineNumber": 22,
+    "Properties": []
+  },
+  {
+    "Id": "2770adcd-8249-0e70-2dcc-6af7f4a2c645",
+    "FullyQualifiedName": "tests.multiplication_tests.when_both_operands_are_negative",
+    "DisplayName": "when_both_operands_are_negative",
+    "ExecutorUri": "executor://RustTestExecutor/v1",
+    "Source": "<TestRoot>\\hello_library\\Cargo.toml",
+    "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+    "LineNumber": 49,
+    "Properties": []
+  },
+  {
+    "Id": "e96648bd-4cdc-63b8-1374-103f265b9ebe",
+    "FullyQualifiedName": "tests.multiplication_tests.when_both_operands_are_positive",
+    "DisplayName": "when_both_operands_are_positive",
+    "ExecutorUri": "executor://RustTestExecutor/v1",
+    "Source": "<TestRoot>\\hello_library\\Cargo.toml",
+    "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+    "LineNumber": 49,
+    "Properties": []
+  },
+  {
+    "Id": "f823de95-0bc5-988d-d3df-0529951d21e9",
+    "FullyQualifiedName": "tests.multiplication_tests.when_operands_are_swapped",
+    "DisplayName": "when_operands_are_swapped",
+    "ExecutorUri": "executor://RustTestExecutor/v1",
+    "Source": "<TestRoot>\\hello_library\\Cargo.toml",
+    "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+    "LineNumber": 49,
+    "Properties": []
+  },
+  {
+    "Id": "918f71cd-cfff-f339-0221-9496fa10691b",
+    "FullyQualifiedName": "tests.should_fail",
+    "DisplayName": "should_fail",
+    "ExecutorUri": "executor://RustTestExecutor/v1",
+    "Source": "<TestRoot>\\hello_library\\Cargo.toml",
+    "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+    "LineNumber": 45,
+    "Properties": []
+  },
+  {
+    "Id": "f7b69c31-4f80-0844-5ae2-3a80496957c1",
+    "FullyQualifiedName": "tests.should_success",
+    "DisplayName": "should_success",
+    "ExecutorUri": "executor://RustTestExecutor/v1",
+    "Source": "<TestRoot>\\hello_library\\Cargo.toml",
+    "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+    "LineNumber": 40,
+    "Properties": []
+  }
+]
