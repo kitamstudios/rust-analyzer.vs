@@ -17,4 +17,6 @@ public interface IMetadataService
     Task<Workspace.Package> GetContainingPackageAsync(PathEx filePath, CancellationToken ct);
 
     Task<int> OnWorkspaceUpdateAsync(IEnumerable<PathEx> filePaths, CancellationToken ct);
+
+    Task<IEnumerable<PathEx>> GetCachedPackagesAsync(CancellationToken ct);
 }

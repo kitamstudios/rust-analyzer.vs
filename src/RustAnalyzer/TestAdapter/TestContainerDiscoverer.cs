@@ -2,11 +2,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
-using EnsureThat;
-using KS.RustAnalyzer.TestAdapter.Cargo;
+using Community.VisualStudio.Toolkit;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
@@ -21,116 +18,96 @@ namespace KS.RustAnalyzer.TestAdapter;
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 {
-    private readonly ConcurrentDictionary<string, TestContainer> _testContainersCache
-        = new (StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<PathEx, TestContainer> _testContainersCache = new ();
 
     private readonly IVsFolderWorkspaceService _workspaceFactory;
+    private readonly TL _tl;
     private IWorkspace _currentWorkspace;
 
     [ImportingConstructor]
-    public TestContainerDiscoverer([Import] SVsServiceProvider serviceProvider)
+    public TestContainerDiscoverer([Import] SVsServiceProvider serviceProvider, [Import] ITelemetryService t, [Import] ILogger l)
     {
-        _workspaceFactory = serviceProvider
-            .GetService<SComponentModel, IComponentModel>()
+        _workspaceFactory = VS.GetRequiredService<SComponentModel, IComponentModel>()
             .GetService<IVsFolderWorkspaceService>();
         _workspaceFactory.OnActiveWorkspaceChanged += ActiveWorkspaceChangedEventHandlerAsync;
         _currentWorkspace = _workspaceFactory.CurrentWorkspace;
+        _tl = new TL
+        {
+            T = t,
+            L = l,
+        };
     }
 
     public event EventHandler TestContainersUpdated;
-
-    [Import]
-    public ILogger L { get; set; }
-
-    [Import]
-    public ITelemetryService T { get; set; }
 
     public Uri ExecutorUri => new (Constants.ExecutorUriString);
 
     public IEnumerable<ITestContainer> TestContainers => _testContainersCache.Values;
 
-    private void TryUpdateTestContainersCache(PathEx path, WatcherChangeTypes changeType = WatcherChangeTypes.Created)
-    {
-        Ensure.That(path.IsManifest()).IsTrue();
-
-        if (!File.Exists(path))
-        {
-            var removed = _testContainersCache.TryRemove(path, out _);
-            if (!removed)
-            {
-                L.WriteError("Failed to remove container {0}.", path);
-            }
-
-            TestContainersUpdated?.Invoke(this, EventArgs.Empty);
-        }
-
-        if (!_testContainersCache.ContainsKey(path))
-        {
-            var added = _testContainersCache.TryAdd(path, new TestContainer(path, this, L, T));
-            if (!added)
-            {
-                L.WriteError("Failed to add container {0}.", path);
-            }
-        }
-
-        TestContainersUpdated?.Invoke(this, EventArgs.Empty);
-    }
-
-    private bool IsPathInDirectory(string location, string path)
-    {
-        return new FileInfo(path).FullName.ToUpperInvariant().StartsWith(new DirectoryInfo(location).FullName.ToUpperInvariant());
-    }
-
     private async Task ActiveWorkspaceChangedEventHandlerAsync(object sender, EventArgs eventArgs)
     {
         _testContainersCache.Clear();
 
-        L.WriteLine("Unloading workspace at {0}", _currentWorkspace?.Location);
-        if (_currentWorkspace != null)
-        {
-            _currentWorkspace.GetFileWatcherService().OnBatchFileSystemChanged -= BatchFileSystemChangedEventHandlerAsync;
-        }
+        UnloadOldWorkspace();
 
+        await LoadNewWorkspaceAsync();
+    }
+
+    private async Task LoadNewWorkspaceAsync()
+    {
         if (_workspaceFactory.CurrentWorkspace == null)
         {
             return;
         }
 
         _currentWorkspace = _workspaceFactory.CurrentWorkspace;
-        L.WriteLine("TestContainerDiscoverer loading new workspace at {0}", _currentWorkspace.Location);
-        T.TrackEvent("TcdLoadWorkspace", ("Location", _currentWorkspace.Location));
-        _currentWorkspace.GetFileWatcherService().OnBatchFileSystemChanged += BatchFileSystemChangedEventHandlerAsync;
-        await _currentWorkspace.GetFindFilesService().FindFilesAsync(Constants.ManifestFileName, new FindFilesProgress(TryUpdateTestContainersCache));
-    }
-
-    private Task BatchFileSystemChangedEventHandlerAsync(object sender, BatchFileSystemEventArgs eventArgs)
-    {
-        foreach (var fsea in eventArgs.FileSystemEvents.Where(CanFileChangeTests))
+        _tl.L.WriteLine("TestContainerDiscoverer loading new workspace at '{0}'.", _currentWorkspace.Location);
+        _tl.T.TrackEvent("TcdLoadWorkspace", ("Location", _currentWorkspace.Location));
+        var mds = _currentWorkspace.GetService<IMetadataService>();
+        foreach (var p in await mds.GetCachedPackagesAsync(default))
         {
-            TryUpdateTestContainersCache((PathEx)fsea.FullPath, fsea.ChangeType);
+            if (!_testContainersCache.TryAdd(p, new TestContainer(p, this, _tl)))
+            {
+                _tl.L.WriteError("Failed to add '{0}'", p);
+            }
         }
 
-        return Task.CompletedTask;
+        TestContainersUpdated?.Invoke(this, EventArgs.Empty);
+
+        mds.PackageAdded += PackageAddedEventHandler;
+        mds.PackageRemoved += PackageRemovedEventHandler;
     }
 
-    private bool CanFileChangeTests(FileSystemEventArgs eventArgs)
+    private void UnloadOldWorkspace()
     {
-        // TODO: UT: We need to expand the check to include .rs and possibly other files as well.
-        return ((PathEx)eventArgs.FullPath).IsManifest() && IsPathInDirectory(_currentWorkspace.Location, eventArgs.FullPath);
+        _tl.L.WriteLine("Unloading workspace at '{0}'.", _currentWorkspace?.Location);
+        if (_currentWorkspace == null)
+        {
+            return;
+        }
+
+        var mds = _currentWorkspace.GetService<IMetadataService>();
+        mds.PackageRemoved -= PackageRemovedEventHandler;
+        mds.PackageAdded -= PackageAddedEventHandler;
     }
 
-    public class FindFilesProgress : IProgress<string>
+    private void PackageRemovedEventHandler(object sender, PathEx e)
     {
-        private readonly Action<PathEx, WatcherChangeTypes> _tryUpdateTestContainersCache;
-
-        public FindFilesProgress(Action<PathEx, WatcherChangeTypes> tryUpdateTestContainersCache)
+        if (!_testContainersCache.TryRemove(e, out _))
         {
-            _tryUpdateTestContainersCache = tryUpdateTestContainersCache;
+            _tl.L.WriteError("Failed to remove container {0}.", e);
         }
 
-        public void Report(string value)
+        TestContainersUpdated?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void PackageAddedEventHandler(object sender, PathEx e)
+    {
+        if (!_testContainersCache.TryAdd(e, new TestContainer(e, this, _tl)))
         {
-            _tryUpdateTestContainersCache((PathEx)value, WatcherChangeTypes.Created);
+            _tl.L.WriteError("Failed to add container {0}.", e);
         }
+
+        TestContainersUpdated?.Invoke(this, EventArgs.Empty);
     }
 }

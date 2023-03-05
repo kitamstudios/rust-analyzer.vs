@@ -88,6 +88,17 @@ public class MetadataService : IMetadataService, IDisposable
             ct);
     }
 
+    public Task<IEnumerable<PathEx>> GetCachedPackagesAsync(CancellationToken ct)
+    {
+        return ProtectPackageCacheAndRunAsync(
+            (ct) =>
+            {
+                var packages = new List<PathEx>(_packageCache.Keys) as IEnumerable<PathEx>;
+                return packages.ToTask();
+            },
+            ct);
+    }
+
     private async Task<T> ProtectPackageCacheAndRunAsync<T>(Func<CancellationToken, Task<T>> f, CancellationToken ct)
     {
         await _packageCacheLocker.WaitAsync(ct);

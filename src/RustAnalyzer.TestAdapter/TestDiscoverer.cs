@@ -22,7 +22,7 @@ public class TestDiscoverer : ITestDiscoverer
         var l = new TestAdapterLogger(logger);
         try
         {
-            var tasks = sources.Select(source => DiscoverAndReportTestsFromOneSource(source, discoverySink, l));
+            var tasks = sources.Select(source => DiscoverAndReportTestsFromOneSource((PathEx)source, discoverySink, l));
             Task.WaitAll(tasks.ToArray());
         }
         catch (Exception e)
@@ -33,7 +33,7 @@ public class TestDiscoverer : ITestDiscoverer
         }
     }
 
-    public async Task<IEnumerable<TestCase>> DiscoverTestCasesFromOneSourceAsync(string source, ILogger l, CancellationToken ct)
+    public async Task<IEnumerable<TestCase>> DiscoverTestCasesFromOneSourceAsync(PathEx source, ILogger l, CancellationToken ct)
     {
         l.WriteLine("Starting discovery of tests from {0}.", source);
 
@@ -43,7 +43,7 @@ public class TestDiscoverer : ITestDiscoverer
         return testCaseInfos;
     }
 
-    private async Task DiscoverAndReportTestsFromOneSource(string source, ITestCaseDiscoverySink discoverySink, ILogger l)
+    private async Task DiscoverAndReportTestsFromOneSource(PathEx source, ITestCaseDiscoverySink discoverySink, ILogger l)
     {
         try
         {
@@ -60,14 +60,14 @@ public class TestDiscoverer : ITestDiscoverer
         catch (Exception e)
         {
             l.WriteError("DiscoverTestsFromOneSource failed with {0}", e);
-            _t.TrackException(e, new[] { ("Source", source) });
+            _t.TrackException(e, new[] { ("Source", $"{source}") });
             throw;
         }
 
         await Task.CompletedTask;
     }
 
-    private static TestCase CreateTestCaseFromTest(string source, TestInfo test)
+    private static TestCase CreateTestCaseFromTest(PathEx source, TestInfo test)
     {
         var fqnParts = test.FQN.Split(new[] { "::" }, StringSplitOptions.RemoveEmptyEntries);
         return new TestCase
@@ -81,8 +81,8 @@ public class TestDiscoverer : ITestDiscoverer
         };
     }
 
-    private Task<IEnumerable<TestInfo>> FindTestsInSourceAsync(string source, ILogger l, CancellationToken ct)
+    private Task<IEnumerable<TestInfo>> FindTestsInSourceAsync(PathEx source, ILogger l, CancellationToken ct)
     {
-        return new ToolChainService(_t, l).GetTestSuiteAsync((PathEx)source, ct);
+        return new ToolChainService(_t, l).GetTestSuiteAsync(source, ct);
     }
 }

@@ -10,6 +10,9 @@ using Xunit;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests;
 
+// TODO: tests for both public APIs
+// TODO: test for both extensions for discoverer
+// TODO: test for both extensions for executor
 public class TestExecutorTests
 {
     [Theory(Skip = "rustc changes not in nightlies yet.")]
@@ -19,7 +22,7 @@ public class TestExecutorTests
     public void RunTestsTests(string workspaceRelRoot)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
-        var manifestPath = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
+        var manifestPath = TestHelpers.ThisTestRoot + (PathEx)workspaceRelRoot + Constants.ManifestFileName2;
 
         var fh = new SpyFrameworkHandle();
         new TestExecutor().RunTests(new[] { (string)manifestPath }, Mock.Of<IRunContext>(), fh);

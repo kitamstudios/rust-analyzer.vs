@@ -22,10 +22,10 @@ public class TestDiscovererTests
     public void DiscoverTestsTests(string workspaceRelRoot)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
-        var manifestPath = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
+        var source = TestHelpers.ThisTestRoot + (PathEx)workspaceRelRoot + Constants.ManifestFileName2;
 
         var sink = new SpyTestCaseDiscoverySink();
-        new TestDiscoverer().DiscoverTests(new[] { (string)manifestPath }, Mock.Of<IDiscoveryContext>(), Mock.Of<IMessageLogger>(), sink);
+        new TestDiscoverer().DiscoverTests(new[] { (string)source }, Mock.Of<IDiscoveryContext>(), Mock.Of<IMessageLogger>(), sink);
 
         var normalizedStr = sink.TestCases
             .OrderBy(x => x.FullyQualifiedName).ThenBy(x => x.LineNumber)

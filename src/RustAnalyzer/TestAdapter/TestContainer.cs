@@ -7,34 +7,32 @@ using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestWindow.Extensibility;
 using Microsoft.VisualStudio.TestWindow.Extensibility.Model;
-using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter;
 
 [DebuggerDisplay("{Constants.ExecutorUriString}/{Source}")]
-public class TestContainer : ITestContainer
+public class TestContainer : BaseTestContainer, ITestContainer
 {
-    public TestContainer(string source, ITestContainerDiscoverer discoverer, ILogger l, ITelemetryService t)
+    public TestContainer(PathEx testContainerPath, ITestContainerDiscoverer discoverer, TL tl)
     {
-        Source = source;
+        TestContainerPath = testContainerPath;
         TimeStamp = GetTimeStamp();
         Discoverer = discoverer;
-        L = l;
-        T = t;
+        TL = tl;
 
-        T.TrackEvent("NewTestContainer", ("Source", source));
-        L.WriteLine("New Test container {0} [{1}]", source, TimeStamp);
+        TL.T.TrackEvent("NewTestContainer", ("ManifestPath", testContainerPath));
+        TL.L.WriteLine("New Test container {0} [{1}]", testContainerPath, TimeStamp);
     }
 
     private TestContainer(TestContainer testContainer)
-        : this(testContainer.Source, testContainer.Discoverer, testContainer.L, testContainer.T)
+        : this(testContainer.TestContainerPath, testContainer.Discoverer, testContainer.TL)
     {
         TimeStamp = testContainer.TimeStamp;
     }
 
-    public ITestContainerDiscoverer Discoverer { get; }
+    public override PathEx TestContainerPath { get; }
 
-    public string Source { get; }
+    public ITestContainerDiscoverer Discoverer { get; }
 
     public IEnumerable<Guid> DebugEngines => Enumerable.Empty<Guid>();
 
@@ -46,9 +44,7 @@ public class TestContainer : ITestContainer
 
     public DateTime TimeStamp { get; }
 
-    public ILogger L { get; }
-
-    public ITelemetryService T { get; }
+    public TL TL { get; }
 
     public int CompareTo(ITestContainer other)
     {
@@ -57,13 +53,13 @@ public class TestContainer : ITestContainer
             return -1;
         }
 
-        var res = string.Compare(Source, otherContainer.Source);
+        var res = string.Compare(TestContainerPath, otherContainer.TestContainerPath);
         if (res != 0)
         {
             return res;
         }
 
-        L.WriteLine("Test container comparision {0} vs {1} for {2}", TimeStamp, otherContainer.TimeStamp, Source);
+        TL.L.WriteLine("Test container comparision {0} vs {1} for {2}", TimeStamp, otherContainer.TimeStamp, TestContainerPath);
 
         return TimeStamp.CompareTo(otherContainer.TimeStamp);
     }
@@ -74,9 +70,9 @@ public class TestContainer : ITestContainer
 
     private DateTime GetTimeStamp()
     {
-        if (File.Exists(Source))
+        if (TestContainerPath.FileExists())
         {
-            return File.GetLastWriteTime(Source);
+            return File.GetLastWriteTime(TestContainerPath);
         }
 
         return DateTime.MinValue;

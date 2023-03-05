@@ -103,6 +103,8 @@ public static class WorkspaceExtensions
 
     public static bool IsRustFile(this PathEx @this) => @this.GetExtension() == Constants.RustFileExtension2;
 
+    public static bool IsTestContainer(this PathEx @this) => @this.GetExtension() == Constants.TestsContainerExtension;
+
     public static async Task<bool> CanHaveExecutableTargetsAsync(this IMetadataService @this, PathEx filePath, CancellationToken ct)
     {
         if (!filePath.IsManifest() && !filePath.IsRustFile())

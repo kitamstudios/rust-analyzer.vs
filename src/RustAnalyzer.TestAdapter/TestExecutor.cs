@@ -21,6 +21,7 @@ public class TestExecutor : ITestExecutor
         _cancelled = true;
     }
 
+    // TODO: Unit tests for this.
     public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
     {
         var ct = new CancellationToken(_cancelled);
@@ -30,7 +31,7 @@ public class TestExecutor : ITestExecutor
             var tasks = tests
                 .GroupBy(t => t.Source)
                 .Select(g => (Source: g.Key, Tests: g.AsEnumerable()))
-                .Select(x => RunAndRecordTestResultsFromOneSourceAsync(x.Source, x.Tests, frameworkHandle, l, _t, ct));
+                .Select(x => RunAndRecordTestResultsFromOneSourceAsync((PathEx)x.Source, x.Tests, frameworkHandle, l, _t, ct));
             Task.WaitAll(tasks.ToArray());
         }
         catch (Exception e)
@@ -47,7 +48,7 @@ public class TestExecutor : ITestExecutor
         var l = new TestAdapterLogger(frameworkHandle);
         try
         {
-            var tasks = sources.Select(source => RunTestsTestsFromOneSourceAsync(source, runContext, frameworkHandle, l, _t, ct));
+            var tasks = sources.Select(source => RunTestsTestsFromOneSourceAsync((PathEx)source, runContext, frameworkHandle, l, _t, ct));
             Task.WaitAll(tasks.ToArray());
         }
         catch (Exception e)
@@ -58,14 +59,14 @@ public class TestExecutor : ITestExecutor
         }
     }
 
-    public static async Task RunTestsTestsFromOneSourceAsync(string source, IRunContext runContext, IFrameworkHandle frameworkHandle, ILogger l, ITelemetryService t, CancellationToken ct)
+    public static async Task RunTestsTestsFromOneSourceAsync(PathEx source, IRunContext runContext, IFrameworkHandle frameworkHandle, ILogger l, ITelemetryService t, CancellationToken ct)
     {
         var discoverer = new TestDiscoverer();
         var testCases = await discoverer.DiscoverTestCasesFromOneSourceAsync(source, l, ct);
         await RunAndRecordTestResultsFromOneSourceAsync(source, testCases, frameworkHandle, l, t, ct);
     }
 
-    private static async Task RunAndRecordTestResultsFromOneSourceAsync(string source, IEnumerable<TestCase> testCases, IFrameworkHandle frameworkHandle, ILogger l, ITelemetryService t, CancellationToken ct)
+    private static async Task RunAndRecordTestResultsFromOneSourceAsync(PathEx source, IEnumerable<TestCase> testCases, IFrameworkHandle frameworkHandle, ILogger l, ITelemetryService t, CancellationToken ct)
     {
         var testResults = await RunTestsFromOneSourceAsync(source, testCases, l, t, ct);
         foreach (var testResult in testResults)
@@ -74,7 +75,7 @@ public class TestExecutor : ITestExecutor
         }
     }
 
-    private static Task<IEnumerable<TestResult>> RunTestsFromOneSourceAsync(string source, IEnumerable<TestCase> testCases, ILogger l, ITelemetryService t, CancellationToken ct)
+    private static Task<IEnumerable<TestResult>> RunTestsFromOneSourceAsync(PathEx source, IEnumerable<TestCase> testCases, ILogger l, ITelemetryService t, CancellationToken ct)
     {
         var testResults = testCases.Select(t => new TestResult(t)
         {

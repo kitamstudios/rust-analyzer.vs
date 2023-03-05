@@ -59,6 +59,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>source.extension.vsixmanifest</DependentUpon>
     </Compile>
+    <Compile Include="TestAdapter\BaseTestContainer.cs" />
     <Compile Include="TestAdapter\TestContainerDiscoverer.cs" />
     <Compile Include="TestAdapter\TestContainer.cs" />
     <Compile Include="Infrastructure\PreReqsCheckService.cs" />
