@@ -19,7 +19,7 @@ public class TestDiscovererTests
 {
     private readonly IToolChainService _tcs = new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L);
 
-    [Theory]
+    [Theory(Skip = "Rust nightlies do not contain the necessary changes yet.")]
     [InlineData(@"hello_world", "hello_world_hello_world.rusttests")] // No tests.
     [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests")] // Has tests.
     [UseReporter(typeof(DiffReporter))]

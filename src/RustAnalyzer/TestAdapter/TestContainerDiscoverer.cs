@@ -17,7 +17,7 @@ using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 namespace KS.RustAnalyzer.TestAdapter;
 
 // TODO: Reset test containers when profile changes
-[Export(typeof(ITestContainerDiscoverer))]
+// TODO: [Export(typeof(ITestContainerDiscoverer))]
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 {
@@ -67,15 +67,10 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
         _tl.L.WriteLine("TestContainerDiscoverer loading new workspace at '{0}'.", _currentWorkspace.Location);
         _tl.T.TrackEvent("TcdLoadWorkspace", ("Location", _currentWorkspace.Location));
         var mds = _currentWorkspace.GetService<IMetadataService>();
-        // TODO: refactor method to SRP.
-        // TODO: softcode profile.
         var packages = await mds.GetCachedPackagesAsync(default);
-        foreach (var (c, _) in packages.SelectMany(p => p.GetTestContainers("dev")))
+        foreach (var (c, _) in packages.SelectMany(p => p.GetTestContainers(Constants.DefaultTestProfile)))
         {
-            if (!_testContainersCache.TryAdd(c, new TestContainer(c, this, _tl)))
-            {
-                _tl.L.WriteError("Failed to add '{0}'", c);
-            }
+            TryAddTestContainer(c);
         }
 
         TestContainersUpdated?.Invoke(this, EventArgs.Empty);
@@ -99,15 +94,12 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
         mds.PackageAdded -= PackageAddedEventHandler;
     }
 
-    // TODO: softcode profile.
     private void PackageRemovedEventHandler(object sender, Workspace.Package e)
     {
-        foreach (var (container, _) in e.GetTestContainers("dev"))
+        _tl.L.WriteLine("TCD: Package Removed EventHandler: '{0}'", e.ManifestPath);
+        foreach (var (container, _) in e.GetTestContainers(Constants.DefaultTestProfile))
         {
-            if (!_testContainersCache.TryRemove(container, out _))
-            {
-                _tl.L.WriteError("Failed to remove container {0}.", container);
-            }
+            TryRemoveTestContainer(container);
         }
 
         TestContainersUpdated?.Invoke(this, EventArgs.Empty);
@@ -115,12 +107,10 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 
     private void PackageAddedEventHandler(object sender, Workspace.Package e)
     {
-        foreach (var (container, _) in e.GetTestContainers("dev"))
+        _tl.L.WriteLine("TCD: Package Added EventHandler: '{0}'", e.ManifestPath);
+        foreach (var (container, _) in e.GetTestContainers(Constants.DefaultTestProfile))
         {
-            if (!_testContainersCache.TryAdd(container, new TestContainer(container, this, _tl)))
-            {
-                _tl.L.WriteError("Failed to add container {0}.", container);
-            }
+            TryAddTestContainer(container);
         }
 
         TestContainersUpdated?.Invoke(this, EventArgs.Empty);
@@ -128,8 +118,32 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 
     private void TestContainerUpdatedEventHandler(object sender, PathEx e)
     {
-        // TODO: implement
-        // TODO: handle deleted case.
+        _tl.L.WriteLine("TCD: TestContainer Updated EventHandler: '{0}'", e);
+        if (e.FileExists())
+        {
+            TryAddTestContainer(e);
+        }
+        else
+        {
+            TryRemoveTestContainer(e);
+        }
+
         TestContainersUpdated?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void TryAddTestContainer(PathEx container)
+    {
+        if (!_testContainersCache.TryAdd(container, new TestContainer(container, this, _tl)))
+        {
+            _tl.L.WriteError("TCD: Failed to add '{0}'", container);
+        }
+    }
+
+    private void TryRemoveTestContainer(PathEx container)
+    {
+        if (!_testContainersCache.TryRemove(container, out _))
+        {
+            _tl.L.WriteError("TCD: Failed to remove container {0}.", container);
+        }
     }
 }

@@ -50,7 +50,6 @@ public sealed class ToolChainService : IToolChainService
         return path.ToTask();
     }
 
-    // TODO: delete and regenerate all approved.txts.
     public async Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
     {
         var success = await ExecuteOperationAsync(
@@ -122,7 +121,7 @@ public sealed class ToolChainService : IToolChainService
             ct: ct);
     }
 
-    // TODO: "Build all" enabled if top level cargo.toml exists.
+    // TODO: NEW: "Build all" enabled if top level cargo.toml exists.
     public async Task<Workspace> GetWorkspaceAsync(PathEx manifestPath, CancellationToken ct)
     {
         var cargoFullPath = GetCargoExePath();
@@ -155,8 +154,6 @@ public sealed class ToolChainService : IToolChainService
     }
 
     // TODO: when do we regenerate the testexe path? Can we optimize on not running cargo test --no-run if testexe is already present?
-    // TODO: Needs profile argument.
-    // TODO: tests need to honor profile selection in the IDE.
     // TODO: Refactor this function, make DRY with the previous one.
     public async Task<TestSuiteInfo> GetTestSuiteInfoAsync(PathEx testContainerPath, string profile, CancellationToken ct)
     {
@@ -175,7 +172,6 @@ public sealed class ToolChainService : IToolChainService
                 throw new InvalidOperationException($"{exitCode}\n{string.Join("\n", proc.StandardErrorLines)}");
             }
 
-            // TODO: test with multiple executables generated.
             var testExeBuildInfos = proc.StandardErrorLines
                 .Select(l => TestExecutablePathCracker.Matches(l))
                 .Where(m => m.Count > 0 && m[0].Groups.Count == 4)

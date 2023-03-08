@@ -56,7 +56,7 @@ public static class CommentHelper
                 UncommentRegion(view, mappedStart.Value, mappedEnd.Value);
             }
 
-            // TODO: select multiple spans?
+            // select multiple spans?
             // Select the full region we just commented, do not select if in projection buffer
             // (the selection might span non-language buffer regions)
             if (view.TextBuffer.IsPythonContent())

@@ -80,7 +80,7 @@ public sealed class ToolChainServiceTests
         wmd.Packages.Should().ContainSingle(p => p.Name == Workspace.Package.RootPackageName && !p.IsPackage);
     }
 
-    // TODO: during build, fmt, clippy etc. save all open files.
+    // TODO: NEW: during build, fmt, clippy etc. save all open files.
     [Theory]
     [InlineData(@"hello_world")]
     [InlineData(@"hello_library")]
@@ -109,7 +109,7 @@ public sealed class ToolChainServiceTests
 
     // TODO: tests in multiple files in the same package.
     // TODO: tests in multiple packages in the same workspace.
-    [Theory]
+    [Theory(Skip = "Rust nightlies do not contain the necessary changes yet.")]
     [InlineData(@"hello_world", "hello_world_hello_world.rusttests")] // No tests.
     [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests")] // Has tests.
     [UseReporter(typeof(DiffReporter))]

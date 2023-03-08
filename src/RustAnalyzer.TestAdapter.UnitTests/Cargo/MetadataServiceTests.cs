@@ -102,6 +102,22 @@ public sealed class MetadataServiceTests
         mMds.Should().Raise(nameof(IMetadataService.PackageAdded)).WithArgs<Workspace.Package>(p => p.ManifestPath == manifestPath);
     }
 
+    [Theory]
+    [InlineData(@"hello_world")]
+    public async Task TestContainerUpdatedEventsGetFiredAsync(string workspaceRelRoot)
+    {
+        var workspaceRoot = TestHelpers.ThisTestRoot;
+        var manifestPath = workspaceRoot + (PathEx)workspaceRelRoot + Constants.ManifestFileName2;
+
+        CreateTestableMDS(workspaceRoot, manifestPath, out var cs, out var mds);
+        using var mMds = mds.Monitor();
+
+        var testContainer = manifestPath.GetDirectoryName() + (PathEx)$"target/debug/a.{Constants.TestsContainerExtension}";
+        await mds.OnWorkspaceUpdateAsync(new[] { testContainer }, default);
+        mMds.Should().Raise(nameof(IMetadataService.TestContainerUpdated)).WithArgs<PathEx>(p => p == testContainer);
+        mMds.Clear();
+    }
+
     private static void CreateMDS(PathEx workspaceRoot, PathEx manifestPath, out Mock<IToolChainService> cs, out IMetadataService mds)
     {
         cs = new Mock<IToolChainService>();

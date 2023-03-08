@@ -2,10 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
+using Microsoft.VisualStudio.Workspace;
+using Microsoft.VisualStudio.Workspace.Debug;
+using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 using CommunityVS = Community.VisualStudio.Toolkit.VS;
 
 namespace KS.RustAnalyzer.Infrastructure;
@@ -103,6 +108,14 @@ public static class VsCommon
                 Marshal.Release(selectionContainer);
             }
         }
+    }
+
+    public static async Task<string> GetProfileAsync(this IComponentModel2 @this, PathEx manifestPath)
+    {
+        var w = @this.GetService<IVsFolderWorkspaceService>().CurrentWorkspace;
+        var projCfgSvc = await w.GetServiceAsync<IProjectConfigurationService>();
+        var profile = projCfgSvc.GetActiveProjectBuildConfiguration(new ProjectTargetFileContext(manifestPath));
+        return profile;
     }
 
     private static string AddPrefixToMessage(this string @this) => $"[{Vsix.Name} v{Vsix.Version}]\n\n{@this}";

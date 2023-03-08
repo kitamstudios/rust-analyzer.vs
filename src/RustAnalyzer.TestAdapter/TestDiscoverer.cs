@@ -85,7 +85,6 @@ public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
 
     private Task<TestSuiteInfo> FindTestsInSourceAsync(PathEx source, ILogger l, CancellationToken ct)
     {
-        // TODO: remove hard coding.
-        return new ToolChainService(_t, l).GetTestSuiteInfoAsync(source, "dev", ct);
+        return new ToolChainService(_t, l).GetTestSuiteInfoAsync(source, Constants.DefaultTestProfile, ct);
     }
 }

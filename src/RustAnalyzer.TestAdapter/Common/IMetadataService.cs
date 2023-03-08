@@ -12,7 +12,6 @@ public interface IMetadataService
 
     event EventHandler<Workspace.Package> PackageRemoved;
 
-    // TODO: add test for this.
     event EventHandler<PathEx> TestContainerUpdated;
 
     Task<Workspace.Package> GetPackageAsync(PathEx manifestPath, CancellationToken ct);

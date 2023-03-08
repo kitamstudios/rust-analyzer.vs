@@ -133,7 +133,6 @@ public class MetadataService : IMetadataService, IDisposable
         return package;
     }
 
-    // TODO: Undo the previous commits.
     private async Task<Workspace.Package> GetPackageAsyncCore(PathEx manifestPath, CancellationToken ct)
     {
         var w = await _cargoService.GetWorkspaceAsync(manifestPath, ct);
@@ -204,7 +203,6 @@ public class MetadataService : IMetadataService, IDisposable
         }
     }
 
-    // TODO: Test for this.
     private void OnTestContainerUpdated(PathEx testContainer)
     {
         var t = Task.Run(

@@ -26,6 +26,9 @@ public static class Constants
     public const string ManifestExtension = ".toml";
     public const string TestsContainerExtension = ".rusttests";
 
+    // TODO: softcode profile.
+    public const string DefaultTestProfile = "dev";
+
     public static readonly Version MinimumRequiredVsVersion = new (17, 5);
 
     public static readonly PathEx TestsContainerExtension2 = (PathEx)TestsContainerExtension;

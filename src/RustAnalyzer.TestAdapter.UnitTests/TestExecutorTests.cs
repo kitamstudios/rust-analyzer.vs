@@ -11,12 +11,11 @@ using Xunit;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests;
 
-// TODO: tests for both public APIs
-// TODO: test for both extensions for discoverer
-// TODO: test for both extensions for executor
+// TODO: test for both APIs for discoverer
+// TODO: test for both APIs for executor
 public class TestExecutorTests
 {
-    [Theory]
+    [Theory(Skip = "Rust nightlies do not contain the necessary changes yet.")]
     [InlineData(@"hello_world", "hello_world_hello_world.rusttests")] // No tests.
     [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests")] // Has tests.
     [UseReporter(typeof(DiffReporter))]

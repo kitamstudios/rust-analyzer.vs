@@ -4,7 +4,7 @@ using KS.RustAnalyzer.Infrastructure;
 
 namespace KS.RustAnalyzer.NodeEnhancements;
 
-// TODO: XC: Add proper examples for cross compilation.
+// TODO: XPLAT: Add proper examples for cross compilation.
 public class NodeBrowseObject : INotifyPropertyChanged
 {
     private string _commandLineArguments;
