@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestWindow.Extensibility;
 using Microsoft.VisualStudio.TestWindow.Extensibility.Model;
@@ -34,7 +34,7 @@ public class TestContainer : BaseTestContainer, ITestContainer
 
     public ITestContainerDiscoverer Discoverer { get; }
 
-    public IEnumerable<Guid> DebugEngines => Enumerable.Empty<Guid>();
+    public IEnumerable<Guid> DebugEngines => new[] { VSConstants.DebugEnginesGuids.NativeOnly_guid };
 
     public FrameworkVersion TargetFramework => FrameworkVersion.None;
 

@@ -10,7 +10,7 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 namespace KS.RustAnalyzer.TestAdapter;
 
 [ExtensionUri(Constants.ExecutorUriString)]
-public class TestExecutor : ITestExecutor
+public class TestExecutor : BaseTestExecutor, ITestExecutor
 {
     private readonly TelemetryService _t = new ();
 
@@ -42,13 +42,13 @@ public class TestExecutor : ITestExecutor
         }
     }
 
-    public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
+    public override void RunTests(IEnumerable<PathEx> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
     {
         var ct = new CancellationToken(_cancelled);
         var l = new TestAdapterLogger(frameworkHandle);
         try
         {
-            var tasks = sources.Select(source => RunTestsTestsFromOneSourceAsync((PathEx)source, runContext, frameworkHandle, l, _t, ct));
+            var tasks = sources.Select(source => RunTestsTestsFromOneSourceAsync(source, runContext, frameworkHandle, l, _t, ct));
             Task.WaitAll(tasks.ToArray());
         }
         catch (Exception e)

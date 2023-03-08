@@ -1,112 +1,115 @@
-[
-  {
-    "type": "test",
-    "name": "tests::fibonacci_test::case_1",
-    "ignore": false,
-    "ignore_message": "",
-    "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "start_line": 30,
-    "start_col": 8,
-    "end_line": 30,
-    "end_col": 22
-  },
-  {
-    "type": "test",
-    "name": "tests::fibonacci_test::case_2",
-    "ignore": false,
-    "ignore_message": "",
-    "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "start_line": 30,
-    "start_col": 8,
-    "end_line": 30,
-    "end_col": 22
-  },
-  {
-    "type": "test",
-    "name": "tests::fibonacci_test::case_3",
-    "ignore": false,
-    "ignore_message": "",
-    "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "start_line": 30,
-    "start_col": 8,
-    "end_line": 30,
-    "end_col": 22
-  },
-  {
-    "type": "test",
-    "name": "tests::it_works",
-    "ignore": false,
-    "ignore_message": "",
-    "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "start_line": 16,
-    "start_col": 8,
-    "end_line": 16,
-    "end_col": 16
-  },
-  {
-    "type": "test",
-    "name": "tests::it_works245_ignored",
-    "ignore": true,
-    "ignore_message": "ignored for now!",
-    "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "start_line": 22,
-    "start_col": 8,
-    "end_line": 22,
-    "end_col": 27
-  },
-  {
-    "type": "test",
-    "name": "tests::multiplication_tests::when_both_operands_are_negative",
-    "ignore": false,
-    "ignore_message": "",
-    "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "start_line": 49,
-    "start_col": 5,
-    "end_line": 49,
-    "end_col": 61
-  },
-  {
-    "type": "test",
-    "name": "tests::multiplication_tests::when_both_operands_are_positive",
-    "ignore": false,
-    "ignore_message": "",
-    "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "start_line": 49,
-    "start_col": 5,
-    "end_line": 49,
-    "end_col": 61
-  },
-  {
-    "type": "test",
-    "name": "tests::multiplication_tests::when_operands_are_swapped",
-    "ignore": false,
-    "ignore_message": "",
-    "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "start_line": 49,
-    "start_col": 5,
-    "end_line": 49,
-    "end_col": 61
-  },
-  {
-    "type": "test",
-    "name": "tests::should_fail",
-    "ignore": false,
-    "ignore_message": "",
-    "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "start_line": 45,
-    "start_col": 8,
-    "end_line": 45,
-    "end_col": 19
-  },
-  {
-    "type": "test",
-    "name": "tests::should_success",
-    "ignore": false,
-    "ignore_message": "",
-    "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "start_line": 40,
-    "start_col": 8,
-    "end_line": 40,
-    "end_col": 22
-  }
-]
+{
+  "container": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
+  "tests": [
+    {
+      "type": "test",
+      "name": "tests::fibonacci_test::case_1",
+      "ignore": false,
+      "ignore_message": "",
+      "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "start_line": 30,
+      "start_col": 8,
+      "end_line": 30,
+      "end_col": 22
+    },
+    {
+      "type": "test",
+      "name": "tests::fibonacci_test::case_2",
+      "ignore": false,
+      "ignore_message": "",
+      "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "start_line": 30,
+      "start_col": 8,
+      "end_line": 30,
+      "end_col": 22
+    },
+    {
+      "type": "test",
+      "name": "tests::fibonacci_test::case_3",
+      "ignore": false,
+      "ignore_message": "",
+      "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "start_line": 30,
+      "start_col": 8,
+      "end_line": 30,
+      "end_col": 22
+    },
+    {
+      "type": "test",
+      "name": "tests::it_works",
+      "ignore": false,
+      "ignore_message": "",
+      "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "start_line": 16,
+      "start_col": 8,
+      "end_line": 16,
+      "end_col": 16
+    },
+    {
+      "type": "test",
+      "name": "tests::it_works245_ignored",
+      "ignore": true,
+      "ignore_message": "ignored for now!",
+      "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "start_line": 22,
+      "start_col": 8,
+      "end_line": 22,
+      "end_col": 27
+    },
+    {
+      "type": "test",
+      "name": "tests::multiplication_tests::when_both_operands_are_negative",
+      "ignore": false,
+      "ignore_message": "",
+      "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "start_line": 49,
+      "start_col": 5,
+      "end_line": 49,
+      "end_col": 61
+    },
+    {
+      "type": "test",
+      "name": "tests::multiplication_tests::when_both_operands_are_positive",
+      "ignore": false,
+      "ignore_message": "",
+      "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "start_line": 49,
+      "start_col": 5,
+      "end_line": 49,
+      "end_col": 61
+    },
+    {
+      "type": "test",
+      "name": "tests::multiplication_tests::when_operands_are_swapped",
+      "ignore": false,
+      "ignore_message": "",
+      "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "start_line": 49,
+      "start_col": 5,
+      "end_line": 49,
+      "end_col": 61
+    },
+    {
+      "type": "test",
+      "name": "tests::should_fail",
+      "ignore": false,
+      "ignore_message": "",
+      "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "start_line": 45,
+      "start_col": 8,
+      "end_line": 45,
+      "end_col": 19
+    },
+    {
+      "type": "test",
+      "name": "tests::should_success",
+      "ignore": false,
+      "ignore_message": "",
+      "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "start_line": 40,
+      "start_col": 8,
+      "end_line": 40,
+      "end_col": 22
+    }
+  ]
+}

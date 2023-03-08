@@ -1,1 +1,4 @@
-[]
+{
+  "container": "<TestRoot>\\hello_world\\target\\debug\\hello_world_hello_world.rusttests",
+  "tests": []
+}

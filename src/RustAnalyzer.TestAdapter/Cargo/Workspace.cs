@@ -1,4 +1,5 @@
 using System;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Runtime.Serialization;
 using KS.RustAnalyzer.TestAdapter.Common;
@@ -92,6 +93,9 @@ public sealed class Workspace
         [JsonProperty("targets")]
         public ChildCollection<Package, Target> Targets { get; set; }
 
+        [JsonProperty("test_containers")]
+        public Collection<PathEx> TestContainers { get; set; } = new Collection<PathEx>();
+
         public PathEx WorkspaceRoot => Parent.WorkspaceRoot;
 
         public PathEx FullPath => ManifestPath;
@@ -122,6 +126,8 @@ public sealed class Workspace
         public PathEx TargetFileName => this.CreateTargetFileName();
 
         public bool IsRunnable => CrateTypes[0] == CrateType.Bin;
+
+        public bool CanHaveTests => Kinds[0] != Kind.Example && Kinds[0] != Kind.ProcMacro && Kinds[0] != Kind.BenchMark;
 
         public string QualifiedTargetFileName => $"[{Kinds[0].ToString().ToLower()}: {(string)this.GetTargetPathRelativeToWorkspace()}] {(string)TargetFileName}";
 

@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
@@ -18,7 +18,7 @@ namespace KS.RustAnalyzer.TestAdapter.Cargo;
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class ToolChainService : IToolChainService
 {
-    private static readonly Regex TestExecutablePathCracker = new (@"^\s*Executable unittests (.*) \((.*)\)$", RegexOptions.Compiled);
+    private static readonly Regex TestExecutablePathCracker = new (@"^\s*Executable( unittests)? (.*) \((.*)\)$$", RegexOptions.Compiled);
 
     private readonly TL _tl;
 
@@ -32,18 +32,16 @@ public sealed class ToolChainService : IToolChainService
         };
     }
 
-    public PathEx? GetRustUpExePath()
-    {
-        var c = (PathEx?)Constants.RustUpExe.SearchInPath();
-        _tl.L.WriteLine("... using {0} from '{1}'.", Constants.RustUpExe, c);
-        return c;
-    }
-
     public PathEx? GetCargoExePath()
     {
-        var c = (PathEx?)Constants.CargoExe.SearchInPath();
-        _tl.L.WriteLine("... using {0} from '{1}'.", Constants.CargoExe, c);
-        return c;
+        PathEx? cargoExePath = (PathEx)Environment.GetEnvironmentVariable("USERPROFILE") + (PathEx)@".cargo\bin" + Constants.CargoExe2;
+        if (!cargoExePath.Value.FileExists())
+        {
+            cargoExePath = (PathEx?)Constants.CargoExe.SearchInPath();
+        }
+
+        _tl.L.WriteLine("... using {0} from '{1}'.", Constants.CargoExe, cargoExePath);
+        return cargoExePath;
     }
 
     public Task<PathEx> GetRustAnalyzerExePath()
@@ -52,9 +50,10 @@ public sealed class ToolChainService : IToolChainService
         return path.ToTask();
     }
 
-    public Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
+    // TODO: delete and regenerate all approved.txts.
+    public async Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
     {
-        return ExecuteOperationAsync(
+        var success = await ExecuteOperationAsync(
             "build",
             bti.ManifestPath,
             arguments: $"build --manifest-path \"{bti.ManifestPath}\" --profile {bti.Profile} --message-format json {bti.AdditionalBuildArgs}",
@@ -65,6 +64,17 @@ public sealed class ToolChainService : IToolChainService
             ts: _tl.T,
             l: _tl.L,
             ct: ct);
+
+        if (success)
+        {
+            var w = await GetWorkspaceAsync(bti.ManifestPath, ct);
+            var tasks = w.Packages
+                .SelectMany(p => p.GetTestContainers(bti.Profile))
+                .Select(x => WriteTestContainerAsync(x.Container, x.Target.Parent.ManifestPath, w.TargetDirectory, x.Target.SourcePath, (PathEx)"<not_yet_generated>", ct));
+            await Task.WhenAll(tasks);
+        }
+
+        return success;
     }
 
     public Task<bool> CleanAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
@@ -112,6 +122,7 @@ public sealed class ToolChainService : IToolChainService
             ct: ct);
     }
 
+    // TODO: "Build all" enabled if top level cargo.toml exists.
     public async Task<Workspace> GetWorkspaceAsync(PathEx manifestPath, CancellationToken ct)
     {
         var cargoFullPath = GetCargoExePath();
@@ -143,14 +154,19 @@ public sealed class ToolChainService : IToolChainService
         }
     }
 
-    public async Task<IEnumerable<TestInfo>> GetTestSuiteAsync(PathEx manifestPath, CancellationToken ct)
+    // TODO: when do we regenerate the testexe path? Can we optimize on not running cargo test --no-run if testexe is already present?
+    // TODO: Needs profile argument.
+    // TODO: tests need to honor profile selection in the IDE.
+    // TODO: Refactor this function, make DRY with the previous one.
+    public async Task<TestSuiteInfo> GetTestSuiteInfoAsync(PathEx testContainerPath, string profile, CancellationToken ct)
     {
         var cargoFullPath = GetCargoExePath();
+        var tc = await ReadTestContainerAsync(testContainerPath, ct);
 
         var exitCode = 0;
         try
         {
-            using var proc = ProcessRunner.Run(cargoFullPath, new[] { "test", "--no-run", "--manifest-path", manifestPath }, ct);
+            using var proc = ProcessRunner.Run(cargoFullPath, new[] { "test", "--no-run", "--manifest-path", tc.Manifest, "--profile", profile }, ct);
             _tl.L.WriteLine("Started PID:{0} with args: {1}...", proc.ProcessId, proc.Arguments);
             exitCode = await proc;
             _tl.L.WriteLine("... Finished PID {0} with exit code {1}.", proc.ProcessId, proc.ExitCode);
@@ -159,35 +175,26 @@ public sealed class ToolChainService : IToolChainService
                 throw new InvalidOperationException($"{exitCode}\n{string.Join("\n", proc.StandardErrorLines)}");
             }
 
-            // TODO: this assumes there will be only one testexe listed.
-            var lastLine = proc.StandardErrorLines.Last(StringExtensions.IsNotNullOrEmpty);
-            var matches = TestExecutablePathCracker.Matches(lastLine);
-            if (!(matches.Count > 0 && matches[0].Groups.Count == 3))
+            // TODO: test with multiple executables generated.
+            var testExeBuildInfos = proc.StandardErrorLines
+                .Select(l => TestExecutablePathCracker.Matches(l))
+                .Where(m => m.Count > 0 && m[0].Groups.Count == 4)
+                .Select(m => (source: tc.Manifest.GetDirectoryName() + (PathEx)m[0].Groups[2].Value, testExe: (PathEx)m[0].Groups[3].Value))
+                .Where(x => x.source == tc.Source);
+
+            if (!testExeBuildInfos.Any())
             {
-                throw new InvalidOperationException($"Couldn't extract the test exe name. Invalid format of last line: {lastLine}");
+                // TODO: log and track case where source is not found in the stderr lines.
             }
 
-            var testExePath = matches[0].Groups[2].Value;
-            using var testExeProc = ProcessRunner.Run(testExePath, new[] { "--list", "--format", "json", "-Zunstable-options" }, ct);
-            _tl.L.WriteLine("Started PID:{0}, with args: {1}...", testExeProc.ProcessId, testExeProc.Arguments);
-            var testExeExitCode = await testExeProc;
-            _tl.L.WriteLine("... Finished PID {0} with exit code {1}.", testExeProc.ProcessId, testExeProc.ExitCode);
-            if (testExeExitCode != 0)
-            {
-                throw new InvalidOperationException($"{testExeExitCode}\n{string.Join("\n", testExeProc.StandardErrorLines)}");
-            }
+            tc.TestExe = testExeBuildInfos.First().testExe;
+            await WriteTestContainerAsync(testContainerPath, tc.Manifest, tc.Target, tc.Source, tc.TestExe, ct);
 
-            var manifestLoc = manifestPath.GetDirectoryName();
-            var testSuites = testExeProc.StandardOutputLines
-                .Skip(1)
-                .Take(testExeProc.StandardOutputLines.Count() - 2)
-                .Select(l => DeserializeTest(manifestLoc, l));
-
-            return testSuites;
+            return await GetTestSuiteInfoFromOneTestExe(tc.TestExe, testContainerPath, tc.Manifest.GetDirectoryName(), ct);
         }
         catch (Exception e)
         {
-            _tl.L.WriteLine("Unable to obtain metadata for file {0}. Ex: {1}", manifestPath, e);
+            _tl.L.WriteLine("Unable to obtain metadata for file {0}. Ex: {1}", tc.Manifest, e);
             if (exitCode != 101)
             {
                 _tl.T.TrackException(e);
@@ -197,10 +204,56 @@ public sealed class ToolChainService : IToolChainService
         }
     }
 
-    private static TestInfo DeserializeTest(PathEx manifestLocation, string serializedVal)
+    private async Task<TestSuiteInfo> GetTestSuiteInfoFromOneTestExe(PathEx testExePath, PathEx testContainerPath, PathEx manifestDir, CancellationToken ct)
     {
-        var test = JsonConvert.DeserializeObject<TestInfo>(serializedVal);
-        test.SourcePath = manifestLocation.Combine(test.SourcePath);
+        // TODO: DRY violation with exe running block in the above functions.
+        using var testExeProc = ProcessRunner.Run(testExePath, new[] { "--list", "--format", "json", "-Zunstable-options" }, ct);
+        _tl.L.WriteLine("Started PID:{0}, with args: {1}...", testExeProc.ProcessId, testExeProc.Arguments);
+        var testExeExitCode = await testExeProc;
+        _tl.L.WriteLine("... Finished PID {0} with exit code {1}.", testExeProc.ProcessId, testExeProc.ExitCode);
+        if (testExeExitCode != 0)
+        {
+            throw new InvalidOperationException($"{testExeExitCode}\n{string.Join("\n", testExeProc.StandardErrorLines)}");
+        }
+
+        var testSuites = testExeProc.StandardOutputLines
+            .Skip(1)
+            .Take(testExeProc.StandardOutputLines.Count() - 2)
+            .Select(l => DeserializeTest(manifestDir, l))
+            .OrderBy(x => x.FQN).ThenBy(x => x.StartLine)
+            .ToList();
+
+        return new TestSuiteInfo
+        {
+            Container = testContainerPath,
+            Tests = new Collection<TestSuiteInfo.TestInfo>(testSuites),
+        };
+    }
+
+    private static async Task<TestContainer> ReadTestContainerAsync(PathEx testContainerPath, CancellationToken ct)
+    {
+        return JsonConvert.DeserializeObject<TestContainer>(await testContainerPath.ReadAllTextAsync(ct));
+    }
+
+    private static Task WriteTestContainerAsync(PathEx testContainer, PathEx manifestPath, PathEx targetPath, PathEx sourcePath, PathEx testExePath, CancellationToken ct)
+    {
+        return testContainer.WriteAllTextAsync(
+            JsonConvert.SerializeObject(
+                new TestContainer
+                {
+                    Manifest = manifestPath,
+                    Source = sourcePath,
+                    Target = targetPath,
+                    TestExe = testExePath
+                },
+                new PathExJsonConverter()),
+            ct);
+    }
+
+    private static TestSuiteInfo.TestInfo DeserializeTest(PathEx manifestDir, string serializedVal)
+    {
+        var test = JsonConvert.DeserializeObject<TestSuiteInfo.TestInfo>(serializedVal);
+        test.SourcePath = manifestDir + test.SourcePath;
 
         return test;
     }

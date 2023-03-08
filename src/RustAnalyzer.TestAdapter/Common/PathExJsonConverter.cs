@@ -1,11 +1,14 @@
 using System;
-using KS.RustAnalyzer.TestAdapter.Common;
 using Newtonsoft.Json;
 
-namespace KS.RustAnalyzer.Tests.Common;
+namespace KS.RustAnalyzer.TestAdapter.Common;
 
 public class PathExJsonConverter : JsonConverter<PathEx>
 {
+    public override bool CanRead => false;
+
+    public override bool CanWrite => true;
+
     public override void WriteJson(JsonWriter writer, PathEx value, JsonSerializer serializer)
     {
         writer.WriteValue(value);

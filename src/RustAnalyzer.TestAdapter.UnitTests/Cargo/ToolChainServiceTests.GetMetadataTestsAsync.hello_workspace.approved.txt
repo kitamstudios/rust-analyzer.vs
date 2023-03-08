@@ -1,4 +1,4 @@
-﻿{
+{
   "version": 1,
   "target_directory": "<TestRoot>\\hello_workspace\\target",
   "workspace_root": "<TestRoot>\\hello_workspace",
@@ -18,10 +18,12 @@
           ],
           "TargetFileName": "main.exe",
           "IsRunnable": true,
+          "CanHaveTests": true,
           "QualifiedTargetFileName": "[bin: main\\] main.exe",
           "AdditionalBuildArgs": ""
         }
       ],
+      "test_containers": [],
       "WorkspaceRoot": "<TestRoot>\\hello_workspace",
       "FullPath": "<TestRoot>\\hello_workspace\\main\\Cargo.toml",
       "IsPackage": true
@@ -41,10 +43,12 @@
           ],
           "TargetFileName": "libshared.rlib",
           "IsRunnable": false,
+          "CanHaveTests": true,
           "QualifiedTargetFileName": "[lib: shared\\] libshared.rlib",
           "AdditionalBuildArgs": ""
         }
       ],
+      "test_containers": [],
       "WorkspaceRoot": "<TestRoot>\\hello_workspace",
       "FullPath": "<TestRoot>\\hello_workspace\\shared\\Cargo.toml",
       "IsPackage": true
@@ -64,10 +68,12 @@
           ],
           "TargetFileName": "libshared2.rlib",
           "IsRunnable": false,
+          "CanHaveTests": true,
           "QualifiedTargetFileName": "[lib: subfolder\\shared2\\] libshared2.rlib",
           "AdditionalBuildArgs": ""
         }
       ],
+      "test_containers": [],
       "WorkspaceRoot": "<TestRoot>\\hello_workspace",
       "FullPath": "<TestRoot>\\hello_workspace\\subfolder\\shared2\\Cargo.toml",
       "IsPackage": true
@@ -76,6 +82,7 @@
       "name": "<root>",
       "manifest_path": "<TestRoot>\\hello_workspace\\Cargo.toml",
       "targets": [],
+      "test_containers": [],
       "WorkspaceRoot": "<TestRoot>\\hello_workspace",
       "FullPath": "<TestRoot>\\hello_workspace\\Cargo.toml",
       "IsPackage": false

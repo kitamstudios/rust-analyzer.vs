@@ -83,7 +83,7 @@ public sealed class MetadataServiceTests
         using var mMds = mds.Monitor();
 
         await mds.GetPackageAsync(manifestPath, default);
-        mMds.Should().Raise(nameof(IMetadataService.PackageAdded)).WithArgs<PathEx>(p => p == manifestPath);
+        mMds.Should().Raise(nameof(IMetadataService.PackageAdded)).WithArgs<Workspace.Package>(p => p.ManifestPath == manifestPath);
         mMds.Clear();
 
         await mds.GetPackageAsync(manifestPath, default);
@@ -91,7 +91,7 @@ public sealed class MetadataServiceTests
         mMds.Clear();
 
         await mds.OnWorkspaceUpdateAsync(new[] { manifestPath.GetDirectoryName().Combine((PathEx)"src/main.rs") }, default);
-        mMds.Should().Raise(nameof(IMetadataService.PackageRemoved)).WithArgs<PathEx>(p => p == manifestPath);
+        mMds.Should().Raise(nameof(IMetadataService.PackageRemoved)).WithArgs<Workspace.Package>(p => p.ManifestPath == manifestPath);
         mMds.Clear();
 
         await mds.OnWorkspaceUpdateAsync(new[] { manifestPath.GetDirectoryName().Combine((PathEx)"src/main.rs") }, default);
@@ -99,7 +99,7 @@ public sealed class MetadataServiceTests
         mMds.Clear();
 
         await mds.GetPackageAsync(manifestPath, default);
-        mMds.Should().Raise(nameof(IMetadataService.PackageAdded)).WithArgs<PathEx>(p => p == manifestPath);
+        mMds.Should().Raise(nameof(IMetadataService.PackageAdded)).WithArgs<Workspace.Package>(p => p.ManifestPath == manifestPath);
     }
 
     private static void CreateMDS(PathEx workspaceRoot, PathEx manifestPath, out Mock<IToolChainService> cs, out IMetadataService mds)

@@ -1,9 +1,13 @@
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace KS.RustAnalyzer.TestAdapter.Common;
 
 public static class PathExExtensions
 {
+    public static readonly string[] LineSeperators = new[] { "\r", "\n", "\r\n" };
+
     public static bool FileExists(this PathEx @this) => File.Exists(@this);
 
     public static PathEx GetExtension(this PathEx @this) => (PathEx)Path.GetExtension(@this);
@@ -29,5 +33,17 @@ public static class PathExExtensions
         var pp = ((string)potentialParent).TrimEnd(Path.DirectorySeparatorChar);
 
         return ((string)@this).StartsWith(pp, PathEx.DefaultComparison);
+    }
+
+    public static async Task WriteAllTextAsync(this PathEx @this, string content, CancellationToken ct)
+    {
+        using var file = new StreamWriter(@this);
+        await file.WriteAsync(content);
+    }
+
+    public static async Task<string> ReadAllTextAsync(this PathEx @this, CancellationToken ct)
+    {
+        using var file = new StreamReader(@this);
+        return await file.ReadToEndAsync();
     }
 }

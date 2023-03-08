@@ -38,13 +38,14 @@ public static class WorkspaceExtensions
 
     public static PathEx GetPath(this Workspace.Target @this, string profile)
     {
+        var profileTargetPath = @this.Parent.Parent.TargetDirectory.MakeProfilePath(profile);
         if (@this.Kinds[0] == Workspace.Kind.Example)
         {
-            return @this.Parent.Parent.TargetDirectory.Combine(ProfileInfos[profile], (PathEx)"examples", @this.TargetFileName);
+            return profileTargetPath + (PathEx)"examples" + @this.TargetFileName;
         }
         else
         {
-            return @this.Parent.Parent.TargetDirectory.Combine(ProfileInfos[profile], @this.TargetFileName);
+            return profileTargetPath + @this.TargetFileName;
         }
     }
 
@@ -122,4 +123,21 @@ public static class WorkspaceExtensions
     }
 
     public static bool IsExample(this Workspace.Target @this) => @this.Kinds[0] == Workspace.Kind.Example;
+
+    public static PathEx GetTestContainerPath(this Workspace.Target @this, string profile)
+    {
+        return @this.Parent.Parent.TargetDirectory + ProfileInfos[profile] + (PathEx)$"{@this.Parent.Name}_{@this.TargetFileName.GetFileNameWithoutExtension()}{Constants.TestsContainerExtension2}";
+    }
+
+    public static PathEx MakeProfilePath(this PathEx @this, string profile)
+    {
+        return @this + ProfileInfos[profile];
+    }
+
+    public static IEnumerable<(PathEx Container, Workspace.Target Target)> GetTestContainers(this Workspace.Package @this, string profile)
+    {
+        return @this.Targets
+            .Where(t => t.CanHaveTests)
+            .Select(t => (Container: t.GetTestContainerPath(profile), Target: t));
+    }
 }

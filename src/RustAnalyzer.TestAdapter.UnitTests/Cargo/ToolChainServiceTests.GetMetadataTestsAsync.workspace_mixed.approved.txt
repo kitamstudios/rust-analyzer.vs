@@ -1,4 +1,4 @@
-﻿{
+{
   "version": 1,
   "target_directory": "<TestRoot>\\workspace_mixed\\target",
   "workspace_root": "<TestRoot>\\workspace_mixed",
@@ -18,6 +18,7 @@
           ],
           "TargetFileName": "libshared.rlib",
           "IsRunnable": false,
+          "CanHaveTests": true,
           "QualifiedTargetFileName": "[lib: shared\\] libshared.rlib",
           "AdditionalBuildArgs": ""
         },
@@ -32,6 +33,7 @@
           ],
           "TargetFileName": "example1.exe",
           "IsRunnable": true,
+          "CanHaveTests": false,
           "QualifiedTargetFileName": "[example: shared\\] example1.exe",
           "AdditionalBuildArgs": "--example \"example1\""
         },
@@ -46,6 +48,7 @@
           ],
           "TargetFileName": "bench1.exe",
           "IsRunnable": true,
+          "CanHaveTests": false,
           "QualifiedTargetFileName": "[benchmark: shared\\] bench1.exe",
           "AdditionalBuildArgs": ""
         },
@@ -60,10 +63,12 @@
           ],
           "TargetFileName": "bench2.exe",
           "IsRunnable": true,
+          "CanHaveTests": false,
           "QualifiedTargetFileName": "[benchmark: shared\\] bench2.exe",
           "AdditionalBuildArgs": ""
         }
       ],
+      "test_containers": [],
       "WorkspaceRoot": "<TestRoot>\\workspace_mixed",
       "FullPath": "<TestRoot>\\workspace_mixed\\shared\\Cargo.toml",
       "IsPackage": true
@@ -83,6 +88,7 @@
           ],
           "TargetFileName": "libmain.rlib",
           "IsRunnable": false,
+          "CanHaveTests": true,
           "QualifiedTargetFileName": "[lib: \\] libmain.rlib",
           "AdditionalBuildArgs": ""
         },
@@ -97,6 +103,7 @@
           ],
           "TargetFileName": "bin1.exe",
           "IsRunnable": true,
+          "CanHaveTests": true,
           "QualifiedTargetFileName": "[bin: \\] bin1.exe",
           "AdditionalBuildArgs": ""
         },
@@ -111,6 +118,7 @@
           ],
           "TargetFileName": "bin2.exe",
           "IsRunnable": true,
+          "CanHaveTests": true,
           "QualifiedTargetFileName": "[bin: \\] bin2.exe",
           "AdditionalBuildArgs": ""
         },
@@ -125,6 +133,7 @@
           ],
           "TargetFileName": "example1.exe",
           "IsRunnable": true,
+          "CanHaveTests": false,
           "QualifiedTargetFileName": "[example: \\] example1.exe",
           "AdditionalBuildArgs": "--example \"example1\""
         },
@@ -139,6 +148,7 @@
           ],
           "TargetFileName": "example2.exe",
           "IsRunnable": true,
+          "CanHaveTests": false,
           "QualifiedTargetFileName": "[example: \\] example2.exe",
           "AdditionalBuildArgs": "--example \"example2\""
         },
@@ -153,6 +163,7 @@
           ],
           "TargetFileName": "example3.exe",
           "IsRunnable": true,
+          "CanHaveTests": false,
           "QualifiedTargetFileName": "[example: \\] example3.exe",
           "AdditionalBuildArgs": "--example \"example3\""
         },
@@ -167,6 +178,7 @@
           ],
           "TargetFileName": "test1.exe",
           "IsRunnable": true,
+          "CanHaveTests": true,
           "QualifiedTargetFileName": "[test: \\] test1.exe",
           "AdditionalBuildArgs": ""
         },
@@ -181,6 +193,7 @@
           ],
           "TargetFileName": "test2.exe",
           "IsRunnable": true,
+          "CanHaveTests": true,
           "QualifiedTargetFileName": "[test: \\] test2.exe",
           "AdditionalBuildArgs": ""
         },
@@ -195,10 +208,12 @@
           ],
           "TargetFileName": "bench1.exe",
           "IsRunnable": true,
+          "CanHaveTests": false,
           "QualifiedTargetFileName": "[benchmark: \\] bench1.exe",
           "AdditionalBuildArgs": ""
         }
       ],
+      "test_containers": [],
       "WorkspaceRoot": "<TestRoot>\\workspace_mixed",
       "FullPath": "<TestRoot>\\workspace_mixed\\Cargo.toml",
       "IsPackage": true

@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using ApprovalTests;
@@ -15,6 +16,9 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 
 public sealed class ToolChainServiceTests
 {
+    private const string SearchPattern = $"*{Constants.TestsContainerExtension}";
+    private readonly IToolChainService _tcs = new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L);
+
     [Theory]
     [InlineData(@"hello_world")]
     [InlineData(@"hello_workspace")]
@@ -25,7 +29,7 @@ public sealed class ToolChainServiceTests
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
         var manifestPath = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
 
-        var wmd = await new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
+        var wmd = await _tcs.GetWorkspaceAsync(manifestPath, default);
 
         var normalizedStr = wmd
             .SerializeObject(Formatting.Indented, new PathExJsonConverter())
@@ -42,7 +46,7 @@ public sealed class ToolChainServiceTests
     {
         var manifestPath = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
 
-        var wmd = await new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
+        var wmd = await _tcs.GetWorkspaceAsync(manifestPath, default);
         var targetParents = wmd.Packages.Select(p => (p, tp: p.Targets.Select(t => t.Parent)));
 
         wmd.Packages.Should().OnlyContain(p => p.Parent == wmd);
@@ -58,7 +62,7 @@ public sealed class ToolChainServiceTests
     {
         var manifestPath = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
 
-        var wmd = await new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
+        var wmd = await _tcs.GetWorkspaceAsync(manifestPath, default);
 
         wmd.Packages.Should().NotContain(p => p.Name == Workspace.Package.RootPackageName || !p.IsPackage);
         wmd.Packages.Should().OnlyContain(p => p.IsPackage);
@@ -71,24 +75,62 @@ public sealed class ToolChainServiceTests
     {
         var manifestPath = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
 
-        var wmd = await new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L).GetWorkspaceAsync(manifestPath, default);
+        var wmd = await _tcs.GetWorkspaceAsync(manifestPath, default);
 
         wmd.Packages.Should().ContainSingle(p => p.Name == Workspace.Package.RootPackageName && !p.IsPackage);
     }
 
-    [Theory(Skip = "rustc changes not in nightlies yet.")]
-    [InlineData(@"hello_world")] // No tests.
-    [InlineData(@"hello_library")] // Has tests.
+    // TODO: during build, fmt, clippy etc. save all open files.
+    [Theory]
+    [InlineData(@"hello_world")]
+    [InlineData(@"hello_library")]
+    [InlineData(@"hello_workspace")]
+    [InlineData(@"workspace_mixed")]
     [UseReporter(typeof(DiffReporter))]
-    public async Task GetTestSuiteTestsAsync(string workspaceRelRoot)
+    public async Task BuildTestsAsync(string workspaceRelRoot)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
-        var manifestPath = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRelRoot, Constants.ManifestFileName2);
+        var workspacePath = TestHelpers.ThisTestRoot + (PathEx)workspaceRelRoot;
+        var manifestPath = workspacePath + Constants.ManifestFileName2;
+        var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath("dev");
+        Directory.EnumerateFiles(targetPath, SearchPattern).ToList().ForEach(File.Delete);
 
-        var testSuite = await new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L).GetTestSuiteAsync(manifestPath, default);
+        var success = await _tcs.DoBuildAsync(workspacePath, manifestPath, "dev");
 
+        success.Should().BeTrue();
+        var tasks = Directory.EnumerateFiles(targetPath, SearchPattern)
+            .Select(async f => (path: (PathEx)f, container: JsonConvert.DeserializeObject<TestContainer>(await ((PathEx)f).ReadAllTextAsync(default))));
+        var tcs = await Task.WhenAll(tasks);
+        var normalizedStr = tcs
+            .SerializeObject(Formatting.Indented, new PathExJsonConverter())
+            .Replace(((string)TestHelpers.ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase);
+        Approvals.Verify(normalizedStr);
+    }
+
+    // TODO: tests in multiple files in the same package.
+    // TODO: tests in multiple packages in the same workspace.
+    [Theory]
+    [InlineData(@"hello_world", "hello_world_hello_world.rusttests")] // No tests.
+    [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests")] // Has tests.
+    [UseReporter(typeof(DiffReporter))]
+    public async Task GetTestSuiteTestsAsync(string workspaceRelRoot, string containerName)
+    {
+        NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
+        var workspacePath = TestHelpers.ThisTestRoot + (PathEx)workspaceRelRoot;
+        var manifestPath = workspacePath + Constants.ManifestFileName2;
+        var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath("dev");
+        var tcPath = targetPath + (PathEx)containerName;
+        Directory.EnumerateFiles(targetPath, SearchPattern).ToList().ForEach(File.Delete);
+
+        // TODO: passing tcPath with profile qualified path as well as profile does not seem valid.
+        await _tcs.DoBuildAsync(workspacePath, manifestPath, "dev");
+        var testSuite = await _tcs.GetTestSuiteInfoAsync(tcPath, "dev", default);
+        var tc = JsonConvert.DeserializeObject<TestContainer>(await tcPath.ReadAllTextAsync(default));
+
+        tc.TestExe.FileExists().Should().BeTrue();
+        tc.TestExe.GetExtension().Should().Be((PathEx)".exe");
+        testSuite.Container.Should().Be(tcPath);
         var normalizedStr = testSuite
-            .OrderBy(x => x.FQN).ThenBy(x => x.StartLine)
             .SerializeObject(Formatting.Indented, new PathExJsonConverter())
             .Replace(((string)TestHelpers.ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase);
         Approvals.Verify(normalizedStr);

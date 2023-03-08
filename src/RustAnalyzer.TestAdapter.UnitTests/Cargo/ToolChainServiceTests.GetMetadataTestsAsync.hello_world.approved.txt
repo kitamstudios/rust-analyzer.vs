@@ -1,4 +1,4 @@
-﻿{
+{
   "version": 1,
   "target_directory": "<TestRoot>\\hello_world\\target",
   "workspace_root": "<TestRoot>\\hello_world",
@@ -18,10 +18,12 @@
           ],
           "TargetFileName": "hello_world.exe",
           "IsRunnable": true,
+          "CanHaveTests": true,
           "QualifiedTargetFileName": "[bin: \\] hello_world.exe",
           "AdditionalBuildArgs": ""
         }
       ],
+      "test_containers": [],
       "WorkspaceRoot": "<TestRoot>\\hello_world",
       "FullPath": "<TestRoot>\\hello_world\\Cargo.toml",
       "IsPackage": true

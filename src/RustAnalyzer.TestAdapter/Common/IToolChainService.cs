@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Cargo;
@@ -8,8 +7,6 @@ namespace KS.RustAnalyzer.TestAdapter.Common;
 
 public interface IToolChainService
 {
-    PathEx? GetRustUpExePath();
-
     PathEx? GetCargoExePath();
 
     Task<PathEx> GetRustAnalyzerExePath();
@@ -24,7 +21,18 @@ public interface IToolChainService
 
     Task<Workspace> GetWorkspaceAsync(PathEx manifestPath, CancellationToken ct);
 
-    Task<IEnumerable<TestInfo>> GetTestSuiteAsync(PathEx manifestPath, CancellationToken ct);
+    Task<TestSuiteInfo> GetTestSuiteInfoAsync(PathEx testContainerPath, string profile, CancellationToken ct);
+}
+
+public sealed class TestContainer
+{
+    public PathEx Manifest { get; set; }
+
+    public PathEx Target { get; set; }
+
+    public PathEx Source { get; set; }
+
+    public PathEx TestExe { get; set; }
 }
 
 public sealed class BuildTargetInfo

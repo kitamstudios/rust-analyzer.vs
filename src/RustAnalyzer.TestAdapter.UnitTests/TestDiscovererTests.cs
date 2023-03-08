@@ -1,8 +1,10 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
+using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
@@ -15,17 +17,23 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests;
 
 public class TestDiscovererTests
 {
-    [Theory(Skip = "rustc changes not in nightlies yet.")]
-    [InlineData(@"hello_world")] // No tests.
-    [InlineData(@"hello_library")] // Has tests.
+    private readonly IToolChainService _tcs = new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L);
+
+    [Theory]
+    [InlineData(@"hello_world", "hello_world_hello_world.rusttests")] // No tests.
+    [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests")] // Has tests.
     [UseReporter(typeof(DiffReporter))]
-    public void DiscoverTestsTests(string workspaceRelRoot)
+    public async Task DiscoverTestsTestsAsync(string workspaceRelRoot, string containerName)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
-        var source = TestHelpers.ThisTestRoot + (PathEx)workspaceRelRoot + Constants.ManifestFileName2;
+        var workspacePath = TestHelpers.ThisTestRoot + (PathEx)workspaceRelRoot;
+        var manifestPath = workspacePath + Constants.ManifestFileName2;
+        var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath("dev");
+        var tcPath = targetPath + (PathEx)containerName;
 
+        await _tcs.DoBuildAsync(workspacePath, manifestPath, "dev");
         var sink = new SpyTestCaseDiscoverySink();
-        new TestDiscoverer().DiscoverTests(new[] { (string)source }, Mock.Of<IDiscoveryContext>(), Mock.Of<IMessageLogger>(), sink);
+        new TestDiscoverer().DiscoverTests(new[] { (string)tcPath }, Mock.Of<IDiscoveryContext>(), Mock.Of<IMessageLogger>(), sink);
 
         var normalizedStr = sink.TestCases
             .OrderBy(x => x.FullyQualifiedName).ThenBy(x => x.LineNumber)

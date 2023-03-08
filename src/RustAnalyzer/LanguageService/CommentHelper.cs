@@ -123,7 +123,7 @@ public static class CommentHelper
 
                 Debug.Assert(curLine.Length >= minColumn, "???");
 
-                edit.Insert(curLine.Start.Position + minColumn, "// ");
+                edit.Insert(curLine.Start.Position + minColumn, "//");
             }
 
             edit.Apply();
@@ -186,11 +186,7 @@ public static class CommentHelper
                 continue;
             }
 
-            if (string.Concat(text.Skip(j).Take(3)) == "// ")
-            {
-                edit.Delete(curLine.Start.Position + j, 3);
-            }
-            else if (string.Concat(text.Skip(j).Take(2)) == "//")
+            if (string.Concat(text.Skip(j).Take(2)) == "//")
             {
                 edit.Delete(curLine.Start.Position + j, 2);
             }

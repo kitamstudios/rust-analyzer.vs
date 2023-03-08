@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Moq;
@@ -50,5 +51,13 @@ public static class TestHelpers
         }
 
         return str;
+    }
+
+    public static Task<bool> DoBuildAsync(this IToolChainService @this, PathEx workspacePath, PathEx manifestPath, string profile)
+    {
+        return @this.BuildAsync(
+                    new BuildTargetInfo { WorkspaceRoot = workspacePath, ManifestPath = manifestPath, Profile = profile, AdditionalBuildArgs = string.Empty },
+                    new BuildOutputSinks { OutputSink = Mock.Of<IBuildOutputSink>(), BuildActionProgressReporter = bm => Task.CompletedTask },
+                    default);
     }
 }

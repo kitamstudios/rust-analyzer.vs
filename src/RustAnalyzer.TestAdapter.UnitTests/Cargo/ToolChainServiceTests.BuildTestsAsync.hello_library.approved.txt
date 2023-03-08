@@ -1,0 +1,11 @@
+[
+  {
+    "Item1": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
+    "Item2": {
+      "Manifest": "<TestRoot>\\hello_library\\Cargo.toml",
+      "Target": "<TestRoot>\\hello_library\\target",
+      "Source": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "TestExe": "<not_yet_generated>"
+    }
+  }
+]

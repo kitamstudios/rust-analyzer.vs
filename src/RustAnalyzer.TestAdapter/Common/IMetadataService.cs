@@ -8,9 +8,12 @@ namespace KS.RustAnalyzer.TestAdapter.Common;
 
 public interface IMetadataService
 {
-    event EventHandler<PathEx> PackageAdded;
+    event EventHandler<Workspace.Package> PackageAdded;
 
-    event EventHandler<PathEx> PackageRemoved;
+    event EventHandler<Workspace.Package> PackageRemoved;
+
+    // TODO: add test for this.
+    event EventHandler<PathEx> TestContainerUpdated;
 
     Task<Workspace.Package> GetPackageAsync(PathEx manifestPath, CancellationToken ct);
 
@@ -18,5 +21,5 @@ public interface IMetadataService
 
     Task<int> OnWorkspaceUpdateAsync(IEnumerable<PathEx> filePaths, CancellationToken ct);
 
-    Task<IEnumerable<PathEx>> GetCachedPackagesAsync(CancellationToken ct);
+    Task<IEnumerable<Workspace.Package>> GetCachedPackagesAsync(CancellationToken ct);
 }

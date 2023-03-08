@@ -62,9 +62,6 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\TestsCommon\PathExJsonConverter.cs">
-      <Link>Common\PathExJsonConverter.cs</Link>
-    </Compile>
     <Compile Include="..\TestsCommon\TestHelpers.cs">
       <Link>Common\TestHelpers.cs</Link>
     </Compile>

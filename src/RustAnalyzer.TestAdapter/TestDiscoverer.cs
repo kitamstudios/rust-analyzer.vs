@@ -12,17 +12,17 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 namespace KS.RustAnalyzer.TestAdapter;
 
 [DefaultExecutorUri(Constants.ExecutorUriString)]
-[FileExtension(Constants.ManifestExtension)]
-public class TestDiscoverer : ITestDiscoverer
+[FileExtension(Constants.TestsContainerExtension)]
+public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
 {
     private readonly TelemetryService _t = new ();
 
-    public void DiscoverTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
+    public override void DiscoverTests(IEnumerable<PathEx> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
     {
         var l = new TestAdapterLogger(logger);
         try
         {
-            var tasks = sources.Select(source => DiscoverAndReportTestsFromOneSource((PathEx)source, discoverySink, l));
+            var tasks = sources.Select(source => DiscoverAndReportTestsFromOneSource(source, discoverySink, l));
             Task.WaitAll(tasks.ToArray());
         }
         catch (Exception e)
@@ -37,23 +37,25 @@ public class TestDiscoverer : ITestDiscoverer
     {
         l.WriteLine("Starting discovery of tests from {0}.", source);
 
-        var testCaseInfos = (await FindTestsInSourceAsync(source, l, ct)).Select(t => CreateTestCaseFromTest(source, t));
+        var testSuite = await FindTestsInSourceAsync(source, l, ct);
+        var testCaseInfos = testSuite.Tests.Select(t => CreateTestCaseFromTest(testSuite.Container, t));
         _t.TrackEvent("DiscoverTestsFromOneSource", ("Source", source), ("NumberOfTests", $"{testCaseInfos.Count()}"));
 
         return testCaseInfos;
     }
 
+    // TODO: DRY with previous method.
     private async Task DiscoverAndReportTestsFromOneSource(PathEx source, ITestCaseDiscoverySink discoverySink, ILogger l)
     {
         try
         {
             l.WriteLine("Starting discovery of tests from {0}.", source);
 
-            var testCaseInfos = await FindTestsInSourceAsync(source, l, default);
+            var testSuite = await FindTestsInSourceAsync(source, l, default);
             _t.TrackEvent("DiscoverTestsFromOneSource", ("NumberOfTests", "{testCaseInfos.Count()}"));
-            foreach (var testCaseInfo in testCaseInfos)
+            foreach (var testCaseInfo in testSuite.Tests)
             {
-                var testCase = CreateTestCaseFromTest(source, testCaseInfo);
+                var testCase = CreateTestCaseFromTest(testSuite.Container, testCaseInfo);
                 discoverySink.SendTestCase(testCase);
             }
         }
@@ -67,7 +69,7 @@ public class TestDiscoverer : ITestDiscoverer
         await Task.CompletedTask;
     }
 
-    private static TestCase CreateTestCaseFromTest(PathEx source, TestInfo test)
+    private static TestCase CreateTestCaseFromTest(PathEx container, TestSuiteInfo.TestInfo test)
     {
         var fqnParts = test.FQN.Split(new[] { "::" }, StringSplitOptions.RemoveEmptyEntries);
         return new TestCase
@@ -77,12 +79,13 @@ public class TestDiscoverer : ITestDiscoverer
             DisplayName = fqnParts[fqnParts.Length - 1],
             ExecutorUri = new Uri(Constants.ExecutorUriString),
             FullyQualifiedName = string.Join(".", fqnParts),
-            Source = source,
+            Source = container,
         };
     }
 
-    private Task<IEnumerable<TestInfo>> FindTestsInSourceAsync(PathEx source, ILogger l, CancellationToken ct)
+    private Task<TestSuiteInfo> FindTestsInSourceAsync(PathEx source, ILogger l, CancellationToken ct)
     {
-        return new ToolChainService(_t, l).GetTestSuiteAsync(source, ct);
+        // TODO: remove hard coding.
+        return new ToolChainService(_t, l).GetTestSuiteInfoAsync(source, "dev", ct);
     }
 }

@@ -34,9 +34,11 @@ public class MetadataService : IMetadataService, IDisposable
         _tl.T.TrackEvent("CreatingMDS", ("WorkspaceRoot", $"{workspaceRoot}"));
     }
 
-    public event EventHandler<PathEx> PackageAdded;
+    public event EventHandler<Workspace.Package> PackageAdded;
 
-    public event EventHandler<PathEx> PackageRemoved;
+    public event EventHandler<Workspace.Package> PackageRemoved;
+
+    public event EventHandler<PathEx> TestContainerUpdated;
 
     public Action DisconnectEvents { get; set; } = () => { };
 
@@ -68,6 +70,11 @@ public class MetadataService : IMetadataService, IDisposable
 
     public Task<int> OnWorkspaceUpdateAsync(IEnumerable<PathEx> filePaths, CancellationToken ct)
     {
+        foreach (var filePath in filePaths.Where(fp => fp.IsTestContainer()))
+        {
+            OnTestContainerUpdated(filePath);
+        }
+
         return ProtectPackageCacheAndRunAsync(
             (ct) =>
             {
@@ -76,9 +83,9 @@ public class MetadataService : IMetadataService, IDisposable
                     if (filePath.TryGetParentManifestOrThisUnderWorkspace(_workspaceRoot, out PathEx? manifest))
                     {
                         _tl.L.WriteLine("OnWorkspaceUpdateAsync: Removing from cache: {0}", manifest);
-                        if (_packageCache.TryRemove(manifest.Value, out var _))
+                        if (_packageCache.TryRemove(manifest.Value, out var package))
                         {
-                            OnPackageRemoved(manifest.Value);
+                            OnPackageRemoved(package);
                         }
                     }
                 }
@@ -88,12 +95,12 @@ public class MetadataService : IMetadataService, IDisposable
             ct);
     }
 
-    public Task<IEnumerable<PathEx>> GetCachedPackagesAsync(CancellationToken ct)
+    public Task<IEnumerable<Workspace.Package>> GetCachedPackagesAsync(CancellationToken ct)
     {
         return ProtectPackageCacheAndRunAsync(
             (ct) =>
             {
-                var packages = new List<PathEx>(_packageCache.Keys) as IEnumerable<PathEx>;
+                var packages = new List<Workspace.Package>(_packageCache.Values) as IEnumerable<Workspace.Package>;
                 return packages.ToTask();
             },
             ct);
@@ -120,11 +127,13 @@ public class MetadataService : IMetadataService, IDisposable
         }
 
         _tl.L.WriteLine("... Cache miss: {0}.", manifestPath);
-        _packageCache[manifestPath] = await GetPackageAsyncCore(manifestPath, ct);
-        OnPackageAdded(manifestPath);
-        return _packageCache[manifestPath];
+        package = await GetPackageAsyncCore(manifestPath, ct);
+        _packageCache[manifestPath] = package;
+        OnPackageAdded(package);
+        return package;
     }
 
+    // TODO: Undo the previous commits.
     private async Task<Workspace.Package> GetPackageAsyncCore(PathEx manifestPath, CancellationToken ct)
     {
         var w = await _cargoService.GetWorkspaceAsync(manifestPath, ct);
@@ -154,7 +163,7 @@ public class MetadataService : IMetadataService, IDisposable
     }
 
     // NOTE: This fire-n-forget ensure we dont hold the lock for longer than necessary.
-    private void OnPackageAdded(PathEx package)
+    private void OnPackageAdded(Workspace.Package package)
     {
         var t = Task.Run(
             async () =>
@@ -175,12 +184,33 @@ public class MetadataService : IMetadataService, IDisposable
     }
 
     // NOTE: This fire-n-forget ensure we dont hold the lock for longer than necessary.
-    private void OnPackageRemoved(PathEx package)
+    private void OnPackageRemoved(Workspace.Package package)
     {
         var t = Task.Run(
             async () =>
             {
                 PackageRemoved?.Invoke(this, package);
+                await Task.CompletedTask;
+            });
+
+        if (_synchronousEvents)
+        {
+            // NOTE: Testability hook.
+            t.Wait();
+        }
+        else
+        {
+            t.Forget();
+        }
+    }
+
+    // TODO: Test for this.
+    private void OnTestContainerUpdated(PathEx testContainer)
+    {
+        var t = Task.Run(
+            async () =>
+            {
+                TestContainerUpdated?.Invoke(this, testContainer);
                 await Task.CompletedTask;
             });
 

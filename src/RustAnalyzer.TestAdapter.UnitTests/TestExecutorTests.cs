@@ -2,6 +2,7 @@ using System.Linq;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
+using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
@@ -15,17 +16,19 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests;
 // TODO: test for both extensions for executor
 public class TestExecutorTests
 {
-    [Theory(Skip = "rustc changes not in nightlies yet.")]
-    [InlineData(@"hello_world")] // No tests.
-    [InlineData(@"hello_library")] // Has tests.
+    [Theory]
+    [InlineData(@"hello_world", "hello_world_hello_world.rusttests")] // No tests.
+    [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests")] // Has tests.
     [UseReporter(typeof(DiffReporter))]
-    public void RunTestsTests(string workspaceRelRoot)
+    public void RunTestsTests(string workspaceRelRoot, string containerName)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
-        var manifestPath = TestHelpers.ThisTestRoot + (PathEx)workspaceRelRoot + Constants.ManifestFileName2;
+        var workspacePath = TestHelpers.ThisTestRoot + (PathEx)workspaceRelRoot;
+        var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath("dev");
+        var tcPath = targetPath + (PathEx)containerName;
 
         var fh = new SpyFrameworkHandle();
-        new TestExecutor().RunTests(new[] { (string)manifestPath }, Mock.Of<IRunContext>(), fh);
+        new TestExecutor().RunTests(new[] { (string)tcPath }, Mock.Of<IRunContext>(), fh);
 
         var normalizedStr = fh.Results.OrderBy(x => x);
         Approvals.VerifyAll(normalizedStr, string.Empty);
