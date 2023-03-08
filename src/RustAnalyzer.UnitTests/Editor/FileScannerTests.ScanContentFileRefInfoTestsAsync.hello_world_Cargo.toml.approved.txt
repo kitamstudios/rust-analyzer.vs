@@ -1,4 +1,4 @@
-﻿[0] = {
+[0] = {
   "WorkspacePath": "target\\debug\\hello_world.exe",
   "Target": "<TestRoot>\\hello_world\\target\\debug\\hello_world.exe",
   "Context": "dev",

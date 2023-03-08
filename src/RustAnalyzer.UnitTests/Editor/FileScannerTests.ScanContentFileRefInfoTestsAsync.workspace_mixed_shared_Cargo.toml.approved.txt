@@ -1,4 +1,4 @@
-﻿[0] = {
+[0] = {
   "WorkspacePath": "..\\target\\debug\\libshared.rlib",
   "Target": "<TestRoot>\\workspace_mixed\\target\\debug\\libshared.rlib",
   "Context": "dev",

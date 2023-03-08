@@ -1,4 +1,4 @@
-﻿[0] = {
+[0] = {
   "ProviderType": "72d3fcef-0000-4266-b8dd-d3ed06e35a2b",
   "ContextType": "1b8311d1-09ce-4d9f-a2a5-c885f5763a4a",
   "Context": {

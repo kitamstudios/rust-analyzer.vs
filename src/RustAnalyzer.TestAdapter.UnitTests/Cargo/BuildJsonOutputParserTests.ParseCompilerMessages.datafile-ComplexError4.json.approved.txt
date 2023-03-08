@@ -1,4 +1,4 @@
-﻿[0] = {
+[0] = {
   "Code": "RS0000",
   "ProjectFile": "D:\\src\\ks\\rust-analyzer\\src\\TestProjects\\hello_workspace\\shared\\Cargo.toml",
   "Type": 2,

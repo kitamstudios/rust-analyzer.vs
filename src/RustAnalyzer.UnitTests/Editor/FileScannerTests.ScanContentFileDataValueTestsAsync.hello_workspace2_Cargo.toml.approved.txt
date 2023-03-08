@@ -1,4 +1,4 @@
-﻿[0] = {
+[0] = {
   "Type": "55b77c41-9751-433c-9d5f-5e815f152562",
   "Name": "IsDefaultStartupProject",
   "Value": {

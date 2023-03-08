@@ -1,4 +1,4 @@
-﻿[0] = {
+[0] = {
   "WorkspacePath": "target\\debug\\libhello_lib.rlib",
   "Target": "<TestRoot>\\hello_library\\target\\debug\\libhello_lib.rlib",
   "Context": "dev",

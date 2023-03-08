@@ -1,4 +1,4 @@
-﻿[0] = {
+[0] = {
   "Type": "ed84fd5a-4ee1-4489-9ddd-1dd46ff97f19",
   "Name": "BuildConfiguration",
   "Value": null,

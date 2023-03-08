@@ -1,4 +1,4 @@
-﻿[0] = {
+[0] = {
   "Code": "unused_imports",
   "ProjectFile": "D:\\src\\dpt\\pls\\test_app\\Cargo.toml",
   "Type": 1,
