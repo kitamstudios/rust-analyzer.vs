@@ -10,6 +10,8 @@ public static class PathExExtensions
 
     public static bool FileExists(this PathEx @this) => File.Exists(@this);
 
+    public static bool DirectoryExists(this PathEx @this) => Directory.Exists(@this);
+
     public static PathEx GetExtension(this PathEx @this) => (PathEx)Path.GetExtension(@this);
 
     public static PathEx GetFileName(this PathEx @this) => (PathEx)Path.GetFileName(@this);
