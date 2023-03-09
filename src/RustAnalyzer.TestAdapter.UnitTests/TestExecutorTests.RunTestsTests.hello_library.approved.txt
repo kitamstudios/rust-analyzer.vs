@@ -1,10 +1,232 @@
-[0] = tests.fibonacci_test.case_1 - Passed
-[1] = tests.fibonacci_test.case_2 - Passed
-[2] = tests.fibonacci_test.case_3 - Passed
-[3] = tests.it_works - Passed
-[4] = tests.it_works245_ignored - Skipped
-[5] = tests.multiplication_tests.when_both_operands_are_negative - Passed
-[6] = tests.multiplication_tests.when_both_operands_are_positive - Passed
-[7] = tests.multiplication_tests.when_operands_are_swapped - Passed
-[8] = tests.should_fail - Failed
-[9] = tests.should_success - Passed
+[
+  {
+    "TestCase": {
+      "Id": "9cdd003c-30d9-0b2e-7a1f-6ff5883001b3",
+      "FullyQualifiedName": "tests.fibonacci_test.case_1",
+      "DisplayName": "case_1",
+      "ExecutorUri": "executor://RustTestExecutor/v1",
+      "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
+      "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "LineNumber": 30,
+      "Properties": []
+    },
+    "Attachments": [],
+    "Outcome": 1,
+    "ErrorMessage": null,
+    "ErrorStackTrace": null,
+    "DisplayName": "tests::fibonacci_test::case_1",
+    "Messages": [],
+    "ComputerName": null,
+    "Duration": "00:00:00",
+
+
+    "Properties": []
+  },
+  {
+    "TestCase": {
+      "Id": "be520c15-de75-8385-7805-3f45967d2e25",
+      "FullyQualifiedName": "tests.fibonacci_test.case_2",
+      "DisplayName": "case_2",
+      "ExecutorUri": "executor://RustTestExecutor/v1",
+      "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
+      "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "LineNumber": 30,
+      "Properties": []
+    },
+    "Attachments": [],
+    "Outcome": 1,
+    "ErrorMessage": null,
+    "ErrorStackTrace": null,
+    "DisplayName": "tests::fibonacci_test::case_2",
+    "Messages": [],
+    "ComputerName": null,
+    "Duration": "00:00:00",
+
+
+    "Properties": []
+  },
+  {
+    "TestCase": {
+      "Id": "d4c0ed85-7658-8909-f7c5-c7969544bfa2",
+      "FullyQualifiedName": "tests.fibonacci_test.case_3",
+      "DisplayName": "case_3",
+      "ExecutorUri": "executor://RustTestExecutor/v1",
+      "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
+      "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "LineNumber": 30,
+      "Properties": []
+    },
+    "Attachments": [],
+    "Outcome": 2,
+    "ErrorMessage": "thread 'tests::fibonacci_test::case_3' panicked at 'assertion failed: `(left == right)`\n  left: `1`,\n right: `2`', src\\lib.rs:31:9\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
+    "ErrorStackTrace": null,
+    "DisplayName": "tests::fibonacci_test::case_3",
+    "Messages": [],
+    "ComputerName": null,
+    "Duration": "00:00:00",
+
+
+    "Properties": []
+  },
+  {
+    "TestCase": {
+      "Id": "9d2fbab2-5a6a-bfae-6dfb-49f2b2f8eeb3",
+      "FullyQualifiedName": "tests.it_works",
+      "DisplayName": "it_works",
+      "ExecutorUri": "executor://RustTestExecutor/v1",
+      "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
+      "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "LineNumber": 16,
+      "Properties": []
+    },
+    "Attachments": [],
+    "Outcome": 1,
+    "ErrorMessage": null,
+    "ErrorStackTrace": null,
+    "DisplayName": "tests::it_works",
+    "Messages": [],
+    "ComputerName": null,
+    "Duration": "00:00:00",
+
+
+    "Properties": []
+  },
+  {
+    "TestCase": {
+      "Id": "794e5b7c-add1-83c5-37ea-e4158a439e05",
+      "FullyQualifiedName": "tests.it_works245_ignored",
+      "DisplayName": "it_works245_ignored",
+      "ExecutorUri": "executor://RustTestExecutor/v1",
+      "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
+      "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "LineNumber": 22,
+      "Properties": []
+    },
+    "Attachments": [],
+    "Outcome": 3,
+    "ErrorMessage": null,
+    "ErrorStackTrace": null,
+    "DisplayName": "tests::it_works245_ignored",
+    "Messages": [],
+    "ComputerName": null,
+    "Duration": "00:00:00",
+
+
+    "Properties": []
+  },
+  {
+    "TestCase": {
+      "Id": "513d6fec-4dfa-140a-4e41-8cea20164157",
+      "FullyQualifiedName": "tests.multiplication_tests.when_both_operands_are_negative",
+      "DisplayName": "when_both_operands_are_negative",
+      "ExecutorUri": "executor://RustTestExecutor/v1",
+      "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
+      "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "LineNumber": 49,
+      "Properties": []
+    },
+    "Attachments": [],
+    "Outcome": 1,
+    "ErrorMessage": null,
+    "ErrorStackTrace": null,
+    "DisplayName": "tests::multiplication_tests::when_both_operands_are_negative",
+    "Messages": [],
+    "ComputerName": null,
+    "Duration": "00:00:00",
+
+
+    "Properties": []
+  },
+  {
+    "TestCase": {
+      "Id": "7252ac24-86aa-ad90-9abf-5f14d4702319",
+      "FullyQualifiedName": "tests.multiplication_tests.when_both_operands_are_positive",
+      "DisplayName": "when_both_operands_are_positive",
+      "ExecutorUri": "executor://RustTestExecutor/v1",
+      "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
+      "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "LineNumber": 49,
+      "Properties": []
+    },
+    "Attachments": [],
+    "Outcome": 1,
+    "ErrorMessage": null,
+    "ErrorStackTrace": null,
+    "DisplayName": "tests::multiplication_tests::when_both_operands_are_positive",
+    "Messages": [],
+    "ComputerName": null,
+    "Duration": "00:00:00",
+
+
+    "Properties": []
+  },
+  {
+    "TestCase": {
+      "Id": "d5f95417-2284-8c80-5c2a-6ba057ad0b95",
+      "FullyQualifiedName": "tests.multiplication_tests.when_operands_are_swapped",
+      "DisplayName": "when_operands_are_swapped",
+      "ExecutorUri": "executor://RustTestExecutor/v1",
+      "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
+      "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "LineNumber": 49,
+      "Properties": []
+    },
+    "Attachments": [],
+    "Outcome": 1,
+    "ErrorMessage": null,
+    "ErrorStackTrace": null,
+    "DisplayName": "tests::multiplication_tests::when_operands_are_swapped",
+    "Messages": [],
+    "ComputerName": null,
+    "Duration": "00:00:00",
+
+
+    "Properties": []
+  },
+  {
+    "TestCase": {
+      "Id": "6ecf7022-b9df-b85f-668b-a145eb01a5f0",
+      "FullyQualifiedName": "tests.should_fail",
+      "DisplayName": "should_fail",
+      "ExecutorUri": "executor://RustTestExecutor/v1",
+      "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
+      "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "LineNumber": 45,
+      "Properties": []
+    },
+    "Attachments": [],
+    "Outcome": 2,
+    "ErrorMessage": "thread 'tests::should_fail' panicked at 'assertion failed: `(left != right)`\n  left: `42`,\n right: `42`', src\\lib.rs:46:9\n",
+    "ErrorStackTrace": null,
+    "DisplayName": "tests::should_fail",
+    "Messages": [],
+    "ComputerName": null,
+    "Duration": "00:00:00",
+
+
+    "Properties": []
+  },
+  {
+    "TestCase": {
+      "Id": "ce619d2c-ff75-4bc5-b42c-f40eeaee2f82",
+      "FullyQualifiedName": "tests.should_success",
+      "DisplayName": "should_success",
+      "ExecutorUri": "executor://RustTestExecutor/v1",
+      "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
+      "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "LineNumber": 40,
+      "Properties": []
+    },
+    "Attachments": [],
+    "Outcome": 1,
+    "ErrorMessage": null,
+    "ErrorStackTrace": null,
+    "DisplayName": "tests::should_success",
+    "Messages": [],
+    "ComputerName": null,
+    "Duration": "00:00:00",
+
+
+    "Properties": []
+  }
+]

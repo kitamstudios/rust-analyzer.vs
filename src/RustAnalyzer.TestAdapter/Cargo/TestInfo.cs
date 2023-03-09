@@ -7,6 +7,15 @@ using Newtonsoft.Json.Converters;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
+[JsonConverter(typeof(StringEnumConverter))]
+public enum TestType
+{
+    [EnumMember(Value = "test")]
+    Test,
+    [EnumMember(Value = "benchmark")]
+    Benchmark,
+}
+
 [DebuggerDisplay("{Container} [#tests = {Tests.Count}]")]
 public sealed class TestSuiteInfo
 {
@@ -19,15 +28,6 @@ public sealed class TestSuiteInfo
     [DebuggerDisplay("[{Type}] {FQN}")]
     public sealed class TestInfo
     {
-        [JsonConverter(typeof(StringEnumConverter))]
-        public enum TestType
-        {
-            [EnumMember(Value = "test")]
-            Test,
-            [EnumMember(Value = "benchmark")]
-            Benchmark,
-        }
-
         [JsonProperty("type")]
         public TestType Type { get; set; }
 
@@ -55,4 +55,36 @@ public sealed class TestSuiteInfo
         [JsonProperty("end_col")]
         public int EndColumn { get; set; }
     }
+}
+
+[DebuggerDisplay("[{Type}] {FQN}")]
+public sealed class TestRunInfo
+{
+    [JsonConverter(typeof(StringEnumConverter))]
+    public enum EventType
+    {
+        [EnumMember(Value = "started")]
+        Started,
+        [EnumMember(Value = "ok")]
+        Ok,
+        [EnumMember(Value = "ignored")]
+        Ignored,
+        [EnumMember(Value = "failed")]
+        Failed,
+    }
+
+    [JsonProperty("type")]
+    public TestType Type { get; set; }
+
+    [JsonProperty("event")]
+    public EventType Event { get; set; }
+
+    [JsonProperty("name")]
+    public string FQN { get; set; }
+
+    [JsonProperty("stdout")]
+    public string StdOut { get; set; }
+
+    [JsonProperty("message")]
+    public string Message { get; set; }
 }

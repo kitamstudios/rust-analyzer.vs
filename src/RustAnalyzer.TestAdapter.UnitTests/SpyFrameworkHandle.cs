@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
@@ -8,9 +8,9 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests;
 
 public class SpyFrameworkHandle : IFrameworkHandle
 {
-    private readonly List<string> _results = new ();
+    private readonly List<TestResult> _results = new ();
 
-    public IReadOnlyList<string> Results => _results;
+    public IReadOnlyList<TestResult> Results => _results;
 
     public bool EnableShutdownAfterTestRun { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
@@ -31,7 +31,7 @@ public class SpyFrameworkHandle : IFrameworkHandle
 
     public void RecordResult(TestResult testResult)
     {
-        _results.Add($"{testResult.TestCase.FullyQualifiedName} - {testResult.Outcome}");
+        _results.Add(testResult);
     }
 
     public void RecordStart(TestCase testCase)

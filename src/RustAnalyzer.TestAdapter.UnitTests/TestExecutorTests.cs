@@ -1,4 +1,6 @@
+using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
@@ -7,11 +9,11 @@ using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Moq;
+using Newtonsoft.Json;
 using Xunit;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests;
 
-// TODO: test for both APIs for discoverer
 // TODO: test for both APIs for executor
 public class TestExecutorTests
 {
@@ -29,7 +31,11 @@ public class TestExecutorTests
         var fh = new SpyFrameworkHandle();
         new TestExecutor().RunTests(new[] { (string)tcPath }, Mock.Of<IRunContext>(), fh);
 
-        var normalizedStr = fh.Results.OrderBy(x => x);
-        Approvals.VerifyAll(normalizedStr, string.Empty);
+        var normalizedStr = fh.Results
+            .OrderBy(x => x.TestCase.FullyQualifiedName).ThenBy(x => x.TestCase.LineNumber)
+            .SerializeObject(Formatting.Indented)
+            .Replace(((string)TestHelpers.ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase);
+        normalizedStr = Regex.Replace(normalizedStr, @"    ""(Start|End)Time"": ""(.*)"",", string.Empty);
+        Approvals.Verify(normalizedStr);
     }
 }

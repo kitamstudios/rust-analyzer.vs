@@ -43,7 +43,7 @@ mod tests {
 
     #[rstest]
     fn should_fail(fixture: u32) {
-        assert_ne!(fixture, 41);
+        assert_ne!(fixture, 42);
     }
 
     #[test_case(-2, -4 ; "when both operands are negative")]

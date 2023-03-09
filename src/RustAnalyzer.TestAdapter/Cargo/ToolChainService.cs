@@ -69,7 +69,7 @@ public sealed class ToolChainService : IToolChainService
             var w = await GetWorkspaceAsync(bti.ManifestPath, ct);
             var tasks = w.Packages
                 .SelectMany(p => p.GetTestContainers(bti.Profile))
-                .Select(x => WriteTestContainerAsync(x.Container, x.Target.Parent.ManifestPath, w.TargetDirectory, x.Target.SourcePath, (PathEx)"<not_yet_generated>", ct));
+                .Select(x => WriteTestContainerAsync(x.Container, x.Target.Parent.ManifestPath, w.TargetDirectory, x.Target.SourcePath, null, ct));
             await Task.WhenAll(tasks);
         }
 
@@ -231,7 +231,7 @@ public sealed class ToolChainService : IToolChainService
         return JsonConvert.DeserializeObject<TestContainer>(await testContainerPath.ReadAllTextAsync(ct));
     }
 
-    private static Task WriteTestContainerAsync(PathEx testContainer, PathEx manifestPath, PathEx targetPath, PathEx sourcePath, PathEx testExePath, CancellationToken ct)
+    private static Task WriteTestContainerAsync(PathEx testContainer, PathEx manifestPath, PathEx targetPath, PathEx sourcePath, PathEx? testExePath, CancellationToken ct)
     {
         return testContainer.WriteAllTextAsync(
             JsonConvert.SerializeObject(
@@ -240,7 +240,7 @@ public sealed class ToolChainService : IToolChainService
                     Manifest = manifestPath,
                     Source = sourcePath,
                     Target = targetPath,
-                    TestExe = testExePath
+                    TestExe = testExePath ?? TestContainer.NotYetGeneratedMarker,
                 },
                 new PathExJsonConverter()),
             ct);

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
@@ -15,76 +14,37 @@ namespace KS.RustAnalyzer.TestAdapter;
 [FileExtension(Constants.TestsContainerExtension)]
 public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
 {
-    private readonly TelemetryService _t = new ();
-
     public override void DiscoverTests(IEnumerable<PathEx> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
     {
-        var l = new TestAdapterLogger(logger);
+        var tl = logger.CreateTL();
         try
         {
-            var tasks = sources.Select(source => DiscoverAndReportTestsFromOneSource(source, discoverySink, l));
+            var tasks = sources.Select(source => DiscoverAndReportTestsFromOneSource(source, discoverySink, tl, default));
             Task.WaitAll(tasks.ToArray());
         }
         catch (Exception e)
         {
-            l.WriteError("DiscoverTestsFromOneSource failed with {0}", e);
-            _t.TrackException(e);
+            tl.L.WriteError("DiscoverTests failed with {0}", e);
+            tl.T.TrackException(e);
             throw;
         }
     }
 
-    public async Task<IEnumerable<TestCase>> DiscoverTestCasesFromOneSourceAsync(PathEx source, ILogger l, CancellationToken ct)
+    private async Task DiscoverAndReportTestsFromOneSource(PathEx source, ITestCaseDiscoverySink discoverySink, TL tl, CancellationToken ct)
     {
-        l.WriteLine("Starting discovery of tests from {0}.", source);
-
-        var testSuite = await FindTestsInSourceAsync(source, l, ct);
-        var testCaseInfos = testSuite.Tests.Select(t => CreateTestCaseFromTest(testSuite.Container, t));
-        _t.TrackEvent("DiscoverTestsFromOneSource", ("Source", source), ("NumberOfTests", $"{testCaseInfos.Count()}"));
-
-        return testCaseInfos;
-    }
-
-    // TODO: DRY with previous method.
-    private async Task DiscoverAndReportTestsFromOneSource(PathEx source, ITestCaseDiscoverySink discoverySink, ILogger l)
-    {
+        tl.L.WriteLine("DiscoverAndReportTestsFromOneSource starting with {0}", source);
         try
         {
-            l.WriteLine("Starting discovery of tests from {0}.", source);
-
-            var testSuite = await FindTestsInSourceAsync(source, l, default);
-            _t.TrackEvent("DiscoverTestsFromOneSource", ("NumberOfTests", "{testCaseInfos.Count()}"));
-            foreach (var testCaseInfo in testSuite.Tests)
-            {
-                var testCase = CreateTestCaseFromTest(testSuite.Container, testCaseInfo);
-                discoverySink.SendTestCase(testCase);
-            }
+            var testCaseInfos = await source.DiscoverTestCasesFromOneSourceAsync(tl, ct);
+            testCaseInfos.ForEach(discoverySink.SendTestCase);
         }
         catch (Exception e)
         {
-            l.WriteError("DiscoverTestsFromOneSource failed with {0}", e);
-            _t.TrackException(e, new[] { ("Source", $"{source}") });
+            tl.L.WriteError("DiscoverAndReportTestsFromOneSource failed with {0}", e);
+            tl.T.TrackException(e, new[] { ("Source", $"{source}") });
             throw;
         }
 
         await Task.CompletedTask;
-    }
-
-    private static TestCase CreateTestCaseFromTest(PathEx container, TestSuiteInfo.TestInfo test)
-    {
-        var fqnParts = test.FQN.Split(new[] { "::" }, StringSplitOptions.RemoveEmptyEntries);
-        return new TestCase
-        {
-            CodeFilePath = test.SourcePath,
-            LineNumber = test.StartLine,
-            DisplayName = fqnParts[fqnParts.Length - 1],
-            ExecutorUri = new Uri(Constants.ExecutorUriString),
-            FullyQualifiedName = string.Join(".", fqnParts),
-            Source = container,
-        };
-    }
-
-    private Task<TestSuiteInfo> FindTestsInSourceAsync(PathEx source, ILogger l, CancellationToken ct)
-    {
-        return new ToolChainService(_t, l).GetTestSuiteInfoAsync(source, Constants.DefaultTestProfile, ct);
     }
 }
