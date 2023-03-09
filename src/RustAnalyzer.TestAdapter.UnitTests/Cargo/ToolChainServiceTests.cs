@@ -16,7 +16,6 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 
 public sealed class ToolChainServiceTests
 {
-    private const string SearchPattern = $"*{Constants.TestsContainerExtension}";
     private readonly IToolChainService _tcs = new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L);
 
     [Theory]
@@ -93,12 +92,12 @@ public sealed class ToolChainServiceTests
         var workspacePath = TestHelpers.ThisTestRoot + (PathEx)workspaceRelRoot;
         var manifestPath = workspacePath + Constants.ManifestFileName2;
         var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath("dev");
-        CleanTestContainers(targetPath);
+        targetPath.CleanTestContainers();
 
         var success = await _tcs.DoBuildAsync(workspacePath, manifestPath, "dev");
 
         success.Should().BeTrue();
-        var tasks = Directory.EnumerateFiles(targetPath, SearchPattern)
+        var tasks = Directory.EnumerateFiles(targetPath, TestHelpers.TestContainersSearchPattern)
             .Select(async f => (path: (PathEx)f, container: JsonConvert.DeserializeObject<TestContainer>(await ((PathEx)f).ReadAllTextAsync(default))));
         var tcs = await Task.WhenAll(tasks);
         var normalizedStr = tcs
@@ -120,7 +119,7 @@ public sealed class ToolChainServiceTests
         var manifestPath = workspacePath + Constants.ManifestFileName2;
         var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath("dev");
         var tcPath = targetPath + (PathEx)containerName;
-        CleanTestContainers(targetPath);
+        targetPath.CleanTestContainers();
 
         // TODO: passing tcPath with profile qualified path as well as profile does not seem valid.
         await _tcs.DoBuildAsync(workspacePath, manifestPath, "dev");
@@ -134,15 +133,5 @@ public sealed class ToolChainServiceTests
             .SerializeObject(Formatting.Indented, new PathExJsonConverter())
             .Replace(((string)TestHelpers.ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase);
         Approvals.Verify(normalizedStr);
-    }
-
-    private static void CleanTestContainers(PathEx targetPath)
-    {
-        if (!targetPath.DirectoryExists())
-        {
-            return;
-        }
-
-        Directory.EnumerateFiles(targetPath, SearchPattern).ToList().ForEach(File.Delete);
     }
 }

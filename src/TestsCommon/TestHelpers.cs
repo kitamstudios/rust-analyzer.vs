@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
+using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Moq;
@@ -11,6 +12,8 @@ namespace KS.RustAnalyzer.Tests.Common;
 
 public static class TestHelpers
 {
+    public const string TestContainersSearchPattern = $"*{Constants.TestsContainerExtension}";
+
     public static readonly PathEx ThisTestRoot =
         (PathEx)Path.Combine(
             Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)),
@@ -59,5 +62,15 @@ public static class TestHelpers
                     new BuildTargetInfo { WorkspaceRoot = workspacePath, ManifestPath = manifestPath, Profile = profile, AdditionalBuildArgs = string.Empty },
                     new BuildOutputSinks { OutputSink = Mock.Of<IBuildOutputSink>(), BuildActionProgressReporter = bm => Task.CompletedTask },
                     default);
+    }
+
+    public static void CleanTestContainers(this PathEx @this)
+    {
+        if (!@this.DirectoryExists())
+        {
+            return;
+        }
+
+        Directory.EnumerateFiles(@this, TestContainersSearchPattern).ForEach(File.Delete);
     }
 }

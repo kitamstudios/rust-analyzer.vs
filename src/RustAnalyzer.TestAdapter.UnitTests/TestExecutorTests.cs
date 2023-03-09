@@ -32,6 +32,7 @@ public class TestExecutorTests
         var manifestPath = workspacePath + Constants.ManifestFileName2;
         var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath("dev");
         var tcPath = targetPath + (PathEx)containerName;
+        targetPath.CleanTestContainers();
 
         await _tcs.DoBuildAsync(workspacePath, manifestPath, "dev");
         var fh = new SpyFrameworkHandle();
