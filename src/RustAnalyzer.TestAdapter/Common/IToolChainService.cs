@@ -30,7 +30,7 @@ public sealed class TestContainer
 
     public PathEx Manifest { get; set; }
 
-    public PathEx Target { get; set; }
+    public PathEx TargetDir { get; set; }
 
     public PathEx Source { get; set; }
 

@@ -184,9 +184,9 @@ public sealed class ToolChainService : IToolChainService
             }
 
             tc.TestExe = testExeBuildInfos.First().testExe;
-            await WriteTestContainerAsync(testContainerPath, tc.Manifest, tc.Target, tc.Source, tc.TestExe, ct);
+            await WriteTestContainerAsync(testContainerPath, tc.Manifest, tc.TargetDir, tc.Source, tc.TestExe, ct);
 
-            return await GetTestSuiteInfoFromOneTestExe(tc.TestExe, testContainerPath, tc.Manifest.GetDirectoryName(), ct);
+            return await GetTestSuiteInfoFromOneTestExe(tc.TestExe, testContainerPath, tc.TargetDir.GetDirectoryName(), ct);
         }
         catch (Exception e)
         {
@@ -200,7 +200,7 @@ public sealed class ToolChainService : IToolChainService
         }
     }
 
-    private async Task<TestSuiteInfo> GetTestSuiteInfoFromOneTestExe(PathEx testExePath, PathEx testContainerPath, PathEx manifestDir, CancellationToken ct)
+    private async Task<TestSuiteInfo> GetTestSuiteInfoFromOneTestExe(PathEx testExePath, PathEx testContainerPath, PathEx workspaceRoot, CancellationToken ct)
     {
         // TODO: DRY violation with exe running block in the above functions.
         using var testExeProc = ProcessRunner.Run(testExePath, new[] { "--list", "--format", "json", "-Zunstable-options" }, ct);
@@ -215,7 +215,7 @@ public sealed class ToolChainService : IToolChainService
         var testSuites = testExeProc.StandardOutputLines
             .Skip(1)
             .Take(testExeProc.StandardOutputLines.Count() - 2)
-            .Select(l => DeserializeTest(manifestDir, l))
+            .Select(l => DeserializeTest(workspaceRoot, l))
             .OrderBy(x => x.FQN).ThenBy(x => x.StartLine)
             .ToList();
 
@@ -239,17 +239,17 @@ public sealed class ToolChainService : IToolChainService
                 {
                     Manifest = manifestPath,
                     Source = sourcePath,
-                    Target = targetPath,
+                    TargetDir = targetPath,
                     TestExe = testExePath ?? TestContainer.NotYetGeneratedMarker,
                 },
                 new PathExJsonConverter()),
             ct);
     }
 
-    private static TestSuiteInfo.TestInfo DeserializeTest(PathEx manifestDir, string serializedVal)
+    private static TestSuiteInfo.TestInfo DeserializeTest(PathEx workspaceRoot, string serializedVal)
     {
         var test = JsonConvert.DeserializeObject<TestSuiteInfo.TestInfo>(serializedVal);
-        test.SourcePath = manifestDir + test.SourcePath;
+        test.SourcePath = workspaceRoot + test.SourcePath;
 
         return test;
     }

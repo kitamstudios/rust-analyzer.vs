@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
@@ -15,19 +16,24 @@ using Xunit;
 namespace KS.RustAnalyzer.TestAdapter.UnitTests;
 
 // TODO: test for both APIs for executor
+// TODO: tests for filter
 public class TestExecutorTests
 {
+    private readonly IToolChainService _tcs = new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L);
+
     [Theory(Skip = "Rust nightlies do not contain the necessary changes yet.")]
     [InlineData(@"hello_world", "hello_world_hello_world.rusttests")] // No tests.
     [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests")] // Has tests.
     [UseReporter(typeof(DiffReporter))]
-    public void RunTestsTests(string workspaceRelRoot, string containerName)
+    public async Task RunTestsTestsAsync(string workspaceRelRoot, string containerName)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
         var workspacePath = TestHelpers.ThisTestRoot + (PathEx)workspaceRelRoot;
+        var manifestPath = workspacePath + Constants.ManifestFileName2;
         var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath("dev");
         var tcPath = targetPath + (PathEx)containerName;
 
+        await _tcs.DoBuildAsync(workspacePath, manifestPath, "dev");
         var fh = new SpyFrameworkHandle();
         new TestExecutor().RunTests(new[] { (string)tcPath }, Mock.Of<IRunContext>(), fh);
 

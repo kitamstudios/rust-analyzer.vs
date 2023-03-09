@@ -3,7 +3,7 @@
     "Item1": "<TestRoot>\\hello_world\\target\\debug\\hello_world_hello_world.rusttests",
     "Item2": {
       "Manifest": "<TestRoot>\\hello_world\\Cargo.toml",
-      "Target": "<TestRoot>\\hello_world\\target",
+      "TargetDir": "<TestRoot>\\hello_world\\target",
       "Source": "<TestRoot>\\hello_world\\src\\main.rs",
       "TestExe": "<not_yet_generated>"
     }
