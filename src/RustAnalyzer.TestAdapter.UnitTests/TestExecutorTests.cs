@@ -39,7 +39,7 @@ public class TestExecutorTests
         Approvals.Verify(normalizedStr);
     }
 
-    [Theory]
+    [Theory(Skip = "Rust nightlies do not contain the necessary changes yet.")]
     [InlineData(@"workspace_with_tests", new[] { "add_one_libadd_one|tests.fibonacci_test.case_2", "adder_adder|tests.it_works_failing", "adder_adder|tests1.tests1.it_works_skipped2" })]
     public async Task RunSelectedTestsFromMultiplePackagesMultipleFilesTestsAsync(string workspaceRelRoot, string[] tests)
     {
