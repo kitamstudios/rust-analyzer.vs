@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests1;
+
 use std;
 use add_one;
 
@@ -28,7 +31,7 @@ mod tests {
 
     #[test]
     fn it_works_failing() {
-        assert_eq!(3, add_one(2));
+        assert_eq!(3, add_one(4));
     }
 
     #[test]

@@ -2,54 +2,66 @@
   {
     "Item1": "<TestRoot>\\workspace_mixed\\target\\debug\\main_bin1.rusttests",
     "Item2": {
+      "ThisPath": "<TestRoot>\\workspace_mixed\\target\\debug\\main_bin1.rusttests",
       "Manifest": "<TestRoot>\\workspace_mixed\\Cargo.toml",
       "TargetDir": "<TestRoot>\\workspace_mixed\\target",
       "Source": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+      "Profile": "dev",
       "TestExe": "<not_yet_generated>"
     }
   },
   {
     "Item1": "<TestRoot>\\workspace_mixed\\target\\debug\\main_bin2.rusttests",
     "Item2": {
+      "ThisPath": "<TestRoot>\\workspace_mixed\\target\\debug\\main_bin2.rusttests",
       "Manifest": "<TestRoot>\\workspace_mixed\\Cargo.toml",
       "TargetDir": "<TestRoot>\\workspace_mixed\\target",
       "Source": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+      "Profile": "dev",
       "TestExe": "<not_yet_generated>"
     }
   },
   {
     "Item1": "<TestRoot>\\workspace_mixed\\target\\debug\\main_libmain.rusttests",
     "Item2": {
+      "ThisPath": "<TestRoot>\\workspace_mixed\\target\\debug\\main_libmain.rusttests",
       "Manifest": "<TestRoot>\\workspace_mixed\\Cargo.toml",
       "TargetDir": "<TestRoot>\\workspace_mixed\\target",
       "Source": "<TestRoot>\\workspace_mixed\\src\\libx.rs",
+      "Profile": "dev",
       "TestExe": "<not_yet_generated>"
     }
   },
   {
     "Item1": "<TestRoot>\\workspace_mixed\\target\\debug\\main_test1.rusttests",
     "Item2": {
+      "ThisPath": "<TestRoot>\\workspace_mixed\\target\\debug\\main_test1.rusttests",
       "Manifest": "<TestRoot>\\workspace_mixed\\Cargo.toml",
       "TargetDir": "<TestRoot>\\workspace_mixed\\target",
       "Source": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+      "Profile": "dev",
       "TestExe": "<not_yet_generated>"
     }
   },
   {
     "Item1": "<TestRoot>\\workspace_mixed\\target\\debug\\main_test2.rusttests",
     "Item2": {
+      "ThisPath": "<TestRoot>\\workspace_mixed\\target\\debug\\main_test2.rusttests",
       "Manifest": "<TestRoot>\\workspace_mixed\\Cargo.toml",
       "TargetDir": "<TestRoot>\\workspace_mixed\\target",
       "Source": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+      "Profile": "dev",
       "TestExe": "<not_yet_generated>"
     }
   },
   {
     "Item1": "<TestRoot>\\workspace_mixed\\target\\debug\\shared_libshared.rusttests",
     "Item2": {
+      "ThisPath": "<TestRoot>\\workspace_mixed\\target\\debug\\shared_libshared.rusttests",
       "Manifest": "<TestRoot>\\workspace_mixed\\shared\\Cargo.toml",
       "TargetDir": "<TestRoot>\\workspace_mixed\\target",
       "Source": "<TestRoot>\\workspace_mixed\\shared\\src\\lib.rs",
+      "Profile": "dev",
       "TestExe": "<not_yet_generated>"
     }
   }

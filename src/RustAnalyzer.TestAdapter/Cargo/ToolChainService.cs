@@ -69,7 +69,7 @@ public sealed class ToolChainService : IToolChainService
             var w = await GetWorkspaceAsync(bti.ManifestPath, ct);
             var tasks = w.Packages
                 .SelectMany(p => p.GetTestContainers(bti.Profile))
-                .Select(x => WriteTestContainerAsync(x.Container, x.Target.Parent.ManifestPath, w.TargetDirectory, x.Target.SourcePath, null, ct));
+                .Select(x => x.Container.WriteTestContainerAsync(x.Target.Parent.ManifestPath, w.TargetDirectory, x.Target.SourcePath, bti.Profile, null, ct));
             await Task.WhenAll(tasks);
         }
 
@@ -129,15 +129,8 @@ public sealed class ToolChainService : IToolChainService
         var exitCode = 0;
         try
         {
-            using var proc = ProcessRunner.Run(cargoFullPath, new[] { "metadata", "--no-deps", "--format-version", "1", "--manifest-path", manifestPath, "--offline" }, ct);
-            _tl.L.WriteLine("Started PID:{0} with args: {1}...", proc.ProcessId, proc.Arguments);
-            exitCode = await proc;
-            _tl.L.WriteLine("... Finished PID {0} with exit code {1}.", proc.ProcessId, proc.ExitCode);
-            if (exitCode != 0)
-            {
-                throw new InvalidOperationException($"{exitCode}\n{string.Join("\n", proc.StandardErrorLines)}");
-            }
-
+            using var proc = await ProcessRunner.RunWithLogging(cargoFullPath, new[] { "metadata", "--no-deps", "--format-version", "1", "--manifest-path", manifestPath, "--offline" }, ct, _tl.L);
+            exitCode = proc.ExitCode ?? 0;
             var w = JsonConvert.DeserializeObject<Workspace>(string.Join(string.Empty, proc.StandardOutputLines));
             return AddRootPackageIfNecessary(w, manifestPath);
         }
@@ -146,6 +139,7 @@ public sealed class ToolChainService : IToolChainService
             _tl.L.WriteLine("Unable to obtain metadata for file {0}. Ex: {1}", manifestPath, e);
             if (exitCode != 101)
             {
+                // TODO: RELEASE: This wont work.
                 _tl.T.TrackException(e);
             }
 
@@ -153,38 +147,32 @@ public sealed class ToolChainService : IToolChainService
         }
     }
 
-    // TODO: when do we regenerate the testexe path? Can we optimize on not running cargo test --no-run if testexe is already present?
-    // TODO: Refactor this function, make DRY with the previous one.
     public async Task<TestSuiteInfo> GetTestSuiteInfoAsync(PathEx testContainerPath, string profile, CancellationToken ct)
     {
         var cargoFullPath = GetCargoExePath();
-        var tc = await ReadTestContainerAsync(testContainerPath, ct);
+        var tc = await testContainerPath.ReadTestContainerAsync(ct);
 
         var exitCode = 0;
         try
         {
-            using var proc = ProcessRunner.Run(cargoFullPath, new[] { "test", "--no-run", "--manifest-path", tc.Manifest, "--profile", profile }, ct);
-            _tl.L.WriteLine("Started PID:{0} with args: {1}...", proc.ProcessId, proc.Arguments);
-            exitCode = await proc;
-            _tl.L.WriteLine("... Finished PID {0} with exit code {1}.", proc.ProcessId, proc.ExitCode);
-            if (exitCode != 0)
-            {
-                throw new InvalidOperationException($"{exitCode}\n{string.Join("\n", proc.StandardErrorLines)}");
-            }
+            using var proc = await ProcessRunner.RunWithLogging(cargoFullPath, new[] { "test", "--no-run", "--manifest-path", tc.Manifest, "--profile", profile }, ct, _tl.L);
+            exitCode = proc.ExitCode ?? 0;
 
             var testExeBuildInfos = proc.StandardErrorLines
                 .Select(l => TestExecutablePathCracker.Matches(l))
                 .Where(m => m.Count > 0 && m[0].Groups.Count == 4)
                 .Select(m => (source: tc.Manifest.GetDirectoryName() + (PathEx)m[0].Groups[2].Value, testExe: (PathEx)m[0].Groups[3].Value))
                 .Where(x => x.source == tc.Source);
-
             if (!testExeBuildInfos.Any())
             {
-                // TODO: log and track case where source is not found in the stderr lines.
+                var e = new InvalidOperationException(string.Format("Unable to parse output of cargo test to obtain test exe paths. Command line '{0}'. Exit code: {1}", proc.Arguments, proc.ExitCode));
+                _tl.L.WriteError(e.Message);
+                _tl.T.TrackException(e);
+                throw e;
             }
 
             tc.TestExe = testExeBuildInfos.First().testExe;
-            await WriteTestContainerAsync(testContainerPath, tc.Manifest, tc.TargetDir, tc.Source, tc.TestExe, ct);
+            await testContainerPath.WriteTestContainerAsync(tc.Manifest, tc.TargetDir, tc.Source, profile, tc.TestExe, ct);
 
             return await GetTestSuiteInfoFromOneTestExe(tc.TestExe, testContainerPath, tc.TargetDir.GetDirectoryName(), ct);
         }
@@ -202,19 +190,10 @@ public sealed class ToolChainService : IToolChainService
 
     private async Task<TestSuiteInfo> GetTestSuiteInfoFromOneTestExe(PathEx testExePath, PathEx testContainerPath, PathEx workspaceRoot, CancellationToken ct)
     {
-        // TODO: DRY violation with exe running block in the above functions.
-        using var testExeProc = ProcessRunner.Run(testExePath, new[] { "--list", "--format", "json", "-Zunstable-options" }, ct);
-        _tl.L.WriteLine("Started PID:{0}, with args: {1}...", testExeProc.ProcessId, testExeProc.Arguments);
-        var testExeExitCode = await testExeProc;
-        _tl.L.WriteLine("... Finished PID {0} with exit code {1}.", testExeProc.ProcessId, testExeProc.ExitCode);
-        if (testExeExitCode != 0)
-        {
-            throw new InvalidOperationException($"{testExeExitCode}\n{string.Join("\n", testExeProc.StandardErrorLines)}");
-        }
-
-        var testSuites = testExeProc.StandardOutputLines
+        using var proc = await ProcessRunner.RunWithLogging(testExePath, new[] { "--list", "--format", "json", "-Zunstable-options" }, ct, _tl.L);
+        var testSuites = proc.StandardOutputLines
             .Skip(1)
-            .Take(testExeProc.StandardOutputLines.Count() - 2)
+            .Take(proc.StandardOutputLines.Count() - 2)
             .Select(l => DeserializeTest(workspaceRoot, l))
             .OrderBy(x => x.FQN).ThenBy(x => x.StartLine)
             .ToList();
@@ -224,26 +203,6 @@ public sealed class ToolChainService : IToolChainService
             Container = testContainerPath,
             Tests = new Collection<TestSuiteInfo.TestInfo>(testSuites),
         };
-    }
-
-    private static async Task<TestContainer> ReadTestContainerAsync(PathEx testContainerPath, CancellationToken ct)
-    {
-        return JsonConvert.DeserializeObject<TestContainer>(await testContainerPath.ReadAllTextAsync(ct));
-    }
-
-    private static Task WriteTestContainerAsync(PathEx testContainer, PathEx manifestPath, PathEx targetPath, PathEx sourcePath, PathEx? testExePath, CancellationToken ct)
-    {
-        return testContainer.WriteAllTextAsync(
-            JsonConvert.SerializeObject(
-                new TestContainer
-                {
-                    Manifest = manifestPath,
-                    Source = sourcePath,
-                    TargetDir = targetPath,
-                    TestExe = testExePath ?? TestContainer.NotYetGeneratedMarker,
-                },
-                new PathExJsonConverter()),
-            ct);
     }
 
     private static TestSuiteInfo.TestInfo DeserializeTest(PathEx workspaceRoot, string serializedVal)

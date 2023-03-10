@@ -39,13 +39,15 @@ public static class PathExExtensions
 
     public static async Task WriteAllTextAsync(this PathEx @this, string content, CancellationToken ct)
     {
-        using var file = new StreamWriter(@this);
+        using var fs = new FileStream(@this, FileMode.Create, FileAccess.ReadWrite);
+        using var file = new StreamWriter(fs);
         await file.WriteAsync(content);
     }
 
     public static async Task<string> ReadAllTextAsync(this PathEx @this, CancellationToken ct)
     {
-        using var file = new StreamReader(@this);
+        using var fs = new FileStream(@this, FileMode.Open, FileAccess.Read);
+        using var file = new StreamReader(fs);
         return await file.ReadToEndAsync();
     }
 }

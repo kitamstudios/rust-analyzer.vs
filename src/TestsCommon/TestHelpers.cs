@@ -2,11 +2,13 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Moq;
+using Newtonsoft.Json;
 
 namespace KS.RustAnalyzer.Tests.Common;
 
@@ -72,5 +74,22 @@ public static class TestHelpers
         }
 
         Directory.EnumerateFiles(@this, TestContainersSearchPattern).ForEach(File.Delete);
+    }
+
+    public static string SerializeAndNormalizeObject(this object @this)
+    {
+        var str = @this
+            .SerializeObject(Formatting.Indented, new PathExJsonConverter())
+            .Replace(((string)ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase);
+        return Regex.Replace(str, @"    ""(Start|End)Time"": ""(.*)"",", string.Empty);
+    }
+
+    public static (PathEx WorkspacePath, PathEx ManifestPath, PathEx TargetPath) GetTestPaths(this string @this, string profile)
+    {
+        var workspacePath = ThisTestRoot + (PathEx)@this;
+        var manifestPath = workspacePath + Constants.ManifestFileName2;
+        var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath(profile);
+
+        return (WorkspacePath: workspacePath, ManifestPath: manifestPath, TargetPath: targetPath);
     }
 }

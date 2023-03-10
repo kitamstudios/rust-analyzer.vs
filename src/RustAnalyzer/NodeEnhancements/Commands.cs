@@ -41,7 +41,7 @@ public abstract class BaseToolChainCommand<T> : BaseCommand<T>
         var selectedPath = GetSelectedItems().FirstOrDefault();
 
         var mefRepo = await CommunityVS.Services.GetComponentModelAsync();
-        var profile = await mefRepo.GetProfileAsync(selectedPath);
+        var profile = mefRepo.GetProfile(selectedPath);
         var toolChainSvc = mefRepo.GetService<IToolChainService>();
         var bos = mefRepo.GetService<IBuildOutputSink>();
 

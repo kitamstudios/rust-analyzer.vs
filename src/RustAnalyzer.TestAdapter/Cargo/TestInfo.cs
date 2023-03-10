@@ -87,4 +87,7 @@ public sealed class TestRunInfo
 
     [JsonProperty("message")]
     public string Message { get; set; }
+
+    [JsonProperty("exec_time")]
+    public double ExecutionTime { get; set; }
 }

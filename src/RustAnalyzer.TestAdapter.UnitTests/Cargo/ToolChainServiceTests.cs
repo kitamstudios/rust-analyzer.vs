@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -30,9 +29,7 @@ public sealed class ToolChainServiceTests
 
         var wmd = await _tcs.GetWorkspaceAsync(manifestPath, default);
 
-        var normalizedStr = wmd
-            .SerializeObject(Formatting.Indented, new PathExJsonConverter())
-            .Replace(((string)TestHelpers.ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase);
+        var normalizedStr = wmd.SerializeAndNormalizeObject();
         Approvals.Verify(normalizedStr);
     }
 
@@ -100,14 +97,10 @@ public sealed class ToolChainServiceTests
         var tasks = Directory.EnumerateFiles(targetPath, TestHelpers.TestContainersSearchPattern)
             .Select(async f => (path: (PathEx)f, container: JsonConvert.DeserializeObject<TestContainer>(await ((PathEx)f).ReadAllTextAsync(default))));
         var tcs = await Task.WhenAll(tasks);
-        var normalizedStr = tcs
-            .SerializeObject(Formatting.Indented, new PathExJsonConverter())
-            .Replace(((string)TestHelpers.ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase);
+        var normalizedStr = tcs.SerializeAndNormalizeObject();
         Approvals.Verify(normalizedStr);
     }
 
-    // TODO: tests in multiple files in the same package.
-    // TODO: tests in multiple packages in the same workspace.
     [Theory(Skip = "Rust nightlies do not contain the necessary changes yet.")]
     [InlineData(@"hello_world", "hello_world_hello_world.rusttests")] // No tests.
     [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests")] // Has tests.
@@ -117,21 +110,20 @@ public sealed class ToolChainServiceTests
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
         var workspacePath = TestHelpers.ThisTestRoot + (PathEx)workspaceRelRoot;
         var manifestPath = workspacePath + Constants.ManifestFileName2;
-        var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath("dev");
+        var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath("release");
         var tcPath = targetPath + (PathEx)containerName;
         targetPath.CleanTestContainers();
 
-        // TODO: passing tcPath with profile qualified path as well as profile does not seem valid.
-        await _tcs.DoBuildAsync(workspacePath, manifestPath, "dev");
-        var testSuite = await _tcs.GetTestSuiteInfoAsync(tcPath, "dev", default);
+        await _tcs.DoBuildAsync(workspacePath, manifestPath, "release");
+        var testSuite = await _tcs.GetTestSuiteInfoAsync(tcPath, "release", default);
         var tc = JsonConvert.DeserializeObject<TestContainer>(await tcPath.ReadAllTextAsync(default));
 
         tc.TestExe.FileExists().Should().BeTrue();
         tc.TestExe.GetExtension().Should().Be((PathEx)".exe");
+        tc.Profile.Should().Be("release");
+        tc.ThisPath.Should().Be(tcPath);
         testSuite.Container.Should().Be(tcPath);
-        var normalizedStr = testSuite
-            .SerializeObject(Formatting.Indented, new PathExJsonConverter())
-            .Replace(((string)TestHelpers.ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase);
+        var normalizedStr = testSuite.SerializeAndNormalizeObject();
         Approvals.Verify(normalizedStr);
     }
 }

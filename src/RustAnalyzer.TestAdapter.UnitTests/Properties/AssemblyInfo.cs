@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 using ApprovalTests.Reporters;
+using Xunit;
 
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
@@ -36,3 +37,5 @@ using ApprovalTests.Reporters;
 [assembly: AssemblyFileVersion("1.0.0.0")]
 
 [assembly: IgnoreLineEndings(true)]
+
+[assembly: CollectionBehavior(DisableTestParallelization = true)]

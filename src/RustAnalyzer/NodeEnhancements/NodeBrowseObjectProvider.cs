@@ -70,6 +70,7 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
             return;
         }
 
+        // TODO: Ensure environment block is valid. Do all transformations that need to be done here.
         ThreadHelper.JoinableTaskFactory
             .RunAsync(() => fsob.SS.SetAsync(e.PropertyName, (PathEx)fsob.RelativePath, (string)fsob.GetType().GetProperty(e.PropertyName).GetValue(fsob, null)))
             .Forget();

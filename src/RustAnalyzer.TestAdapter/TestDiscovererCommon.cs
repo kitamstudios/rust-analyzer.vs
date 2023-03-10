@@ -14,33 +14,37 @@ public static class TestDiscovererCommon
 {
     public static TL CreateTL(this IMessageLogger @this) => new () { T = new TelemetryService(), L = new TestAdapterLogger(@this) };
 
-    public static Task<TestSuiteInfo> FindTestsInSourceAsync(this PathEx source, TL tl, CancellationToken ct)
+    public static Task<TestSuiteInfo> FindTestsInSourceAsync(this TestContainer tc, TL tl, CancellationToken ct)
     {
-        return new ToolChainService(tl.T, tl.L).GetTestSuiteInfoAsync(source, Constants.DefaultTestProfile, ct);
+        return new ToolChainService(tl.T, tl.L).GetTestSuiteInfoAsync(tc.ThisPath, tc.Profile, ct);
     }
 
-    public static async Task<IEnumerable<TestCase>> DiscoverTestCasesFromOneSourceAsync(this PathEx source, TL tl, CancellationToken ct)
+    public static async Task<IEnumerable<TestCase>> DiscoverTestCasesFromOneSourceAsync(this TestContainer tc, TL tl, CancellationToken ct)
     {
-        tl.L.WriteLine("Starting discovery of tests from {0}.", source);
+        tl.L.WriteLine("Starting discovery of tests from {0}.", tc.ThisPath);
 
-        var testSuite = await source.FindTestsInSourceAsync(tl, ct);
+        var testSuite = await tc.FindTestsInSourceAsync(tl, ct);
         var testCaseInfos = testSuite.Tests.Select(t => CreateTestCaseFromTest(testSuite.Container, t));
-        tl.T.TrackEvent("DiscoverTestsFromOneSource", ("Source", source), ("NumberOfTests", $"{testCaseInfos.Count()}"));
+        tl.T.TrackEvent("DiscoverTestsFromOneSource", ("Source", tc.ThisPath), ("NumberOfTests", $"{testCaseInfos.Count()}"));
 
         return testCaseInfos;
     }
 
-    private static TestCase CreateTestCaseFromTest(PathEx container, TestSuiteInfo.TestInfo test)
+    public static string RustTestFQN2TestExplorerFQN(this string rustTestFQN) => rustTestFQN.Replace("::", ".");
+
+    public static string TestExplorerFQN2RustTestFQN(this string rustTestFQN) => rustTestFQN.Replace(".", "::");
+
+    private static TestCase CreateTestCaseFromTest(PathEx testContainer, TestSuiteInfo.TestInfo test)
     {
-        var fqnParts = test.FQN.Split(new[] { "::" }, StringSplitOptions.RemoveEmptyEntries);
+        var fqn = test.FQN.RustTestFQN2TestExplorerFQN();
         return new TestCase
         {
             CodeFilePath = test.SourcePath,
             LineNumber = test.StartLine,
-            DisplayName = fqnParts[fqnParts.Length - 1],
+            DisplayName = fqn.Split('.').Last(),
             ExecutorUri = new Uri(Constants.ExecutorUriString),
-            FullyQualifiedName = string.Join(".", fqnParts),
-            Source = container,
+            FullyQualifiedName = fqn,
+            Source = testContainer,
         };
     }
 }

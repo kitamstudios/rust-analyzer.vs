@@ -336,6 +336,20 @@ public sealed class ProcessRunner : IDisposable
         return Run(filename, arguments, null!, null!, false, null!, cancellationToken: cancellationToken);
     }
 
+    public static async Task<ProcessRunner> RunWithLogging(string filename, string[] arguments, CancellationToken ct, ILogger l, bool @throw = true)
+    {
+        var proc = Run(filename, arguments, ct);
+        l.WriteLine("Started PID:{0} with args: {1}...", proc.ProcessId, proc.Arguments);
+        var exitCode = await proc;
+        l.WriteLine("... Finished PID {0} with exit code {1}.", proc.ProcessId, proc.ExitCode);
+        if (@throw && exitCode != 0)
+        {
+            throw new InvalidOperationException($"{exitCode}\n{string.Join("\n", proc.StandardErrorLines)}");
+        }
+
+        return proc;
+    }
+
     /// <summary>
     /// Runs the file with the provided settings.
     /// </summary>

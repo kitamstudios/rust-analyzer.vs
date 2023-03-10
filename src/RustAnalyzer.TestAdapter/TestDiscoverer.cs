@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
@@ -19,7 +20,7 @@ public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
         var tl = logger.CreateTL();
         try
         {
-            var tasks = sources.Select(source => DiscoverAndReportTestsFromOneSource(source, discoverySink, tl, default));
+            var tasks = sources.Select(async source => await DiscoverAndReportTestsFromOneSource(await source.ReadTestContainerAsync(default), discoverySink, tl, default));
             Task.WaitAll(tasks.ToArray());
         }
         catch (Exception e)
@@ -30,18 +31,18 @@ public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
         }
     }
 
-    private async Task DiscoverAndReportTestsFromOneSource(PathEx source, ITestCaseDiscoverySink discoverySink, TL tl, CancellationToken ct)
+    private async Task DiscoverAndReportTestsFromOneSource(TestContainer tc, ITestCaseDiscoverySink discoverySink, TL tl, CancellationToken ct)
     {
-        tl.L.WriteLine("DiscoverAndReportTestsFromOneSource starting with {0}", source);
+        tl.L.WriteLine("DiscoverAndReportTestsFromOneSource starting with {0}", tc.ThisPath);
         try
         {
-            var testCaseInfos = await source.DiscoverTestCasesFromOneSourceAsync(tl, ct);
+            var testCaseInfos = await tc.DiscoverTestCasesFromOneSourceAsync(tl, ct);
             testCaseInfos.ForEach(discoverySink.SendTestCase);
         }
         catch (Exception e)
         {
             tl.L.WriteError("DiscoverAndReportTestsFromOneSource failed with {0}", e);
-            tl.T.TrackException(e, new[] { ("Source", $"{source}") });
+            tl.T.TrackException(e, new[] { ("Source", $"{tc.ThisPath}") });
             throw;
         }
 

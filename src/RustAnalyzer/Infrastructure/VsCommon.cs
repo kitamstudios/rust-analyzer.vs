@@ -110,10 +110,15 @@ public static class VsCommon
         }
     }
 
-    public static async Task<string> GetProfileAsync(this IComponentModel2 @this, PathEx manifestPath)
+    public static string GetProfile(this IComponentModel2 @this, PathEx manifestPath)
     {
         var w = @this.GetService<IVsFolderWorkspaceService>().CurrentWorkspace;
-        var projCfgSvc = await w.GetServiceAsync<IProjectConfigurationService>();
+        return w.GetProfile(manifestPath);
+    }
+
+    public static string GetProfile(this IWorkspace @this, PathEx manifestPath)
+    {
+        var projCfgSvc = @this.GetService<IProjectConfigurationService>();
         var profile = projCfgSvc.GetActiveProjectBuildConfiguration(new ProjectTargetFileContext(manifestPath));
         return profile;
     }

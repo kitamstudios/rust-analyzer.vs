@@ -5,6 +5,7 @@ using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading.Tasks;
 using Community.VisualStudio.Toolkit;
+using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.ComponentModelHost;
@@ -16,11 +17,12 @@ using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter;
 
-// TODO: Reset test containers when profile changes
 // TODO: [Export(typeof(ITestContainerDiscoverer))]
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 {
+    // TODO: TXP: Test pass additional command line and additional environment variables.
+    // TODO: TXP: Get all defaults for discovery and run from Options the override with above.
     private readonly ConcurrentDictionary<PathEx, TestContainer> _testContainersCache = new ();
 
     private readonly IVsFolderWorkspaceService _workspaceFactory;
@@ -68,7 +70,7 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
         _tl.T.TrackEvent("TcdLoadWorkspace", ("Location", _currentWorkspace.Location));
         var mds = _currentWorkspace.GetService<IMetadataService>();
         var packages = await mds.GetCachedPackagesAsync(default);
-        foreach (var (c, _) in packages.SelectMany(p => p.GetTestContainers(Constants.DefaultTestProfile)))
+        foreach (var (c, _) in packages.SelectMany(p => p.GetTestContainers(_currentWorkspace.GetProfile(p.ManifestPath))))
         {
             TryAddTestContainer(c);
         }
@@ -97,7 +99,7 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
     private void PackageRemovedEventHandler(object sender, Workspace.Package e)
     {
         _tl.L.WriteLine("TCD: Package Removed EventHandler: '{0}'", e.ManifestPath);
-        foreach (var (container, _) in e.GetTestContainers(Constants.DefaultTestProfile))
+        foreach (var (container, _) in e.GetTestContainers(_currentWorkspace?.GetProfile(e.ManifestPath) ?? "dev"))
         {
             TryRemoveTestContainer(container);
         }
@@ -108,7 +110,7 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
     private void PackageAddedEventHandler(object sender, Workspace.Package e)
     {
         _tl.L.WriteLine("TCD: Package Added EventHandler: '{0}'", e.ManifestPath);
-        foreach (var (container, _) in e.GetTestContainers(Constants.DefaultTestProfile))
+        foreach (var (container, _) in e.GetTestContainers(_currentWorkspace?.GetProfile(e.ManifestPath) ?? "dev"))
         {
             TryAddTestContainer(container);
         }

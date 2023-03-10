@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,7 +9,6 @@ using KS.RustAnalyzer.Editor;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
 using Microsoft.VisualStudio.Workspace.Indexing;
-using Newtonsoft.Json;
 using Xunit;
 
 namespace KS.RustAnalyzer.UnitTests.Editor;
@@ -39,10 +37,7 @@ public class FileScannerTests
                 ri.ReferenceType,
             });
         Approvals.VerifyAll(
-            processedRefInfos.Select(
-                o => o
-                    .SerializeObject(Formatting.Indented, new PathExJsonConverter())
-                    .Replace(((string)TestHelpers.ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase)),
+            processedRefInfos.Select(o => o.SerializeAndNormalizeObject()),
             label: string.Empty);
     }
 
@@ -68,9 +63,7 @@ public class FileScannerTests
             });
         Approvals.VerifyAll(
             processedDataValues.Select(
-                o => o
-                    .SerializeObject(Formatting.Indented, new PathExJsonConverter())
-                    .Replace(((string)TestHelpers.ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase)),
+                o => o.SerializeAndNormalizeObject()),
             label: string.Empty);
     }
 }

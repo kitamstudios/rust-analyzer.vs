@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 using ApprovalTests;
@@ -10,7 +9,6 @@ using KS.RustAnalyzer.Tests.Common;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using Moq;
-using Newtonsoft.Json;
 using Xunit;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests;
@@ -38,8 +36,7 @@ public class TestDiscovererTests
 
         var normalizedStr = sink.TestCases
             .OrderBy(x => x.FullyQualifiedName).ThenBy(x => x.LineNumber)
-            .SerializeObject(Formatting.Indented)
-            .Replace(((string)TestHelpers.ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase);
+            .SerializeAndNormalizeObject();
         Approvals.Verify(normalizedStr);
     }
 }

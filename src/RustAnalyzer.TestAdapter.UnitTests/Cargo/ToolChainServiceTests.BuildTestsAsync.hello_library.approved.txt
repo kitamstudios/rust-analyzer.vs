@@ -2,9 +2,11 @@
   {
     "Item1": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
     "Item2": {
+      "ThisPath": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
       "Manifest": "<TestRoot>\\hello_library\\Cargo.toml",
       "TargetDir": "<TestRoot>\\hello_library\\target",
       "Source": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "Profile": "dev",
       "TestExe": "<not_yet_generated>"
     }
   }
