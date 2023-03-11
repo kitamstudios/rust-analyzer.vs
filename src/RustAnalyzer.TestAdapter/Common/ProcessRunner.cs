@@ -331,14 +331,14 @@ public sealed class ProcessRunner : IDisposable
         return Run(filename, arguments, null!, null!, true, null!, cancellationToken: cancellationToken);
     }
 
-    public static ProcessRunner Run(string filename, string[] arguments, CancellationToken cancellationToken)
+    public static ProcessRunner Run(string filename, string[] arguments, string workingDirectory, IDictionary<string, string> env, CancellationToken cancellationToken)
     {
-        return Run(filename, arguments, null!, null!, false, null!, cancellationToken: cancellationToken);
+        return Run(filename, arguments, workingDirectory, env, false, null!, cancellationToken: cancellationToken);
     }
 
-    public static async Task<ProcessRunner> RunWithLogging(string filename, string[] arguments, CancellationToken ct, ILogger l, bool @throw = true)
+    public static async Task<ProcessRunner> RunWithLogging(string filename, string[] arguments, string workingDirectory, IDictionary<string, string> env, CancellationToken ct, ILogger l, bool @throw = true)
     {
-        var proc = Run(filename, arguments, ct);
+        var proc = Run(filename, arguments, workingDirectory, env, ct);
         l.WriteLine("Started PID:{0} with args: {1}...", proc.ProcessId, proc.Arguments);
         var exitCode = await proc;
         l.WriteLine("... Finished PID {0} with exit code {1}.", proc.ProcessId, proc.ExitCode);

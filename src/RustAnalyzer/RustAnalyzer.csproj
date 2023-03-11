@@ -51,6 +51,7 @@
     <Compile Include="NodeEnhancements\Commands.cs" />
     <Compile Include="Infrastructure\Options.cs" />
     <Compile Include="Infrastructure\StringExtensions.cs" />
+    <Compile Include="NodeEnhancements\NodeBrowseObjectPropertyFilter.cs" />
     <Compile Include="NodeEnhancements\NodeBrowseObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RustAnalyzerPackage.cs" />

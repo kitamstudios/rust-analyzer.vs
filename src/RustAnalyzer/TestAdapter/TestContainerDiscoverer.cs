@@ -21,8 +21,10 @@ namespace KS.RustAnalyzer.TestAdapter;
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 {
-    // TODO: TXP: Test pass additional command line and additional environment variables.
-    // TODO: TXP: Get all defaults for discovery and run from Options the override with above.
+    // TODO: RELEASE: Fix reported exceptions.
+    // TODO: RELEASE: Fix the debugger issue reported by recatak.
+    // TODO: RELEASE: Test for passing additional command line and additional environment variables.
+    // TODO: RELEASE: Get all defaults for discovery and run from Options the override with above.
     private readonly ConcurrentDictionary<PathEx, TestContainer> _testContainersCache = new ();
 
     private readonly IVsFolderWorkspaceService _workspaceFactory;

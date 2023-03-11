@@ -10,12 +10,12 @@ public static class EnumExtensions
 {
     public static string GetName<T>(this T source)
     {
-        return GetAttributeValue(source, a => a.Name);
+        return source.GetAttributeValue<T, DisplayAttribute>(a => a.Name);
     }
 
     public static string GetShortName<T>(this T source)
     {
-        return GetAttributeValue(source, a => a.ShortName);
+        return source.GetAttributeValue<T, DisplayAttribute>(a => a.ShortName);
     }
 
     public static IEnumerable<T> GetEnumValues<T>()
@@ -136,28 +136,5 @@ public static class EnumExtensions
         }
 
         return false;
-    }
-
-    private static string GetAttributeValue<T>(
-        this T source,
-        Func<DisplayAttribute, string> valueSelector)
-    {
-        var fieldName = source?.ToString();
-        if (fieldName == null)
-        {
-            throw new ArgumentOutOfRangeException(nameof(source));
-        }
-
-        var field = source?.GetType().GetField(fieldName);
-
-        var attributes = field?.GetCustomAttributes(typeof(DisplayAttribute), false) as DisplayAttribute[];
-        if (attributes != null && attributes.Length > 0)
-        {
-            return valueSelector(attributes[0]);
-        }
-        else
-        {
-            return source?.ToString();
-        }
     }
 }

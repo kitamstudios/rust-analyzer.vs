@@ -6,6 +6,9 @@
       "Manifest": "<TestRoot>\\workspace_mixed\\Cargo.toml",
       "TargetDir": "<TestRoot>\\workspace_mixed\\target",
       "Source": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+      "AdditionalTestDiscoveryArguments": "",
+      "AdditionalTestExecutionArguments": "",
+      "TestExecutionEnvironment": "",
       "Profile": "dev",
       "TestExe": "<not_yet_generated>"
     }
@@ -17,6 +20,9 @@
       "Manifest": "<TestRoot>\\workspace_mixed\\Cargo.toml",
       "TargetDir": "<TestRoot>\\workspace_mixed\\target",
       "Source": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+      "AdditionalTestDiscoveryArguments": "",
+      "AdditionalTestExecutionArguments": "",
+      "TestExecutionEnvironment": "",
       "Profile": "dev",
       "TestExe": "<not_yet_generated>"
     }
@@ -28,6 +34,9 @@
       "Manifest": "<TestRoot>\\workspace_mixed\\Cargo.toml",
       "TargetDir": "<TestRoot>\\workspace_mixed\\target",
       "Source": "<TestRoot>\\workspace_mixed\\src\\libx.rs",
+      "AdditionalTestDiscoveryArguments": "",
+      "AdditionalTestExecutionArguments": "",
+      "TestExecutionEnvironment": "",
       "Profile": "dev",
       "TestExe": "<not_yet_generated>"
     }
@@ -39,6 +48,9 @@
       "Manifest": "<TestRoot>\\workspace_mixed\\Cargo.toml",
       "TargetDir": "<TestRoot>\\workspace_mixed\\target",
       "Source": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+      "AdditionalTestDiscoveryArguments": "",
+      "AdditionalTestExecutionArguments": "",
+      "TestExecutionEnvironment": "",
       "Profile": "dev",
       "TestExe": "<not_yet_generated>"
     }
@@ -50,6 +62,9 @@
       "Manifest": "<TestRoot>\\workspace_mixed\\Cargo.toml",
       "TargetDir": "<TestRoot>\\workspace_mixed\\target",
       "Source": "<TestRoot>\\workspace_mixed\\src\\main.rs",
+      "AdditionalTestDiscoveryArguments": "",
+      "AdditionalTestExecutionArguments": "",
+      "TestExecutionEnvironment": "",
       "Profile": "dev",
       "TestExe": "<not_yet_generated>"
     }
@@ -61,6 +76,9 @@
       "Manifest": "<TestRoot>\\workspace_mixed\\shared\\Cargo.toml",
       "TargetDir": "<TestRoot>\\workspace_mixed\\target",
       "Source": "<TestRoot>\\workspace_mixed\\shared\\src\\lib.rs",
+      "AdditionalTestDiscoveryArguments": "",
+      "AdditionalTestExecutionArguments": "",
+      "TestExecutionEnvironment": "",
       "Profile": "dev",
       "TestExe": "<not_yet_generated>"
     }

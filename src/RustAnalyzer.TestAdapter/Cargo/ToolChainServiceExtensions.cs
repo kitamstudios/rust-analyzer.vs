@@ -17,7 +17,7 @@ public static class ToolChainServiceExtensions
         return JsonConvert.DeserializeObject<TestContainer>(await @this.ReadAllTextAsync(ct));
     }
 
-    public static Task WriteTestContainerAsync(this PathEx @this, PathEx manifestPath, PathEx targetPath, PathEx sourcePath, string profile, PathEx? testExePath, CancellationToken ct)
+    public static Task WriteTestContainerAsync(this PathEx @this, PathEx manifestPath, PathEx targetPath, PathEx sourcePath, string additionalTestDiscoveryArguments, string additionalTestExecutionArguments, string testExecutionEnvironment, string profile, PathEx? testExePath, CancellationToken ct)
     {
         return @this.WriteAllTextAsync(
             JsonConvert.SerializeObject(
@@ -27,6 +27,9 @@ public static class ToolChainServiceExtensions
                     Manifest = manifestPath,
                     Source = sourcePath,
                     TargetDir = targetPath,
+                    AdditionalTestDiscoveryArguments = additionalTestDiscoveryArguments,
+                    AdditionalTestExecutionArguments = additionalTestExecutionArguments,
+                    TestExecutionEnvironment = testExecutionEnvironment,
                     Profile = profile,
                     TestExe = testExePath ?? TestContainer.NotYetGeneratedMarker,
                 },

@@ -41,23 +41,24 @@ public class WorkspaceExtensionsTests
     }
 
     [Theory]
-    [InlineData(@"not_a_project\src\main.rs", "not_a_project", false)]
-    [InlineData(@"hello_library\src\lib.rs", "hello_library", false)]
-    [InlineData(@"hello_library\Cargo.toml", "hello_library", false)]
-    [InlineData(@"hello_workspace\main\src\main.rs", "hello_workspace", true)]
-    [InlineData(@"hello_workspace\main\src\main.txt", "hello_workspace", false)]
-    [InlineData(@"hello_workspace\main\Cargo.toml", "hello_workspace", true)]
-    [InlineData(@"workspace_with_example\lib\examples\eg1.rs", "workspace_with_example", true)]
-    [InlineData(@"workspace_with_example\lib\examples\eg2\main.rs", "workspace_with_example", true)]
-    [InlineData(@"workspace_with_example\lib\examples\eg2\utils.rs", "workspace_with_example", false)]
-    [InlineData(@"does_not_exist\workspace_with_example\lib\examples\eg1.rs", "does_not_exist", false)]
-    public async Task CanHaveExecutableTargetsTestsAsync(string relativePath, string relWorkspaceRoot, bool canHaveExecutableTargets)
+    [InlineData(@"not_a_project\src\main.rs", "not_a_project", false, false)]
+    [InlineData(@"hello_library\src\lib.rs", "hello_library", false, true)]
+    [InlineData(@"hello_library\Cargo.toml", "hello_library", false, true)]
+    [InlineData(@"hello_workspace\main\src\main.rs", "hello_workspace", true, true)]
+    [InlineData(@"hello_workspace\main\src\main.txt", "hello_workspace", false, false)]
+    [InlineData(@"hello_workspace\main\Cargo.toml", "hello_workspace", true, true)]
+    [InlineData(@"workspace_with_example\lib\examples\eg1.rs", "workspace_with_example", true, true)]
+    [InlineData(@"workspace_with_example\lib\examples\eg2\main.rs", "workspace_with_example", true, true)]
+    [InlineData(@"workspace_with_example\lib\examples\eg2\utils.rs", "workspace_with_example", false, true)]
+    [InlineData(@"does_not_exist\workspace_with_example\lib\examples\eg1.rs", "does_not_exist", false, false)]
+    public async Task CanHaveExecutableTargetsTestsAsync(string relativePath, string relWorkspaceRoot, bool canHaveExecutableTargets, bool doesHaveTargets)
     {
         var filePath = TestHelpers.ThisTestRoot.Combine((PathEx)relativePath);
         var workspaceRoot = TestHelpers.ThisTestRoot.Combine((PathEx)relWorkspaceRoot);
 
-        var res = await TestHelpers.MS(workspaceRoot).CanHaveExecutableTargetsAsync(filePath, default);
+        var (hasTargets, isExe) = await TestHelpers.MS(workspaceRoot).GetTargetInfoAsync(filePath, default);
 
-        res.Should().Be(canHaveExecutableTargets);
+        isExe.Should().Be(canHaveExecutableTargets);
+        hasTargets.Should().Be(doesHaveTargets);
     }
 }

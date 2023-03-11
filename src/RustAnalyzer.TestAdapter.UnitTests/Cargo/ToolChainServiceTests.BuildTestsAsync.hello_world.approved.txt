@@ -6,6 +6,9 @@
       "Manifest": "<TestRoot>\\hello_world\\Cargo.toml",
       "TargetDir": "<TestRoot>\\hello_world\\target",
       "Source": "<TestRoot>\\hello_world\\src\\main.rs",
+      "AdditionalTestDiscoveryArguments": "",
+      "AdditionalTestExecutionArguments": "",
+      "TestExecutionEnvironment": "",
       "Profile": "dev",
       "TestExe": "<not_yet_generated>"
     }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.NodeEnhancements;
@@ -11,7 +12,9 @@ namespace KS.RustAnalyzer.Infrastructure;
 
 public interface ISettingsService
 {
-    string Get(string type, PathEx fullItemPath);
+    string GetRaw(string type, PathEx fullItemPath);
+
+    Task<string> GetAsync(string type, PathEx fullItemPath);
 
     Task SetAsync(string type, PathEx fullItemPath, string value);
 }
@@ -28,30 +31,97 @@ public sealed class SettingsServiceFactory : IWorkspaceServiceFactory
 
     public object CreateService(IWorkspace workspaceContext)
     {
-        return new SettingsService((PathEx)workspaceContext.Location, workspaceContext.GetSettingsManager(), new TL { T = T, L = L, });
+        return new SettingsService(
+            (PathEx)workspaceContext.Location,
+            workspaceContext.GetSettingsManager(),
+            async () => await Options.GetLiveInstanceAsync(),
+            new TL { T = T, L = L, });
     }
+}
+
+public class SettingsInfo
+{
+    public string Kind { get; set; }
+
+    public Func<string, string> Getter { get; set; }
+
+    public Func<bool, bool, bool, bool> ShouldDisplay { get; set; }
 }
 
 public sealed class SettingsService : ISettingsService
 {
     public const string KindDebugger = "Debugger";
     public const string KindBuild = "Build";
+    public const string KindTest = "Test";
     public const string TypeCommandLineArguments = nameof(NodeBrowseObject.CommandLineArguments);
     public const string TypeDebuggerEnvironment = nameof(NodeBrowseObject.DebuggerEnvironment);
-    public const string TypeAdditionalBuildArgs = nameof(NodeBrowseObject.AdditionalBuildArguments);
+    public const string TypeAdditionalBuildArguments = nameof(NodeBrowseObject.AdditionalBuildArguments);
+    public const string TypeAdditionalTestDiscoveryArguments = nameof(NodeBrowseObject.AdditionalTestDiscoveryArguments);
+    public const string TypeAdditionalTestExecutionArguments = nameof(NodeBrowseObject.AdditionalTestExecutionArguments);
+    public const string TypeTestExecutionEnvironment = nameof(NodeBrowseObject.TestExecutionEnvironment);
+
+    public static readonly IReadOnlyDictionary<string, SettingsInfo> PropertyInfo =
+        new Dictionary<string, SettingsInfo>
+        {
+            [TypeCommandLineArguments] =
+                new SettingsInfo
+                {
+                    Kind = KindDebugger,
+                    Getter = x => x,
+                    ShouldDisplay = (hasTargets, isExe, isManifest) => isExe,
+                },
+            [TypeDebuggerEnvironment] =
+                new SettingsInfo
+                {
+                    Kind = KindDebugger,
+                    Getter = StringExtensions.GetEnvironmentBlock,
+                    ShouldDisplay = (hasTargets, isExe, isManifest) => isExe,
+                },
+            [TypeAdditionalBuildArguments] =
+                new SettingsInfo
+                {
+                    Kind = KindBuild,
+                    Getter = x => x,
+                    ShouldDisplay = (hasTargets, isExe, isManifest) => isExe,
+                },
+            [TypeAdditionalTestDiscoveryArguments] =
+                new SettingsInfo
+                {
+                    Kind = KindTest,
+                    Getter = x => x,
+                    ShouldDisplay = (hasTargets, isExe, isManifest) => isManifest && hasTargets,
+                },
+            [TypeAdditionalTestExecutionArguments] =
+                new SettingsInfo
+                {
+                    Kind = KindTest,
+                    Getter = x => x,
+                    ShouldDisplay = (hasTargets, isExe, isManifest) => isManifest && hasTargets,
+                },
+            [TypeTestExecutionEnvironment] =
+                new SettingsInfo
+                {
+                    Kind = KindTest,
+                    Getter = StringExtensions.GetEnvironmentBlock,
+                    ShouldDisplay = (hasTargets, isExe, isManifest) => isManifest && hasTargets,
+                },
+        };
+
     private readonly PathEx _location;
     private readonly IWorkspaceSettingsManager _settingsManager;
+    private readonly Func<Task<ISettingsServiceDefaults>> _hostWideOptionsGetter;
     private readonly TL _tl;
 
-    [ImportingConstructor]
-    public SettingsService(PathEx location, IWorkspaceSettingsManager settingsManager, TL tl)
+    public SettingsService(PathEx location, IWorkspaceSettingsManager settingsManager, Func<Task<ISettingsServiceDefaults>> hostWideOptionsGetter, TL tl)
     {
         _location = location;
         _settingsManager = settingsManager;
+        _hostWideOptionsGetter = hostWideOptionsGetter;
         _tl = tl;
     }
 
-    public string Get(string type, PathEx fullItemPath)
+    // TODO: RELEASE: Unit test this.
+    public string GetRaw(string type, PathEx fullItemPath)
     {
         if (_settingsManager == null)
         {
@@ -61,12 +131,29 @@ public sealed class SettingsService : ISettingsService
 
         var settings = _settingsManager.GetAggregatedSettings(SettingsTypes.Generic);
         var result = settings.GetProperty(CreateKeyName(type, fullItemPath), out string value);
-        if (result == WorkspaceSettingsResult.Success)
+        if (result != WorkspaceSettingsResult.Success || value.IsNullOrEmptyOrWhiteSpace())
         {
-            return value;
+            value = string.Empty;
         }
 
-        return string.Empty;
+        return value;
+    }
+
+    // TODO: RELEASE: Unit test this.
+    public async Task<string> GetAsync(string type, PathEx fullItemPath)
+    {
+        var value = GetRaw(type, fullItemPath);
+        if (value.IsNullOrEmptyOrWhiteSpace())
+        {
+            var hostWideOptions = await _hostWideOptionsGetter();
+            value = (string)hostWideOptions.GetType().GetProperty(type).GetValue(hostWideOptions, null);
+            if (value.IsNullOrEmptyOrWhiteSpace())
+            {
+                value = string.Empty;
+            }
+        }
+
+        return PropertyInfo[type].Getter(value);
     }
 
     public async Task SetAsync(string type, PathEx fullItemPath, string value)
@@ -94,24 +181,7 @@ public sealed class SettingsService : ISettingsService
 
     private string CreateKeyName(string type, PathEx fullItemPath)
     {
-        string kind;
-        if (type == TypeCommandLineArguments)
-        {
-            kind = KindDebugger;
-        }
-        else if (type == TypeDebuggerEnvironment)
-        {
-            kind = KindDebugger;
-        }
-        else if (type == TypeAdditionalBuildArgs)
-        {
-            kind = KindBuild;
-        }
-        else
-        {
-            throw new NotImplementedException(type);
-        }
-
+        var kind = PropertyInfo[type].Kind;
         var relItemPath = _location.MakeRelativePath(fullItemPath);
 
         return $"{Vsix.Name}-{kind}-{type}-{relItemPath}";

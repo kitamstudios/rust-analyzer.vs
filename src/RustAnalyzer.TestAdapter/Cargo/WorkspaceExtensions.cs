@@ -106,20 +106,10 @@ public static class WorkspaceExtensions
 
     public static bool IsTestContainer(this PathEx @this) => @this.GetExtension() == Constants.TestsContainerExtension;
 
-    public static async Task<bool> CanHaveExecutableTargetsAsync(this IMetadataService @this, PathEx filePath, CancellationToken ct)
+    public static async Task<(bool HasTargets, bool IsExe)> GetTargetInfoAsync(this IMetadataService @this, PathEx filePath, CancellationToken ct)
     {
-        if (!filePath.IsManifest() && !filePath.IsRustFile())
-        {
-            return false;
-        }
-
-        var p = await @this?.GetContainingPackageAsync(filePath, ct);
-        if (p == null)
-        {
-            return false;
-        }
-
-        return p.Targets.Any(t => t.IsRunnable && (t.SourcePath == filePath || t.Parent.ManifestPath == filePath));
+        var ts = await @this.GetTargets(filePath, ct);
+        return (ts.Any(), ts.Any(t => t.IsRunnable && (t.SourcePath == filePath || t.Parent.ManifestPath == filePath)));
     }
 
     public static bool IsExample(this Workspace.Target @this) => @this.Kinds[0] == Workspace.Kind.Example;
@@ -139,5 +129,21 @@ public static class WorkspaceExtensions
         return @this.Targets
             .Where(t => t.CanHaveTests)
             .Select(t => (Container: t.GetTestContainerPath(profile), Target: t));
+    }
+
+    private static async Task<IEnumerable<Workspace.Target>> GetTargets(this IMetadataService @this, PathEx filePath, CancellationToken ct)
+    {
+        if (!filePath.IsManifest() && !filePath.IsRustFile())
+        {
+            return Enumerable.Empty<Workspace.Target>();
+        }
+
+        var p = await @this?.GetContainingPackageAsync(filePath, ct);
+        if (p == null)
+        {
+            return Enumerable.Empty<Workspace.Target>();
+        }
+
+        return p.Targets;
     }
 }

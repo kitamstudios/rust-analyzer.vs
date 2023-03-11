@@ -6,6 +6,9 @@
       "Manifest": "<TestRoot>\\hello_workspace\\main\\Cargo.toml",
       "TargetDir": "<TestRoot>\\hello_workspace\\target",
       "Source": "<TestRoot>\\hello_workspace\\main\\src\\main.rs",
+      "AdditionalTestDiscoveryArguments": "",
+      "AdditionalTestExecutionArguments": "",
+      "TestExecutionEnvironment": "",
       "Profile": "dev",
       "TestExe": "<not_yet_generated>"
     }
@@ -17,6 +20,9 @@
       "Manifest": "<TestRoot>\\hello_workspace\\subfolder\\shared2\\Cargo.toml",
       "TargetDir": "<TestRoot>\\hello_workspace\\target",
       "Source": "<TestRoot>\\hello_workspace\\subfolder\\shared2\\src\\lib.rs",
+      "AdditionalTestDiscoveryArguments": "",
+      "AdditionalTestExecutionArguments": "",
+      "TestExecutionEnvironment": "",
       "Profile": "dev",
       "TestExe": "<not_yet_generated>"
     }
@@ -28,6 +34,9 @@
       "Manifest": "<TestRoot>\\hello_workspace\\shared\\Cargo.toml",
       "TargetDir": "<TestRoot>\\hello_workspace\\target",
       "Source": "<TestRoot>\\hello_workspace\\shared\\src\\lib.rs",
+      "AdditionalTestDiscoveryArguments": "",
+      "AdditionalTestExecutionArguments": "",
+      "TestExecutionEnvironment": "",
       "Profile": "dev",
       "TestExe": "<not_yet_generated>"
     }

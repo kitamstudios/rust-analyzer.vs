@@ -52,7 +52,7 @@ public class FileContextProviderTests
     private static ISettingsService GetSettingsService()
     {
         var ss = new Mock<ISettingsService>();
-        ss.Setup(cs => cs.Get(It.IsAny<string>(), It.IsAny<PathEx>())).Returns(string.Empty);
+        ss.Setup(cs => cs.GetAsync(It.IsAny<string>(), It.IsAny<PathEx>())).Returns(string.Empty.ToTask());
 
         return ss.Object;
     }

@@ -39,7 +39,7 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
             return await Task.FromResult(FileContext.EmptyFileContexts);
         }
 
-        var additionalBuildArgs = _settingsService.Get(SettingsService.TypeAdditionalBuildArgs, (PathEx)filePath);
+        var args = await GetBuildTargetInfoForBuildActionAsync(fp);
 
         if (fp.IsManifest())
         {
@@ -50,7 +50,19 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
                         new FileContext(
                             FileContextProviderFactory.ProviderTypeGuid,
                             BuildContextTypes.BuildContextTypeGuid,
-                            new BuildFileContext(_cargoService, new BuildTargetInfo { Profile = profile, WorkspaceRoot = package.WorkspaceRoot, ManifestPath = fp, AdditionalBuildArgs = additionalBuildArgs }, _outputPane),
+                            new BuildFileContext(
+                                _cargoService,
+                                new BuildTargetInfo
+                                {
+                                    Profile = profile,
+                                    WorkspaceRoot = package.WorkspaceRoot,
+                                    ManifestPath = fp,
+                                    AdditionalBuildArgs = args.AdditionalBuildArgs,
+                                    AdditionalTestDiscoveryArguments = args.AdditionalTestDiscoveryArguments,
+                                    AdditionalTestExecutionArguments = args.AdditionalTestExecutionArguments,
+                                    TestExecutionEnvironment = args.TestExecutionEnvironment,
+                                },
+                                _outputPane),
                             new[] { (string)fp },
                             displayName: profile),
                         new FileContext(
@@ -67,11 +79,20 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
             var target = package.GetTargets().Where(t => t.SourcePath == fp && t.IsRunnable).FirstOrDefault();
             if (target != null)
             {
-                return package.GetProfiles().SelectMany(p => GetBuildActions(target, p, additionalBuildArgs)).ToList();
+                return package.GetProfiles().SelectMany(p => GetBuildActions(target, p, args.AdditionalBuildArgs)).ToList();
             }
         }
 
         return FileContext.EmptyFileContexts;
+    }
+
+    private async Task<(string AdditionalBuildArgs, string AdditionalTestDiscoveryArguments, string AdditionalTestExecutionArguments, string TestExecutionEnvironment)> GetBuildTargetInfoForBuildActionAsync(PathEx filePath)
+    {
+        return (
+            AdditionalBuildArgs: await _settingsService.GetAsync(SettingsService.TypeAdditionalBuildArguments, filePath),
+            AdditionalTestDiscoveryArguments: await _settingsService.GetAsync(SettingsService.TypeAdditionalTestDiscoveryArguments, filePath),
+            AdditionalTestExecutionArguments: await _settingsService.GetAsync(SettingsService.TypeAdditionalTestExecutionArguments, filePath),
+            TestExecutionEnvironment: await _settingsService.GetAsync(SettingsService.TypeTestExecutionEnvironment, filePath));
     }
 
     private IEnumerable<FileContext> GetBuildActions(Workspace.Target target, string profile, string additionalBuildArgs)

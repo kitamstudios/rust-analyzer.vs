@@ -74,8 +74,8 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                 return;
             }
 
-            var args = GetSettings(RaSettingsService.TypeCommandLineArguments, workspaceContext.GetService<ISettingsService>(), lcw);
-            var env = GetSettings(RaSettingsService.TypeDebuggerEnvironment, workspaceContext.GetService<ISettingsService>(), lcw);
+            var args = await GetSettingsAsync(RaSettingsService.TypeCommandLineArguments, workspaceContext.GetService<ISettingsService>(), lcw);
+            var env = await GetSettingsAsync(RaSettingsService.TypeDebuggerEnvironment, workspaceContext.GetService<ISettingsService>(), lcw);
             var noDebugFlag = lcw.ContainsKey(LaunchConfigurationConstants.NoDebugKey) ? __VSDBGLAUNCHFLAGS.DBGLAUNCH_NoDebug : 0;
             var info = new VsDebugTargetInfo
             {
@@ -83,7 +83,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                 bstrExe = processName,
                 bstrCurDir = Path.GetDirectoryName(processName),
                 bstrArg = args,
-                bstrEnv = env.GetEnvironmentBlock(),
+                bstrEnv = env,
                 bstrOptions = null,
                 bstrPortName = null,
                 bstrMdmRegisteredName = null,
@@ -109,10 +109,10 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
         }
     }
 
-    private string GetSettings(string type, ISettingsService settingsService, LaunchConfigWrapper lcw)
+    private Task<string> GetSettingsAsync(string type, ISettingsService settingsService, LaunchConfigWrapper lcw)
     {
         var projectKey = lcw[LaunchConfigurationConstants.ProjectKey];
-        return settingsService.Get(type, (PathEx)projectKey);
+        return settingsService.GetAsync(type, (PathEx)projectKey);
     }
 
     /// <summary>

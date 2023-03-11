@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
@@ -69,7 +70,7 @@ public sealed class ToolChainService : IToolChainService
             var w = await GetWorkspaceAsync(bti.ManifestPath, ct);
             var tasks = w.Packages
                 .SelectMany(p => p.GetTestContainers(bti.Profile))
-                .Select(x => x.Container.WriteTestContainerAsync(x.Target.Parent.ManifestPath, w.TargetDirectory, x.Target.SourcePath, bti.Profile, null, ct));
+                .Select(x => x.Container.WriteTestContainerAsync(x.Target.Parent.ManifestPath, w.TargetDirectory, x.Target.SourcePath, bti.AdditionalTestDiscoveryArguments, bti.AdditionalTestExecutionArguments, bti.TestExecutionEnvironment, bti.Profile, null, ct));
             await Task.WhenAll(tasks);
         }
 
@@ -121,7 +122,7 @@ public sealed class ToolChainService : IToolChainService
             ct: ct);
     }
 
-    // TODO: NEW: "Build all" enabled if top level cargo.toml exists.
+    // TODO: RELEASE: "Build all" enabled if top level cargo.toml exists.
     public async Task<Workspace> GetWorkspaceAsync(PathEx manifestPath, CancellationToken ct)
     {
         var cargoFullPath = GetCargoExePath();
@@ -129,7 +130,13 @@ public sealed class ToolChainService : IToolChainService
         var exitCode = 0;
         try
         {
-            using var proc = await ProcessRunner.RunWithLogging(cargoFullPath, new[] { "metadata", "--no-deps", "--format-version", "1", "--manifest-path", manifestPath, "--offline" }, ct, _tl.L);
+            using var proc = await ProcessRunner.RunWithLogging(
+                cargoFullPath,
+                new[] { "metadata", "--no-deps", "--format-version", "1", "--manifest-path", manifestPath, "--offline" },
+                cargoFullPath?.GetDirectoryName(),
+                ImmutableDictionary<string, string>.Empty,
+                ct,
+                _tl.L);
             exitCode = proc.ExitCode ?? 0;
             var w = JsonConvert.DeserializeObject<Workspace>(string.Join(string.Empty, proc.StandardOutputLines));
             return AddRootPackageIfNecessary(w, manifestPath);
@@ -155,7 +162,10 @@ public sealed class ToolChainService : IToolChainService
         var exitCode = 0;
         try
         {
-            using var proc = await ProcessRunner.RunWithLogging(cargoFullPath, new[] { "test", "--no-run", "--manifest-path", tc.Manifest, "--profile", profile }, ct, _tl.L);
+            var args = new[] { "test", "--no-run", "--manifest-path", tc.Manifest, "--profile", profile }
+                .Concat(tc.AdditionalTestDiscoveryArguments.GetSpaceSeperatedParts())
+                .ToArray();
+            using var proc = await ProcessRunner.RunWithLogging(cargoFullPath, args, cargoFullPath?.GetDirectoryName(), ImmutableDictionary<string, string>.Empty, ct, _tl.L);
             exitCode = proc.ExitCode ?? 0;
 
             var testExeBuildInfos = proc.StandardErrorLines
@@ -171,8 +181,9 @@ public sealed class ToolChainService : IToolChainService
                 throw e;
             }
 
+            // TODO: RELEASE: Drive through tests. This should loop through all test exes. Add test for this.
             tc.TestExe = testExeBuildInfos.First().testExe;
-            await testContainerPath.WriteTestContainerAsync(tc.Manifest, tc.TargetDir, tc.Source, profile, tc.TestExe, ct);
+            await testContainerPath.WriteTestContainerAsync(tc.Manifest, tc.TargetDir, tc.Source, tc.AdditionalTestDiscoveryArguments, tc.AdditionalTestExecutionArguments, tc.TestExecutionEnvironment, profile, tc.TestExe, ct);
 
             return await GetTestSuiteInfoFromOneTestExe(tc.TestExe, testContainerPath, tc.TargetDir.GetDirectoryName(), ct);
         }
@@ -190,7 +201,7 @@ public sealed class ToolChainService : IToolChainService
 
     private async Task<TestSuiteInfo> GetTestSuiteInfoFromOneTestExe(PathEx testExePath, PathEx testContainerPath, PathEx workspaceRoot, CancellationToken ct)
     {
-        using var proc = await ProcessRunner.RunWithLogging(testExePath, new[] { "--list", "--format", "json", "-Zunstable-options" }, ct, _tl.L);
+        using var proc = await ProcessRunner.RunWithLogging(testExePath, new[] { "--list", "--format", "json", "-Zunstable-options" }, workspaceRoot, ImmutableDictionary<string, string>.Empty, ct, _tl.L);
         var testSuites = proc.StandardOutputLines
             .Skip(1)
             .Take(proc.StandardOutputLines.Count() - 2)
@@ -241,12 +252,11 @@ public sealed class ToolChainService : IToolChainService
             opName,
             new[] { ("FilePath", filePath), ("Profile", profile), ("CargoPath", cargoFullPath.Value), ("Arguments", arguments) });
 
-        string workingDir = Path.GetDirectoryName(filePath);
         return await RunAsync(
             cargoFullPath.Value,
             arguments,
-            workingDir,
-            redirector: new BuildOutputRedirector(outputPane, (PathEx)workingDir, buildMessageReporter, outputPreprocessor),
+            cargoFullPath?.GetDirectoryName(),
+            redirector: new BuildOutputRedirector(outputPane, (PathEx)Path.GetDirectoryName(filePath), buildMessageReporter, outputPreprocessor),
             ct: ct);
     }
 

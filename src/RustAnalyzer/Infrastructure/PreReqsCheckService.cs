@@ -88,6 +88,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         return results;
     }
 
+    // TODO: RELEASE: rustc project hangs IDE.
     private static async Task<(bool, string)> CheckCargoAsync(IToolChainService cargoService)
     {
         if (!cargoService.GetCargoExePath().HasValue)

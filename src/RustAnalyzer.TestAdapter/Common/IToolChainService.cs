@@ -36,6 +36,12 @@ public sealed class TestContainer
 
     public PathEx Source { get; set; }
 
+    public string AdditionalTestDiscoveryArguments { get; set; }
+
+    public string AdditionalTestExecutionArguments { get; set; }
+
+    public string TestExecutionEnvironment { get; set; }
+
     public string Profile { get; set; }
 
     public PathEx TestExe { get; set; }
@@ -50,6 +56,12 @@ public sealed class BuildTargetInfo
     public string Profile { get; set; }
 
     public string AdditionalBuildArgs { get; set; } = string.Empty;
+
+    public string AdditionalTestDiscoveryArguments { get; set; } = string.Empty;
+
+    public string AdditionalTestExecutionArguments { get; set; } = string.Empty;
+
+    public string TestExecutionEnvironment { get; set; } = string.Empty;
 }
 
 public sealed class BuildOutputSinks
