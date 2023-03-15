@@ -95,7 +95,7 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
                 .Concat(new[] { "--format", "json", "-Zunstable-options", "--report-time" })
                 .Concat(tc.AdditionalTestExecutionArguments.GetSpaceSeperatedParts())
                 .ToArray();
-        var envDict = tc.TestExecutionEnvironment.GetDictionaryFromEnvironmentBlock();
+        var envDict = tc.TestExecutionEnvironment.OverrideProcessEnvironment();
         if (isBeingDebugged)
         {
             tl.L.WriteLine("RunTestsFromOneSourceAsync launching test under debugger.");

@@ -84,7 +84,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                 bstrExe = processName,
                 bstrCurDir = Path.GetDirectoryName(processName),
                 bstrArg = args,
-                bstrEnv = env,
+                bstrEnv = env.OverrideProcessEnvironment().ToEnvironmentBlock(),
                 bstrOptions = null,
                 bstrPortName = null,
                 bstrMdmRegisteredName = null,
