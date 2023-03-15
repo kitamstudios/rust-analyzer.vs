@@ -16,6 +16,7 @@ using RaSettingsService = KS.RustAnalyzer.Infrastructure.SettingsService;
 
 namespace KS.RustAnalyzer.Debugger;
 
+// TODO: RELEASE: Close solution, do not force upgrade.
 [ExportLaunchDebugTarget(ProviderType, new[] { ".exe" })]
 public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
 {

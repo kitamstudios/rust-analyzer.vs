@@ -6,10 +6,10 @@ using Microsoft.VisualBasic.FileIO;
 
 namespace KS.RustAnalyzer.Infrastructure;
 
-public static class StringExtensions
+public static class EnvironmentExtensions
 {
     // Environment variables should be passed as a null-terminated block of null-terminated strings. Each string is in the following form:name=value\0.
-    // NOTE: This is here because TextFieldParser is not in .NET Standard.
+    // NOTE: This is here because TextFieldParser is not in .NET Standard 2.0 which VS2022 requires. This causes a whole bunch of complications.
     public static string GetEnvironmentBlock(this string @this)
     {
         using var sr = new StringReader(@this);

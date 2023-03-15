@@ -74,7 +74,7 @@ public sealed class SettingsService : ISettingsService
                 new SettingsInfo
                 {
                     Kind = KindDebugger,
-                    Getter = StringExtensions.GetEnvironmentBlock,
+                    Getter = EnvironmentExtensions.GetEnvironmentBlock,
                     ShouldDisplay = (hasTargets, isExe, isManifest) => isExe,
                 },
             [TypeAdditionalBuildArguments] =
@@ -102,7 +102,7 @@ public sealed class SettingsService : ISettingsService
                 new SettingsInfo
                 {
                     Kind = KindTest,
-                    Getter = StringExtensions.GetEnvironmentBlock,
+                    Getter = EnvironmentExtensions.GetEnvironmentBlock,
                     ShouldDisplay = (hasTargets, isExe, isManifest) => isManifest && hasTargets,
                 },
         };

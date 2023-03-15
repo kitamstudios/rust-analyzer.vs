@@ -50,7 +50,7 @@
     <Compile Include="Infrastructure\StringBuildMessagePreprocessor.cs" />
     <Compile Include="NodeEnhancements\Commands.cs" />
     <Compile Include="Infrastructure\Options.cs" />
-    <Compile Include="Infrastructure\StringExtensions.cs" />
+    <Compile Include="Infrastructure\EnvironmentExtensions.cs" />
     <Compile Include="NodeEnhancements\NodeBrowseObjectPropertyFilter.cs" />
     <Compile Include="NodeEnhancements\NodeBrowseObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

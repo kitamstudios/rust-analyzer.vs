@@ -4,7 +4,8 @@ using Xunit;
 
 namespace KS.RustAnalyzer.UnitTests.Infrastructure;
 
-public class StringExtensionTests
+// TODO: Test that writing bad settings values is not possible instead of failing later
+public class EnvironmentExtensionsTests
 {
     [Theory]
     [InlineData(@"", "\0")]

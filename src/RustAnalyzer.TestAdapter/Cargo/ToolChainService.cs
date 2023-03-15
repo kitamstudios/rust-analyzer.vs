@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Newtonsoft.Json;
 
@@ -224,6 +225,7 @@ public sealed class ToolChainService : IToolChainService
         return test;
     }
 
+    // TODO: RELEASE: Test for duration field.
     private static Workspace AddRootPackageIfNecessary(Workspace w, PathEx manifestPath)
     {
         var p = w.Packages.FirstOrDefault(p => p.ManifestPath.GetFullPath() == manifestPath.GetFullPath());
@@ -262,7 +264,7 @@ public sealed class ToolChainService : IToolChainService
 
     private static async Task<bool> RunAsync(PathEx cargoFullPath, string arguments, string workingDir, ProcessOutputRedirector redirector, CancellationToken ct)
     {
-        Debug.Assert(!string.IsNullOrEmpty(arguments), $"{nameof(arguments)} should not be empty.");
+        EnsureArg.IsNotEmptyOrWhiteSpace(arguments, nameof(arguments));
 
         redirector?.WriteLineWithoutProcessing($"\n=== Cargo started: {Constants.CargoExe} {arguments} ===");
         redirector?.WriteLineWithoutProcessing($"         Path: {cargoFullPath}");

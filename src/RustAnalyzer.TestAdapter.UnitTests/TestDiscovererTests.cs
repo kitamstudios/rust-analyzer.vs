@@ -18,19 +18,19 @@ public class TestDiscovererTests
     private readonly IToolChainService _tcs = new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L);
 
     [Theory(Skip = "Rust nightlies do not contain the necessary changes yet.")]
-    [InlineData(@"hello_world", "hello_world_hello_world.rusttests")] // No tests.
-    [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests")] // Has tests.
+    [InlineData(@"hello_world", "hello_world_hello_world.rusttests", "dev")] // No tests.
+    [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests", "dev")] // Has tests.
     [UseReporter(typeof(DiffReporter))]
-    public async Task DiscoverTestsTestsAsync(string workspaceRelRoot, string containerName)
+    public async Task DiscoverTestsTestsAsync(string workspaceRelRoot, string containerName, string profile)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
         var workspacePath = TestHelpers.ThisTestRoot + (PathEx)workspaceRelRoot;
         var manifestPath = workspacePath + Constants.ManifestFileName2;
-        var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath("dev");
+        var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath(profile);
         var tcPath = targetPath + (PathEx)containerName;
         targetPath.CleanTestContainers();
 
-        await _tcs.DoBuildAsync(workspacePath, manifestPath, "dev");
+        await _tcs.DoBuildAsync(workspacePath, manifestPath, profile);
         var sink = new SpyTestCaseDiscoverySink();
         new TestDiscoverer().DiscoverTests(new[] { (string)tcPath }, Mock.Of<IDiscoveryContext>(), Mock.Of<IMessageLogger>(), sink);
 

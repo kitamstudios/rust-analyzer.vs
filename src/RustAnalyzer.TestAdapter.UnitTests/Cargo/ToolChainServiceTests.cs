@@ -78,20 +78,20 @@ public sealed class ToolChainServiceTests
 
     // TODO: RELEASE: during build, fmt, clippy etc. save all open files.
     [Theory]
-    [InlineData(@"hello_world")]
-    [InlineData(@"hello_library")]
-    [InlineData(@"hello_workspace")]
-    [InlineData(@"workspace_mixed")]
+    [InlineData(@"hello_world", "dev")]
+    [InlineData(@"hello_library", "dev")]
+    [InlineData(@"hello_workspace", "dev")]
+    [InlineData(@"workspace_mixed", "dev")]
     [UseReporter(typeof(DiffReporter))]
-    public async Task BuildTestsAsync(string workspaceRelRoot)
+    public async Task BuildTestsAsync(string workspaceRelRoot, string profile)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
         var workspacePath = TestHelpers.ThisTestRoot + (PathEx)workspaceRelRoot;
         var manifestPath = workspacePath + Constants.ManifestFileName2;
-        var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath("dev");
+        var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath(profile);
         targetPath.CleanTestContainers();
 
-        var success = await _tcs.DoBuildAsync(workspacePath, manifestPath, "dev");
+        var success = await _tcs.DoBuildAsync(workspacePath, manifestPath, profile);
 
         success.Should().BeTrue();
         var tasks = Directory.EnumerateFiles(targetPath, TestHelpers.TestContainersSearchPattern)
@@ -102,25 +102,25 @@ public sealed class ToolChainServiceTests
     }
 
     [Theory(Skip = "Rust nightlies do not contain the necessary changes yet.")]
-    [InlineData(@"hello_world", "hello_world_hello_world.rusttests")] // No tests.
-    [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests")] // Has tests.
+    [InlineData(@"hello_world", "hello_world_hello_world.rusttests", "release")] // No tests.
+    [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests", "release")] // Has tests.
     [UseReporter(typeof(DiffReporter))]
-    public async Task GetTestSuiteTestsAsync(string workspaceRelRoot, string containerName)
+    public async Task GetTestSuiteTestsAsync(string workspaceRelRoot, string containerName, string profile)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
         var workspacePath = TestHelpers.ThisTestRoot + (PathEx)workspaceRelRoot;
         var manifestPath = workspacePath + Constants.ManifestFileName2;
-        var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath("release");
+        var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath(profile);
         var tcPath = targetPath + (PathEx)containerName;
         targetPath.CleanTestContainers();
 
-        await _tcs.DoBuildAsync(workspacePath, manifestPath, "release");
-        var testSuite = await _tcs.GetTestSuiteInfoAsync(tcPath, "release", default);
+        await _tcs.DoBuildAsync(workspacePath, manifestPath, profile);
+        var testSuite = await _tcs.GetTestSuiteInfoAsync(tcPath, profile, default);
         var tc = JsonConvert.DeserializeObject<TestContainer>(await tcPath.ReadAllTextAsync(default));
 
         tc.TestExe.FileExists().Should().BeTrue();
         tc.TestExe.GetExtension().Should().Be((PathEx)".exe");
-        tc.Profile.Should().Be("release");
+        tc.Profile.Should().Be(profile);
         tc.ThisPath.Should().Be(tcPath);
         testSuite.Container.Should().Be(tcPath);
         var normalizedStr = testSuite.SerializeAndNormalizeObject();
