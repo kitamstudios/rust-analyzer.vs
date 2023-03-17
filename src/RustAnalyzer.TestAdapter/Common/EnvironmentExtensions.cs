@@ -14,9 +14,8 @@ public static class EnvironmentExtensions
         var entrySep = new[] { "=" };
         return (@this ?? string.Empty)
             .Split(nullSep, StringSplitOptions.RemoveEmptyEntries)
-            .Select(x => x.Split(entrySep, StringSplitOptions.RemoveEmptyEntries))
-            .Where(x => x.Length == 2)
-            .ToDictionary(x => x[0], x => x[1]);
+            .Select(x => x.Split(entrySep, StringSplitOptions.None))
+            .ToDictionary(x => x[0], x => x.Length == 2 ? x[1] : string.Empty);
     }
 
     public static IDictionary<string, string> OverrideProcessEnvironment(this string @this)
