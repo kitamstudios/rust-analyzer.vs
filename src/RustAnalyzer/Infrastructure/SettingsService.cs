@@ -120,7 +120,7 @@ public sealed class SettingsService : ISettingsService
         _tl = tl;
     }
 
-    // TODO: RELEASE: Unit test this.
+    // TODO: 1.5. RELEASE: Unit test this.
     public string GetRaw(string type, PathEx fullItemPath)
     {
         if (_settingsManager == null)
@@ -139,7 +139,7 @@ public sealed class SettingsService : ISettingsService
         return value;
     }
 
-    // TODO: RELEASE: Unit test this.
+    // TODO: 1.5 RELEASE: Unit test this.
     public async Task<string> GetAsync(string type, PathEx fullItemPath)
     {
         var value = GetRaw(type, fullItemPath);

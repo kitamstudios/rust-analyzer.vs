@@ -1,0 +1,12 @@
+[
+  {
+    "Id": "61ec0126-2ee6-8dbd-8e1a-cd3dae34c850",
+    "FullyQualifiedName": "tests.test_requires_foo_to_be_bar",
+    "DisplayName": "test_requires_foo_to_be_bar",
+    "ExecutorUri": "executor://RustTestExecutor/v1",
+    "Source": "<TestRoot>\\bin_with_example\\target\\debug\\hello_world_hello_world.rusttests",
+    "CodeFilePath": "<TestRoot>\\bin_with_example\\src\\main.rs",
+    "LineNumber": 34,
+    "Properties": []
+  }
+]

@@ -41,7 +41,7 @@ public class NodeBrowseObject : INotifyPropertyChanged
 
     [Category(SettingsService.KindBuild)]
     [DisplayName("Additional arguments")]
-    [Description("Additional build arguments passed Cargo.exe. Example: --features=blocking --config http.proxy=\\\"http://example.com\\\"")]
+    [Description(@"Additional build arguments passed Cargo.exe. Example: --features=blocking --config ""build.rustflags = '--cfg foo=\""bar\""'""")]
     public string AdditionalBuildArguments
     {
         get => GetPropertyValue();
@@ -51,17 +51,17 @@ public class NodeBrowseObject : INotifyPropertyChanged
     // TODO: TXP: Run example tests as well --all-targets.
     [Category(SettingsService.KindTest)]
     [DisplayName("Additional discovery arguments")]
-    [Description($"Additional arguments passed Cargo.exe test --no-run in addition to --manifest-path and --profile. Check cargo help test for more information.")]
+    [Description("Additional arguments passed Cargo.exe test --no-run in addition to --manifest-path and --profile. Check cargo help test for more information.")]
     public string AdditionalTestDiscoveryArguments
     {
         get => GetPropertyValue();
         set => SetPropertyValue(value);
     }
 
-    // TODO: RELEASE: Write the command likes properly from VS logs.
+    // TODO: 3. RELEASE: Write the command likes properly from VS logs.
     [Category(SettingsService.KindTest)]
     [DisplayName("Additional execution arguments")]
-    [Description($"Additional arguments passed test executable test in addition to XXXX. Check cargo help test for more information.")]
+    [Description("Additional arguments passed test executable test in addition to XXXX. Check cargo help test for more information.")]
     public string AdditionalTestExecutionArguments
     {
         get => GetPropertyValue();
@@ -70,7 +70,7 @@ public class NodeBrowseObject : INotifyPropertyChanged
 
     [Category(SettingsService.KindTest)]
     [DisplayName("Execution environment")]
-    [Description($"Environment variables to set for test execution. Example: RUST_BACKTRACE=1")]
+    [Description("Environment variables to set for test execution. Example: RUST_BACKTRACE=1")]
     public string TestExecutionEnvironment
     {
         get => GetPropertyValue();

@@ -18,7 +18,7 @@ public class TestExecutorTests
 {
     private readonly IToolChainService _tcs = new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L);
 
-    [Theory(Skip = "Rust nightlies do not contain the necessary changes yet.")]
+    [Theory]
     [InlineData(@"hello_world", "hello_world_hello_world.rusttests", "bench")] // No tests.
     [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests", "bench")] // Has tests.
     [UseReporter(typeof(DiffReporter))]
@@ -29,7 +29,7 @@ public class TestExecutorTests
         var tcPath = tps.TargetPath + (PathEx)containerName;
         tps.TargetPath.CleanTestContainers();
 
-        await _tcs.DoBuildAsync(tps.WorkspacePath, tps.ManifestPath, profile);
+        await _tcs.DoBuildAsync(tps.WorkspacePath, tps.ManifestPath, profile, additionalTestExecutionArguments: "--exclude-should-panic", testExecutionEnvironment: "ENV_VAR_1=ENV_VAR_1_VALUE\0\0");
         var fh = new SpyFrameworkHandle();
         new TestExecutor().RunTests(new[] { (string)tcPath }, Mock.Of<IRunContext>(), fh);
 
@@ -39,7 +39,7 @@ public class TestExecutorTests
         Approvals.Verify(normalizedStr);
     }
 
-    [Theory(Skip = "Rust nightlies do not contain the necessary changes yet.")]
+    [Theory]
     [InlineData(@"workspace_with_tests", new[] { "add_one_libadd_one|tests.fibonacci_test.case_2", "adder_adder|tests.it_works_failing", "adder_adder|tests1.tests1.it_works_skipped2" }, "test")]
     public async Task RunSelectedTestsFromMultiplePackagesMultipleFilesTestsAsync(string workspaceRelRoot, string[] tests, string profile)
     {

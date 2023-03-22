@@ -6,7 +6,7 @@ using KS.RustAnalyzer.TestAdapter.Common;
 
 namespace KS.RustAnalyzer.NodeEnhancements;
 
-// TODO: RELEASE: Unit test this and FSOB.
+// TODO: 1.5 RELEASE: Unit test this and FSOB.
 public class NodeBrowseObjectPropertyFilter<T> : CustomTypeDescriptor
     where T : NodeBrowseObject
 {

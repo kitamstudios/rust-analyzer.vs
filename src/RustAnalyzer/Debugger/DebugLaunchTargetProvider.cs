@@ -16,7 +16,7 @@ using RaSettingsService = KS.RustAnalyzer.Infrastructure.SettingsService;
 
 namespace KS.RustAnalyzer.Debugger;
 
-// TODO: RELEASE: Close solution, do not force upgrade.
+// TODO: 3. RELEASE: Close solution, do not force upgrade.
 [ExportLaunchDebugTarget(ProviderType, new[] { ".exe" })]
 public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
 {
@@ -62,9 +62,6 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                 return;
             }
 
-            L.WriteLine("LaunchDebugTarget with profile: {0}, launchConfiguration: {1}", profile, lcw.SerializeObject());
-            T.TrackEvent("Debug", ("Target", targetFQN), ("Profile", profile), ("Manifest", package.FullPath));
-
             var processName = target.GetPath(profile);
             if (!File.Exists(processName))
             {
@@ -78,6 +75,10 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
             var args = await GetSettingsAsync(RaSettingsService.TypeCommandLineArguments, workspaceContext.GetService<ISettingsService>(), lcw);
             var env = await GetSettingsAsync(RaSettingsService.TypeDebuggerEnvironment, workspaceContext.GetService<ISettingsService>(), lcw);
             var noDebugFlag = lcw.ContainsKey(LaunchConfigurationConstants.NoDebugKey) ? __VSDBGLAUNCHFLAGS.DBGLAUNCH_NoDebug : 0;
+
+            L.WriteLine("LaunchDebugTarget with profile: {0}, launchConfiguration: {1}", profile, lcw.SerializeObject());
+            T.TrackEvent("Debug", ("Target", targetFQN), ("Profile", profile), ("Manifest", package.FullPath), ("Args", args), ("Env", env.ReplaceNullWithBar()));
+
             var info = new VsDebugTargetInfo
             {
                 dlo = DEBUG_LAUNCH_OPERATION.DLO_CreateProcess,

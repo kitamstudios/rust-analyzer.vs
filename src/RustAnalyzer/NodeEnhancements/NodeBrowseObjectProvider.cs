@@ -32,7 +32,7 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
         _preReqs = preReqs;
     }
 
-    // TODO: RELEASE: Unit test this.
+    // TODO: 1.5 RELEASE: Unit test this.
     public object ProvideBrowseObject(WorkspaceVisualNodeBase node)
     {
         _tl.L.WriteLine("Getting browse object for {0}.", node.NodeFullMoniker);

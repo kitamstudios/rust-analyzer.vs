@@ -76,7 +76,7 @@ public sealed class ToolChainServiceTests
         wmd.Packages.Should().ContainSingle(p => p.Name == Workspace.Package.RootPackageName && !p.IsPackage);
     }
 
-    // TODO: RELEASE: during build, fmt, clippy etc. save all open files.
+    // TODO: 2.5 RELEASE: during build, fmt, clippy etc. save all open files.
     [Theory]
     [InlineData(@"hello_world", "dev")]
     [InlineData(@"hello_library", "dev")]
@@ -101,7 +101,19 @@ public sealed class ToolChainServiceTests
         Approvals.Verify(normalizedStr);
     }
 
-    [Theory(Skip = "Rust nightlies do not contain the necessary changes yet.")]
+    [Theory]
+    [InlineData(@"bin_with_example", "dev")]
+    public async Task AdditionalBuildArgsTestsAsync(string workspaceRelRoot, string profile)
+    {
+        var workspacePath = TestHelpers.ThisTestRoot + (PathEx)workspaceRelRoot;
+        var manifestPath = workspacePath + Constants.ManifestFileName2;
+
+        var success = await _tcs.DoBuildAsync(workspacePath, manifestPath, profile, additionalBuildArgs: @"--config ""build.rustflags = '--cfg foo=\""bar\""'""");
+
+        success.Should().BeTrue();
+    }
+
+    [Theory]
     [InlineData(@"hello_world", "hello_world_hello_world.rusttests", "release")] // No tests.
     [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests", "release")] // Has tests.
     [UseReporter(typeof(DiffReporter))]

@@ -4,7 +4,7 @@ using Xunit;
 
 namespace KS.RustAnalyzer.UnitTests.Infrastructure;
 
-// TODO: Test that writing bad settings values is not possible instead of failing later
+// TODO: 3. Test that writing bad settings values is not possible instead of failing later
 public class EnvironmentExtensionsTests
 {
     [Theory]

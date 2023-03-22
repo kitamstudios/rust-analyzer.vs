@@ -52,7 +52,7 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         {
             var tasks = sources.Select(async source => await RunTestsTestsFromOneSourceAsync(await source.ReadTestContainerAsync(ct), runContext, frameworkHandle, tl, ct));
 
-            // TODO: RELEASE: For all task.waitall wrap the method with try-catch-throw exception.
+            // TODO: 2. RELEASE: For all task.waitall wrap the method with try-catch-throw exception.
             Task.WaitAll(tasks.ToArray());
         }
         catch (Exception e)
@@ -93,9 +93,10 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         var args = testCases
                 .Select(tc => tc.FullyQualifiedName.TestExplorerFQN2RustTestFQN())
                 .Concat(new[] { "--format", "json", "-Zunstable-options", "--report-time" })
-                .Concat(tc.AdditionalTestExecutionArguments.GetSpaceSeperatedParts())
+                .Concat(tc.AdditionalTestExecutionArguments.ToNullSeparatedArray())
                 .ToArray();
         var envDict = tc.TestExecutionEnvironment.OverrideProcessEnvironment();
+        tl.T.TrackEvent("RunTestsFromOneSourceAsync", ("IsBeingDebugged", $"{isBeingDebugged}"), ("Args", string.Join("|", args)), ("Env", tc.TestExecutionEnvironment.ReplaceNullWithBar()));
         if (isBeingDebugged)
         {
             tl.L.WriteLine("RunTestsFromOneSourceAsync launching test under debugger.");
@@ -108,7 +109,7 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
             return Enumerable.Empty<TestResult>();
         }
 
-        // TODO: RELEASE: say in description defaults in tools options.
+        // TODO: 3. RELEASE: say in description defaults in tools options.
         using var testExeProc = await ProcessRunner.RunWithLogging(tc.TestExe, args, tc.Manifest.GetDirectoryName(), envDict, ct, tl.L, @throw: false);
         var ec = testExeProc.ExitCode ?? 0;
         if (ec != 0)

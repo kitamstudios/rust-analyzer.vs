@@ -1,8 +1,7 @@
 use std;
-use lib_with_example::add;
 
 fn main() {
-    println!("file example: 1 + 2 = {}", add(1, 2));
+    println!("file example: 1 + 2 = {}", 1 + 2);
 
     println!("A B = {}", std::env::var_os("A B").unwrap_or(std::ffi::OsString::from("NOT FOUND!")).to_str().unwrap());
     println!("XX = {}", std::env::var("XX").unwrap_or("NOT FOUND!".to_string()));

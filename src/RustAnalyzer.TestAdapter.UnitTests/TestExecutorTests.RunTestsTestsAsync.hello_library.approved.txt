@@ -7,7 +7,7 @@
       "ExecutorUri": "executor://RustTestExecutor/v1",
       "Source": "<TestRoot>\\hello_library\\target\\release\\hello_lib_libhello_lib.rusttests",
       "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "LineNumber": 30,
+      "LineNumber": 31,
       "Properties": []
     },
     "Attachments": [],
@@ -30,7 +30,7 @@
       "ExecutorUri": "executor://RustTestExecutor/v1",
       "Source": "<TestRoot>\\hello_library\\target\\release\\hello_lib_libhello_lib.rusttests",
       "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "LineNumber": 30,
+      "LineNumber": 31,
       "Properties": []
     },
     "Attachments": [],
@@ -53,12 +53,12 @@
       "ExecutorUri": "executor://RustTestExecutor/v1",
       "Source": "<TestRoot>\\hello_library\\target\\release\\hello_lib_libhello_lib.rusttests",
       "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "LineNumber": 30,
+      "LineNumber": 31,
       "Properties": []
     },
     "Attachments": [],
     "Outcome": 2,
-    "ErrorMessage": "thread 'tests::fibonacci_test::case_3' panicked at 'assertion failed: `(left == right)`\n  left: `1`,\n right: `2`', src\\lib.rs:31:9\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
+    "ErrorMessage": "thread 'tests::fibonacci_test::case_3' panicked at 'assertion failed: `(left == right)`\n  left: `1`,\n right: `2`', src\\lib.rs:32:9\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
     "ErrorStackTrace": null,
     "DisplayName": "tests.fibonacci_test.case_3",
     "Messages": [],
@@ -76,7 +76,7 @@
       "ExecutorUri": "executor://RustTestExecutor/v1",
       "Source": "<TestRoot>\\hello_library\\target\\release\\hello_lib_libhello_lib.rusttests",
       "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "LineNumber": 16,
+      "LineNumber": 17,
       "Properties": []
     },
     "Attachments": [],
@@ -99,7 +99,7 @@
       "ExecutorUri": "executor://RustTestExecutor/v1",
       "Source": "<TestRoot>\\hello_library\\target\\release\\hello_lib_libhello_lib.rusttests",
       "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "LineNumber": 22,
+      "LineNumber": 23,
       "Properties": []
     },
     "Attachments": [],
@@ -116,13 +116,36 @@
   },
   {
     "TestCase": {
+      "Id": "45f11fdd-c68c-e4ce-c89f-6373c6846704",
+      "FullyQualifiedName": "tests.long_running_test",
+      "DisplayName": "long_running_test",
+      "ExecutorUri": "executor://RustTestExecutor/v1",
+      "Source": "<TestRoot>\\hello_library\\target\\release\\hello_lib_libhello_lib.rusttests",
+      "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "LineNumber": 65,
+      "Properties": []
+    },
+    "Attachments": [],
+    "Outcome": 1,
+    "ErrorMessage": "",
+    "ErrorStackTrace": null,
+    "DisplayName": "tests.long_running_test",
+    "Messages": [],
+    "ComputerName": null,
+    "Duration": "00:00:00.1000000"
+
+
+    "Properties": []
+  },
+  {
+    "TestCase": {
       "Id": "513d6fec-4dfa-140a-4e41-8cea20164157",
       "FullyQualifiedName": "tests.multiplication_tests.when_both_operands_are_negative",
       "DisplayName": "when_both_operands_are_negative",
       "ExecutorUri": "executor://RustTestExecutor/v1",
       "Source": "<TestRoot>\\hello_library\\target\\release\\hello_lib_libhello_lib.rusttests",
       "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "LineNumber": 49,
+      "LineNumber": 50,
       "Properties": []
     },
     "Attachments": [],
@@ -145,7 +168,7 @@
       "ExecutorUri": "executor://RustTestExecutor/v1",
       "Source": "<TestRoot>\\hello_library\\target\\release\\hello_lib_libhello_lib.rusttests",
       "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "LineNumber": 49,
+      "LineNumber": 50,
       "Properties": []
     },
     "Attachments": [],
@@ -168,7 +191,7 @@
       "ExecutorUri": "executor://RustTestExecutor/v1",
       "Source": "<TestRoot>\\hello_library\\target\\release\\hello_lib_libhello_lib.rusttests",
       "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "LineNumber": 49,
+      "LineNumber": 50,
       "Properties": []
     },
     "Attachments": [],
@@ -191,12 +214,12 @@
       "ExecutorUri": "executor://RustTestExecutor/v1",
       "Source": "<TestRoot>\\hello_library\\target\\release\\hello_lib_libhello_lib.rusttests",
       "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "LineNumber": 45,
+      "LineNumber": 46,
       "Properties": []
     },
     "Attachments": [],
     "Outcome": 2,
-    "ErrorMessage": "thread 'tests::should_fail' panicked at 'assertion failed: `(left != right)`\n  left: `42`,\n right: `42`', src\\lib.rs:46:9\n",
+    "ErrorMessage": "thread 'tests::should_fail' panicked at 'assertion failed: `(left != right)`\n  left: `42`,\n right: `42`', src\\lib.rs:47:9\n",
     "ErrorStackTrace": null,
     "DisplayName": "tests.should_fail",
     "Messages": [],
@@ -214,7 +237,7 @@
       "ExecutorUri": "executor://RustTestExecutor/v1",
       "Source": "<TestRoot>\\hello_library\\target\\release\\hello_lib_libhello_lib.rusttests",
       "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "LineNumber": 40,
+      "LineNumber": 41,
       "Properties": []
     },
     "Attachments": [],

@@ -7,7 +7,7 @@ using Xunit;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests.Common;
 
-// TODO: RELEASE: log VS version in OS version.
+// TODO: 2.5 RELEASE: log VS version in OS version.
 // TODO: TXP: Telemetry from test adapter has the overrides set correctly and does not rely on VS.
 public class EnvironmentExtensionsTests
 {
@@ -20,7 +20,7 @@ public class EnvironmentExtensionsTests
     public void GetDictionaryFromEnvironmentBlockTests(string envBlock, string dict)
     {
         var expectedDict = dict.Split(new[] { "||" }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Split('|')).ToDictionary(x => x[0], x => x[1]);
-        envBlock.ToDictionary().Should().BeEquivalentTo(expectedDict);
+        envBlock.ToNullSeparatedDictionary().Should().BeEquivalentTo(expectedDict);
     }
 
     [Theory]
@@ -32,7 +32,7 @@ public class EnvironmentExtensionsTests
     public void EnvBlockToEnvDictRoundTripTests(string envBlock)
     {
         envBlock
-            .ToDictionary()
+            .ToNullSeparatedDictionary()
             .ToEnvironmentBlock()
             .Should()
             .BeEquivalentTo(envBlock ?? "\0");
@@ -45,7 +45,7 @@ public class EnvironmentExtensionsTests
 
         procEnv
             .ToEnvironmentBlock()
-            .ToDictionary()
+            .ToNullSeparatedDictionary()
             .Should()
             .BeEquivalentTo(procEnv);
     }
@@ -59,7 +59,7 @@ public class EnvironmentExtensionsTests
     public void OverrideWithEnvironmentBlockTests(string envBlock)
     {
         var newEnv = envBlock.OverrideProcessEnvironment();
-        var envBlockDict = envBlock.ToDictionary();
+        var envBlockDict = envBlock.ToNullSeparatedDictionary();
 
         newEnv.Should().HaveCountGreaterThanOrEqualTo(Environment.GetEnvironmentVariables().Count);
         newEnv.Should().Contain(new KeyValuePair<string, string>("windir", Environment.GetEnvironmentVariable("windir")));

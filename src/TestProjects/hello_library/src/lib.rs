@@ -9,12 +9,13 @@ pub fn fibonacci(n: u32) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::{thread, time};
     use rstest::*;
     use test_case::test_case;
 
     #[test]
     fn it_works() {
-        assert_eq!(0, 0);
+        assert_eq!(std::env::var("ENV_VAR_1").unwrap_or("NOT FOUND!".to_string()), "ENV_VAR_1_VALUE");
     }
 
     #[test]
@@ -52,5 +53,17 @@ mod tests {
     fn multiplication_tests(x: i8, y: i8) {
         let actual = (x * y).abs();
         assert_eq!(8, actual)
+    }
+
+    #[test]
+    #[should_panic(expected = "values don't match")]
+    fn mytest() {
+        assert_eq!(1, 2, "values don't match");
+    }
+
+    #[test]
+    fn long_running_test() {
+        thread::sleep(time::Duration::from_millis(100));
+        assert_eq!(1, 1);
     }
 }

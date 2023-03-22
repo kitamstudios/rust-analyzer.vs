@@ -58,10 +58,27 @@ public static class TestHelpers
         return str;
     }
 
-    public static Task<bool> DoBuildAsync(this IToolChainService @this, PathEx workspacePath, PathEx manifestPath, string profile)
+    public static Task<bool> DoBuildAsync(
+        this IToolChainService @this,
+        PathEx workspacePath,
+        PathEx manifestPath,
+        string profile,
+        string additionalBuildArgs = "",
+        string additionalTestDiscoveryArguments = "",
+        string additionalTestExecutionArguments = "",
+        string testExecutionEnvironment = "")
     {
         return @this.BuildAsync(
-                    new BuildTargetInfo { WorkspaceRoot = workspacePath, ManifestPath = manifestPath, Profile = profile, AdditionalBuildArgs = string.Empty },
+                    new BuildTargetInfo
+                    {
+                        WorkspaceRoot = workspacePath,
+                        ManifestPath = manifestPath,
+                        Profile = profile,
+                        AdditionalBuildArgs = additionalBuildArgs,
+                        AdditionalTestDiscoveryArguments = additionalTestDiscoveryArguments,
+                        AdditionalTestExecutionArguments = additionalTestExecutionArguments,
+                        TestExecutionEnvironment = testExecutionEnvironment,
+                    },
                     new BuildOutputSinks { OutputSink = Mock.Of<IBuildOutputSink>(), BuildActionProgressReporter = bm => Task.CompletedTask },
                     default);
     }
@@ -78,10 +95,11 @@ public static class TestHelpers
 
     public static string SerializeAndNormalizeObject(this object @this)
     {
-        var str = @this
+        return @this
             .SerializeObject(Formatting.Indented, new PathExJsonConverter())
-            .Replace(((string)ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase);
-        return Regex.Replace(str, @"    ""(Start|End)Time"": ""(.*)"",", string.Empty);
+            .Replace(((string)ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase)
+            .RegexReplace(@"    ""(Start|End)Time"": ""(.*)"",", string.Empty)
+            .RegexReplace(@"    ""Duration"": ""00:00:00.1\d{6}"",", @"    ""Duration"": ""00:00:00.1000000""");
     }
 
     public static (PathEx WorkspacePath, PathEx ManifestPath, PathEx TargetPath) GetTestPaths(this string @this, string profile)

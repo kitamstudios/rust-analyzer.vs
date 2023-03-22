@@ -123,7 +123,7 @@ public sealed class ToolChainService : IToolChainService
             ct: ct);
     }
 
-    // TODO: RELEASE: "Build all" enabled if top level cargo.toml exists.
+    // TODO: NEW: "Build all" enabled if top level cargo.toml exists.
     public async Task<Workspace> GetWorkspaceAsync(PathEx manifestPath, CancellationToken ct)
     {
         var cargoFullPath = GetCargoExePath();
@@ -147,7 +147,7 @@ public sealed class ToolChainService : IToolChainService
             _tl.L.WriteLine("Unable to obtain metadata for file {0}. Ex: {1}", manifestPath, e);
             if (exitCode != 101)
             {
-                // TODO: RELEASE: This wont work.
+                // TODO: 2. RELEASE: This wont work.
                 _tl.T.TrackException(e);
             }
 
@@ -164,8 +164,11 @@ public sealed class ToolChainService : IToolChainService
         try
         {
             var args = new[] { "test", "--no-run", "--manifest-path", tc.Manifest, "--profile", profile }
-                .Concat(tc.AdditionalTestDiscoveryArguments.GetSpaceSeperatedParts())
-                .ToArray();
+                .Concat(tc.AdditionalTestDiscoveryArguments.ToNullSeparatedArray())
+            .ToArray();
+
+            _tl.T.TrackEvent("GetTestSuiteInfoAsync", ("TestContainer", testContainerPath), ("Profile", profile), ("Args", string.Join("|", args)));
+
             using var proc = await ProcessRunner.RunWithLogging(cargoFullPath, args, cargoFullPath?.GetDirectoryName(), ImmutableDictionary<string, string>.Empty, ct, _tl.L);
             exitCode = proc.ExitCode ?? 0;
 
@@ -182,7 +185,7 @@ public sealed class ToolChainService : IToolChainService
                 throw e;
             }
 
-            // TODO: RELEASE: Drive through tests. This should loop through all test exes. Add test for this.
+            // NOTE: We are gauranteed to have only 1 exe here even if there are multiple files with tests. See workspace_with_tests/adder.
             tc.TestExe = testExeBuildInfos.First().testExe;
             await testContainerPath.WriteTestContainerAsync(tc.Manifest, tc.TargetDir, tc.Source, tc.AdditionalTestDiscoveryArguments, tc.AdditionalTestExecutionArguments, tc.TestExecutionEnvironment, profile, tc.TestExe, ct);
 
@@ -225,7 +228,6 @@ public sealed class ToolChainService : IToolChainService
         return test;
     }
 
-    // TODO: RELEASE: Test for duration field.
     private static Workspace AddRootPackageIfNecessary(Workspace w, PathEx manifestPath)
     {
         var p = w.Packages.FirstOrDefault(p => p.ManifestPath.GetFullPath() == manifestPath.GetFullPath());

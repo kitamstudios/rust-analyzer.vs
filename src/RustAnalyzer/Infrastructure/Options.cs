@@ -71,7 +71,7 @@ public class Options : BaseOptionModel<Options>, ISettingsServiceDefaults
     [Description($"Additional arguments passed test executable test in addition to XXXX. Check cargo help test for more information.")]
     public string AdditionalTestExecutionArguments { get; set; } = "--exact --show-output --test-threads 1";
 
-    // TODO: RELEASE: Fix up the descriptions and default values
+    // TODO: 3. RELEASE: Fix up the descriptions and default values
     [Browsable(true)]
     [Category(SettingsService.KindTest)]
     [DisplayName("Test execution environment")]

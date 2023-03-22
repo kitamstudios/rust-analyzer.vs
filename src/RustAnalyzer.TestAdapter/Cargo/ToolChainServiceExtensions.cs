@@ -33,6 +33,7 @@ public static class ToolChainServiceExtensions
                     Profile = profile,
                     TestExe = testExePath ?? TestContainer.NotYetGeneratedMarker,
                 },
+                Formatting.Indented,
                 new PathExJsonConverter()),
             ct);
     }

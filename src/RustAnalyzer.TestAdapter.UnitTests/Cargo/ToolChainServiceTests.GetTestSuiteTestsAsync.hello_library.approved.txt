@@ -7,9 +7,9 @@
       "ignore": false,
       "ignore_message": "",
       "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "start_line": 30,
+      "start_line": 31,
       "start_col": 8,
-      "end_line": 30,
+      "end_line": 31,
       "end_col": 22
     },
     {
@@ -18,9 +18,9 @@
       "ignore": false,
       "ignore_message": "",
       "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "start_line": 30,
+      "start_line": 31,
       "start_col": 8,
-      "end_line": 30,
+      "end_line": 31,
       "end_col": 22
     },
     {
@@ -29,9 +29,9 @@
       "ignore": false,
       "ignore_message": "",
       "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "start_line": 30,
+      "start_line": 31,
       "start_col": 8,
-      "end_line": 30,
+      "end_line": 31,
       "end_col": 22
     },
     {
@@ -40,9 +40,9 @@
       "ignore": false,
       "ignore_message": "",
       "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "start_line": 16,
+      "start_line": 17,
       "start_col": 8,
-      "end_line": 16,
+      "end_line": 17,
       "end_col": 16
     },
     {
@@ -51,10 +51,21 @@
       "ignore": true,
       "ignore_message": "ignored for now!",
       "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "start_line": 22,
+      "start_line": 23,
       "start_col": 8,
-      "end_line": 22,
+      "end_line": 23,
       "end_col": 27
+    },
+    {
+      "type": "test",
+      "name": "tests::long_running_test",
+      "ignore": false,
+      "ignore_message": "",
+      "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "start_line": 65,
+      "start_col": 8,
+      "end_line": 65,
+      "end_col": 25
     },
     {
       "type": "test",
@@ -62,9 +73,9 @@
       "ignore": false,
       "ignore_message": "",
       "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "start_line": 49,
+      "start_line": 50,
       "start_col": 5,
-      "end_line": 49,
+      "end_line": 50,
       "end_col": 61
     },
     {
@@ -73,9 +84,9 @@
       "ignore": false,
       "ignore_message": "",
       "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "start_line": 49,
+      "start_line": 50,
       "start_col": 5,
-      "end_line": 49,
+      "end_line": 50,
       "end_col": 61
     },
     {
@@ -84,10 +95,21 @@
       "ignore": false,
       "ignore_message": "",
       "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "start_line": 49,
+      "start_line": 50,
       "start_col": 5,
-      "end_line": 49,
+      "end_line": 50,
       "end_col": 61
+    },
+    {
+      "type": "test",
+      "name": "tests::mytest",
+      "ignore": false,
+      "ignore_message": "",
+      "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
+      "start_line": 60,
+      "start_col": 8,
+      "end_line": 60,
+      "end_col": 14
     },
     {
       "type": "test",
@@ -95,9 +117,9 @@
       "ignore": false,
       "ignore_message": "",
       "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "start_line": 45,
+      "start_line": 46,
       "start_col": 8,
-      "end_line": 45,
+      "end_line": 46,
       "end_col": 19
     },
     {
@@ -106,9 +128,9 @@
       "ignore": false,
       "ignore_message": "",
       "source_path": "<TestRoot>\\hello_library\\src\\lib.rs",
-      "start_line": 40,
+      "start_line": 41,
       "start_col": 8,
-      "end_line": 40,
+      "end_line": 41,
       "end_col": 22
     }
   ]
