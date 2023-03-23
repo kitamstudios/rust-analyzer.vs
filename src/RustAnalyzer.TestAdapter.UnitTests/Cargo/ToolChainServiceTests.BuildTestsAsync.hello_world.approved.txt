@@ -5,7 +5,6 @@
       "ThisPath": "<TestRoot>\\hello_world\\target\\debug\\hello_world_hello_world.rusttests",
       "Manifest": "<TestRoot>\\hello_world\\Cargo.toml",
       "TargetDir": "<TestRoot>\\hello_world\\target",
-      "Source": "<TestRoot>\\hello_world\\src\\main.rs",
       "AdditionalTestDiscoveryArguments": "",
       "AdditionalTestExecutionArguments": "",
       "TestExecutionEnvironment": "",

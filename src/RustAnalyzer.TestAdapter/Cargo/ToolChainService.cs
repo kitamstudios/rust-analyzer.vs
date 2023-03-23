@@ -71,7 +71,7 @@ public sealed class ToolChainService : IToolChainService
             var w = await GetWorkspaceAsync(bti.ManifestPath, ct);
             var tasks = w.Packages
                 .SelectMany(p => p.GetTestContainers(bti.Profile))
-                .Select(x => x.Container.WriteTestContainerAsync(x.Target.Parent.ManifestPath, w.TargetDirectory, x.Target.SourcePath, bti.AdditionalTestDiscoveryArguments, bti.AdditionalTestExecutionArguments, bti.TestExecutionEnvironment, bti.Profile, null, ct));
+                .Select(x => x.Container.WriteTestContainerAsync(x.Target.Parent.ManifestPath, w.TargetDirectory, bti.AdditionalTestDiscoveryArguments, bti.AdditionalTestExecutionArguments, bti.TestExecutionEnvironment, bti.Profile, null, ct));
             await Task.WhenAll(tasks);
         }
 
@@ -175,8 +175,7 @@ public sealed class ToolChainService : IToolChainService
             var testExeBuildInfos = proc.StandardErrorLines
                 .Select(l => TestExecutablePathCracker.Matches(l))
                 .Where(m => m.Count > 0 && m[0].Groups.Count == 4)
-                .Select(m => (source: tc.Manifest.GetDirectoryName() + (PathEx)m[0].Groups[2].Value, testExe: (PathEx)m[0].Groups[3].Value))
-                .Where(x => x.source == tc.Source);
+                .Select(m => (source: tc.Manifest.GetDirectoryName() + (PathEx)m[0].Groups[2].Value, testExe: (PathEx)m[0].Groups[3].Value));
             if (!testExeBuildInfos.Any())
             {
                 var e = new InvalidOperationException(string.Format("Unable to parse output of cargo test to obtain test exe paths. Command line '{0}'. Exit code: {1}", proc.Arguments, proc.ExitCode));
@@ -187,7 +186,7 @@ public sealed class ToolChainService : IToolChainService
 
             // NOTE: We are gauranteed to have only 1 exe here even if there are multiple files with tests. See workspace_with_tests/adder.
             tc.TestExe = testExeBuildInfos.First().testExe;
-            await testContainerPath.WriteTestContainerAsync(tc.Manifest, tc.TargetDir, tc.Source, tc.AdditionalTestDiscoveryArguments, tc.AdditionalTestExecutionArguments, tc.TestExecutionEnvironment, profile, tc.TestExe, ct);
+            await testContainerPath.WriteTestContainerAsync(tc.Manifest, tc.TargetDir, tc.AdditionalTestDiscoveryArguments, tc.AdditionalTestExecutionArguments, tc.TestExecutionEnvironment, profile, tc.TestExe, ct);
 
             return await GetTestSuiteInfoFromOneTestExe(tc.TestExe, testContainerPath, tc.TargetDir.GetDirectoryName(), ct);
         }

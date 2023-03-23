@@ -82,7 +82,7 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
 
         if (process.Start())
         {
-            L.WriteLine("Done starting rust-analyzer from path.");
+            L.WriteLine("Done starting rust-analyzer from path. PID: {0}", process.Id);
             T.TrackEvent("rust-analyzer-start", ("Path", rlsPath));
 
             return await Task.FromResult(new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream));

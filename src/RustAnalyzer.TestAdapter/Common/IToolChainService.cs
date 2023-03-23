@@ -34,8 +34,6 @@ public sealed class TestContainer
 
     public PathEx TargetDir { get; set; }
 
-    public PathEx Source { get; set; }
-
     public string AdditionalTestDiscoveryArguments { get; set; }
 
     public string AdditionalTestExecutionArguments { get; set; }

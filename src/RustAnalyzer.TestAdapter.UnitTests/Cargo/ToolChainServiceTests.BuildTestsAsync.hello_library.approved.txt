@@ -5,7 +5,6 @@
       "ThisPath": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
       "Manifest": "<TestRoot>\\hello_library\\Cargo.toml",
       "TargetDir": "<TestRoot>\\hello_library\\target",
-      "Source": "<TestRoot>\\hello_library\\src\\lib.rs",
       "AdditionalTestDiscoveryArguments": "",
       "AdditionalTestExecutionArguments": "",
       "TestExecutionEnvironment": "",
