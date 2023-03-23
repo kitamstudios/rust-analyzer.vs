@@ -38,6 +38,7 @@ $testContainers = dir $SrcDir -Recurse -Filter Cargo.toml | % {
 
 $trx = Join-Path $testResults "TestResults.trx"
 vstest.console.exe @testContainers /TestAdapterPath:"$TestAdapterLocation" /Parallel "/logger:console;verbosity=detailed" "/logger:trx;LogFileName=$trx"
+cmd /c echo "Clear up the vstest.console.exe error..."
 
 $obtainedFile = Join-Path $testResults "obtained.txt"
 $xml = [xml] (gc $trx)
