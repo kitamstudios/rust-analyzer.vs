@@ -65,7 +65,7 @@ public class CargoClippy : BaseToolChainCommand<CargoClippy>
 {
     protected override Func<IToolChainService, Func<BuildTargetInfo, BuildOutputSinks, CancellationToken, Task<bool>>> Operation => its => its.RunClippyAsync;
 
-    protected override string GetOptions(Options opts) => opts.DefailtCargoClippyArgs;
+    protected override string GetOptions(Options opts) => opts.DefaultCargoClippyArgs;
 }
 
 [Command(PackageGuids.guidRustAnalyzerPackageString, PackageIds.CargoFmt)]
@@ -73,5 +73,5 @@ public class CargoFmt : BaseToolChainCommand<CargoFmt>
 {
     protected override Func<IToolChainService, Func<BuildTargetInfo, BuildOutputSinks, CancellationToken, Task<bool>>> Operation => its => its.RunFmtAsync;
 
-    protected override string GetOptions(Options opts) => opts.DefailtCargoFmtArgs;
+    protected override string GetOptions(Options opts) => opts.DefaultCargoFmtArgs;
 }

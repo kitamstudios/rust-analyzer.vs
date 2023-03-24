@@ -12,7 +12,6 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Debug;
 using static Microsoft.VisualStudio.VSConstants;
-using RaSettingsService = KS.RustAnalyzer.Infrastructure.SettingsService;
 
 namespace KS.RustAnalyzer.Debugger;
 
@@ -72,8 +71,8 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                 return;
             }
 
-            var args = await GetSettingsAsync(RaSettingsService.TypeCommandLineArguments, workspaceContext.GetService<ISettingsService>(), lcw);
-            var env = await GetSettingsAsync(RaSettingsService.TypeDebuggerEnvironment, workspaceContext.GetService<ISettingsService>(), lcw);
+            var args = await GetSettingsAsync(SettingsInfo.TypeCommandLineArguments, workspaceContext.GetService<ISettingsService>(), lcw);
+            var env = await GetSettingsAsync(SettingsInfo.TypeDebuggerEnvironment, workspaceContext.GetService<ISettingsService>(), lcw);
             var noDebugFlag = lcw.ContainsKey(LaunchConfigurationConstants.NoDebugKey) ? __VSDBGLAUNCHFLAGS.DBGLAUNCH_NoDebug : 0;
 
             L.WriteLine("LaunchDebugTarget with profile: {0}, launchConfiguration: {1}", profile, lcw.SerializeObject());

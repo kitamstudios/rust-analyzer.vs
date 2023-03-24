@@ -17,12 +17,11 @@ using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter;
 
-// TODO: TXP: [Export(typeof(ITestContainerDiscoverer))]
+[Export(typeof(ITestContainerDiscoverer))]
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 {
-    // TODO: 3. RELEASE: Fix reported exceptions.
-    // TODO: 1.5 RELEASE: Test this. Get all defaults for discovery and run from Options the override with above.
+    // TODO: 3. RELEASE: Fix reported exceptions in appinsights.
     private readonly ConcurrentDictionary<PathEx, TestContainer> _testContainersCache = new ();
 
     private readonly IVsFolderWorkspaceService _workspaceFactory;

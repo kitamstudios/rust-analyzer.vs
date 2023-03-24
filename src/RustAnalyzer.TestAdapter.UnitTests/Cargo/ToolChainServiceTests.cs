@@ -76,7 +76,7 @@ public sealed class ToolChainServiceTests
         wmd.Packages.Should().ContainSingle(p => p.Name == Workspace.Package.RootPackageName && !p.IsPackage);
     }
 
-    // TODO: 2.5 RELEASE: during build, fmt, clippy etc. save all open files.
+    // TODO: 3. RELEASE: during build, fmt, clippy etc. save all open files.
     [Theory]
     [InlineData(@"hello_world", "dev")]
     [InlineData(@"hello_library", "dev")]

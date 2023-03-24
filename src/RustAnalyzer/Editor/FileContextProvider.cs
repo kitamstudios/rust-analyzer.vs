@@ -89,10 +89,10 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
     private async Task<(string AdditionalBuildArgs, string AdditionalTestDiscoveryArguments, string AdditionalTestExecutionArguments, string TestExecutionEnvironment)> GetBuildTargetInfoForBuildActionAsync(PathEx filePath)
     {
         return (
-            AdditionalBuildArgs: await _settingsService.GetAsync(SettingsService.TypeAdditionalBuildArguments, filePath),
-            AdditionalTestDiscoveryArguments: await _settingsService.GetAsync(SettingsService.TypeAdditionalTestDiscoveryArguments, filePath),
-            AdditionalTestExecutionArguments: await _settingsService.GetAsync(SettingsService.TypeAdditionalTestExecutionArguments, filePath),
-            TestExecutionEnvironment: await _settingsService.GetAsync(SettingsService.TypeTestExecutionEnvironment, filePath));
+            AdditionalBuildArgs: await _settingsService.GetAsync(SettingsInfo.TypeAdditionalBuildArguments, filePath),
+            AdditionalTestDiscoveryArguments: await _settingsService.GetAsync(SettingsInfo.TypeAdditionalTestDiscoveryArguments, filePath),
+            AdditionalTestExecutionArguments: await _settingsService.GetAsync(SettingsInfo.TypeAdditionalTestExecutionArguments, filePath),
+            TestExecutionEnvironment: await _settingsService.GetAsync(SettingsInfo.TypeTestExecutionEnvironment, filePath));
     }
 
     private IEnumerable<FileContext> GetBuildActions(Workspace.Target target, string profile, string additionalBuildArgs)

@@ -6,7 +6,7 @@ using KS.RustAnalyzer.TestAdapter.Common;
 
 namespace KS.RustAnalyzer.NodeEnhancements;
 
-// TODO: XPLAT: Add proper examples for cross compilation.
+// TODO: TXP: Support doc, example, benchmark and integration tests. Run example tests as well --all-targets.
 public class NodeBrowseObject : INotifyPropertyChanged
 {
     private readonly IDictionary<string, string> _propertyValueStore = new Dictionary<string, string>();
@@ -21,7 +21,7 @@ public class NodeBrowseObject : INotifyPropertyChanged
     [Browsable(false)]
     public ISettingsService SS { get; set; }
 
-    [Category(SettingsService.KindDebugger)]
+    [Category(SettingsInfo.KindDebugger)]
     [DisplayName("Command line arguments")]
     [Description("Command line arguments passed to executable during F5 & CTRL+F5. Example: \"Arg 1\" arg2 arg3")]
     public string CommandLineArguments
@@ -30,7 +30,7 @@ public class NodeBrowseObject : INotifyPropertyChanged
         set => SetPropertyValue(value);
     }
 
-    [Category(SettingsService.KindDebugger)]
+    [Category(SettingsInfo.KindDebugger)]
     [DisplayName("Environment")]
     [Description("Environment passed to executable during F5 & CTRL+F5. Example: \"ENV VAR1=VAL 1\" ENVVAR2=VAL2")]
     public string DebuggerEnvironment
@@ -39,38 +39,36 @@ public class NodeBrowseObject : INotifyPropertyChanged
         set => SetPropertyValue(value);
     }
 
-    [Category(SettingsService.KindBuild)]
+    [Category(SettingsInfo.KindBuild)]
     [DisplayName("Additional arguments")]
-    [Description(@"Additional build arguments passed Cargo.exe. Example: --features=blocking --config ""build.rustflags = '--cfg foo=\""bar\""'""")]
+    [Description(@"Additional build arguments passed Cargo.exe build. Example: --features=blocking --config ""build.rustflags = '--cfg foo=\""bar\""'""")]
     public string AdditionalBuildArguments
     {
         get => GetPropertyValue();
         set => SetPropertyValue(value);
     }
 
-    // TODO: TXP: Run example tests as well --all-targets.
-    [Category(SettingsService.KindTest)]
-    [DisplayName("Additional discovery arguments")]
-    [Description("Additional arguments passed Cargo.exe test --no-run in addition to --manifest-path and --profile. Check cargo help test for more information.")]
+    [Category(SettingsInfo.KindTest)]
+    [DisplayName("Discovery arguments")]
+    [Description("Additional arguments passed Cargo.exe test in addition to --no-run --manifest-path <manifest> --profile <profile>. Overrides Tools > Options > rust-analyzer.vs. Check 'cargo help test' for more information.")]
     public string AdditionalTestDiscoveryArguments
     {
         get => GetPropertyValue();
         set => SetPropertyValue(value);
     }
 
-    // TODO: 3. RELEASE: Write the command likes properly from VS logs.
-    [Category(SettingsService.KindTest)]
-    [DisplayName("Additional execution arguments")]
-    [Description("Additional arguments passed test executable test in addition to XXXX. Check cargo help test for more information.")]
+    [Category(SettingsInfo.KindTest)]
+    [DisplayName("Execution arguments")]
+    [Description("Additional arguments passed test executable test in addition to --format json --report-time. Overrides Tools > Options > rust-analyzer.vs. Check 'cargo help test' for more information.")]
     public string AdditionalTestExecutionArguments
     {
         get => GetPropertyValue();
         set => SetPropertyValue(value);
     }
 
-    [Category(SettingsService.KindTest)]
+    [Category(SettingsInfo.KindTest)]
     [DisplayName("Execution environment")]
-    [Description("Environment variables to set for test execution. Example: RUST_BACKTRACE=1")]
+    [Description("Environment variables to set for test execution. Overrides Tools > Options > rust-analyzer.vs. Example: RUST_BACKTRACE=1")]
     public string TestExecutionEnvironment
     {
         get => GetPropertyValue();
@@ -81,7 +79,7 @@ public class NodeBrowseObject : INotifyPropertyChanged
     {
         FullPath = fullPath;
         SS = ss;
-        foreach (var propName in SettingsService.PropertyInfo.Keys)
+        foreach (var propName in SettingsInfo.Store.Keys)
         {
             _propertyValueStore[propName] = SS.GetRaw(propName, FullPath);
         }

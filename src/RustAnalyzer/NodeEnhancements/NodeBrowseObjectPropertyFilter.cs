@@ -6,7 +6,7 @@ using KS.RustAnalyzer.TestAdapter.Common;
 
 namespace KS.RustAnalyzer.NodeEnhancements;
 
-// TODO: 1.5 RELEASE: Unit test this and FSOB.
+// TODO: SETTINGS: Unit test infrastructure to reduce dependency on manual testing. NBO, NBO provider, NBO filter. 
 public class NodeBrowseObjectPropertyFilter<T> : CustomTypeDescriptor
     where T : NodeBrowseObject
 {
@@ -40,7 +40,7 @@ public class NodeBrowseObjectPropertyFilter<T> : CustomTypeDescriptor
         var props = base
             .GetProperties(attributes)
             .Cast<PropertyDescriptor>()
-            .Where(p => !SettingsService.PropertyInfo.ContainsKey(p.Name) || SettingsService.PropertyInfo[p.Name].ShouldDisplay(_hasTargets, _isExecutable, _isManifest))
+            .Where(p => !SettingsInfo.Store.ContainsKey(p.Name) || SettingsInfo.Store[p.Name].ShouldDisplay(_hasTargets, _isExecutable, _isManifest))
             .ToArray();
         return new PropertyDescriptorCollection(props);
     }

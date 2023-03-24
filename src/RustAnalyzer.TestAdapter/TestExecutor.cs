@@ -78,7 +78,6 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         }
     }
 
-    // TODO: TXP: Enable CDP integration tests.
     private static async Task<IEnumerable<TestResult>> RunTestsFromOneSourceAsync(TestContainer tc, IEnumerable<TestCase> testCases, TL tl, bool isBeingDebugged, IFrameworkHandle fh, CancellationToken ct)
     {
         tl.L.WriteLine("RunTestsFromOneSourceAsync starting with {0}", tc.ThisPath);
@@ -109,7 +108,6 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
             return Enumerable.Empty<TestResult>();
         }
 
-        // TODO: 3. RELEASE: say in description defaults in tools options.
         using var testExeProc = await ProcessRunner.RunWithLogging(tc.TestExe, args, tc.Manifest.GetDirectoryName(), envDict, ct, tl.L, @throw: false);
         var ec = testExeProc.ExitCode ?? 0;
         if (ec != 0)

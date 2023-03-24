@@ -32,7 +32,6 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
         _preReqs = preReqs;
     }
 
-    // TODO: 1.5 RELEASE: Unit test this.
     public object ProvideBrowseObject(WorkspaceVisualNodeBase node)
     {
         _tl.L.WriteLine("Getting browse object for {0}.", node.NodeFullMoniker);
@@ -79,7 +78,7 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
                     var val = (string)fsob.GetType().GetProperty(e.PropertyName).GetValue(fsob, null);
 
                     // NOTE: Trying getting the value and ensure it is not null to frontload potential downstream failures.
-                    Ensure.That(SettingsService.PropertyInfo[e.PropertyName].Getter(val)).IsNotNull();
+                    Ensure.That(SettingsInfo.Store[e.PropertyName].Getter(val)).IsNotNull();
                     await fsob.SS.SetAsync(e.PropertyName, fsob.FullPath, val);
                 })
             .FireAndForget();

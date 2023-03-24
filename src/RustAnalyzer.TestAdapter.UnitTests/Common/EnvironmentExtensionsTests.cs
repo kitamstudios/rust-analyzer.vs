@@ -7,8 +7,6 @@ using Xunit;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests.Common;
 
-// TODO: 2.5 RELEASE: log VS version in OS version.
-// TODO: TXP: Telemetry from test adapter has the overrides set correctly and does not rely on VS.
 public class EnvironmentExtensionsTests
 {
     [Theory]

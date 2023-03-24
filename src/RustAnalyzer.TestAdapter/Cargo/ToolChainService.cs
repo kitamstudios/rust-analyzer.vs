@@ -205,17 +205,25 @@ public sealed class ToolChainService : IToolChainService
     private async Task<TestSuiteInfo> GetTestSuiteInfoFromOneTestExe(PathEx testExePath, PathEx testContainerPath, PathEx workspaceRoot, CancellationToken ct)
     {
         using var proc = await ProcessRunner.RunWithLogging(testExePath, new[] { "--list", "--format", "json", "-Zunstable-options" }, workspaceRoot, ImmutableDictionary<string, string>.Empty, ct, _tl.L);
-        var testSuites = proc.StandardOutputLines
-            .Skip(1)
-            .Take(proc.StandardOutputLines.Count() - 2)
-            .Select(l => DeserializeTest(workspaceRoot, l))
-            .OrderBy(x => x.FQN).ThenBy(x => x.StartLine)
-            .ToList();
+
+        var tests = Enumerable.Empty<TestSuiteInfo.TestInfo>();
+        if (!proc.StandardOutputLines.FirstOrDefault()?.Trim()?.StartsWith("{") ?? false)
+        {
+            _tl.L.WriteError($"{Vsix.Name} requires https://github.com/rust-lang/rust/issues/49359 to support unit testing experience. The RFC process is currnetly underway. Till then the fix is available only in nightly toolchain. Please install the nightly toolchain following instructions in https://rust-lang.github.io/rustup/concepts/channels.html.");
+        }
+        else
+        {
+            tests = proc.StandardOutputLines
+                .Skip(1)
+                .Take(proc.StandardOutputLines.Count() - 2)
+                .Select(l => DeserializeTest(workspaceRoot, l))
+                .OrderBy(x => x.FQN).ThenBy(x => x.StartLine);
+        }
 
         return new TestSuiteInfo
         {
             Container = testContainerPath,
-            Tests = new Collection<TestSuiteInfo.TestInfo>(testSuites),
+            Tests = new Collection<TestSuiteInfo.TestInfo>(tests.ToList()),
         };
     }
 
