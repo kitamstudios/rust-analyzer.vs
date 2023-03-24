@@ -6,7 +6,7 @@ using KS.RustAnalyzer.TestAdapter.Common;
 
 namespace KS.RustAnalyzer.NodeEnhancements;
 
-// TODO: SETTINGS: Unit test infrastructure to reduce dependency on manual testing. NBO, NBO provider, NBO filter. 
+// TODO: SETTINGS: Unit test infrastructure to reduce dependency on manual testing. NBO, NBO provider, NBO filter.
 public class NodeBrowseObjectPropertyFilter<T> : CustomTypeDescriptor
     where T : NodeBrowseObject
 {
