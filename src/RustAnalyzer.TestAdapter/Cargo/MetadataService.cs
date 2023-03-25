@@ -68,14 +68,14 @@ public class MetadataService : IMetadataService, IDisposable
         return await GetPackageAsync(manifest.Value, ct);
     }
 
-    public Task<int> OnWorkspaceUpdateAsync(IEnumerable<PathEx> filePaths, CancellationToken ct)
+    public async Task<int> OnWorkspaceUpdateAsync(IEnumerable<PathEx> filePaths, CancellationToken ct)
     {
         foreach (var filePath in filePaths.Where(fp => fp.IsTestContainer()))
         {
             OnTestContainerUpdated(filePath);
         }
 
-        return ProtectPackageCacheAndRunAsync(
+        await ProtectPackageCacheAndRunAsync(
             (ct) =>
             {
                 foreach (var filePath in filePaths.Where(fp => fp.IsManifest() || fp.IsRustFile()))
@@ -90,9 +90,11 @@ public class MetadataService : IMetadataService, IDisposable
                     }
                 }
 
-                return Task.FromResult(filePaths.Count());
+                return 0.ToTask();
             },
             ct);
+
+        return filePaths.Count();
     }
 
     public Task<IEnumerable<Workspace.Package>> GetCachedPackagesAsync(CancellationToken ct)
@@ -203,6 +205,7 @@ public class MetadataService : IMetadataService, IDisposable
         }
     }
 
+    // NOTE: This fire-n-forget ensure we dont hold the lock for longer than necessary.
     private void OnTestContainerUpdated(PathEx testContainer)
     {
         var t = Task.Run(

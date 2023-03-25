@@ -30,7 +30,7 @@ public class SettingsInfo
                 new SettingsInfo
                 {
                     Kind = KindDebugger,
-                    Getter = EnvironmentExtensions.GetEnvironmentBlock,
+                    Getter = StringExtensions.GetEnvironmentBlock,
                     ShouldDisplay = (hasTargets, isExe, isManifest) => isExe,
                 },
             [TypeAdditionalBuildArguments] =
@@ -44,21 +44,21 @@ public class SettingsInfo
                 new SettingsInfo
                 {
                     Kind = KindTest,
-                    Getter = x => x,
+                    Getter = StringExtensions.ToNullSeparatedArray,
                     ShouldDisplay = (hasTargets, isExe, isManifest) => isManifest && hasTargets,
                 },
             [TypeAdditionalTestExecutionArguments] =
                 new SettingsInfo
                 {
                     Kind = KindTest,
-                    Getter = x => x,
+                    Getter = StringExtensions.ToNullSeparatedArray,
                     ShouldDisplay = (hasTargets, isExe, isManifest) => isManifest && hasTargets,
                 },
             [TypeTestExecutionEnvironment] =
                 new SettingsInfo
                 {
                     Kind = KindTest,
-                    Getter = EnvironmentExtensions.GetEnvironmentBlock,
+                    Getter = StringExtensions.GetEnvironmentBlock,
                     ShouldDisplay = (hasTargets, isExe, isManifest) => isManifest && hasTargets,
                 },
         };

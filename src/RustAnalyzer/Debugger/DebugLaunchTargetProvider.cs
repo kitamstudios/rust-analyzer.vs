@@ -15,7 +15,7 @@ using static Microsoft.VisualStudio.VSConstants;
 
 namespace KS.RustAnalyzer.Debugger;
 
-// TODO: 3. RELEASE: Close solution, do not force upgrade.
+// TODO: NEW: Close solution, do not force upgrade.
 [ExportLaunchDebugTarget(ProviderType, new[] { ".exe" })]
 public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
 {

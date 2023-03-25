@@ -27,20 +27,11 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         var ct = new CancellationToken(_cancelled);
         var tl = frameworkHandle.CreateTL();
         tl.L.WriteLine("RunTests starting. Executing {0} tests", tests.Count());
-        try
-        {
-            var tasks = tests
-                .GroupBy(t => t.Source)
-                .Select(g => (Source: g.Key, Tests: g.AsEnumerable()))
-                .Select(async x => await RunAndRecordTestResultsFromOneSourceAsync(await ((PathEx)x.Source).ReadTestContainerAsync(ct), x.Tests, runContext.IsBeingDebugged, frameworkHandle, tl, ct));
-            Task.WaitAll(tasks.ToArray());
-        }
-        catch (Exception e)
-        {
-            tl.L.WriteError("RunTests failed with {0}", e);
-            tl.T.TrackException(e);
-            throw;
-        }
+        var tasks = tests
+            .GroupBy(t => t.Source)
+            .Select(g => (Source: g.Key, Tests: g.AsEnumerable()))
+            .Select(async x => await RunAndRecordTestResultsFromOneSourceAsync(await ((PathEx)x.Source).ReadTestContainerAsync(ct), x.Tests, runContext.IsBeingDebugged, frameworkHandle, tl, ct));
+        Task.WaitAll(tasks.ToArray());
     }
 
     public override void RunTests(IEnumerable<PathEx> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
@@ -48,19 +39,8 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         var ct = new CancellationToken(_cancelled);
         var tl = frameworkHandle.CreateTL();
         tl.L.WriteLine("RunTests starting. Executing {0} sources.", sources.Count());
-        try
-        {
-            var tasks = sources.Select(async source => await RunTestsTestsFromOneSourceAsync(await source.ReadTestContainerAsync(ct), runContext, frameworkHandle, tl, ct));
-
-            // TODO: 2. RELEASE: For all task.waitall wrap the method with try-catch-throw exception.
-            Task.WaitAll(tasks.ToArray());
-        }
-        catch (Exception e)
-        {
-            tl.L.WriteError("RunTests failed with {0}", e);
-            tl.T.TrackException(e);
-            throw;
-        }
+        var tasks = sources.Select(async source => await RunTestsTestsFromOneSourceAsync(await source.ReadTestContainerAsync(ct), runContext, frameworkHandle, tl, ct));
+        Task.WaitAll(tasks.ToArray());
     }
 
     public static async Task RunTestsTestsFromOneSourceAsync(TestContainer tc, IRunContext runContext, IFrameworkHandle fh, TL tl, CancellationToken ct)
@@ -71,10 +51,19 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
 
     private static async Task RunAndRecordTestResultsFromOneSourceAsync(TestContainer tc, IEnumerable<TestCase> testCases, bool isBeingDebugged, IFrameworkHandle fh, TL tl, CancellationToken ct)
     {
-        var testResults = await RunTestsFromOneSourceAsync(tc, testCases, tl, isBeingDebugged, fh, ct);
-        foreach (var testResult in testResults)
+        try
         {
-            fh.RecordResult(testResult);
+            var testResults = await RunTestsFromOneSourceAsync(tc, testCases, tl, isBeingDebugged, fh, ct);
+            foreach (var testResult in testResults)
+            {
+                fh.RecordResult(testResult);
+            }
+        }
+        catch (Exception e)
+        {
+            tl.L.WriteError("RunTests failed with {0}", e);
+            tl.T.TrackException(e);
+            throw;
         }
     }
 
@@ -92,7 +81,7 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         var args = testCases
                 .Select(tc => tc.FullyQualifiedName.TestExplorerFQN2RustTestFQN())
                 .Concat(new[] { "--format", "json", "-Zunstable-options", "--report-time" })
-                .Concat(tc.AdditionalTestExecutionArguments.ToNullSeparatedArray())
+                .Concat(tc.AdditionalTestExecutionArguments.FromNullSeparatedArray())
                 .ToArray();
         var envDict = tc.TestExecutionEnvironment.OverrideProcessEnvironment();
         tl.T.TrackEvent("RunTestsFromOneSourceAsync", ("IsBeingDebugged", $"{isBeingDebugged}"), ("Args", string.Join("|", args)), ("Env", tc.TestExecutionEnvironment.ReplaceNullWithBar()));

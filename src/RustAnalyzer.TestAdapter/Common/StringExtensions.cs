@@ -45,12 +45,12 @@ public static class StringExtensions
     public static IDictionary<string, string> ToNullSeparatedDictionary(this string @this)
     {
         return @this
-            .ToNullSeparatedArray()
+            .FromNullSeparatedArray()
             .Select(x => x.Split(EqSep, StringSplitOptions.None))
             .ToDictionary(x => x[0], x => x.Length == 2 ? x[1] : string.Empty);
     }
 
-    public static string[] ToNullSeparatedArray(this string @this)
+    public static string[] FromNullSeparatedArray(this string @this)
     {
         return (@this ?? string.Empty).Split(NullSep, StringSplitOptions.RemoveEmptyEntries);
     }

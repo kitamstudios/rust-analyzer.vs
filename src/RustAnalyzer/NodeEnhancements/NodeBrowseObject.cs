@@ -50,7 +50,7 @@ public class NodeBrowseObject : INotifyPropertyChanged
 
     [Category(SettingsInfo.KindTest)]
     [DisplayName("Discovery arguments")]
-    [Description("Additional arguments passed Cargo.exe test in addition to --no-run --manifest-path <manifest> --profile <profile>. Overrides Tools > Options > rust-analyzer.vs. Check 'cargo help test' for more information.")]
+    [Description("Additional arguments passed Cargo.exe test in addition to --no-run --manifest-path <manifest> --profile <profile>. Overrides Tools > Options > rust-analyzer.vs. Check 'cargo help test' for more information. Example: --config \"build.rustFlags = '--cfg foo'\"")]
     public string AdditionalTestDiscoveryArguments
     {
         get => GetPropertyValue();
@@ -59,7 +59,7 @@ public class NodeBrowseObject : INotifyPropertyChanged
 
     [Category(SettingsInfo.KindTest)]
     [DisplayName("Execution arguments")]
-    [Description("Additional arguments passed test executable test in addition to --format json --report-time. Overrides Tools > Options > rust-analyzer.vs. Check 'cargo help test' for more information.")]
+    [Description("Additional arguments passed test executable test in addition to --format json --report-time. Overrides Tools > Options > rust-analyzer.vs. Check 'cargo help test' for more information. Example: --exclude-should-panic")]
     public string AdditionalTestExecutionArguments
     {
         get => GetPropertyValue();

@@ -109,7 +109,7 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
     private void PackageAddedEventHandler(object sender, Workspace.Package e)
     {
         _tl.L.WriteLine("TCD: Package Added EventHandler: '{0}'", e.ManifestPath);
-        foreach (var (container, _) in e.GetTestContainers(_currentWorkspace?.GetProfile(e.ManifestPath) ?? "dev"))
+        foreach (var (container, _) in e.GetTestContainers(_currentWorkspace?.GetProfile(e.ManifestPath) ?? "dev").Where(x => x.Container.FileExists()))
         {
             TryAddTestContainer(container);
         }

@@ -4,7 +4,7 @@ using Xunit;
 
 namespace KS.RustAnalyzer.UnitTests.Infrastructure;
 
-public class EnvironmentExtensionsTests
+public class StringExtensionsTests
 {
     [Theory]
     [InlineData(@"", "\0")]
@@ -21,5 +21,13 @@ public class EnvironmentExtensionsTests
     public void GetEnvironmentBlockTests(string str, string envBlock)
     {
         str.GetEnvironmentBlock().Should().Be(envBlock);
+    }
+
+    [Theory]
+    [InlineData(@"", "\0")]
+    [InlineData(@"--config ""build.rustflags = '--cfg foo=bar'""", "--config\0build.rustflags = '--cfg foo=bar'")]
+    public void ToNullSeparatedArrayTests(string str, string nullSepParts)
+    {
+        str.ToNullSeparatedArray().Should().Be(nullSepParts);
     }
 }

@@ -18,17 +18,8 @@ public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
     public override void DiscoverTests(IEnumerable<PathEx> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
     {
         var tl = logger.CreateTL();
-        try
-        {
-            var tasks = sources.Select(async source => await DiscoverAndReportTestsFromOneSource(await source.ReadTestContainerAsync(default), discoverySink, tl, default));
-            Task.WaitAll(tasks.ToArray());
-        }
-        catch (Exception e)
-        {
-            tl.L.WriteError("DiscoverTests failed with {0}", e);
-            tl.T.TrackException(e);
-            throw;
-        }
+        var tasks = sources.Select(async source => await DiscoverAndReportTestsFromOneSource(await source.ReadTestContainerAsync(default), discoverySink, tl, default));
+        Task.WaitAll(tasks.ToArray());
     }
 
     private async Task DiscoverAndReportTestsFromOneSource(TestContainer tc, ITestCaseDiscoverySink discoverySink, TL tl, CancellationToken ct)

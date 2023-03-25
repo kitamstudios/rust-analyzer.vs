@@ -37,7 +37,18 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
 
     private async Task BatchFileSystemChangedEventHandlerAsync(BatchFileSystemEventArgs eventArgs, IMetadataService mds)
     {
-        var filePaths = eventArgs.FileSystemEvents.Select(fse => (PathEx?)fse.FullPath).Where(x => x.HasValue).Select(x => x.Value).Distinct();
+        var filePaths = eventArgs
+            .FileSystemEvents
+            .Select(fse => (PathEx?)fse.FullPath)
+            .Where(x => x.HasValue)
+            .Select(x => x.Value)
+            .Where(x => x.IsTestContainer() || x.IsManifest() || x.IsRustFile())
+            .Distinct();
+        if (!filePaths.Any())
+        {
+            return;
+        }
+
         await mds.OnWorkspaceUpdateAsync(filePaths, default);
     }
 }

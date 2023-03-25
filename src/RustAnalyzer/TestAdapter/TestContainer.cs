@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
@@ -15,6 +16,7 @@ public class TestContainer : BaseTestContainer, ITestContainer
 {
     public TestContainer(PathEx testContainerPath, ITestContainerDiscoverer discoverer, TL tl)
     {
+        EnsureArg.IsTrue(testContainerPath.FileExists(), nameof(testContainerPath));
         TestContainerPath = testContainerPath;
         TimeStamp = GetTimeStamp();
         Discoverer = discoverer;

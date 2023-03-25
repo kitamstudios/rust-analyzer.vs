@@ -164,7 +164,7 @@ public sealed class ToolChainService : IToolChainService
         try
         {
             var args = new[] { "test", "--no-run", "--manifest-path", tc.Manifest, "--profile", profile }
-                .Concat(tc.AdditionalTestDiscoveryArguments.ToNullSeparatedArray())
+                .Concat(tc.AdditionalTestDiscoveryArguments.FromNullSeparatedArray())
             .ToArray();
 
             _tl.T.TrackEvent("GetTestSuiteInfoAsync", ("TestContainer", testContainerPath), ("Profile", profile), ("Args", string.Join("|", args)));
