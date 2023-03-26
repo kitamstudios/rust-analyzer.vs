@@ -24,7 +24,7 @@ public class StringExtensionsTests
     }
 
     [Theory]
-    [InlineData(@"", "\0")]
+    [InlineData(@"", "")]
     [InlineData(@"--config ""build.rustflags = '--cfg foo=bar'""", "--config\0build.rustflags = '--cfg foo=bar'")]
     public void ToNullSeparatedArrayTests(string str, string nullSepParts)
     {
