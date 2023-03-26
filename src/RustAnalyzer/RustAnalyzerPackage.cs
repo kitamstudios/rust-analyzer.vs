@@ -147,6 +147,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
         private const string ActionContextDismiss = "dismiss";
         private const string ActionContextGetHelp = "get_help";
         private const string ActionContextRateExtension = "rate_extension";
+        private const string ActionContextTestExperienceDemo = "test_experience_demo";
         private const string DismissedRegKeyName = "release_notes_dismissed";
 
         public static async Task ShowAsync(IServiceProvider sp, TL tl)
@@ -163,7 +164,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
             var actionItems = new[]
             {
                 new InfoBarHyperlink("Rate Extension", ActionContextRateExtension),
-                new InfoBarHyperlink("Get help!", ActionContextGetHelp),
+                new InfoBarHyperlink("Test experience demo", ActionContextTestExperienceDemo),
                 new InfoBarHyperlink("Dismiss", ActionContextDismiss),
             };
             var model = new InfoBarModel(
@@ -191,7 +192,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                     VsShellUtilities.OpenSystemBrowser(Constants.RateExtensionUrl);
                     break;
 
-                case ActionContextGetHelp:
+                case ActionContextTestExperienceDemo:
                     VsShellUtilities.OpenSystemBrowser(Constants.DiscordUrl);
                     break;
 

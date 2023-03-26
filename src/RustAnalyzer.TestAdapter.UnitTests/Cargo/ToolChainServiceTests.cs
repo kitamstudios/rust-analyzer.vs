@@ -108,7 +108,7 @@ public sealed class ToolChainServiceTests
         var workspacePath = TestHelpers.ThisTestRoot + (PathEx)workspaceRelRoot;
         var manifestPath = workspacePath + Constants.ManifestFileName2;
 
-        var success = await _tcs.DoBuildAsync(workspacePath, manifestPath, profile, additionalBuildArgs: @"--config ""build.rustflags = '--cfg foo=\""bar\""'""");
+        var success = await _tcs.DoBuildAsync(workspacePath, manifestPath, profile, additionalBuildArgs: @"--config ""build.rustflags = '--cfg foo'""");
 
         success.Should().BeTrue();
     }

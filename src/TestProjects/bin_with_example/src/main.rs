@@ -1,6 +1,6 @@
 use std;
 
-#[cfg(foo = "bar")]
+#[cfg(foo)]
 fn needs_foo_to_be_bar() {
 }
 
@@ -30,8 +30,8 @@ pub fn fibonacci(n: u32) -> u32 {
 #[cfg(test)]
 mod tests {
     #[test]
-    #[cfg(foo = "bar")]
-    fn test_requires_foo_to_be_bar() {
+    #[cfg(foo)]
+    fn test_requires_foo() {
         assert_eq!(1, 2, "values don't match");
     }
 }

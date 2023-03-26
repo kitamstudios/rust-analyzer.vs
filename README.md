@@ -22,10 +22,11 @@ Download this extension from the [Visual Studio Marketplace][marketplace] or get
 
 ## Features
 
-- Build, Clean (errors in Error list with details in output window).
-- Debug & Run without debugging.
 - Workspaces & super workspaces both fully supported (super workspace is a folder with multiple multiple cargo workspaces).
 - Intellisense / Auto-complete / Goto definition / Code actions / Find references etc. all features from Rust language server.
+- Build, Clean (errors in Error list with details in output window).
+- Debug & Run without debugging.
+- Run, debug & manage unit tests from test explorer.
 - Examples support (run & debug).
 - Set additional properties for build / debug / run (e.g. command line arguments).
 - Clippy / Fmt integration.
@@ -34,12 +35,12 @@ Download this extension from the [Visual Studio Marketplace][marketplace] or get
 
 ### Upcoming
 
-- Cross compilation (wasm, linux, etc.) / build & run on WSL2 / leverage docker
-- Test integration (unit / integration / document, run & debug)
-- Basic project templates
+- Cross compilation (wasm, linux, etc.) / build & run on WSL2 / leverage docker.
+- Test experience enhancements (document and benchmark tests).
 
 ### Probably never
 
+- Basic project templates.
 - ChatGPT integration.
 - Folder enhancements (icons, context menus).
 - crates.io integration.

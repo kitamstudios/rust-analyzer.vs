@@ -48,7 +48,7 @@ public class TestDiscovererTests
         var tcPath = tps.TargetPath + (PathEx)containerName;
         tps.TargetPath.CleanTestContainers();
 
-        await _tcs.DoBuildAsync(tps.WorkspacePath, tps.ManifestPath, profile, additionalBuildArgs: @"--config ""build.rustflags = '--cfg foo=\""bar\""'""", additionalTestDiscoveryArguments: "--config\0build.rustflags = '--cfg foo=\"bar\"'\0\0");
+        await _tcs.DoBuildAsync(tps.WorkspacePath, tps.ManifestPath, profile, additionalBuildArgs: @"--config ""build.rustflags = '--cfg foo'""", additionalTestDiscoveryArguments: "--config\0build.rustflags = '--cfg foo'\0\0");
         var sink = new SpyTestCaseDiscoverySink();
         new TestDiscoverer().DiscoverTests(new[] { (string)tcPath }, Mock.Of<IDiscoveryContext>(), Mock.Of<IMessageLogger>(), sink);
 

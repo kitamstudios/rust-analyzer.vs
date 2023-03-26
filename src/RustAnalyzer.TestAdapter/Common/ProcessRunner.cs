@@ -344,7 +344,7 @@ public sealed class ProcessRunner : IDisposable
         l.WriteLine("... Finished PID {0} with exit code {1}.", proc.ProcessId, proc.ExitCode);
         if (@throw && exitCode != 0)
         {
-            throw new InvalidOperationException($"{exitCode}\n{string.Join("\n", proc.StandardErrorLines)}");
+            throw new InvalidOperationException($"{exitCode}\n{string.Join("\n", proc.StandardErrorLines)}").AddExitCode(exitCode);
         }
 
         return proc;

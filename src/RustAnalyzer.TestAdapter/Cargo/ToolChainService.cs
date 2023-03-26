@@ -128,7 +128,6 @@ public sealed class ToolChainService : IToolChainService
     {
         var cargoFullPath = GetCargoExePath();
 
-        var exitCode = 0;
         try
         {
             using var proc = await ProcessRunner.RunWithLogging(
@@ -138,16 +137,14 @@ public sealed class ToolChainService : IToolChainService
                 ImmutableDictionary<string, string>.Empty,
                 ct,
                 _tl.L);
-            exitCode = proc.ExitCode ?? 0;
             var w = JsonConvert.DeserializeObject<Workspace>(string.Join(string.Empty, proc.StandardOutputLines));
             return AddRootPackageIfNecessary(w, manifestPath);
         }
         catch (Exception e)
         {
             _tl.L.WriteLine("Unable to obtain metadata for file {0}. Ex: {1}", manifestPath, e);
-            if (exitCode != 101)
+            if (!e.IsCargo101Error())
             {
-                // TODO: 2. RELEASE: This wont work.
                 _tl.T.TrackException(e);
             }
 
@@ -160,7 +157,6 @@ public sealed class ToolChainService : IToolChainService
         var cargoFullPath = GetCargoExePath();
         var tc = await testContainerPath.ReadTestContainerAsync(ct);
 
-        var exitCode = 0;
         try
         {
             var args = new[] { "test", "--no-run", "--manifest-path", tc.Manifest, "--profile", profile }
@@ -170,7 +166,6 @@ public sealed class ToolChainService : IToolChainService
             _tl.T.TrackEvent("GetTestSuiteInfoAsync", ("TestContainer", testContainerPath), ("Profile", profile), ("Args", string.Join("|", args)));
 
             using var proc = await ProcessRunner.RunWithLogging(cargoFullPath, args, cargoFullPath?.GetDirectoryName(), ImmutableDictionary<string, string>.Empty, ct, _tl.L);
-            exitCode = proc.ExitCode ?? 0;
 
             var testExeBuildInfos = proc.StandardErrorLines
                 .Select(l => TestExecutablePathCracker.Matches(l))
@@ -193,7 +188,7 @@ public sealed class ToolChainService : IToolChainService
         catch (Exception e)
         {
             _tl.L.WriteLine("Unable to obtain metadata for file {0}. Ex: {1}", tc.Manifest, e);
-            if (exitCode != 101)
+            if (!e.IsCargo101Error())
             {
                 _tl.T.TrackException(e);
             }
@@ -209,7 +204,7 @@ public sealed class ToolChainService : IToolChainService
         var tests = Enumerable.Empty<TestSuiteInfo.TestInfo>();
         if (!proc.StandardOutputLines.FirstOrDefault()?.Trim()?.StartsWith("{") ?? false)
         {
-            _tl.L.WriteError($"{Vsix.Name} requires https://github.com/rust-lang/rust/issues/49359 to support unit testing experience. The RFC process is currnetly underway. Till then the fix is available only in nightly toolchain. Please install the nightly toolchain following instructions in https://rust-lang.github.io/rustup/concepts/channels.html.");
+            _tl.L.WriteError($"{Vsix.Name} requires https://github.com/rust-lang/rust/issues/49359 to support unit testing experience. The RFC process is currently underway. Till then the fix is available only in nightly toolchain. Please install the nightly toolchain following instructions in https://rust-lang.github.io/rustup/concepts/channels.html.");
         }
         else
         {
