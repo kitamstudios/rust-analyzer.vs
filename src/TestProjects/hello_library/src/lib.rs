@@ -15,7 +15,8 @@ mod tests {
 
     #[test]
     fn it_works() {
-        assert_eq!(std::env::var("ENV_VAR_1").unwrap_or("NOT FOUND!".to_string()), "ENV_VAR_1_VALUE");
+        let val = std::env::var("ENV_VAR_1").unwrap_or("ENV_VAR_1_VALUE".to_string());
+        assert_eq!(val, "NOT FOUND!");
     }
 
     #[test]

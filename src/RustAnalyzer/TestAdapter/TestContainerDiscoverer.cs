@@ -100,10 +100,8 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
         _tl.L.WriteLine("TCD: Package Removed EventHandler: '{0}'", e.ManifestPath);
         foreach (var (container, _) in e.GetTestContainers(_currentWorkspace?.GetProfile(e.ManifestPath) ?? "dev"))
         {
-            TryRemoveTestContainer(container);
+            TestContainerUpdatedEventHandler(this, container);
         }
-
-        TestContainersUpdated?.Invoke(this, EventArgs.Empty);
     }
 
     private void PackageAddedEventHandler(object sender, Workspace.Package e)
@@ -111,10 +109,8 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
         _tl.L.WriteLine("TCD: Package Added EventHandler: '{0}'", e.ManifestPath);
         foreach (var (container, _) in e.GetTestContainers(_currentWorkspace?.GetProfile(e.ManifestPath) ?? "dev").Where(x => x.Container.FileExists()))
         {
-            TryAddTestContainer(container);
+            TestContainerUpdatedEventHandler(this, container);
         }
-
-        TestContainersUpdated?.Invoke(this, EventArgs.Empty);
     }
 
     private void TestContainerUpdatedEventHandler(object sender, PathEx e)
