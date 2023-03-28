@@ -6,7 +6,7 @@
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
     "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "LineNumber": 31,
+    "LineNumber": 32,
     "Properties": []
   },
   {
@@ -16,7 +16,7 @@
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
     "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "LineNumber": 31,
+    "LineNumber": 32,
     "Properties": []
   },
   {
@@ -26,7 +26,7 @@
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
     "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "LineNumber": 31,
+    "LineNumber": 32,
     "Properties": []
   },
   {
@@ -46,7 +46,7 @@
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
     "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "LineNumber": 23,
+    "LineNumber": 24,
     "Properties": []
   },
   {
@@ -56,7 +56,7 @@
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
     "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "LineNumber": 65,
+    "LineNumber": 66,
     "Properties": []
   },
   {
@@ -66,7 +66,7 @@
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
     "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "LineNumber": 50,
+    "LineNumber": 51,
     "Properties": []
   },
   {
@@ -76,7 +76,7 @@
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
     "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "LineNumber": 50,
+    "LineNumber": 51,
     "Properties": []
   },
   {
@@ -86,7 +86,7 @@
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
     "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "LineNumber": 50,
+    "LineNumber": 51,
     "Properties": []
   },
   {
@@ -96,7 +96,7 @@
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
     "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "LineNumber": 60,
+    "LineNumber": 61,
     "Properties": []
   },
   {
@@ -106,7 +106,7 @@
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
     "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "LineNumber": 46,
+    "LineNumber": 47,
     "Properties": []
   },
   {
@@ -116,7 +116,7 @@
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
     "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
-    "LineNumber": 41,
+    "LineNumber": 42,
     "Properties": []
   }
 ]
