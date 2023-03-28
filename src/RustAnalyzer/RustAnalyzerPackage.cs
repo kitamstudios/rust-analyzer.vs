@@ -193,7 +193,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                     break;
 
                 case ActionContextTestExperienceDemo:
-                    VsShellUtilities.OpenSystemBrowser(Constants.DiscordUrl);
+                    VsShellUtilities.OpenSystemBrowser(Constants.TestExperienceDemoUrl);
                     break;
 
                 case ActionContextDismiss:
