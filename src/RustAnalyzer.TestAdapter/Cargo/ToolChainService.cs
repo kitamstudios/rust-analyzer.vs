@@ -204,7 +204,7 @@ public sealed class ToolChainService : IToolChainService
         var tests = Enumerable.Empty<TestSuiteInfo.TestInfo>();
         if (!proc.StandardOutputLines.FirstOrDefault()?.Trim()?.StartsWith("{") ?? false)
         {
-            _tl.L.WriteError($"{Vsix.Name} requires https://github.com/rust-lang/rust/issues/49359 to support unit testing experience. The RFC process is currently underway. Till then the fix is available only in nightly toolchain. Please install the nightly toolchain following instructions in https://rust-lang.github.io/rustup/concepts/channels.html.");
+            _tl.L.WriteError($"{Vsix.Name} requires nightly toolchain. Please install the nightly toolchain following instructions in https://rust-lang.github.io/rustup/concepts/channels.html. Details: Fix for https://github.com/rust-lang/rust/issues/49359 is required to support unit testing experience. The RFC process is currently underway. Till then the fix is available only in nightly toolchain.");
         }
         else
         {

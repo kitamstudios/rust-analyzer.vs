@@ -22,16 +22,21 @@ Download this extension from the [Visual Studio Marketplace][marketplace] or get
 
 ## Features
 
-- Workspaces & super workspaces both fully supported (super workspace is a folder with multiple multiple cargo workspaces).
-- Intellisense / Auto-complete / Goto definition / Code actions / Find references etc. all features from Rust language server.
-- Build, Clean (errors in Error list with details in output window).
-- Debug & Run without debugging.
-- Run, debug & manage unit tests from test explorer.
-- Examples support (run & debug).
-- Set additional properties for build / debug / run (e.g. command line arguments).
-- Clippy / Fmt integration.
-- Comment (Ctrl+K Ctrl+C) & Uncomment (Ctrl+K Ctrl+U)
-- Tested above features with top Rust OSS projects like [cargo](https://github.com/rust-lang/cargo), [ruffle](https://github.com/ruffle-rs/ruffle), [iced](https://github.com/iced-rs/iced), [geo](https://github.com/georust/geo), [ruff](https://github.com/charliermarsh/ruff), [reqwest](https://github.com/seanmonstar/reqwest), [wasmtime](https://github.com/bytecodealliance/wasmtime).
+- [Workspaces & super workspaces both fully supported (super workspace is a folder with multiple cargo workspaces).](https://youtu.be/pE1Vr2zVCbg?t80)
+- [Intellisense / Auto-complete / Goto definition / Code actions / Find references etc. all features from Rust language server.](https://youtu.be/pE1Vr2zVCbg?t210)
+- [Build, Clean (errors in Error list with details in output window).](https://youtu.be/pE1Vr2zVCbg?t242)
+- [Debug & Run without debugging.](https://youtu.be/pE1Vr2zVCbg?t1424)
+- [Run, debug & manage unit tests from test explorer.](https://youtu.be/pE1Vr2zVCbg?t429)
+- [Examples support (run & debug).](https://youtu.be/pE1Vr2zVCbg?t1311)
+- [Set additional properties for build / debug / run (e.g. command line arguments).](https://youtu.be/pE1Vr2zVCbg?t1469)
+- [Clippy / Fmt integration.](https://youtu.be/pE1Vr2zVCbg?t1197)
+- [Comment (Ctrl+K Ctrl+C) & Uncomment (Ctrl+K Ctrl+U)](https://youtu.be/pE1Vr2zVCbg?t762)
+- Infrastructure features
+  - [Extension Logs for debugging in Output | rust-analyzer.vs pane.](https://youtu.be/pE1Vr2zVCbg?t129)
+  - [Test integration requires changes currently in rust nightly toolchain. RFC is in progress to promote the changes to stable. Refer: https://](https://youtu.be/pE1Vr2zVCbg?t379)
+  - [Tools | Options | rust-analyzer.vs](https://youtu.be/pE1Vr2zVCbg?t1225)
+
+> These features continue to get tested with with top Rust OSS projects like [cargo](https://github.com/rust-lang/cargo), [ruffle](https://github.com/ruffle-rs/ruffle), [iced](https://github.com/iced-rs/iced), [geo](https://github.com/georust/geo), [ruff](https://github.com/charliermarsh/ruff), [reqwest](https://github.com/seanmonstar/reqwest), [wasmtime](https://github.com/bytecodealliance/wasmtime). There are bugs! 😉
 
 ### Upcoming
 
@@ -45,10 +50,6 @@ Download this extension from the [Visual Studio Marketplace][marketplace] or get
 - Folder enhancements (icons, context menus).
 - crates.io integration.
 - cargo management.
-
-## Demo
-
-<img src="http://i.imgur.com/qvqSHDp.gif" width="605" height="405" />
 
 ## How can I help?
 
