@@ -17,11 +17,11 @@ using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter;
 
+// TODO: 3. RELEASE: Fix reported exceptions in appinsights.
 [Export(typeof(ITestContainerDiscoverer))]
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 {
-    // TODO: 3. RELEASE: Fix reported exceptions in appinsights.
     private readonly ConcurrentDictionary<PathEx, TestContainer> _testContainersCache = new ();
 
     private readonly IVsFolderWorkspaceService _workspaceFactory;
@@ -33,13 +33,19 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
     {
         _workspaceFactory = VS.GetRequiredService<SComponentModel, IComponentModel>()
             .GetService<IVsFolderWorkspaceService>();
-        _workspaceFactory.OnActiveWorkspaceChanged += ActiveWorkspaceChangedEventHandlerAsync;
-        _currentWorkspace = _workspaceFactory.CurrentWorkspace;
         _tl = new TL
         {
             T = t,
             L = l,
         };
+
+        ThreadHelper.JoinableTaskFactory.RunAsync(
+            async () =>
+            {
+                _currentWorkspace = _workspaceFactory.CurrentWorkspace;
+                await ActiveWorkspaceChangedEventHandlerAsync(this, new EventArgs());
+                _workspaceFactory.OnActiveWorkspaceChanged += ActiveWorkspaceChangedEventHandlerAsync;
+            }).FireAndForget();
     }
 
     public event EventHandler TestContainersUpdated;
@@ -69,12 +75,7 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
         _tl.T.TrackEvent("TcdLoadWorkspace", ("Location", _currentWorkspace.Location));
         var mds = _currentWorkspace.GetService<IMetadataService>();
         var packages = await mds.GetCachedPackagesAsync(default);
-        foreach (var (c, _) in packages.SelectMany(p => p.GetTestContainers(_currentWorkspace.GetProfile(p.ManifestPath))))
-        {
-            TryAddTestContainer(c);
-        }
-
-        TestContainersUpdated?.Invoke(this, EventArgs.Empty);
+        packages.ForEach(p => PackageAddedEventHandler(this, p));
 
         mds.PackageAdded += PackageAddedEventHandler;
         mds.PackageRemoved += PackageRemovedEventHandler;
@@ -95,22 +96,16 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
         mds.PackageAdded -= PackageAddedEventHandler;
     }
 
-    private void PackageRemovedEventHandler(object sender, Workspace.Package e)
-    {
-        _tl.L.WriteLine("TCD: Package Removed EventHandler: '{0}'", e.ManifestPath);
-        foreach (var (container, _) in e.GetTestContainers(_currentWorkspace?.GetProfile(e.ManifestPath) ?? "dev"))
-        {
-            TestContainerUpdatedEventHandler(this, container);
-        }
-    }
-
     private void PackageAddedEventHandler(object sender, Workspace.Package e)
     {
         _tl.L.WriteLine("TCD: Package Added EventHandler: '{0}'", e.ManifestPath);
-        foreach (var (container, _) in e.GetTestContainers(_currentWorkspace?.GetProfile(e.ManifestPath) ?? "dev").Where(x => x.Container.FileExists()))
-        {
-            TestContainerUpdatedEventHandler(this, container);
-        }
+        GetTestContainers(e).ForEach(c => TestContainerUpdatedEventHandler(this, c));
+    }
+
+    private void PackageRemovedEventHandler(object sender, Workspace.Package e)
+    {
+        _tl.L.WriteLine("TCD: Package Removed EventHandler: '{0}'", e.ManifestPath);
+        GetTestContainers(e).ForEach(c => TestContainerUpdatedEventHandler(this, c));
     }
 
     private void TestContainerUpdatedEventHandler(object sender, PathEx e)
@@ -143,4 +138,7 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
             _tl.L.WriteError("TCD: Failed to remove container {0}.", container);
         }
     }
+
+    private IEnumerable<PathEx> GetTestContainers(Workspace.Package e)
+        => e.GetTestContainers(_currentWorkspace?.GetProfile(e.ManifestPath) ?? e.GetProfiles().First()).Select(x => x.Container);
 }

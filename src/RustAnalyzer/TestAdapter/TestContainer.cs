@@ -29,7 +29,6 @@ public class TestContainer : BaseTestContainer, ITestContainer
     private TestContainer(TestContainer testContainer)
         : this(testContainer.TestContainerPath, testContainer.Discoverer, testContainer.TL)
     {
-        TimeStamp = testContainer.TimeStamp;
     }
 
     public override PathEx TestContainerPath { get; }
