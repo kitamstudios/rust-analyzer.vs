@@ -36,7 +36,7 @@ Download this extension from the [Visual Studio Marketplace][marketplace] or get
   - [Test integration requires changes currently in rust nightly toolchain. RFC is in progress to promote the changes to stable. Refer: https://](https://youtu.be/pE1Vr2zVCbg?t=379)
   - [Tools | Options | rust-analyzer.vs](https://youtu.be/pE1Vr2zVCbg?t=1225)
 
-> These features continue to get tested with with top Rust OSS projects like [cargo](https://github.com/rust-lang/cargo), [ruffle](https://github.com/ruffle-rs/ruffle), [iced](https://github.com/iced-rs/iced), [geo](https://github.com/georust/geo), [ruff](https://github.com/charliermarsh/ruff), [reqwest](https://github.com/seanmonstar/reqwest), [wasmtime](https://github.com/bytecodealliance/wasmtime). There are bugs! 😉
+> These features continue to get tested with top Rust OSS projects like [cargo](https://github.com/rust-lang/cargo), [ruffle](https://github.com/ruffle-rs/ruffle), [iced](https://github.com/iced-rs/iced), [geo](https://github.com/georust/geo), [ruff](https://github.com/charliermarsh/ruff), [reqwest](https://github.com/seanmonstar/reqwest), [wasmtime](https://github.com/bytecodealliance/wasmtime). There are bugs! 😉
 
 ### Upcoming
 
