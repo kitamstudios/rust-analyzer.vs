@@ -11,6 +11,7 @@ public class SettingsInfo
     public const string KindTest = "Test";
     public const string TypeCommandLineArguments = nameof(NodeBrowseObject.CommandLineArguments);
     public const string TypeDebuggerEnvironment = nameof(NodeBrowseObject.DebuggerEnvironment);
+    public const string TypeDebuggerWorkingDirectory = nameof(NodeBrowseObject.WorkingDirectory);
     public const string TypeAdditionalBuildArguments = nameof(NodeBrowseObject.AdditionalBuildArguments);
     public const string TypeAdditionalTestDiscoveryArguments = nameof(NodeBrowseObject.AdditionalTestDiscoveryArguments);
     public const string TypeAdditionalTestExecutionArguments = nameof(NodeBrowseObject.AdditionalTestExecutionArguments);
@@ -31,6 +32,13 @@ public class SettingsInfo
                 {
                     Kind = KindDebugger,
                     Getter = StringExtensions.GetEnvironmentBlock,
+                    ShouldDisplay = (hasTargets, isExe, isManifest) => isExe,
+                },
+            [TypeDebuggerWorkingDirectory] =
+                new SettingsInfo
+                {
+                    Kind = KindDebugger,
+                    Getter = x => x,
                     ShouldDisplay = (hasTargets, isExe, isManifest) => isExe,
                 },
             [TypeAdditionalBuildArguments] =

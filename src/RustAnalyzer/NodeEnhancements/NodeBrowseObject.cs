@@ -39,6 +39,15 @@ public class NodeBrowseObject : INotifyPropertyChanged
         set => SetPropertyValue(value);
     }
 
+    [Category(SettingsInfo.KindDebugger)]
+    [DisplayName("Working directory")]
+    [Description("Sets the working directory of the application launched by the debugger. Example: C:\\Folder")]
+    public string WorkingDirectory
+    {
+        get => GetPropertyValue();
+        set => SetPropertyValue(value);
+    }
+
     [Category(SettingsInfo.KindBuild)]
     [DisplayName("Additional arguments")]
     [Description(@"Additional build arguments passed Cargo.exe build. Example: --features=blocking --config ""build.rustflags = '--cfg foo=\""bar\""'""")]
