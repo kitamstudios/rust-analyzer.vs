@@ -73,6 +73,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
 
             var args = await GetSettingsAsync(SettingsInfo.TypeCommandLineArguments, workspaceContext.GetService<ISettingsService>(), lcw);
             var env = await GetSettingsAsync(SettingsInfo.TypeDebuggerEnvironment, workspaceContext.GetService<ISettingsService>(), lcw);
+            var workingDirectory = await GetSettingsAsync(SettingsInfo.TypeDebuggerWorkingDirectory, workspaceContext.GetService<ISettingsService>(), lcw);
             var noDebugFlag = lcw.ContainsKey(LaunchConfigurationConstants.NoDebugKey) ? __VSDBGLAUNCHFLAGS.DBGLAUNCH_NoDebug : 0;
 
             L.WriteLine("LaunchDebugTarget with profile: {0}, launchConfiguration: {1}", profile, lcw.SerializeObject());
@@ -82,7 +83,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
             {
                 dlo = DEBUG_LAUNCH_OPERATION.DLO_CreateProcess,
                 bstrExe = processName,
-                bstrCurDir = Path.GetDirectoryName(processName),
+                bstrCurDir = workingDirectory.IsNullOrEmpty() ? Path.GetDirectoryName(processName) : workingDirectory,
                 bstrArg = args,
                 bstrEnv = env.OverrideProcessEnvironment().ToEnvironmentBlock(),
                 bstrOptions = null,

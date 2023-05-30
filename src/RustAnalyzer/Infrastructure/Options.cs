@@ -18,6 +18,8 @@ public interface ISettingsServiceDefaults
 
     public string DebuggerEnvironment { get; set; }
 
+    public string WorkingDirectory { get; set; }
+
     public string AdditionalBuildArguments { get; set; }
 
     public string AdditionalTestDiscoveryArguments { get; set; }
@@ -52,6 +54,12 @@ public class Options : BaseOptionModel<Options>, ISettingsServiceDefaults
     [DisplayName("Environment")]
     [Description("Environment passed to executable during F5 & CTRL+F5. Example: \"ENV VAR1=VAL 1\" ENVVAR2=VAL2")]
     public string DebuggerEnvironment { get; set; } = string.Empty;
+
+    [Browsable(false)]
+    [Category(SettingsInfo.KindDebugger)]
+    [DisplayName("Working directory")]
+    [Description("Working directory")]
+    public string WorkingDirectory { get; set; } = string.Empty;
 
     [Browsable(false)]
     [Category(SettingsInfo.KindBuild)]
