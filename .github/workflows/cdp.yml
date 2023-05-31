@@ -79,7 +79,7 @@ jobs:
 
     - name: Generate test report
       uses: dorny/test-reporter@v1
-      if: always()
+      if: github.event_name != 'pull_request'
       with:
         name: Tests Results
         path: TestResults/*.trx
