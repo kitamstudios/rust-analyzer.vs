@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Workspace;
@@ -16,7 +17,8 @@ using static Microsoft.VisualStudio.VSConstants;
 namespace KS.RustAnalyzer.Debugger;
 
 // TODO: NEW: Close solution, do not force upgrade.
-[ExportLaunchDebugTarget(ProviderType, new[] { ".exe" })]
+// TODO: Workaround for https://github.com/kitamstudios/rust-analyzer.vs/issues/24. Just implementing LaunchDebugTargetProviderOptions.IsRuntimeSupportContext should be enough but it does not work, for now setting priority to low.
+[ExportLaunchDebugTarget(LaunchDebugTargetProviderOptions.IsRuntimeSupportContext, ProviderType, new[] { ".exe" }, ProviderPriority.Lowest)]
 public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
 {
     public const string ProviderType = "{72D3FCEF-1111-4266-B8DD-D3ED06E35A2B}";
@@ -36,12 +38,10 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
 
     public bool SupportsContext(IWorkspace workspaceContext, string targetFilePath)
     {
-        var e = new NotImplementedException();
+        var mds = workspaceContext.GetService<IMetadataService>();
+        var package = workspaceContext.JTF.Run(async () => await workspaceContext.GetService<IMetadataService>()?.GetContainingPackageAsync((PathEx)targetFilePath, default));
 
-        L.WriteLine("SupportsContext should not have been called. This is unexpected.");
-        T.TrackException(e);
-
-        throw e;
+        return package != null;
     }
 
     private async Task LaunchDebugTargetAsync(IWorkspace workspaceContext, IServiceProvider serviceProvider, string profile, LaunchConfigWrapper lcw)
