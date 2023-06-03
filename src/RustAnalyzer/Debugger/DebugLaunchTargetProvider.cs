@@ -33,7 +33,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
     public void LaunchDebugTarget(IWorkspace workspaceContext, IServiceProvider serviceProvider, DebugLaunchActionContext debugLaunchActionContext)
     {
         var lcw = new LaunchConfigWrapper(debugLaunchActionContext.LaunchConfiguration, new TL { T = T, L = L, });
-        workspaceContext.JTF.Run(async () => await LaunchDebugTargetAsync(workspaceContext, serviceProvider, debugLaunchActionContext.BuildConfiguration, lcw));
+        workspaceContext.JTF.Run(async () => await LaunchDebugTargetAsync(workspaceContext, serviceProvider, lcw));
     }
 
     public bool SupportsContext(IWorkspace workspaceContext, string targetFilePath)
@@ -44,12 +44,13 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
         return package != null;
     }
 
-    private async Task LaunchDebugTargetAsync(IWorkspace workspaceContext, IServiceProvider serviceProvider, string profile, LaunchConfigWrapper lcw)
+    private async Task LaunchDebugTargetAsync(IWorkspace workspaceContext, IServiceProvider serviceProvider, LaunchConfigWrapper lcw)
     {
         try
         {
             var mds = workspaceContext.GetService<IMetadataService>();
             var package = await mds.GetContainingPackageAsync((PathEx)lcw[LaunchConfigurationConstants.ProgramKey], default);
+            var profile = workspaceContext.GetProfile(package.ManifestPath);
             var targetFQN = lcw[LaunchConfigurationConstants.NameKey];
             var target = package.GetTargets().FirstOrDefault(t => t.QualifiedTargetFileName == targetFQN);
             if (target == null)

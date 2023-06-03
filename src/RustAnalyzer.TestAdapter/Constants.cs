@@ -5,7 +5,7 @@ namespace KS.RustAnalyzer.TestAdapter;
 
 public static class Constants
 {
-    public const string ReleaseSummary = $"Updated Rust Language Server. Checkout the Rust test experience intgration. Please report any issues you face. Consider giving 5⭐ if you find this extension useful.";
+    public const string ReleaseSummary = $"Updated RLS + dependency on VS2022 17.6 + bug fixes. Checkout the Rust test experience intgration. Please report any issues you face. Consider giving 5⭐ if you find this extension useful.";
     public const string ReleaseNotesUrl = $"https://github.com/kitamstudios/rust-analyzer.vs/releases/{Vsix.Version}";
     public const string DiscordUrl = "https://discord.gg/JyK55EsACr";
     public const string TestExperienceDemoUrl = "https://youtu.be/pE1Vr2zVCbg?t=170";
@@ -27,7 +27,7 @@ public static class Constants
     public const string ManifestExtension = ".toml";
     public const string TestsContainerExtension = ".rusttests";
 
-    public static readonly Version MinimumRequiredVsVersion = new (17, 5);
+    public static readonly Version MinimumRequiredVsVersion = new (17, 6);
 
     public static readonly PathEx TestsContainerExtension2 = (PathEx)TestsContainerExtension;
     public static readonly PathEx ManifestFileName2 = (PathEx)ManifestFileName;
