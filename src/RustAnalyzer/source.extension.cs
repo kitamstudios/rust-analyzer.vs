@@ -9,7 +9,7 @@ namespace KS.RustAnalyzer
     {
         public const string Id = "KS.RustAnalyzer.3a91e56b-fb28-4d85-b572-ec964abf8e31";
         public const string Name = "rust-analyzer.vs";
-        public const string Description = @"Rust language support for Visual Studio";
+        public const string Description = @"Rust language support for Visual Studio 2022";
         public const string Language = "en-US";
         public const string Version = "2.0";
         public const string Author = "Kitam Studios";

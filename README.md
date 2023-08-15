@@ -2,7 +2,7 @@
 [vsixgallery]: http://vsixgallery.com/extension/KS.RustAnalyzer.3a91e56b-fb28-4d85-b572-ec964abf8e31/
 [repo]: https://github.com/kitamstudios/rust-analyzer.vs
 
-# rust-analyzer.vs - Rust language support for Visual Studio
+# rust-analyzer.vs - Rust language support for Visual Studio 2022
 
 > This extension is not affiliated with [rust-lang/rust-analyzer](https://github.com/rust-lang/rust-analyzer/), and just uses rust-analyzer as an LSP server, together with the installed Rust toolchain. For a list of features, please see the [official site and manual](https://rust-analyzer.github.io/manual.html).
 
