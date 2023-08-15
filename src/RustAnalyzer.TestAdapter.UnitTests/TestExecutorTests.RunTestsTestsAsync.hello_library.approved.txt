@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "TestCase": {
       "Id": "9cdd003c-30d9-0b2e-7a1f-6ff5883001b3",
@@ -58,7 +58,7 @@
     },
     "Attachments": [],
     "Outcome": 2,
-    "ErrorMessage": "thread 'tests::fibonacci_test::case_3' panicked at 'assertion failed: `(left == right)`\n  left: `1`,\n right: `2`', src\\lib.rs:33:9\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
+    "ErrorMessage": "thread 'tests::fibonacci_test::case_3' panicked at src\\lib.rs:33:9:\nassertion failed: `(left == right)`\n  left: `1`,\n right: `2`\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
     "ErrorStackTrace": null,
     "DisplayName": "tests.fibonacci_test.case_3",
     "Messages": [],
@@ -219,7 +219,7 @@
     },
     "Attachments": [],
     "Outcome": 2,
-    "ErrorMessage": "thread 'tests::should_fail' panicked at 'assertion failed: `(left != right)`\n  left: `42`,\n right: `42`', src\\lib.rs:48:9\n",
+    "ErrorMessage": "thread 'tests::should_fail' panicked at src\\lib.rs:48:9:\nassertion failed: `(left != right)`\n  left: `42`,\n right: `42`\n",
     "ErrorStackTrace": null,
     "DisplayName": "tests.should_fail",
     "Messages": [],
