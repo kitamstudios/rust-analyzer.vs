@@ -5,7 +5,7 @@
 [Failed] tests.fibonacci_test.case_3 thread 'tests::fibonacci_test::case_3' panicked at add_one\src\lib.rs:31:9:
 assertion failed: `(left == right)`
   left: `1`,
- right: `2`'
+ right: `2`
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 
 [Failed] tests.fibonacci_test.case_3 thread 'tests::fibonacci_test::case_3' panicked at add_one\src\lib.rs:31:9:
