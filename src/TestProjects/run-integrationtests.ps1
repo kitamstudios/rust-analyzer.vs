@@ -43,8 +43,8 @@ cmd /c echo "Clear up the vstest.console.exe error..."
 $obtainedFile = Join-Path $testResults "obtained.txt"
 $xml = [xml] (gc $trx)
 ($xml.TestRun.Results.UnitTestResult | Sort-Object -Property testName | % { "[$($_.outcome)] $($_.testName) $($_.Output.ErrorInfo.Message)" }) >$obtainedFile
-$expected = gc (Join-Path $SrcDir "integrationtests.approved.txt")
-$obtained = gc $obtainedFile
+$expected = gc (Join-Path $SrcDir "integrationtests.approved.txt") | % { $_.TrimEnd() }
+$obtained = gc $obtainedFile | % { $_.TrimEnd() }
 
 $diff = Compare-Object $expected $obtained -CaseSensitive
 if ($diff.Length)
