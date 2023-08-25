@@ -116,7 +116,17 @@ public static class WorkspaceExtensions
 
     public static PathEx GetTestContainerPath(this Workspace.Target @this, string profile)
     {
-        return @this.Parent.Parent.TargetDirectory + ProfileInfos[profile] + (PathEx)$"{@this.Parent.Name}_{@this.TargetFileName.GetFileNameWithoutExtension()}{Constants.TestsContainerExtension2}";
+        return @this.Parent.Parent.TargetDirectory.MakeProfilePath(profile) + (PathEx)$"{@this.Parent.Name}_{@this.TargetFileName.GetFileNameWithoutExtension()}{Constants.TestsContainerExtension2}";
+    }
+
+    public static PathEx GetDepsPath(this Workspace.Package @this, string profile)
+    {
+        return @this.Parent.TargetDirectory.MakeProfilePath(profile) + (PathEx)"deps";
+    }
+
+    public static PathEx GetTargetPath(this Workspace.Package @this, string profile)
+    {
+        return @this.Parent.TargetDirectory.MakeProfilePath(profile);
     }
 
     public static PathEx MakeProfilePath(this PathEx @this, string profile)

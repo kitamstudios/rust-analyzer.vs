@@ -261,7 +261,7 @@ public sealed class ToolChainService : IToolChainService
         return await RunAsync(
             cargoFullPath.Value,
             arguments,
-            cargoFullPath?.GetDirectoryName(),
+            (PathEx)Path.GetDirectoryName(filePath),
             redirector: new BuildOutputRedirector(outputPane, (PathEx)Path.GetDirectoryName(filePath), buildMessageReporter, outputPreprocessor),
             ct: ct);
     }

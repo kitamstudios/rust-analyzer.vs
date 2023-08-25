@@ -15,6 +15,15 @@ public static class EnvironmentExtensions
             .ToDictionary(g => g.Key, g => g.First().Value);
     }
 
+    public static IDictionary<string, string> PrependToPathInEnviroment(this IDictionary<string, string> @this, params PathEx[] directories)
+    {
+        var pathKey = @this.Keys.First(k => k.Equals("PATH", StringComparison.OrdinalIgnoreCase));
+        var dirs = directories.Aggregate(new StringBuilder(), (acc, e) => acc.AppendFormat("{0};", e)).ToString();
+        @this[pathKey] = $"{dirs}{@this[pathKey]}";
+
+        return @this;
+    }
+
     public static IDictionary<string, string> GetEnvironmentVariables()
     {
         var procEnv = Environment.GetEnvironmentVariables();

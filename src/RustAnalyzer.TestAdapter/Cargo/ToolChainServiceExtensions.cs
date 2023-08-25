@@ -1,3 +1,7 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Common;
@@ -7,6 +11,37 @@ namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
 public static class ToolChainServiceExtensions
 {
+    private static readonly Regex DefaultToolChainCracker = new (@"default_toolchain\s*=\s*\""(.*)\""");
+
+    public static string GetActiveToolChain()
+    {
+        var rustupSettingsPath = GetRustupPath() + (PathEx)@"settings.toml";
+        if (rustupSettingsPath.FileExists())
+        {
+            var dtcLine = File.ReadLines(rustupSettingsPath).Where(l => DefaultToolChainCracker.IsMatch(l)).FirstOrDefault();
+            if (dtcLine != null)
+            {
+                var m = DefaultToolChainCracker.Match(dtcLine);
+                if (m.Success)
+                {
+                    return m.Groups[1].Value;
+                }
+            }
+        }
+
+        return "nightly-x86_64-pc-windows-msvc";
+    }
+
+    public static PathEx GetLibPath()
+    {
+        return GetRustupPath() + (PathEx)@$"toolchains\{GetActiveToolChain()}\lib\rustlib\x86_64-pc-windows-msvc\lib";
+    }
+
+    public static PathEx GetBinPath()
+    {
+        return GetRustupPath() + (PathEx)@$"toolchains\{GetActiveToolChain()}\bin";
+    }
+
     public static bool IsTestDiscoveryComplete(this TestContainer @this)
     {
         return @this.TestExe != TestContainer.NotYetGeneratedMarker && @this.TestExe.FileExists();
@@ -36,4 +71,6 @@ public static class ToolChainServiceExtensions
                 new PathExJsonConverter()),
             ct);
     }
+
+    private static PathEx GetRustupPath() => (PathEx)Environment.GetEnvironmentVariable("USERPROFILE") + (PathEx)@".rustup";
 }
