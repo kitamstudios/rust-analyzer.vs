@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
@@ -16,6 +17,7 @@ public class BuildJsonOutputParserTests
 {
     [Fact]
     [UseReporter(typeof(XUnit2Reporter))]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public void IfNotParsableReturnAsIs()
     {
         var jsonOutput = "   Compiling pest v2.5.2";

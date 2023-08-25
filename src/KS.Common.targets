@@ -71,6 +71,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="SvSoft.MSBuild.CheckUnnecessaryUsings" Version="1.0.0" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup Condition="('$(IsTestProject)' != 'true') And ('$(IsNetFramework)' == 'true')">
     <PackageReference Include="Microsoft.VisualStudio.SDK.Analyzers" Version="16.10.10">
