@@ -64,7 +64,7 @@ mod tests {
 
     #[test]
     fn long_running_test() {
-        thread::sleep(time::Duration::from_millis(1000));
+        thread::sleep(time::Duration::from_millis(200));
         assert_eq!(1, 1);
     }
 }

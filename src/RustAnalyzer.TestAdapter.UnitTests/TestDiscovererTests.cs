@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
+using ApprovalTests.Reporters.TestFrameworks;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
@@ -20,7 +21,7 @@ public class TestDiscovererTests
     [Theory]
     [InlineData(@"hello_world", "hello_world_hello_world.rusttests", "dev")] // No tests.
     [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests", "dev")] // Has tests.
-    [UseReporter(typeof(DiffReporter))]
+    [UseReporter(typeof(XUnit2Reporter))]
     public async Task DiscoverTestsTestsAsync(string workspaceRelRoot, string containerName, string profile)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
@@ -40,7 +41,7 @@ public class TestDiscovererTests
 
     [Theory]
     [InlineData(@"bin_with_example", "hello_world_hello_world.rusttests", "dev")]
-    [UseReporter(typeof(DiffReporter))]
+    [UseReporter(typeof(XUnit2Reporter))]
     public async Task AdditionalBuildArgsTestsAsync(string workspaceRelRoot, string containerName, string profile)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();

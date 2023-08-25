@@ -132,7 +132,7 @@
     "DisplayName": "tests.long_running_test",
     "Messages": [],
     "ComputerName": null,
-    "Duration": "00:00:01.0000000"
+    "Duration": "00:00:00.2000000"
 
 
     "Properties": []

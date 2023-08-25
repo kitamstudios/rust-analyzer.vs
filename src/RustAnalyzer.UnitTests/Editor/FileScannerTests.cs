@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
+using ApprovalTests.Reporters.TestFrameworks;
 using KS.RustAnalyzer.Editor;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
@@ -18,7 +19,7 @@ public class FileScannerTests
     public static IEnumerable<object[]> GetTestData() => TestData.Get();
 
     [Theory]
-    [UseReporter(typeof(DiffReporter))]
+    [UseReporter(typeof(XUnit2Reporter))]
     [MemberData(nameof(GetTestData))]
     public async Task ScanContentFileRefInfoTestsAsync(string workspaceRootRel, string filePathRel)
     {
@@ -42,7 +43,7 @@ public class FileScannerTests
     }
 
     [Theory]
-    [UseReporter(typeof(DiffReporter))]
+    [UseReporter(typeof(XUnit2Reporter))]
     [MemberData(nameof(GetTestData))]
     public async Task ScanContentFileDataValueTestsAsync(string workspaceRootRel, string filePathRel)
     {

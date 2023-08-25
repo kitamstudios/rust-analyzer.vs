@@ -3,6 +3,7 @@ using System.Linq;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
+using ApprovalTests.Reporters.TestFrameworks;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
@@ -14,7 +15,7 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 public class BuildJsonOutputParserTests
 {
     [Fact]
-    [UseReporter(typeof(DiffReporter))]
+    [UseReporter(typeof(XUnit2Reporter))]
     public void IfNotParsableReturnAsIs()
     {
         var jsonOutput = "   Compiling pest v2.5.2";
@@ -24,7 +25,7 @@ public class BuildJsonOutputParserTests
     }
 
     [Theory]
-    [UseReporter(typeof(DiffReporter))]
+    [UseReporter(typeof(XUnit2Reporter))]
     [InlineData("CompilerArtifact1.json")]
     [InlineData("CompilerArtifact2.json")]
     [InlineData("CompilerArtifact3.json")]
@@ -38,7 +39,7 @@ public class BuildJsonOutputParserTests
     }
 
     [Theory]
-    [UseReporter(typeof(DiffReporter))]
+    [UseReporter(typeof(XUnit2Reporter))]
     [InlineData("ComplexError1.json")]
     [InlineData("ComplexWarning1.json")]
     [InlineData("ComplexError2.json")]

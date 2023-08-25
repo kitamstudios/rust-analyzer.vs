@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
+using ApprovalTests.Reporters.TestFrameworks;
 using FluentAssertions;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
@@ -21,7 +22,7 @@ public class TestExecutorTests
     [Theory]
     [InlineData(@"hello_world", "hello_world_hello_world.rusttests", "bench")] // No tests.
     [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests", "bench")] // Has tests.
-    [UseReporter(typeof(DiffReporter))]
+    [UseReporter(typeof(XUnit2Reporter))]
     public async Task RunTestsTestsAsync(string workspaceRelRoot, string containerName, string profile)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();

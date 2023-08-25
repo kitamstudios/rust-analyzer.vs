@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
+using ApprovalTests.Reporters.TestFrameworks;
 using FluentAssertions;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
@@ -21,7 +22,7 @@ public sealed class ToolChainServiceTests
     [InlineData(@"hello_world")]
     [InlineData(@"hello_workspace")]
     [InlineData(@"workspace_mixed")]
-    [UseReporter(typeof(DiffReporter))]
+    [UseReporter(typeof(XUnit2Reporter))]
     public async Task GetMetadataTestsAsync(string workspaceRelRoot)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
@@ -82,7 +83,7 @@ public sealed class ToolChainServiceTests
     [InlineData(@"hello_library", "dev")]
     [InlineData(@"hello_workspace", "dev")]
     [InlineData(@"workspace_mixed", "dev")]
-    [UseReporter(typeof(DiffReporter))]
+    [UseReporter(typeof(XUnit2Reporter))]
     public async Task BuildTestsAsync(string workspaceRelRoot, string profile)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
@@ -116,7 +117,7 @@ public sealed class ToolChainServiceTests
     [Theory]
     [InlineData(@"hello_world", "hello_world_hello_world.rusttests", "release")] // No tests.
     [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests", "release")] // Has tests.
-    [UseReporter(typeof(DiffReporter))]
+    [UseReporter(typeof(XUnit2Reporter))]
     public async Task GetTestSuiteTestsAsync(string workspaceRelRoot, string containerName, string profile)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
