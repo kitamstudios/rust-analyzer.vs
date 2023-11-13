@@ -5,7 +5,7 @@ namespace KS.RustAnalyzer.TestAdapter;
 
 public static class Constants
 {
-    public const string ReleaseSummary = $"Updated RLS + dependency on VS2022 17.7. Please report any issues you face. Consider giving 5⭐ if you find this extension useful.";
+    public const string ReleaseSummary = $"Updated RLS. Please report any issues you face. Consider giving 5⭐ if you find this extension useful.";
     public const string ReleaseNotesUrl = $"https://github.com/kitamstudios/rust-analyzer.vs/releases/{Vsix.Version}";
     public const string DiscordUrl = "https://discord.gg/JyK55EsACr";
     public const string TestExperienceDemoUrl = "https://youtu.be/pE1Vr2zVCbg?t=170";
