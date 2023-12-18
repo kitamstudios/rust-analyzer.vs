@@ -12,7 +12,7 @@ namespace KS.RustAnalyzer.UnitTests;
 
 public sealed class RAExeRelease
 {
-    private const string LastUpdatedRAExeVersion = "2023-11-06";
+    private const string LastUpdatedRAExeVersion = "2023-12-18";
 
     [Fact]
     public async Task LastUpdateShouldNotBeOlderThan30DaysAsync()
