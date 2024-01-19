@@ -95,12 +95,12 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\external\rust-analyzer.2024-01-08.exe">
-      <Link>rust-analyzer.2024-01-15.exe</Link>
+    <Content Include="..\external\rust-analyzer.exe">
+      <Link>2024-01-08\rust-analyzer.2024-01-15.exe</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="..\external\rust_analyzer.pdb">
-      <Link>rust_analyzer.pdb</Link>
+      <Link>2024-01-08\rust_analyzer.pdb</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="languages.pkgdef">
@@ -140,6 +140,7 @@
     <Reference Include="System" />
     <Reference Include="System.Design" />
     <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.IO.Compression.FileSystem" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Community.VisualStudio.VSCT" Version="16.0.29.6" PrivateAssets="all" />
