@@ -12,6 +12,8 @@ namespace KS.RustAnalyzer.Infrastructure;
 public interface IRegistrySettingsService
 {
     public bool InfoBarDismissedByUser { get; set; }
+
+    bool GetPackageRegistryRoot(out string packageRegistryRoot);
 }
 
 [Export(typeof(IRegistrySettingsService))]
@@ -41,7 +43,7 @@ public class RegistrySettingsService : IRegistrySettingsService
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            if (GetPackageRegistryRoot(_serviceProvider, out string regRoot))
+            if (GetPackageRegistryRoot(out string regRoot))
             {
                 return Registry.GetValue(regRoot, DismissedRegKeyName, null)?.ToString() == Vsix.Version;
             }
@@ -53,21 +55,21 @@ public class RegistrySettingsService : IRegistrySettingsService
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            if (value && GetPackageRegistryRoot(_serviceProvider, out string regRoot))
+            if (value && GetPackageRegistryRoot(out string regRoot))
             {
                 Registry.SetValue(regRoot, DismissedRegKeyName, Vsix.Version);
             }
         }
     }
 
-    private static bool GetPackageRegistryRoot(IServiceProvider sp, out string packageRegistryRoot)
+    public bool GetPackageRegistryRoot(out string packageRegistryRoot)
     {
         ThreadHelper.ThrowIfNotOnUIThread();
 
         packageRegistryRoot = null;
-        if (sp.GetService(typeof(SLocalRegistry)) is ILocalRegistry2 localReg && ErrorHandler.Succeeded(localReg.GetLocalRegistryRoot(out var localRegRoot)))
+        if (_serviceProvider.GetService(typeof(SLocalRegistry)) is ILocalRegistry2 localReg && ErrorHandler.Succeeded(localReg.GetLocalRegistryRoot(out var localRegRoot)))
         {
-            packageRegistryRoot = Path.Combine("HKEY_CURRENT_USER", localRegRoot, Vsix.Name);
+            packageRegistryRoot = Path.Combine(Registry.CurrentUser.Name, localRegRoot, Vsix.Name);
             return true;
         }
 

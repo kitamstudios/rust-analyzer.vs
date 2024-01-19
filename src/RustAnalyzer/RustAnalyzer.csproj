@@ -45,7 +45,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Infrastructure\RADownloader.cs" />
+    <Compile Include="Infrastructure\RADownloaderService.cs" />
     <Compile Include="Infrastructure\RegistrySettingsService.cs" />
     <Compile Include="Infrastructure\SettingsInfo.cs" />
     <Compile Include="LanguageService\CommentHelper.cs" />
@@ -95,8 +95,8 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\external\rust-analyzer.exe">
-      <Link>rust-analyzer.exe</Link>
+    <Content Include="..\external\rust-analyzer.2024-01-15.exe">
+      <Link>rust-analyzer.2024-01-15.exe</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="..\external\rust_analyzer.pdb">

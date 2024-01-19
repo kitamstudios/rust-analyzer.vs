@@ -9,8 +9,6 @@ public interface IToolChainService
 {
     PathEx? GetCargoExePath();
 
-    Task<PathEx> GetRustAnalyzerExePath();
-
     Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct);
 
     Task<bool> CleanAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct);

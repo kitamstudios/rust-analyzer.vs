@@ -67,7 +67,7 @@
     </Compile>
     <Compile Include="Infrastructure\StringBuildMessagePreprocessorTests.cs" />
     <Compile Include="Infrastructure\StringExtensionsTests.cs" />
-    <Compile Include="RAExeRelease.cs" />
+    <Compile Include="RAExeReleaseTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Editor\FileContextProviderTests.cs" />
     <Compile Include="Editor\FileScannerTests.cs" />

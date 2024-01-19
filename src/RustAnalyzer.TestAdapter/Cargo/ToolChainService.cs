@@ -5,7 +5,6 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -44,12 +43,6 @@ public sealed class ToolChainService : IToolChainService
 
         _tl.L.WriteLine("... using {0} from '{1}'.", Constants.CargoExe, cargoExePath);
         return cargoExePath;
-    }
-
-    public Task<PathEx> GetRustAnalyzerExePath()
-    {
-        var path = (PathEx)Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "rust-analyzer.exe");
-        return path.ToTask();
     }
 
     public async Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)

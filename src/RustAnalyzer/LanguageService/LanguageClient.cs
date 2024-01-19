@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.LanguageServer.Client;
@@ -36,7 +37,7 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
     public ITelemetryService T { get; set; }
 
     [Import]
-    public IToolChainService ToolChain { get; set; }
+    public IRADownloaderService RADownloader { get; set; }
 
     public JsonRpc Rpc { get; set; }
 
@@ -62,7 +63,7 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
 
     public async Task<Connection> ActivateAsync(CancellationToken token)
     {
-        var rlsPath = await ToolChain.GetRustAnalyzerExePath();
+        var rlsPath = await RADownloader.GetRustAnalyzerExePathAsync();
         L.WriteLine("Starting rust-analyzer from path: {0}.", rlsPath);
         ProcessStartInfo info = new ()
         {
