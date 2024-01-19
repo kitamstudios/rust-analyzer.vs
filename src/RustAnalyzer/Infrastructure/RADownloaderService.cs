@@ -22,7 +22,7 @@ public interface IRADownloaderService
 [PartCreationPolicy(CreationPolicy.Shared)]
 public class RADownloaderService : IRADownloaderService
 {
-    public const string LatestInPackageRAVersion = "2024-01-15";
+    public const string LatestInPackageRAVersion = "2024-01-08";
 
     public const string RAVersionFormat = "yyyy-MM-dd";
     private readonly IRegistrySettingsService _regSettings;

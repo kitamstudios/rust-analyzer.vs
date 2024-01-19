@@ -95,7 +95,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\external\rust-analyzer.2024-01-15.exe">
+    <Content Include="..\external\rust-analyzer.2024-01-08.exe">
       <Link>rust-analyzer.2024-01-15.exe</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
