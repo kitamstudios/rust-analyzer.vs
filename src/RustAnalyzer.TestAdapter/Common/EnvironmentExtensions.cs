@@ -7,6 +7,10 @@ namespace KS.RustAnalyzer.TestAdapter.Common;
 
 public static class EnvironmentExtensions
 {
+    private const char EqEscape = '\u0001';
+    private static readonly char[] NullSep = new[] { '\0' };
+    private static readonly char[] EqSep = new[] { '=' };
+
     public static IDictionary<string, string> OverrideProcessEnvironment(this string @this)
     {
         return @this.ToNullSeparatedDictionary()
@@ -34,8 +38,21 @@ public static class EnvironmentExtensions
     public static string ToEnvironmentBlock(this IDictionary<string, string> @this)
     {
         return @this
-            .Aggregate(new StringBuilder(), (acc, e) => acc.Append($"{e.Key}={e.Value}\0"))
+            .Aggregate(new StringBuilder(), (acc, e) => acc.Append($"{e.Key}={e.Value.Replace('=', EqEscape)}\0"))
             .Append('\0')
             .ToString();
+    }
+
+    public static IDictionary<string, string> ToNullSeparatedDictionary(this string @this)
+    {
+        return @this
+            .FromNullSeparatedArray()
+            .Select(x => x.Split(EqSep, StringSplitOptions.None))
+            .ToDictionary(x => x[0], x => x.Length == 2 ? x[1].Replace(EqEscape, '=') : string.Empty);
+    }
+
+    public static string[] FromNullSeparatedArray(this string @this)
+    {
+        return (@this ?? string.Empty).Split(NullSep, StringSplitOptions.RemoveEmptyEntries);
     }
 }

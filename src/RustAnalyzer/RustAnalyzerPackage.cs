@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -13,8 +12,6 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.Win32;
 using CommunityVS = Community.VisualStudio.Toolkit.VS;
 using Constants = KS.RustAnalyzer.TestAdapter.Constants;
 
@@ -37,6 +34,7 @@ namespace KS.RustAnalyzer;
 public sealed class RustAnalyzerPackage : ToolkitPackage
 {
     private TL _tl;
+    private IRegistrySettingsService _regSettings;
     private IPreReqsCheckService _preReqs;
 
     protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
@@ -51,6 +49,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
             L = cmServiceProvider?.GetService<ILogger>(),
             T = cmServiceProvider?.GetService<ITelemetryService>(),
         };
+        _regSettings = cmServiceProvider?.GetService<IRegistrySettingsService>();
         _preReqs = cmServiceProvider?.GetService<IPreReqsCheckService>();
     }
 
@@ -60,7 +59,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
 
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
-        await ReleaseSummaryNotification.ShowAsync(this, _tl);
+        await ReleaseSummaryNotification.ShowAsync(_regSettings, _tl);
         await SearchAndDisableIncompatibleExtensionsAsync();
         await _preReqs.SatisfyAsync();
     }
@@ -148,14 +147,13 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
         private const string ActionContextGetHelp = "get_help";
         private const string ActionContextRateExtension = "rate_extension";
         private const string ActionContextTestExperienceDemo = "test_experience_demo";
-        private const string DismissedRegKeyName = "release_notes_dismissed";
 
-        public static async Task ShowAsync(IServiceProvider sp, TL tl)
+        public static async Task ShowAsync(IRegistrySettingsService regSettings, TL tl)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             tl.L.WriteLine("Attempting to show release notes...");
-            if (HasBeenDismissedByUser(sp))
+            if (regSettings.InfoBarDismissedByUser)
             {
                 tl.L.WriteLine("... Not showing release notes as it has already been dismissed by the user.");
                 return;
@@ -173,11 +171,11 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                 image: KnownMonikers.StatusInformation,
                 isCloseButtonVisible: true);
             var infoBar = await CommunityVS.InfoBar.CreateAsync(model);
-            infoBar.ActionItemClicked += (s, ea) => InfoBar_ActionItemClicked(s, ea, sp, tl);
+            infoBar.ActionItemClicked += (s, ea) => InfoBar_ActionItemClicked(s, ea, regSettings, tl);
             await infoBar.TryShowInfoBarUIAsync();
         }
 
-        private static void InfoBar_ActionItemClicked(object sender, InfoBarActionItemEventArgs e, IServiceProvider sp, TL tl)
+        private static void InfoBar_ActionItemClicked(object sender, InfoBarActionItemEventArgs e, IRegistrySettingsService regSettings, TL tl)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -197,7 +195,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
                     break;
 
                 case ActionContextDismiss:
-                    MarkDismissedByUser(sp);
+                    regSettings.InfoBarDismissedByUser = true;
                     (sender as InfoBar)?.Close();
                     break;
 
@@ -206,42 +204,6 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
             }
 
             tl.T.TrackEvent("InfoBarAction", ("Context", actionContext));
-        }
-
-        private static void MarkDismissedByUser(IServiceProvider sp)
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
-            if (GetPackageRegistryRoot(sp, out string regRoot))
-            {
-                Registry.SetValue(regRoot, DismissedRegKeyName, Vsix.Version);
-            }
-        }
-
-        private static bool HasBeenDismissedByUser(IServiceProvider sp)
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
-            if (GetPackageRegistryRoot(sp, out string regRoot))
-            {
-                return Registry.GetValue(regRoot, DismissedRegKeyName, null)?.ToString() == Vsix.Version;
-            }
-
-            return false;
-        }
-
-        private static bool GetPackageRegistryRoot(IServiceProvider sp, out string packageRegistryRoot)
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
-            packageRegistryRoot = null;
-            if (sp.GetService(typeof(SLocalRegistry)) is ILocalRegistry2 localReg && ErrorHandler.Succeeded(localReg.GetLocalRegistryRoot(out var localRegRoot)))
-            {
-                packageRegistryRoot = Path.Combine("HKEY_CURRENT_USER", localRegRoot, Vsix.Name);
-                return true;
-            }
-
-            return false;
         }
     }
 

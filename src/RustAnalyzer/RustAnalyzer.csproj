@@ -45,6 +45,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Infrastructure\RADownloader.cs" />
+    <Compile Include="Infrastructure\RegistrySettingsService.cs" />
     <Compile Include="Infrastructure\SettingsInfo.cs" />
     <Compile Include="LanguageService\CommentHelper.cs" />
     <Compile Include="LanguageService\CommentSelectionCommandHandler.cs" />

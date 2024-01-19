@@ -25,6 +25,7 @@ public class EnvironmentExtensionsTests
     [InlineData(null)]
     [InlineData("\0")]
     [InlineData("abc=x\0\0")]
+    [InlineData("A=x\u0001\0\0")]
     [InlineData("a=x\0abc=x\0\0")]
     [InlineData("A B=this\" is a\"b\0XX=this is xx\0A=a\0\0")]
     public void EnvBlockToEnvDictRoundTripTests(string envBlock)
