@@ -45,7 +45,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Infrastructure\RADownloaderService.cs" />
+    <Compile Include="Infrastructure\RAInstallerService.cs" />
     <Compile Include="Infrastructure\RegistrySettingsService.cs" />
     <Compile Include="Infrastructure\SettingsInfo.cs" />
     <Compile Include="LanguageService\CommentHelper.cs" />

@@ -36,7 +36,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
     private TL _tl;
     private IRegistrySettingsService _regSettings;
     private IPreReqsCheckService _preReqs;
-    private IRADownloaderService _raDownloader;
+    private IRAInstallerService _raDownloader;
 
     protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
     {
@@ -52,7 +52,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
         };
         _regSettings = cmServiceProvider?.GetService<IRegistrySettingsService>();
         _preReqs = cmServiceProvider?.GetService<IPreReqsCheckService>();
-        _raDownloader = cmServiceProvider?.GetService<IRADownloaderService>();
+        _raDownloader = cmServiceProvider?.GetService<IRAInstallerService>();
     }
 
     protected override async Task OnAfterPackageLoadedAsync(CancellationToken cancellationToken)
@@ -64,7 +64,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
         await ReleaseSummaryNotification.ShowAsync(_regSettings, _tl);
         await SearchAndDisableIncompatibleExtensionsAsync();
         await _preReqs.SatisfyAsync();
-        await _raDownloader.DownloadLatestRAAsync();
+        await _raDownloader.InstallLatestRAAsync();
     }
 
     #region Handling incompatible extensions

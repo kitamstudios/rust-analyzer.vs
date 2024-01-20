@@ -14,16 +14,16 @@ using Microsoft.Win32;
 
 namespace KS.RustAnalyzer.Infrastructure;
 
-public interface IRADownloaderService
+public interface IRAInstallerService
 {
     Task<PathEx> GetRustAnalyzerExePathAsync();
 
-    Task DownloadLatestRAAsync();
+    Task InstallLatestRAAsync();
 }
 
-[Export(typeof(IRADownloaderService))]
+[Export(typeof(IRAInstallerService))]
 [PartCreationPolicy(CreationPolicy.Shared)]
-public class RADownloaderService : IRADownloaderService
+public class RAInstallerService : IRAInstallerService
 {
     public const string LatestInPackageRAVersion = "2024-01-08";
     public const string RAVersionFormat = "yyyy-MM-dd";
@@ -32,7 +32,7 @@ public class RADownloaderService : IRADownloaderService
     private readonly TL _tl;
 
     [ImportingConstructor]
-    public RADownloaderService(IRegistrySettingsService regSettings, [Import] ITelemetryService t, [Import] ILogger l)
+    public RAInstallerService(IRegistrySettingsService regSettings, [Import] ITelemetryService t, [Import] ILogger l)
     {
         _regSettings = regSettings;
         _tl = new TL
@@ -42,13 +42,8 @@ public class RADownloaderService : IRADownloaderService
         };
     }
 
-    public async Task DownloadLatestRAAsync()
+    public async Task InstallLatestRAAsync()
     {
-        if (!IsDownloadEnabled())
-        {
-            return;
-        }
-
         _tl.L.WriteLine("Initiating download of RA...");
         try
         {
@@ -98,12 +93,6 @@ public class RADownloaderService : IRADownloaderService
         {
             return null;
         }
-    }
-
-    private bool IsDownloadEnabled()
-    {
-        var id = Environment.ExpandEnvironmentVariables("%USERNAME%@%COMPUTERNAME%.%USERDOMAIN%");
-        return id?.Equals("parth@unrenormlizable.unrenormlizable", StringComparison.OrdinalIgnoreCase) ?? false;
     }
 
     private PathEx GetVersionedRAExePath(string version)

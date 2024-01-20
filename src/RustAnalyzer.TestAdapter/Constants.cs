@@ -5,7 +5,7 @@ namespace KS.RustAnalyzer.TestAdapter;
 
 public static class Constants
 {
-    public const string ReleaseSummary = $"Relaxing VS version check based on user feedback. Please report any issues you face. Consider giving 5⭐ if you find this extension useful.";
+    public const string ReleaseSummary = $"Rust Language Server will auto update from now on. Please report any issues you face. Consider giving 5⭐ if you find this extension useful.";
     public const string ReleaseNotesUrl = $"https://github.com/kitamstudios/rust-analyzer.vs/releases/{Vsix.Version}";
     public const string DiscordUrl = "https://discord.gg/JyK55EsACr";
     public const string TestExperienceDemoUrl = "https://youtu.be/pE1Vr2zVCbg?t=170";
