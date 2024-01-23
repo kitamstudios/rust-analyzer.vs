@@ -16,18 +16,18 @@ namespace KS.RustAnalyzer.Infrastructure;
 
 public interface IRlsInstallerService
 {
-    Task<PathEx> GetRustAnalyzerExePathAsync();
+    Task<PathEx> GetExePathAsync();
 
-    Task InstallLatestRAAsync();
+    Task InstallLatestAsync();
 }
 
 [Export(typeof(IRlsInstallerService))]
 [PartCreationPolicy(CreationPolicy.Shared)]
 public class RlsInstallerService : IRlsInstallerService
 {
-    public const string LatestInPackageRAVersion = "2024-01-08";
-    public const string RAVersionFormat = "yyyy-MM-dd";
-    private const string InstalledRAVersionKey = "InstalledRAVersion";
+    public const string LatestInPackageVersion = "2024-01-08";
+    public const string VersionFormat = "yyyy-MM-dd";
+    private const string InstalledRlsVersionKey = "InstalledRlsVersion";
     private readonly IRegistrySettingsService _regSettings;
     private readonly TL _tl;
 
@@ -42,17 +42,17 @@ public class RlsInstallerService : IRlsInstallerService
         };
     }
 
-    public async Task InstallLatestRAAsync()
+    public async Task InstallLatestAsync()
     {
-        _tl.L.WriteLine("Initiating download of RA...");
+        _tl.L.WriteLine("Initiating download of RLS...");
         try
         {
-            var latestRel = await GetLatestRAReleaseRedirectUriAsync();
+            var latestRel = await GetLatestRlsReleaseRedirectUriAsync();
             string installedVer = await GetInstalledVersionAsync();
             if (latestRel != null && installedVer.CompareTo(latestRel?.Version) >= 0)
             {
-                _tl.L.WriteLine($"Not going to download RA. Installed = {installedVer}, Latest = {latestRel?.Uri}.");
-                _tl.T.TrackEvent("RADS.RAUpToDate", ("Installed", installedVer), ("Latest", latestRel?.Uri.ToString()));
+                _tl.L.WriteLine($"Not going to download RLS. Installed = {installedVer}, Latest = {latestRel?.Uri}.");
+                _tl.T.TrackEvent("RLSDS.RlsUpToDate", ("Installed", installedVer), ("Latest", latestRel?.Uri.ToString()));
                 return;
             }
 
@@ -62,7 +62,7 @@ public class RlsInstallerService : IRlsInstallerService
             Install(zipStream, latestRel?.Version);
 
             await CommitAsync(latestRel);
-            _tl.T.TrackEvent("RADS.RAInstalled", ("Installed", installedVer));
+            _tl.T.TrackEvent("RLSDS.RlsInstalled", ("Installed", installedVer));
         }
         catch (Exception ex)
         {
@@ -72,22 +72,22 @@ public class RlsInstallerService : IRlsInstallerService
         }
     }
 
-    public async Task<PathEx> GetRustAnalyzerExePathAsync()
+    public async Task<PathEx> GetExePathAsync()
     {
-        return GetVersionedRAExePath(await GetInstalledVersionAsync());
+        return GetVersionedExePath(await GetInstalledVersionAsync());
     }
 
-    public static async Task<(Uri Uri, string Version)?> GetLatestRAReleaseRedirectUriAsync()
+    public static async Task<(Uri Uri, string Version)?> GetLatestRlsReleaseRedirectUriAsync()
     {
         try
         {
             var latestRelUri = await GetRedirectedUrlAsync("https://github.com/rust-lang/rust-analyzer/releases/latest".ToUri());
 
             var latestRelVersion = latestRelUri.Segments[latestRelUri.Segments.Length - 1];
-            var latestRelDate = DateTime.ParseExact(latestRelVersion, RAVersionFormat, CultureInfo.InvariantCulture);
+            var latestRelDate = DateTime.ParseExact(latestRelVersion, VersionFormat, CultureInfo.InvariantCulture);
 
             return (Uri: new Uri($"https://github.com/rust-lang/rust-analyzer/releases/download/{latestRelVersion}/rust-analyzer-x86_64-pc-windows-msvc.zip"),
-                Version: latestRelDate.ToString(RAVersionFormat, CultureInfo.InvariantCulture));
+                Version: latestRelDate.ToString(VersionFormat, CultureInfo.InvariantCulture));
         }
         catch
         {
@@ -95,20 +95,20 @@ public class RlsInstallerService : IRlsInstallerService
         }
     }
 
-    private PathEx GetVersionedRAExePath(string version)
+    private PathEx GetVersionedExePath(string version)
     {
-        return GetRAFolder(version) + (PathEx)$"rust-analyzer.exe";
+        return GetInstallFolder(version) + (PathEx)$"rust-analyzer.exe";
     }
 
     private async Task<HttpResponseMessage> DownloadAsync((Uri Uri, string Version)? latestRel)
     {
-        _tl.L.WriteLine($"Downloading RA v{latestRel?.Uri}.");
+        _tl.L.WriteLine($"Downloading RLS from {latestRel?.Uri}.");
         var response = await new HttpClient().GetAsync(latestRel?.Uri);
         if (!response.IsSuccessStatusCode)
         {
             _tl.L.WriteError($"Download failed. StatusCode {response.StatusCode}.");
-            _tl.T.TrackEvent("RADS.RADownloadFailed", ("StatusCode", response.StatusCode.ToString()));
-            throw new Exception($"RADS.RADownloadFailed. {response.StatusCode}.");
+            _tl.T.TrackEvent("RLSDS.RlsDownloadFailed", ("StatusCode", response.StatusCode.ToString()));
+            throw new Exception($"RLSDS.RlsDownloadFailed. {response.StatusCode}.");
         }
 
         return response;
@@ -123,15 +123,15 @@ public class RlsInstallerService : IRlsInstallerService
             throw new Exception($"GetPackageRegistryRoot failed.");
         }
 
-        Registry.SetValue(regRoot, InstalledRAVersionKey, latestRel?.Version);
+        Registry.SetValue(regRoot, InstalledRlsVersionKey, latestRel?.Version);
         RlsUpdatedNotification.Enabled = true;
-        _tl.L.WriteLine($"Committed RA installation.");
+        _tl.L.WriteLine($"Committed RLS installation.");
     }
 
     private void Install(Stream zipStream, string downloadedVersion)
     {
-        _tl.L.WriteLine($"Installing RA v{downloadedVersion}...");
-        var raFolder = GetRAFolder(downloadedVersion);
+        _tl.L.WriteLine($"Installing RLS v {downloadedVersion}...");
+        var raFolder = GetInstallFolder(downloadedVersion);
         Directory.CreateDirectory(raFolder);
         using var zip = new ZipArchive(zipStream);
         foreach (var entry in zip.Entries)
@@ -146,22 +146,22 @@ public class RlsInstallerService : IRlsInstallerService
     {
         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-        var installedRAVersion = LatestInPackageRAVersion;
+        var installedRlsVersion = LatestInPackageVersion;
         if (_regSettings.GetPackageRegistryRoot(out var regRoot))
         {
-            installedRAVersion = Registry.GetValue(regRoot, InstalledRAVersionKey, null) as string;
+            installedRlsVersion = Registry.GetValue(regRoot, InstalledRlsVersionKey, null) as string;
         }
 
-        installedRAVersion ??= LatestInPackageRAVersion;
-        if (GetVersionedRAExePath(installedRAVersion).FileExists())
+        installedRlsVersion ??= LatestInPackageVersion;
+        if (GetVersionedExePath(installedRlsVersion).FileExists())
         {
-            return installedRAVersion;
+            return installedRlsVersion;
         }
 
-        return LatestInPackageRAVersion;
+        return LatestInPackageVersion;
     }
 
-    private static PathEx GetRAFolder(string version)
+    private static PathEx GetInstallFolder(string version)
     {
         return (PathEx)Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + (PathEx)version;
     }

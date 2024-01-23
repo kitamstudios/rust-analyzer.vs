@@ -63,7 +63,7 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
 
     public async Task<Connection> ActivateAsync(CancellationToken token)
     {
-        var rlsPath = await RADownloader.GetRustAnalyzerExePathAsync();
+        var rlsPath = await RADownloader.GetExePathAsync();
         L.WriteLine("Starting rust-analyzer from path: {0}.", rlsPath);
         ProcessStartInfo info = new ()
         {

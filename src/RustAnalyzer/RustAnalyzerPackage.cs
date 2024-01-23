@@ -64,7 +64,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
         await ReleaseSummaryNotification.ShowAsync(_regSettings, _tl);
         await SearchAndDisableIncompatibleExtensionsAsync();
         await _preReqs.SatisfyAsync();
-        await _raDownloader.InstallLatestRAAsync();
+        await _raDownloader.InstallLatestAsync();
         await RlsUpdatedNotification.ShowAsync();
     }
 
