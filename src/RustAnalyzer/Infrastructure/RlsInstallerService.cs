@@ -14,16 +14,16 @@ using Microsoft.Win32;
 
 namespace KS.RustAnalyzer.Infrastructure;
 
-public interface IRAInstallerService
+public interface IRlsInstallerService
 {
     Task<PathEx> GetRustAnalyzerExePathAsync();
 
     Task InstallLatestRAAsync();
 }
 
-[Export(typeof(IRAInstallerService))]
+[Export(typeof(IRlsInstallerService))]
 [PartCreationPolicy(CreationPolicy.Shared)]
-public class RAInstallerService : IRAInstallerService
+public class RlsInstallerService : IRlsInstallerService
 {
     public const string LatestInPackageRAVersion = "2024-01-08";
     public const string RAVersionFormat = "yyyy-MM-dd";
@@ -32,7 +32,7 @@ public class RAInstallerService : IRAInstallerService
     private readonly TL _tl;
 
     [ImportingConstructor]
-    public RAInstallerService(IRegistrySettingsService regSettings, [Import] ITelemetryService t, [Import] ILogger l)
+    public RlsInstallerService(IRegistrySettingsService regSettings, [Import] ITelemetryService t, [Import] ILogger l)
     {
         _regSettings = regSettings;
         _tl = new TL
@@ -124,6 +124,7 @@ public class RAInstallerService : IRAInstallerService
         }
 
         Registry.SetValue(regRoot, InstalledRAVersionKey, latestRel?.Version);
+        RlsUpdatedNotification.Enabled = true;
         _tl.L.WriteLine($"Committed RA installation.");
     }
 

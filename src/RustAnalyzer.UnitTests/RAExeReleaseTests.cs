@@ -12,10 +12,10 @@ public sealed class RAExeReleaseTests
     [Fact]
     public async Task LastUpdateShouldNotBeOlderThan30DaysAsync()
     {
-        var ret = await RAInstallerService.GetLatestRAReleaseRedirectUriAsync();
+        var ret = await RlsInstallerService.GetLatestRAReleaseRedirectUriAsync();
 
-        var latestRelDate = DateTime.ParseExact(ret?.Version, RAInstallerService.RAVersionFormat, CultureInfo.InvariantCulture);
-        var lastUpdateDate = DateTime.ParseExact(RAInstallerService.LatestInPackageRAVersion, RAInstallerService.RAVersionFormat, CultureInfo.InvariantCulture);
+        var latestRelDate = DateTime.ParseExact(ret?.Version, RlsInstallerService.RAVersionFormat, CultureInfo.InvariantCulture);
+        var lastUpdateDate = DateTime.ParseExact(RlsInstallerService.LatestInPackageRAVersion, RlsInstallerService.RAVersionFormat, CultureInfo.InvariantCulture);
         lastUpdateDate.Should().NotBeBefore(latestRelDate.AddDays(-120), $"new rust-analyzer.exe is available {ret?.Uri}");
     }
 }

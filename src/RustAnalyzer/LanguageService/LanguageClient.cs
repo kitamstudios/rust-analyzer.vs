@@ -37,7 +37,7 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
     public ITelemetryService T { get; set; }
 
     [Import]
-    public IRAInstallerService RADownloader { get; set; }
+    public IRlsInstallerService RADownloader { get; set; }
 
     public JsonRpc Rpc { get; set; }
 
