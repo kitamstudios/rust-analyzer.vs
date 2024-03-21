@@ -115,8 +115,8 @@ public sealed class ToolChainServiceTests
     }
 
     [Theory]
-    [InlineData(@"hello_world", "hello_world_hello_world.rusttests", "release")] // No tests.
-    [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests", "release")] // Has tests.
+    [InlineData(@"hello_world", "hello_world.rusttests", "release")] // No tests.
+    [InlineData(@"hello_library", "hello_lib.rusttests", "release")] // Has tests.
     [UseReporter(typeof(XUnit2Reporter))]
     public async Task GetTestSuiteTestsAsync(string workspaceRelRoot, string containerName, string profile)
     {

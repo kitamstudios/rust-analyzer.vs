@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.Win32;
@@ -25,7 +26,6 @@ public interface IRlsInstallerService
 [PartCreationPolicy(CreationPolicy.Shared)]
 public class RlsInstallerService : IRlsInstallerService
 {
-    public const string LatestInPackageVersion = "2024-01-08";
     public const string VersionFormat = "yyyy-MM-dd";
     private const string InstalledRlsVersionKey = "InstalledRlsVersion";
     private readonly IRegistrySettingsService _regSettings;
@@ -146,19 +146,19 @@ public class RlsInstallerService : IRlsInstallerService
     {
         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-        var installedRlsVersion = LatestInPackageVersion;
+        var installedRlsVersion = Constants.RlsLatestInPackageVersion;
         if (_regSettings.GetPackageRegistryRoot(out var regRoot))
         {
             installedRlsVersion = Registry.GetValue(regRoot, InstalledRlsVersionKey, null) as string;
         }
 
-        installedRlsVersion ??= LatestInPackageVersion;
+        installedRlsVersion ??= Constants.RlsLatestInPackageVersion;
         if (GetVersionedExePath(installedRlsVersion).FileExists())
         {
             return installedRlsVersion;
         }
 
-        return LatestInPackageVersion;
+        return Constants.RlsLatestInPackageVersion;
     }
 
     private static PathEx GetInstallFolder(string version)

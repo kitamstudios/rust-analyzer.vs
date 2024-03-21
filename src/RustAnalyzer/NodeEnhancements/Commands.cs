@@ -56,7 +56,7 @@ public abstract class BaseToolChainCommand<T> : BaseCommand<T>
     {
         ThreadHelper.ThrowIfNotOnUIThread();
 
-        return VsCommon.GetSelectedItems().Select(si => (PathEx)si.GetFullName());
+        return VsCommon.GetSelectedItems().Select(si => (PathEx?)si.GetFullName()).Where(p => p.HasValue).Select(p => p.Value);
     }
 }
 

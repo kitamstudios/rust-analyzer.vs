@@ -1,8 +1,8 @@
 [
   {
-    "Item1": "<TestRoot>\\hello_workspace\\target\\debug\\main_main.rusttests",
+    "Item1": "<TestRoot>\\hello_workspace\\target\\debug\\main.rusttests",
     "Item2": {
-      "ThisPath": "<TestRoot>\\hello_workspace\\target\\debug\\main_main.rusttests",
+      "ThisPath": "<TestRoot>\\hello_workspace\\target\\debug\\main.rusttests",
       "Manifest": "<TestRoot>\\hello_workspace\\main\\Cargo.toml",
       "TargetDir": "<TestRoot>\\hello_workspace\\target",
       "AdditionalTestDiscoveryArguments": "",
@@ -13,10 +13,10 @@
     }
   },
   {
-    "Item1": "<TestRoot>\\hello_workspace\\target\\debug\\shared2_libshared2.rusttests",
+    "Item1": "<TestRoot>\\hello_workspace\\target\\debug\\shared.rusttests",
     "Item2": {
-      "ThisPath": "<TestRoot>\\hello_workspace\\target\\debug\\shared2_libshared2.rusttests",
-      "Manifest": "<TestRoot>\\hello_workspace\\subfolder\\shared2\\Cargo.toml",
+      "ThisPath": "<TestRoot>\\hello_workspace\\target\\debug\\shared.rusttests",
+      "Manifest": "<TestRoot>\\hello_workspace\\shared\\Cargo.toml",
       "TargetDir": "<TestRoot>\\hello_workspace\\target",
       "AdditionalTestDiscoveryArguments": "",
       "AdditionalTestExecutionArguments": "",
@@ -26,10 +26,10 @@
     }
   },
   {
-    "Item1": "<TestRoot>\\hello_workspace\\target\\debug\\shared_libshared.rusttests",
+    "Item1": "<TestRoot>\\hello_workspace\\target\\debug\\shared2.rusttests",
     "Item2": {
-      "ThisPath": "<TestRoot>\\hello_workspace\\target\\debug\\shared_libshared.rusttests",
-      "Manifest": "<TestRoot>\\hello_workspace\\shared\\Cargo.toml",
+      "ThisPath": "<TestRoot>\\hello_workspace\\target\\debug\\shared2.rusttests",
+      "Manifest": "<TestRoot>\\hello_workspace\\subfolder\\shared2\\Cargo.toml",
       "TargetDir": "<TestRoot>\\hello_workspace\\target",
       "AdditionalTestDiscoveryArguments": "",
       "AdditionalTestExecutionArguments": "",

@@ -19,7 +19,7 @@ namespace KS.RustAnalyzer.TestAdapter.Cargo;
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class ToolChainService : IToolChainService
 {
-    private static readonly Regex TestExecutablePathCracker = new (@"^\s*Executable( unittests)? (.*) \((.*)\)$$", RegexOptions.Compiled);
+    private static readonly Regex TestExecutablePathCracker = new (@"^\s*Executable( unittests)? (.*) \((.*\\(.*)\-[\da-f]{16}.exe)\)$$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private readonly TL _tl;
 
@@ -149,6 +149,7 @@ public sealed class ToolChainService : IToolChainService
     {
         var cargoFullPath = GetCargoExePath();
         var tc = await testContainerPath.ReadTestContainerAsync(ct);
+        _tl.L.WriteLine($"GetTestSuiteInfoAsync: Finding tests for {testContainerPath}");
 
         try
         {
@@ -162,8 +163,8 @@ public sealed class ToolChainService : IToolChainService
 
             var testExeBuildInfos = proc.StandardErrorLines
                 .Select(l => TestExecutablePathCracker.Matches(l))
-                .Where(m => m.Count > 0 && m[0].Groups.Count == 4)
-                .Select(m => (source: tc.Manifest.GetDirectoryName() + (PathEx)m[0].Groups[2].Value, testExe: (PathEx)m[0].Groups[3].Value));
+                .Where(m => m.Count > 0 && m[0].Groups.Count == 5)
+                .Select(m => (tc: (PathEx)m[0].Groups[4].Value, exe: (PathEx)m[0].Groups[3].Value, src: (PathEx)m[0].Groups[2].Value));
             if (!testExeBuildInfos.Any())
             {
                 var e = new InvalidOperationException(string.Format("Unable to parse output of cargo test to obtain test exe paths. Command line '{0}'. Exit code: {1}", proc.Arguments, proc.ExitCode));
@@ -172,8 +173,14 @@ public sealed class ToolChainService : IToolChainService
                 throw e;
             }
 
-            // NOTE: We are gauranteed to have only 1 exe here even if there are multiple files with tests. See workspace_with_tests/adder.
-            tc.TestExe = testExeBuildInfos.First().testExe;
+            testExeBuildInfos.ForEach(info => _tl.L.WriteLine($"GetTestSuiteInfoAsync: Figuring out which executable corresponds to '{testContainerPath}' from {info}."));
+            var infos = testExeBuildInfos.Where(info => info.tc == testContainerPath.GetFileNameWithoutExtension());
+            if (infos.Count() != 1)
+            {
+                _tl.L.WriteError($"GetTestSuiteInfoAsync: Something is not right. Did not find anything corresponding to '{testContainerPath}'. Unknown behavior from this point in.");
+            }
+
+            tc.TestExe = infos.First().exe;
             await testContainerPath.WriteTestContainerAsync(tc.Manifest, tc.TargetDir, tc.AdditionalTestDiscoveryArguments, tc.AdditionalTestExecutionArguments, tc.TestExecutionEnvironment, profile, tc.TestExe, ct);
 
             return await GetTestSuiteInfoFromOneTestExe(tc.TestExe, testContainerPath, tc.TargetDir.GetDirectoryName(), ct);

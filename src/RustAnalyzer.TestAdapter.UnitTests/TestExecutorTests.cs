@@ -20,8 +20,8 @@ public class TestExecutorTests
     private readonly IToolChainService _tcs = new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L);
 
     [Theory]
-    [InlineData(@"hello_world", "hello_world_hello_world.rusttests", "bench")] // No tests.
-    [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests", "bench")] // Has tests.
+    [InlineData(@"hello_world", "hello_world.rusttests", "bench")] // No tests.
+    [InlineData(@"hello_library", "hello_lib.rusttests", "bench")] // Has tests.
     [UseReporter(typeof(XUnit2Reporter))]
     public async Task RunTestsTestsAsync(string workspaceRelRoot, string containerName, string profile)
     {
@@ -41,7 +41,7 @@ public class TestExecutorTests
     }
 
     [Theory]
-    [InlineData(@"workspace_with_tests", new[] { "add_one_libadd_one|tests.fibonacci_test.case_2", "adder_adder|tests.it_works_failing", "adder_adder|tests1.tests1.it_works_skipped2" }, "test")]
+    [InlineData(@"workspace_with_tests", new[] { "add_one|tests.fibonacci_test.case_2", "adder|tests.it_works_failing", "adder|tests1.tests1.it_works_skipped2" }, "test")]
     public async Task RunSelectedTestsFromMultiplePackagesMultipleFilesTestsAsync(string workspaceRelRoot, string[] tests, string profile)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
