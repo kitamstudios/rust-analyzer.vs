@@ -6,6 +6,7 @@ param (
   , $TestAdapterLocation
 )
 
+$TcTemplateDir = Join-Path $PSScriptRoot "integrationtests"
 $SrcDir = Resolve-Path $SrcDir
 $SrcName = Split-Path $SrcDir
 $targetDir = Join-Path $SrcDir "target"
@@ -14,22 +15,11 @@ mkdir -Force $tcDir | Out-Null
 $testResults = Join-Path $SrcDir "TestResults"
 mkdir -Force $testResults | Out-Null
 
-$testContainers = dir $SrcDir -Recurse -Filter Cargo.toml | % {
-  $tcName = ([System.IO.Path]::GetRelativePath((Split-Path $SrcDir), (Split-Path $_)))
-  $tcName = $tcName.Split([IO.Path]::GetInvalidFileNameChars()) -join '_'
-  $tcPath = Join-Path $tcDir "$tcName.rusttests"
-  $tc = @{
-    ThisPath = $tcPath
-    Manifest = $_.FullName
-    TargetDir = $targetDir
-    AdditionalTestDiscoveryArguments = ""
-    AdditionalTestExecutionArguments = ""
-    TestExecutionEnvironment = ""
-    Profile = "dev"
-    TestExe = "<not_yet_generated>"
-  }
-  $tcJson = ConvertTo-Json $tc
-  $tcJson >$tcPath
+$testContainers = dir $TcTemplateDir -Recurse -Filter *.rusttests | % {
+  $tcPath = Join-Path $tcDir $_.Name
+  $tcJson = [System.IO.File]::ReadAllText($_).Replace("|ROOT|", "$SrcDir".Replace("\", "\\"))
+  [System.IO.File]::WriteAllText($tcPath, $tcJson)
+
   Write-Host -ForegroundColor Blue "TC: $tcPath"
   Write-Host -ForegroundColor Blue "Contents: $(gc $tcPath)"
   Write-Host ""

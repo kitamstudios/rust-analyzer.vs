@@ -1,45 +1,37 @@
-[Passed] tests.fibonacci_test.case_1 
-[Passed] tests.fibonacci_test.case_1 
-[Passed] tests.fibonacci_test.case_2 
-[Passed] tests.fibonacci_test.case_2 
+[Passed] integration_test_1
+[Failed] integration_test_2 thread 'integration_test_2' panicked at add_one\tests\integration_tests_2.rs:3:5:
+assertion `left == right` failed
+  left: 4
+ right: 5
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+[Passed] tests.fibonacci_test.case_1
+[Passed] tests.fibonacci_test.case_2
 [Failed] tests.fibonacci_test.case_3 thread 'tests::fibonacci_test::case_3' panicked at add_one\src\lib.rs:31:9:
 assertion `left == right` failed
   left: 1
  right: 2
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 
-[Failed] tests.fibonacci_test.case_3 thread 'tests::fibonacci_test::case_3' panicked at add_one\src\lib.rs:31:9:
-assertion `left == right` failed
-  left: 1
- right: 2
-note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
-
-[Passed] tests.it_works 
-[Passed] tests.it_works 
+[Passed] tests.it_works
 [Failed] tests.it_works_failing thread 'tests::it_works_failing' panicked at adder\src\main.rs:34:9:
 assertion `left == right` failed
   left: 3
  right: 5
 
-[Passed] tests.it_works_passing 
+[Passed] tests.it_works_passing
 [NotExecuted] tests.it_works_skipped this is a test for ignore aka skip
 [NotExecuted] tests.it_works245 ignored for now!
-[NotExecuted] tests.it_works245 ignored for now!
-[Passed] tests.multiplication_tests.when_both_operands_are_negative 
-[Passed] tests.multiplication_tests.when_both_operands_are_negative 
-[Passed] tests.multiplication_tests.when_both_operands_are_positive 
-[Passed] tests.multiplication_tests.when_both_operands_are_positive 
-[Passed] tests.multiplication_tests.when_operands_are_swapped 
-[Passed] tests.multiplication_tests.when_operands_are_swapped 
-[Passed] tests.should_fail 
-[Passed] tests.should_fail 
-[Passed] tests.should_success 
-[Passed] tests.should_success 
+[Passed] tests.multiplication_tests.when_both_operands_are_negative
+[Passed] tests.multiplication_tests.when_both_operands_are_positive
+[Passed] tests.multiplication_tests.when_operands_are_swapped
+[Passed] tests.should_fail
+[Passed] tests.should_success
 [Failed] tests1.tests1.it_works_failing2 thread 'tests1::tests1::it_works_failing2' panicked at adder\src\tests1.rs:20:9:
 assertion `left == right` failed
   left: 3
  right: 6
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 
-[Passed] tests1.tests1.it_works_passing2 
+[Passed] tests1.tests1.it_works_passing2
 [NotExecuted] tests1.tests1.it_works_skipped2 this is a test for ignore aka skip

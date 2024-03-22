@@ -1,0 +1,10 @@
+{
+  "ThisPath": "|ROOT|\\target\\debug\\add_one.rusttests",
+  "Manifest": "|ROOT|\\add_one\\Cargo.toml",
+  "TargetDir": "|ROOT|\\target",
+  "AdditionalTestDiscoveryArguments": "",
+  "AdditionalTestExecutionArguments": "",
+  "TestExecutionEnvironment": "",
+  "Profile": "dev",
+  "TestExe": "<not_yet_generated>"
+}
