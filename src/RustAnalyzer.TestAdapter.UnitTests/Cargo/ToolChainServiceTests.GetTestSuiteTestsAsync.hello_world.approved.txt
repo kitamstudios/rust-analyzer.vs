@@ -1,4 +1,4 @@
 {
-  "container": "<TestRoot>\\hello_world\\target\\release\\hello_world.rusttests",
+  "container": "<TestRoot>\\hello_world\\target\\release\\hello_world_hello_world.rusttests",
   "tests": []
 }

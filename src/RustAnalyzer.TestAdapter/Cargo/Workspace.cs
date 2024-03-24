@@ -125,9 +125,11 @@ public sealed class Workspace
 
         public PathEx TargetFileName => this.CreateTargetFileName();
 
-        public bool IsRunnable => CrateTypes[0] == CrateType.Bin;
+        // NOTE: Hide the integration executables from debug targets. They will be bugged through the test explorer.
+        public bool IsRunnable => CrateTypes[0] == CrateType.Bin && Kinds[0] != Kind.Test && Kinds[0] != Kind.BenchMark;
 
-        public bool CanHaveTests => Kinds[0] != Kind.Example && Kinds[0] != Kind.ProcMacro && Kinds[0] != Kind.BenchMark;
+        // NOTE: Dont generate test containers for integration test executables. They are packaged as part of the library.
+        public bool CanHaveTests => Kinds[0] != Kind.Example && Kinds[0] != Kind.ProcMacro && Kinds[0] != Kind.Test && Kinds[0] != Kind.BenchMark;
 
         public string QualifiedTargetFileName => $"[{Kinds[0].ToString().ToLower()}: {(string)this.GetTargetPathRelativeToWorkspace()}] {(string)TargetFileName}";
 

@@ -1,5 +1,5 @@
 {
-  "container": "<TestRoot>\\hello_library\\target\\release\\hello_lib.rusttests",
+  "container": "<TestRoot>\\hello_library\\target\\release\\hello_lib_libhello_lib.rusttests",
   "tests": [
     {
       "type": "test",

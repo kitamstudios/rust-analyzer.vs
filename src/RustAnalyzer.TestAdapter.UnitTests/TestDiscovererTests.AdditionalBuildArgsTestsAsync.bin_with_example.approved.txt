@@ -1,10 +1,10 @@
 [
   {
-    "Id": "6de5d90f-34c6-8672-e85b-9897a7a73cad",
+    "Id": "3c9d5449-c265-52a4-8227-4c3045207429",
     "FullyQualifiedName": "tests.test_requires_foo",
     "DisplayName": "test_requires_foo",
     "ExecutorUri": "executor://RustTestExecutor/v1",
-    "Source": "<TestRoot>\\bin_with_example\\target\\debug\\hello_world.rusttests",
+    "Source": "<TestRoot>\\bin_with_example\\target\\debug\\hello_world_hello_world.rusttests",
     "CodeFilePath": "<TestRoot>\\bin_with_example\\src\\main.rs",
     "LineNumber": 34,
     "Properties": []

@@ -4,7 +4,6 @@ using System.Runtime.CompilerServices;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
-using ApprovalTests.Reporters.TestFrameworks;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
@@ -16,7 +15,7 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 public class BuildJsonOutputParserTests
 {
     [Fact]
-    [UseReporter(typeof(XUnit2Reporter))]
+    [UseReporter(typeof(RaVsDiffReporter))]
     [MethodImpl(MethodImplOptions.NoInlining)]
     public void IfNotParsableReturnAsIs()
     {
@@ -27,7 +26,7 @@ public class BuildJsonOutputParserTests
     }
 
     [Theory]
-    [UseReporter(typeof(XUnit2Reporter))]
+    [UseReporter(typeof(RaVsDiffReporter))]
     [InlineData("CompilerArtifact1.json")]
     [InlineData("CompilerArtifact2.json")]
     [InlineData("CompilerArtifact3.json")]
@@ -41,7 +40,7 @@ public class BuildJsonOutputParserTests
     }
 
     [Theory]
-    [UseReporter(typeof(XUnit2Reporter))]
+    [UseReporter(typeof(RaVsDiffReporter))]
     [InlineData("ComplexError1.json")]
     [InlineData("ComplexWarning1.json")]
     [InlineData("ComplexError2.json")]

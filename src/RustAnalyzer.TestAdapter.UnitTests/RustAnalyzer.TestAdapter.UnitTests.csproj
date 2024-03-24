@@ -41,6 +41,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\TestsCommon\RaVsDiffReporter.cs">
+      <Link>Common\RaVsDiffReporter.cs</Link>
+    </Compile>
     <Compile Include="..\TestsCommon\TestHelpers.cs">
       <Link>Common\TestHelpers.cs</Link>
     </Compile>

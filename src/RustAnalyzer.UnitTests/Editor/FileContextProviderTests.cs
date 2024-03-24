@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
-using ApprovalTests.Reporters.TestFrameworks;
 using KS.RustAnalyzer.Editor;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Common;
@@ -21,7 +20,7 @@ public class FileContextProviderTests
     public static IEnumerable<object[]> GetTestData() => TestData.Get();
 
     [Theory]
-    [UseReporter(typeof(XUnit2Reporter))]
+    [UseReporter(typeof(RaVsDiffReporter))]
     [MemberData(nameof(GetTestData))]
     public async Task GetContextsForFileTestsAsync(string workspaceRootRel, string filePathRel)
     {

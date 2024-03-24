@@ -47,7 +47,7 @@
             "bin"
           ],
           "TargetFileName": "bench1.exe",
-          "IsRunnable": true,
+          "IsRunnable": false,
           "CanHaveTests": false,
           "QualifiedTargetFileName": "[benchmark: shared\\] bench1.exe",
           "AdditionalBuildArgs": ""
@@ -62,7 +62,7 @@
             "bin"
           ],
           "TargetFileName": "bench2.exe",
-          "IsRunnable": true,
+          "IsRunnable": false,
           "CanHaveTests": false,
           "QualifiedTargetFileName": "[benchmark: shared\\] bench2.exe",
           "AdditionalBuildArgs": ""
@@ -177,8 +177,8 @@
             "bin"
           ],
           "TargetFileName": "test1.exe",
-          "IsRunnable": true,
-          "CanHaveTests": true,
+          "IsRunnable": false,
+          "CanHaveTests": false,
           "QualifiedTargetFileName": "[test: \\] test1.exe",
           "AdditionalBuildArgs": ""
         },
@@ -192,8 +192,8 @@
             "bin"
           ],
           "TargetFileName": "test2.exe",
-          "IsRunnable": true,
-          "CanHaveTests": true,
+          "IsRunnable": false,
+          "CanHaveTests": false,
           "QualifiedTargetFileName": "[test: \\] test2.exe",
           "AdditionalBuildArgs": ""
         },
@@ -207,7 +207,7 @@
             "bin"
           ],
           "TargetFileName": "bench1.exe",
-          "IsRunnable": true,
+          "IsRunnable": false,
           "CanHaveTests": false,
           "QualifiedTargetFileName": "[benchmark: \\] bench1.exe",
           "AdditionalBuildArgs": ""

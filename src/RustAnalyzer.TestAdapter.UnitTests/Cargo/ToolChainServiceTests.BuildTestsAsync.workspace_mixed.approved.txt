@@ -1,8 +1,8 @@
 [
   {
-    "Item1": "<TestRoot>\\workspace_mixed\\target\\debug\\bin1.rusttests",
+    "Item1": "<TestRoot>\\workspace_mixed\\target\\debug\\main_bin1.rusttests",
     "Item2": {
-      "ThisPath": "<TestRoot>\\workspace_mixed\\target\\debug\\bin1.rusttests",
+      "ThisPath": "<TestRoot>\\workspace_mixed\\target\\debug\\main_bin1.rusttests",
       "Manifest": "<TestRoot>\\workspace_mixed\\Cargo.toml",
       "TargetDir": "<TestRoot>\\workspace_mixed\\target",
       "AdditionalTestDiscoveryArguments": "",
@@ -13,9 +13,9 @@
     }
   },
   {
-    "Item1": "<TestRoot>\\workspace_mixed\\target\\debug\\bin2.rusttests",
+    "Item1": "<TestRoot>\\workspace_mixed\\target\\debug\\main_bin2.rusttests",
     "Item2": {
-      "ThisPath": "<TestRoot>\\workspace_mixed\\target\\debug\\bin2.rusttests",
+      "ThisPath": "<TestRoot>\\workspace_mixed\\target\\debug\\main_bin2.rusttests",
       "Manifest": "<TestRoot>\\workspace_mixed\\Cargo.toml",
       "TargetDir": "<TestRoot>\\workspace_mixed\\target",
       "AdditionalTestDiscoveryArguments": "",
@@ -26,9 +26,9 @@
     }
   },
   {
-    "Item1": "<TestRoot>\\workspace_mixed\\target\\debug\\main.rusttests",
+    "Item1": "<TestRoot>\\workspace_mixed\\target\\debug\\main_libmain.rusttests",
     "Item2": {
-      "ThisPath": "<TestRoot>\\workspace_mixed\\target\\debug\\main.rusttests",
+      "ThisPath": "<TestRoot>\\workspace_mixed\\target\\debug\\main_libmain.rusttests",
       "Manifest": "<TestRoot>\\workspace_mixed\\Cargo.toml",
       "TargetDir": "<TestRoot>\\workspace_mixed\\target",
       "AdditionalTestDiscoveryArguments": "",
@@ -39,36 +39,10 @@
     }
   },
   {
-    "Item1": "<TestRoot>\\workspace_mixed\\target\\debug\\shared.rusttests",
+    "Item1": "<TestRoot>\\workspace_mixed\\target\\debug\\shared_libshared.rusttests",
     "Item2": {
-      "ThisPath": "<TestRoot>\\workspace_mixed\\target\\debug\\shared.rusttests",
+      "ThisPath": "<TestRoot>\\workspace_mixed\\target\\debug\\shared_libshared.rusttests",
       "Manifest": "<TestRoot>\\workspace_mixed\\shared\\Cargo.toml",
-      "TargetDir": "<TestRoot>\\workspace_mixed\\target",
-      "AdditionalTestDiscoveryArguments": "",
-      "AdditionalTestExecutionArguments": "",
-      "TestExecutionEnvironment": "",
-      "Profile": "dev",
-      "TestExe": "<not_yet_generated>"
-    }
-  },
-  {
-    "Item1": "<TestRoot>\\workspace_mixed\\target\\debug\\test1.rusttests",
-    "Item2": {
-      "ThisPath": "<TestRoot>\\workspace_mixed\\target\\debug\\test1.rusttests",
-      "Manifest": "<TestRoot>\\workspace_mixed\\Cargo.toml",
-      "TargetDir": "<TestRoot>\\workspace_mixed\\target",
-      "AdditionalTestDiscoveryArguments": "",
-      "AdditionalTestExecutionArguments": "",
-      "TestExecutionEnvironment": "",
-      "Profile": "dev",
-      "TestExe": "<not_yet_generated>"
-    }
-  },
-  {
-    "Item1": "<TestRoot>\\workspace_mixed\\target\\debug\\test2.rusttests",
-    "Item2": {
-      "ThisPath": "<TestRoot>\\workspace_mixed\\target\\debug\\test2.rusttests",
-      "Manifest": "<TestRoot>\\workspace_mixed\\Cargo.toml",
       "TargetDir": "<TestRoot>\\workspace_mixed\\target",
       "AdditionalTestDiscoveryArguments": "",
       "AdditionalTestExecutionArguments": "",

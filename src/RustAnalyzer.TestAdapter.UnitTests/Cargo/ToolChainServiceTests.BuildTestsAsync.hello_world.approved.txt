@@ -1,8 +1,8 @@
 [
   {
-    "Item1": "<TestRoot>\\hello_world\\target\\debug\\hello_world.rusttests",
+    "Item1": "<TestRoot>\\hello_world\\target\\debug\\hello_world_hello_world.rusttests",
     "Item2": {
-      "ThisPath": "<TestRoot>\\hello_world\\target\\debug\\hello_world.rusttests",
+      "ThisPath": "<TestRoot>\\hello_world\\target\\debug\\hello_world_hello_world.rusttests",
       "Manifest": "<TestRoot>\\hello_world\\Cargo.toml",
       "TargetDir": "<TestRoot>\\hello_world\\target",
       "AdditionalTestDiscoveryArguments": "",

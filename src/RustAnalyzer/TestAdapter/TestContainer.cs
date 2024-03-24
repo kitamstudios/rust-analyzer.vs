@@ -67,7 +67,7 @@ public class TestContainer : BaseTestContainer, ITestContainer
 
     public IDeploymentData DeployAppContainer() => null;
 
-    public ITestContainer Snapshot() => new TestContainer(this);
+    public ITestContainer Snapshot() => File.Exists(TestContainerPath) ? new TestContainer(this) : null;
 
     private DateTime GetTimeStamp()
     {
