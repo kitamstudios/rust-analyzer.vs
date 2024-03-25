@@ -42,17 +42,12 @@ public static class ToolChainServiceExtensions
         return GetRustupPath() + (PathEx)@$"toolchains\{GetActiveToolChain()}\bin";
     }
 
-    public static bool IsTestDiscoveryComplete(this TestContainer @this)
-    {
-        return @this.TestExe != TestContainer.NotYetGeneratedMarker && @this.TestExe.FileExists();
-    }
-
     public static async Task<TestContainer> ReadTestContainerAsync(this PathEx @this, CancellationToken ct)
     {
         return JsonConvert.DeserializeObject<TestContainer>(await @this.ReadAllTextAsync(ct));
     }
 
-    public static Task WriteTestContainerAsync(this PathEx @this, PathEx manifestPath, PathEx targetPath, string additionalTestDiscoveryArguments, string additionalTestExecutionArguments, string testExecutionEnvironment, string profile, PathEx? testExePath, CancellationToken ct)
+    public static Task WriteTestContainerAsync(this PathEx @this, PathEx manifestPath, PathEx targetPath, string additionalTestDiscoveryArguments, string additionalTestExecutionArguments, string testExecutionEnvironment, string profile, PathEx[] testExes, CancellationToken ct)
     {
         return @this.WriteAllTextAsync(
             JsonConvert.SerializeObject(
@@ -65,7 +60,7 @@ public static class ToolChainServiceExtensions
                     AdditionalTestExecutionArguments = additionalTestExecutionArguments,
                     TestExecutionEnvironment = testExecutionEnvironment,
                     Profile = profile,
-                    TestExe = testExePath ?? TestContainer.NotYetGeneratedMarker,
+                    TestExes = testExes,
                 },
                 Formatting.Indented,
                 new PathExJsonConverter()),

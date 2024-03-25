@@ -70,17 +70,14 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
     private static async Task<IEnumerable<TestResult>> RunTestsFromOneSourceAsync(TestContainer tc, IEnumerable<TestCase> testCases, TL tl, bool isBeingDebugged, IFrameworkHandle fh, CancellationToken ct)
     {
         tl.L.WriteLine("RunTestsFromOneSourceAsync starting with {0}", tc.ThisPath);
-        if (!tc.IsTestDiscoveryComplete())
+        if (tc.TestExes.Length == 0)
         {
-            tl.L.WriteLine("RunTestsFromOneSourceAsync discovery not complete, starting discovery.");
-            await tc.DiscoverTestCasesFromOneSourceAsync(tl, ct);
-            tc = await tc.ThisPath.ReadTestContainerAsync(ct);
-            tl.L.WriteLine("RunTestsFromOneSourceAsync rediscovery completed, test exe {0}.", tc.TestExe);
+            tl.L.WriteError("RunTestsFromOneSourceAsync: Something has gone wrong. Test discovery not complete yet. {0}", tc.ThisPath);
         }
 
         var args = testCases
-                .Select(tc => tc.FullyQualifiedName.TestExplorerFQN2RustTestFQN())
-                .Concat(new[] { "--format", "json", "-Zunstable-options", "--report-time" })
+                .Select(tc => tc.FullyQualifiedNameRustFormat())
+                .Concat(new[] { "--exact", "--format", "json", "-Zunstable-options", "--report-time" })
                 .Concat(tc.AdditionalTestExecutionArguments.FromNullSeparatedArray())
                 .ToArray();
         var envDict = tc.TestExecutionEnvironment.OverrideProcessEnvironment();
@@ -88,7 +85,7 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         if (isBeingDebugged)
         {
             tl.L.WriteLine("RunTestsFromOneSourceAsync launching test under debugger.");
-            var rc = fh.LaunchProcessWithDebuggerAttached(tc.TestExe, tc.TestExe.GetDirectoryName(), string.Join(" ", args), envDict);
+            var rc = fh.LaunchProcessWithDebuggerAttached(tc.TestExes[0], tc.TestExes[0].GetDirectoryName(), string.Join(" ", args), envDict);
             if (rc != 0)
             {
                 tl.L.WriteError("RunTestsFromOneSourceAsync launching test under debugger - returned {0}.", rc);
@@ -97,32 +94,32 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
             return Enumerable.Empty<TestResult>();
         }
 
-        using var testExeProc = await ProcessRunner.RunWithLogging(tc.TestExe, args, tc.Manifest.GetDirectoryName(), envDict, ct, tl.L, @throw: false);
+        using var testExeProc = await ProcessRunner.RunWithLogging(tc.TestExes[0], args, tc.Manifest.GetDirectoryName(), envDict, ct, tl.L, @throw: false);
         var ec = testExeProc.ExitCode ?? 0;
         if (ec != 0)
         {
             tl.L.WriteError("RunTestsFromOneSourceAsync test executable exited with code {0}.", ec);
         }
 
-        var testCasesMap = testCases.ToImmutableDictionary(x => x.FullyQualifiedName.TestExplorerFQN2RustTestFQN());
+        var testCasesMap = testCases.ToImmutableDictionary(x => x.FullyQualifiedNameRustFormat());
         var tris = testExeProc.StandardOutputLines
             .Skip(1)
             .Take(testExeProc.StandardOutputLines.Count() - 2)
             .Select(JsonConvert.DeserializeObject<TestRunInfo>)
             .Where(x => x.Event != TestRunInfo.EventType.Started)
             .OrderBy(x => x.FQN)
-            .Select(x => ToTestResult(x, testCasesMap));
+            .Select(x => ToTestResult(tc.TestExes[0], x, testCasesMap));
 
         tl.T.TrackEvent("RunTestsFromOneSourceAsync", ("Results", $"{tris.Count()}"));
 
         return tris;
     }
 
-    private static TestResult ToTestResult(TestRunInfo tri, IReadOnlyDictionary<string, TestCase> testCasesMap)
+    private static TestResult ToTestResult(PathEx exe, TestRunInfo tri, IReadOnlyDictionary<string, TestCase> testCasesMap)
     {
         return new TestResult(testCasesMap[tri.FQN])
         {
-            DisplayName = tri.FQN.RustTestFQN2TestExplorerFQN(),
+            DisplayName = tri.FQN.RustFQN2TestExplorerFQN(exe),
             ErrorMessage = string.Join("\n", new[] { tri.Message, tri.StdOut }.Where(x => !string.IsNullOrEmpty(x))),
             Outcome = GetOutcome(tri.Event),
             Duration = TimeSpan.FromSeconds(tri.ExecutionTime)

@@ -7,6 +7,11 @@ namespace KS.RustAnalyzer.TestAdapter;
 
 public abstract class BaseTestExecutor
 {
+    public void RunTests(PathEx source, IRunContext runContext, IFrameworkHandle frameworkHandle)
+    {
+        RunTests(new[] { source }, runContext, frameworkHandle);
+    }
+
     public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
     {
         RunTests(sources.Select(s => (PathEx)s).Where(s => s != default), runContext, frameworkHandle);

@@ -1,7 +1,7 @@
 [
   {
-    "Id": "9cdd003c-30d9-0b2e-7a1f-6ff5883001b3",
-    "FullyQualifiedName": "tests.fibonacci_test.case_1",
+    "Id": "6782c2f7-da7d-1106-e05f-badd5b7660e8",
+    "FullyQualifiedName": "hello_lib.tests.fibonacci_test.case_1",
     "DisplayName": "case_1",
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
@@ -10,8 +10,8 @@
     "Properties": []
   },
   {
-    "Id": "be520c15-de75-8385-7805-3f45967d2e25",
-    "FullyQualifiedName": "tests.fibonacci_test.case_2",
+    "Id": "2a4db758-57e7-6f77-aafc-942b108f6e2f",
+    "FullyQualifiedName": "hello_lib.tests.fibonacci_test.case_2",
     "DisplayName": "case_2",
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
@@ -20,8 +20,8 @@
     "Properties": []
   },
   {
-    "Id": "d4c0ed85-7658-8909-f7c5-c7969544bfa2",
-    "FullyQualifiedName": "tests.fibonacci_test.case_3",
+    "Id": "d78bc0e1-7d95-caff-4ad7-a3f039bb4bcc",
+    "FullyQualifiedName": "hello_lib.tests.fibonacci_test.case_3",
     "DisplayName": "case_3",
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
@@ -30,8 +30,8 @@
     "Properties": []
   },
   {
-    "Id": "9d2fbab2-5a6a-bfae-6dfb-49f2b2f8eeb3",
-    "FullyQualifiedName": "tests.it_works",
+    "Id": "76730596-697e-fd43-cf41-d4c3e5549e99",
+    "FullyQualifiedName": "hello_lib.tests.it_works",
     "DisplayName": "it_works",
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
@@ -40,8 +40,8 @@
     "Properties": []
   },
   {
-    "Id": "794e5b7c-add1-83c5-37ea-e4158a439e05",
-    "FullyQualifiedName": "tests.it_works245_ignored",
+    "Id": "de0ea079-0e84-c1e8-3dcf-f97ea1311648",
+    "FullyQualifiedName": "hello_lib.tests.it_works245_ignored",
     "DisplayName": "it_works245_ignored",
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
@@ -50,8 +50,8 @@
     "Properties": []
   },
   {
-    "Id": "45f11fdd-c68c-e4ce-c89f-6373c6846704",
-    "FullyQualifiedName": "tests.long_running_test",
+    "Id": "40bf974a-b1ba-ae40-cb77-25554d0f1899",
+    "FullyQualifiedName": "hello_lib.tests.long_running_test",
     "DisplayName": "long_running_test",
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
@@ -60,8 +60,8 @@
     "Properties": []
   },
   {
-    "Id": "513d6fec-4dfa-140a-4e41-8cea20164157",
-    "FullyQualifiedName": "tests.multiplication_tests.when_both_operands_are_negative",
+    "Id": "4d549d49-dd0d-f98e-78b0-7b8169955641",
+    "FullyQualifiedName": "hello_lib.tests.multiplication_tests.when_both_operands_are_negative",
     "DisplayName": "when_both_operands_are_negative",
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
@@ -70,8 +70,8 @@
     "Properties": []
   },
   {
-    "Id": "7252ac24-86aa-ad90-9abf-5f14d4702319",
-    "FullyQualifiedName": "tests.multiplication_tests.when_both_operands_are_positive",
+    "Id": "c6b68734-9a99-3571-c3fe-b18c48181838",
+    "FullyQualifiedName": "hello_lib.tests.multiplication_tests.when_both_operands_are_positive",
     "DisplayName": "when_both_operands_are_positive",
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
@@ -80,8 +80,8 @@
     "Properties": []
   },
   {
-    "Id": "d5f95417-2284-8c80-5c2a-6ba057ad0b95",
-    "FullyQualifiedName": "tests.multiplication_tests.when_operands_are_swapped",
+    "Id": "6a346c0c-ab11-91b9-7ecf-e0f2fc023470",
+    "FullyQualifiedName": "hello_lib.tests.multiplication_tests.when_operands_are_swapped",
     "DisplayName": "when_operands_are_swapped",
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
@@ -90,8 +90,8 @@
     "Properties": []
   },
   {
-    "Id": "42ba209f-75a0-2107-2b27-a52756b8439c",
-    "FullyQualifiedName": "tests.mytest",
+    "Id": "70a9d62a-e708-e050-b463-6803c6408f01",
+    "FullyQualifiedName": "hello_lib.tests.mytest",
     "DisplayName": "mytest",
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
@@ -100,8 +100,8 @@
     "Properties": []
   },
   {
-    "Id": "6ecf7022-b9df-b85f-668b-a145eb01a5f0",
-    "FullyQualifiedName": "tests.should_fail",
+    "Id": "12be2792-6f7a-d121-9cc5-86e8221677d1",
+    "FullyQualifiedName": "hello_lib.tests.should_fail",
     "DisplayName": "should_fail",
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
@@ -110,8 +110,8 @@
     "Properties": []
   },
   {
-    "Id": "ce619d2c-ff75-4bc5-b42c-f40eeaee2f82",
-    "FullyQualifiedName": "tests.should_success",
+    "Id": "1929472f-5da4-283e-d2d6-9dc3ff336be3",
+    "FullyQualifiedName": "hello_lib.tests.should_success",
     "DisplayName": "should_success",
     "ExecutorUri": "executor://RustTestExecutor/v1",
     "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",

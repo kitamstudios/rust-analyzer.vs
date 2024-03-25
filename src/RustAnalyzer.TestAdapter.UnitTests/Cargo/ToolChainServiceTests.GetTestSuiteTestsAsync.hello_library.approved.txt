@@ -1,5 +1,6 @@
 {
-  "container": "<TestRoot>\\hello_library\\target\\release\\hello_lib_libhello_lib.rusttests",
+  "source": "<TestRoot>\\hello_library\\target\\release\\hello_lib_libhello_lib.rusttests",
+  "exe": "<TestRoot>\\hello_library\\target\\release\\deps\\hello_lib-d9d78f0fcd1af879.exe",
   "tests": [
     {
       "type": "test",

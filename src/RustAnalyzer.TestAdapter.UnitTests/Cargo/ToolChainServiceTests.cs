@@ -89,12 +89,11 @@ public sealed class ToolChainServiceTests
         var workspacePath = TestHelpers.ThisTestRoot + (PathEx)workspaceRelRoot;
         var manifestPath = workspacePath + Constants.ManifestFileName2;
         var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath(profile);
-        targetPath.CleanTestContainers();
 
         var success = await _tcs.DoBuildAsync(workspacePath, manifestPath, profile);
 
         success.Should().BeTrue();
-        var tasks = Directory.EnumerateFiles(targetPath, TestHelpers.TestContainersSearchPattern)
+        var tasks = Directory.EnumerateFiles(targetPath, Constants.TestContainersSearchPattern)
             .Select(async f => (path: (PathEx)f, container: JsonConvert.DeserializeObject<TestContainer>(await ((PathEx)f).ReadAllTextAsync(default))));
         var tcs = await Task.WhenAll(tasks);
         var normalizedStr = tcs.SerializeAndNormalizeObject();
@@ -124,17 +123,16 @@ public sealed class ToolChainServiceTests
         var manifestPath = workspacePath + Constants.ManifestFileName2;
         var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath(profile);
         var tcPath = targetPath + (PathEx)containerName;
-        targetPath.CleanTestContainers();
 
         await _tcs.DoBuildAsync(workspacePath, manifestPath, profile);
         var testSuite = await _tcs.GetTestSuiteInfoAsync(tcPath, profile, default);
         var tc = JsonConvert.DeserializeObject<TestContainer>(await tcPath.ReadAllTextAsync(default));
 
-        tc.TestExe.FileExists().Should().BeTrue();
-        tc.TestExe.GetExtension().Should().Be((PathEx)".exe");
+        tc.TestExes[0].FileExists().Should().BeTrue();
+        tc.TestExes[0].GetExtension().Should().Be((PathEx)".exe");
         tc.Profile.Should().Be(profile);
         tc.ThisPath.Should().Be(tcPath);
-        testSuite.Container.Should().Be(tcPath);
+        testSuite.Source.Should().Be(tcPath);
         var normalizedStr = testSuite.SerializeAndNormalizeObject();
         Approvals.Verify(normalizedStr);
     }

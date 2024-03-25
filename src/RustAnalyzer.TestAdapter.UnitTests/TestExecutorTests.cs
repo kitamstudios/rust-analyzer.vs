@@ -9,6 +9,7 @@ using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using Moq;
 using Xunit;
 
@@ -27,11 +28,11 @@ public class TestExecutorTests
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
         var tps = workspaceRelRoot.GetTestPaths(profile);
         var tcPath = tps.TargetPath + (PathEx)containerName;
-        tps.TargetPath.CleanTestContainers();
-
         await _tcs.DoBuildAsync(tps.WorkspacePath, tps.ManifestPath, profile, additionalTestExecutionArguments: "--exclude-should-panic", testExecutionEnvironment: "ENV_VAR_1=ENV_VAR_1_VALUE\0\0");
+        new TestDiscoverer().DiscoverTests(tcPath, Mock.Of<IDiscoveryContext>(), Mock.Of<IMessageLogger>(), Mock.Of<ITestCaseDiscoverySink>());
+
         var fh = new SpyFrameworkHandle();
-        new TestExecutor().RunTests(new[] { (string)tcPath }, Mock.Of<IRunContext>(), fh);
+        new TestExecutor().RunTests(tcPath, Mock.Of<IRunContext>(), fh);
 
         var normalizedStr = fh.Results
             .OrderBy(x => x.TestCase.FullyQualifiedName).ThenBy(x => x.TestCase.LineNumber)
@@ -40,16 +41,17 @@ public class TestExecutorTests
     }
 
     [Theory]
-    [InlineData(@"workspace_with_tests", new[] { "add_one_libadd_one|tests.fibonacci_test.case_2", "adder_adder|tests.it_works_failing", "adder_adder|tests1.tests1.it_works_skipped2" }, "test")]
+    [InlineData(@"workspace_with_tests", new[] { "add_one_libadd_one|add_one.tests.fibonacci_test.case_2", "adder_adder|adder.tests.it_works_failing", "adder_adder|adder.tests1.tests1.it_works_skipped2" }, "test")]
     public async Task RunSelectedTestsFromMultiplePackagesMultipleFilesTestsAsync(string workspaceRelRoot, string[] tests, string profile)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
         var tps = workspaceRelRoot.GetTestPaths(profile);
-        tps.TargetPath.CleanTestContainers();
 
         var testCases = tests.Select(t => t.Split('|')).Select(x => new TestCase { Source = $"{tps.TargetPath + x[0]}{Constants.TestsContainerExtension}", FullyQualifiedName = x[1], });
 
         await _tcs.DoBuildAsync(tps.WorkspacePath, tps.ManifestPath, profile);
+        new TestDiscoverer().DiscoverTests(testCases.Select(tc => tc.Source), Mock.Of<IDiscoveryContext>(), Mock.Of<IMessageLogger>(), Mock.Of<ITestCaseDiscoverySink>());
+
         var fh = new SpyFrameworkHandle();
         new TestExecutor().RunTests(testCases, Mock.Of<IRunContext>(), fh);
 

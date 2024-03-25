@@ -47,6 +47,9 @@ public sealed class ToolChainService : IToolChainService
 
     public async Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
     {
+        var w = await GetWorkspaceAsync(bti.ManifestPath, ct);
+        CleanTestContainers(w.TargetDirectory.MakeProfilePath(bti.Profile));
+
         var success = await ExecuteOperationAsync(
             "build",
             bti.ManifestPath,
@@ -61,10 +64,9 @@ public sealed class ToolChainService : IToolChainService
 
         if (success)
         {
-            var w = await GetWorkspaceAsync(bti.ManifestPath, ct);
             var tasks = w.Packages
                 .SelectMany(p => p.GetTestContainers(bti.Profile))
-                .Select(x => x.Container.WriteTestContainerAsync(x.Target.Parent.ManifestPath, w.TargetDirectory, bti.AdditionalTestDiscoveryArguments, bti.AdditionalTestExecutionArguments, bti.TestExecutionEnvironment, bti.Profile, null, ct));
+                .Select(x => x.Container.WriteTestContainerAsync(x.Target.Parent.ManifestPath, w.TargetDirectory, bti.AdditionalTestDiscoveryArguments, bti.AdditionalTestExecutionArguments, bti.TestExecutionEnvironment, bti.Profile, Array.Empty<PathEx>(), ct));
             await Task.WhenAll(tasks);
         }
 
@@ -179,10 +181,10 @@ public sealed class ToolChainService : IToolChainService
                 _tl.L.WriteError($"GetTestSuiteInfoAsync: Something is not right. No test executables found in '{testContainerPath}'.");
             }
 
-            tc.TestExe = exes.First();
-            await testContainerPath.WriteTestContainerAsync(tc.Manifest, tc.TargetDir, tc.AdditionalTestDiscoveryArguments, tc.AdditionalTestExecutionArguments, tc.TestExecutionEnvironment, profile, tc.TestExe, ct);
+            tc.TestExes = exes.ToArray();
+            await testContainerPath.WriteTestContainerAsync(tc.Manifest, tc.TargetDir, tc.AdditionalTestDiscoveryArguments, tc.AdditionalTestExecutionArguments, tc.TestExecutionEnvironment, profile, tc.TestExes, ct);
 
-            return await GetTestSuiteInfoFromOneTestExe(tc.TestExe, testContainerPath, tc.TargetDir.GetDirectoryName(), ct);
+            return await GetTestSuiteInfoFromOneTestExe(tc.TestExes[0], testContainerPath, tc.TargetDir.GetDirectoryName(), ct);
         }
         catch (Exception e)
         {
@@ -216,7 +218,8 @@ public sealed class ToolChainService : IToolChainService
 
         return new TestSuiteInfo
         {
-            Container = testContainerPath,
+            Source = testContainerPath,
+            Exe = testExePath,
             Tests = new Collection<TestSuiteInfo.TestInfo>(tests.ToList()),
         };
     }
@@ -316,6 +319,16 @@ public sealed class ToolChainService : IToolChainService
                 return false;
             }
         }
+    }
+
+    private static void CleanTestContainers(PathEx outDir)
+    {
+        if (!outDir.DirectoryExists())
+        {
+            return;
+        }
+
+        Directory.EnumerateFiles(outDir, $"*{Constants.TestsContainerExtension}").ForEach(File.Delete);
     }
 
     private sealed class BuildOutputRedirector : ProcessOutputRedirector

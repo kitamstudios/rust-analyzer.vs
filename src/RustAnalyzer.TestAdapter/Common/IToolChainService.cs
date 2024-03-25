@@ -24,8 +24,6 @@ public interface IToolChainService
 
 public sealed class TestContainer
 {
-    public static readonly PathEx NotYetGeneratedMarker = (PathEx)"<not_yet_generated>";
-
     public PathEx ThisPath { get; set; }
 
     public PathEx Manifest { get; set; }
@@ -40,7 +38,7 @@ public sealed class TestContainer
 
     public string Profile { get; set; }
 
-    public PathEx TestExe { get; set; }
+    public PathEx[] TestExes { get; set; }
 }
 
 public sealed class BuildTargetInfo

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
@@ -8,6 +8,11 @@ namespace KS.RustAnalyzer.TestAdapter;
 
 public abstract class BaseTestDiscoverer
 {
+    public void DiscoverTests(PathEx source, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
+    {
+        DiscoverTests(new[] { source }, discoveryContext, logger, discoverySink);
+    }
+
     public void DiscoverTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
     {
         DiscoverTests(sources.Select(s => (PathEx)s).Where(s => s != default), discoveryContext, logger, discoverySink);

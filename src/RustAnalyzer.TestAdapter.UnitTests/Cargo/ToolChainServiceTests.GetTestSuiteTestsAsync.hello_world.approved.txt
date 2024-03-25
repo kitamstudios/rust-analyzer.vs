@@ -1,4 +1,5 @@
 {
-  "container": "<TestRoot>\\hello_world\\target\\release\\hello_world_hello_world.rusttests",
+  "source": "<TestRoot>\\hello_world\\target\\release\\hello_world_hello_world.rusttests",
+  "exe": "<TestRoot>\\hello_world\\target\\release\\deps\\hello_world-d116900458eb29b6.exe",
   "tests": []
 }

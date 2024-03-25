@@ -16,11 +16,14 @@ public enum TestType
     Benchmark,
 }
 
-[DebuggerDisplay("{Container} [#tests = {Tests.Count}]")]
+[DebuggerDisplay("{Source} {Exe} [#tests = {Tests.Count}]")]
 public sealed class TestSuiteInfo
 {
-    [JsonProperty("container")]
-    public PathEx Container { get; set; }
+    [JsonProperty("source")]
+    public PathEx Source { get; set; }
+
+    [JsonProperty("exe")]
+    public PathEx Exe { get; set; }
 
     [JsonProperty("tests")]
     public Collection<TestInfo> Tests { get; set; } = new Collection<TestInfo>();

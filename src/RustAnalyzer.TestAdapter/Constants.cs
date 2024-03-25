@@ -26,6 +26,7 @@ public static class Constants
 
     public const string ManifestExtension = ".toml";
     public const string TestsContainerExtension = ".rusttests";
+    public const string TestContainersSearchPattern = $"*{TestsContainerExtension}";
 
     public const string RlsLatestInPackageVersion = "2024-03-18";
     public static readonly Version MinimumRequiredVsVersion = new (17, 7);

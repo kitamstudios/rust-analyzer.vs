@@ -13,8 +13,6 @@ namespace KS.RustAnalyzer.Tests.Common;
 
 public static class TestHelpers
 {
-    public const string TestContainersSearchPattern = $"*{Constants.TestsContainerExtension}";
-
     public static readonly PathEx ThisTestRoot =
         (PathEx)Path.Combine(
             Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)),
@@ -80,16 +78,6 @@ public static class TestHelpers
                     },
                     new BuildOutputSinks { OutputSink = Mock.Of<IBuildOutputSink>(), BuildActionProgressReporter = bm => Task.CompletedTask },
                     default);
-    }
-
-    public static void CleanTestContainers(this PathEx @this)
-    {
-        if (!@this.DirectoryExists())
-        {
-            return;
-        }
-
-        Directory.EnumerateFiles(@this, TestContainersSearchPattern).ForEach(File.Delete);
     }
 
     public static string SerializeAndNormalizeObject(this object @this)

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Cargo;
@@ -12,6 +13,8 @@ namespace KS.RustAnalyzer.TestAdapter;
 
 public static class TestDiscovererCommon
 {
+    private static readonly Regex TestExecutableFingerPrintCracker = new (@"^(.*)\-[\da-f]{16}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
     public static TL CreateTL(this IMessageLogger @this) => new () { T = new TelemetryService(), L = new TestAdapterLogger(@this) };
 
     public static Task<TestSuiteInfo> FindTestsInSourceAsync(this TestContainer tc, TL tl, CancellationToken ct)
@@ -24,19 +27,31 @@ public static class TestDiscovererCommon
         tl.L.WriteLine("Starting discovery of tests from {0}.", tc.ThisPath);
 
         var testSuite = await tc.FindTestsInSourceAsync(tl, ct);
-        var testCaseInfos = testSuite.Tests.Select(t => CreateTestCaseFromTest(testSuite.Container, t));
+        var testCaseInfos = testSuite.Tests.Select(t => CreateTestCaseFromTest(testSuite.Source, testSuite.Exe, t));
         tl.T.TrackEvent("DiscoverTestsFromOneSource", ("Source", tc.ThisPath), ("NumberOfTests", $"{testCaseInfos.Count()}"));
 
         return testCaseInfos;
     }
 
-    public static string RustTestFQN2TestExplorerFQN(this string rustTestFQN) => rustTestFQN.Replace("::", ".");
-
-    public static string TestExplorerFQN2RustTestFQN(this string rustTestFQN) => rustTestFQN.Replace(".", "::");
-
-    private static TestCase CreateTestCaseFromTest(PathEx testContainer, TestSuiteInfo.TestInfo test)
+    public static string RustFQN2TestExplorerFQN(this string rustTestFQN, PathEx exe)
     {
-        var fqn = test.FQN.RustTestFQN2TestExplorerFQN();
+        var strippedExe = (string)exe.GetFileNameWithoutExtension();
+        var m = TestExecutableFingerPrintCracker.Match(strippedExe);
+        if (m.Success)
+        {
+            strippedExe = m.Groups[1].Value;
+        }
+
+        return $"{strippedExe}.{rustTestFQN.Replace("::", ".")}";
+    }
+
+    public static string FullyQualifiedNameRustFormat(this TestCase @this) => @this.FullyQualifiedName.StripNamespace().Replace(".", "::");
+
+    public static string StripNamespace(this string testName) => string.Join(".", testName.Split('.').Skip(1));
+
+    private static TestCase CreateTestCaseFromTest(PathEx testContainer, PathEx testExe, TestSuiteInfo.TestInfo test)
+    {
+        var fqn = test.FQN.RustFQN2TestExplorerFQN(testExe);
         return new TestCase
         {
             CodeFilePath = test.SourcePath,
