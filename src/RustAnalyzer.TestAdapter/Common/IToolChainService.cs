@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Cargo;
@@ -19,7 +20,7 @@ public interface IToolChainService
 
     Task<Workspace> GetWorkspaceAsync(PathEx manifestPath, CancellationToken ct);
 
-    Task<TestSuiteInfo> GetTestSuiteInfoAsync(PathEx testContainerPath, string profile, CancellationToken ct);
+    IAsyncEnumerable<TestSuiteInfo> GetTestSuiteInfoAsync(PathEx testContainerPath, string profile, CancellationToken ct);
 }
 
 public sealed class TestContainer

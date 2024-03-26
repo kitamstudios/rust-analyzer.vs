@@ -5,20 +5,44 @@
   "ReferenceType": 2
 }
 [1] = {
+  "WorkspacePath": "target\\debug\\int_tests.exe",
+  "Target": "<TestRoot>\\hello_library\\target\\debug\\int_tests.exe",
+  "Context": "dev",
+  "ReferenceType": 2
+}
+[2] = {
   "WorkspacePath": "target\\release\\libhello_lib.rlib",
   "Target": "<TestRoot>\\hello_library\\target\\release\\libhello_lib.rlib",
   "Context": "release",
   "ReferenceType": 2
 }
-[2] = {
+[3] = {
+  "WorkspacePath": "target\\release\\int_tests.exe",
+  "Target": "<TestRoot>\\hello_library\\target\\release\\int_tests.exe",
+  "Context": "release",
+  "ReferenceType": 2
+}
+[4] = {
   "WorkspacePath": "target\\debug\\libhello_lib.rlib",
   "Target": "<TestRoot>\\hello_library\\target\\debug\\libhello_lib.rlib",
   "Context": "test",
   "ReferenceType": 2
 }
-[3] = {
+[5] = {
+  "WorkspacePath": "target\\debug\\int_tests.exe",
+  "Target": "<TestRoot>\\hello_library\\target\\debug\\int_tests.exe",
+  "Context": "test",
+  "ReferenceType": 2
+}
+[6] = {
   "WorkspacePath": "target\\release\\libhello_lib.rlib",
   "Target": "<TestRoot>\\hello_library\\target\\release\\libhello_lib.rlib",
+  "Context": "bench",
+  "ReferenceType": 2
+}
+[7] = {
+  "WorkspacePath": "target\\release\\int_tests.exe",
+  "Target": "<TestRoot>\\hello_library\\target\\release\\int_tests.exe",
   "Context": "bench",
   "ReferenceType": 2
 }

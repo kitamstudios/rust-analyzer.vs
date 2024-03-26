@@ -58,7 +58,7 @@
     },
     "Attachments": [],
     "Outcome": 2,
-    "ErrorMessage": "thread 'tests::fibonacci_test::case_3' panicked at src\\lib.rs:33:9:\nassertion `left == right` failed\n  left: 1\n right: 2\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
+    "ErrorMessage": "thread 'tests::fibonacci_test::case_3' panicked at src\\lib.rs:33:9:\nassertion `left == right` failed\n  left: 1\n right: 2\n",
     "ErrorStackTrace": null,
     "DisplayName": "hello_lib.tests.fibonacci_test.case_3",
     "Messages": [],
@@ -245,6 +245,29 @@
     "ErrorMessage": "",
     "ErrorStackTrace": null,
     "DisplayName": "hello_lib.tests.should_success",
+    "Messages": [],
+    "ComputerName": null,
+    "Duration": "00:00:00",
+
+
+    "Properties": []
+  },
+  {
+    "TestCase": {
+      "Id": "6d251830-b822-840b-1c4d-7b80f05e7f83",
+      "FullyQualifiedName": "int_tests.tests.int_test_1",
+      "DisplayName": "int_test_1",
+      "ExecutorUri": "executor://RustTestExecutor/v1",
+      "Source": "<TestRoot>\\hello_library\\target\\release\\hello_lib_libhello_lib.rusttests",
+      "CodeFilePath": "<TestRoot>\\hello_library\\tests\\int_tests.rs",
+      "LineNumber": 4,
+      "Properties": []
+    },
+    "Attachments": [],
+    "Outcome": 1,
+    "ErrorMessage": "",
+    "ErrorStackTrace": null,
+    "DisplayName": "int_tests.tests.int_test_1",
     "Messages": [],
     "ComputerName": null,
     "Duration": "00:00:00",

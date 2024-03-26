@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -147,7 +149,7 @@ public sealed class ToolChainService : IToolChainService
         }
     }
 
-    public async Task<TestSuiteInfo> GetTestSuiteInfoAsync(PathEx testContainerPath, string profile, CancellationToken ct)
+    public async IAsyncEnumerable<TestSuiteInfo> GetTestSuiteInfoAsync(PathEx testContainerPath, string profile, [EnumeratorCancellation] CancellationToken ct)
     {
         var cargoFullPath = GetCargoExePath();
         var tc = await testContainerPath.ReadTestContainerAsync(ct);
@@ -157,7 +159,7 @@ public sealed class ToolChainService : IToolChainService
         {
             var args = new[] { "test", "--no-run", "--manifest-path", tc.Manifest, "--profile", profile }
                 .Concat(tc.AdditionalTestDiscoveryArguments.FromNullSeparatedArray())
-            .ToArray();
+                .ToArray();
 
             _tl.T.TrackEvent("GetTestSuiteInfoAsync", ("TestContainer", testContainerPath), ("Profile", profile), ("Args", string.Join("|", args)));
 
@@ -176,15 +178,8 @@ public sealed class ToolChainService : IToolChainService
             }
 
             var exes = testExeBuildInfos.Select(x => x.exe);
-            if (!exes.Any())
-            {
-                _tl.L.WriteError($"GetTestSuiteInfoAsync: Something is not right. No test executables found in '{testContainerPath}'.");
-            }
-
             tc.TestExes = exes.ToArray();
             await testContainerPath.WriteTestContainerAsync(tc.Manifest, tc.TargetDir, tc.AdditionalTestDiscoveryArguments, tc.AdditionalTestExecutionArguments, tc.TestExecutionEnvironment, profile, tc.TestExes, ct);
-
-            return await GetTestSuiteInfoFromOneTestExe(tc.TestExes[0], testContainerPath, tc.TargetDir.GetDirectoryName(), ct);
         }
         catch (Exception e)
         {
@@ -196,10 +191,21 @@ public sealed class ToolChainService : IToolChainService
 
             throw;
         }
+
+        if (!tc.TestExes.Any())
+        {
+            _tl.L.WriteError($"GetTestSuiteInfoAsync: Something is not right. No test executables found in '{tc.ThisPath}'.");
+        }
+
+        foreach (var exe in tc.TestExes)
+        {
+            yield return await GetTestSuiteInfoFromOneTestExeAsync(tc, exe, ct);
+        }
     }
 
-    private async Task<TestSuiteInfo> GetTestSuiteInfoFromOneTestExe(PathEx testExePath, PathEx testContainerPath, PathEx workspaceRoot, CancellationToken ct)
+    private async Task<TestSuiteInfo> GetTestSuiteInfoFromOneTestExeAsync(TestContainer container, PathEx testExePath, CancellationToken ct)
     {
+        var workspaceRoot = container.TargetDir.GetDirectoryName();
         using var proc = await ProcessRunner.RunWithLogging(testExePath, new[] { "--list", "--format", "json", "-Zunstable-options" }, workspaceRoot, ImmutableDictionary<string, string>.Empty, ct, _tl.L);
 
         var tests = Enumerable.Empty<TestSuiteInfo.TestInfo>();
@@ -218,7 +224,7 @@ public sealed class ToolChainService : IToolChainService
 
         return new TestSuiteInfo
         {
-            Source = testContainerPath,
+            Container = container,
             Exe = testExePath,
             Tests = new Collection<TestSuiteInfo.TestInfo>(tests.ToList()),
         };

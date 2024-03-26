@@ -118,5 +118,15 @@
     "CodeFilePath": "<TestRoot>\\hello_library\\src\\lib.rs",
     "LineNumber": 42,
     "Properties": []
+  },
+  {
+    "Id": "6d251830-b822-840b-1c4d-7b80f05e7f83",
+    "FullyQualifiedName": "int_tests.tests.int_test_1",
+    "DisplayName": "int_test_1",
+    "ExecutorUri": "executor://RustTestExecutor/v1",
+    "Source": "<TestRoot>\\hello_library\\target\\debug\\hello_lib_libhello_lib.rusttests",
+    "CodeFilePath": "<TestRoot>\\hello_library\\tests\\int_tests.rs",
+    "LineNumber": 4,
+    "Properties": []
   }
 ]

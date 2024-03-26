@@ -11,6 +11,11 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 
 namespace KS.RustAnalyzer.TestAdapter;
 
+/// <summary>
+/// Discovery of tests happen by:
+/// 1. Fetching exes for each test container in parallel.
+/// 2. Running all exes in paralle.
+/// </summary>
 [DefaultExecutorUri(Constants.ExecutorUriString)]
 [FileExtension(Constants.TestsContainerExtension)]
 public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
@@ -24,13 +29,18 @@ public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
         Task.WaitAll(tasks.ToArray());
     }
 
+    /// <summary>
+    /// Each TestContainer contains multiple Exes, each Exes contain multiple tests.
+    /// </summary>
     private async Task DiscoverAndReportTestsFromOneSource(TestContainer tc, ITestCaseDiscoverySink discoverySink, TL tl, CancellationToken ct)
     {
         tl.L.WriteLine("DiscoverAndReportTestsFromOneSource starting with {0}", tc.ThisPath);
         try
         {
-            var testCaseInfos = await tc.DiscoverTestCasesFromOneSourceAsync(tl, ct);
-            testCaseInfos.ForEach(discoverySink.SendTestCase);
+            await foreach (var (_, tcs) in tc.DiscoverTestCasesFromOneSourceAsync(tl, ct))
+            {
+                tcs.ForEach(discoverySink.SendTestCase);
+            }
         }
         catch (Exception e)
         {
@@ -38,7 +48,5 @@ public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
             tl.T.TrackException(e, new[] { ("Source", $"{tc.ThisPath}") });
             throw;
         }
-
-        await Task.CompletedTask;
     }
 }

@@ -6,5 +6,5 @@
   "AdditionalTestExecutionArguments": "",
   "TestExecutionEnvironment": "",
   "Profile": "dev",
-  "TestExe": "<not_yet_generated>"
+  "TestExe": []
 }

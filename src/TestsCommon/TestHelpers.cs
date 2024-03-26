@@ -86,7 +86,8 @@ public static class TestHelpers
             .SerializeObject(Formatting.Indented, new PathExJsonConverter())
             .Replace(((string)ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase)
             .RegexReplace(@"    ""(Start|End)Time"": ""(.*)"",", string.Empty)
-            .RegexReplace(@"    ""Duration"": ""00:00:00.2\d{6}"",", @"    ""Duration"": ""00:00:00.2000000""");
+            .RegexReplace(@"    ""Duration"": ""00:00:00.2\d{6}"",", @"    ""Duration"": ""00:00:00.2000000""")
+            .Replace("note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\\n", string.Empty);
     }
 
     public static (PathEx WorkspacePath, PathEx ManifestPath, PathEx TargetPath) GetTestPaths(this string @this, string profile)

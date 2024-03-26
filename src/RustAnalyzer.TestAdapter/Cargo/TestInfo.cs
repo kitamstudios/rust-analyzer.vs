@@ -19,8 +19,8 @@ public enum TestType
 [DebuggerDisplay("{Source} {Exe} [#tests = {Tests.Count}]")]
 public sealed class TestSuiteInfo
 {
-    [JsonProperty("source")]
-    public PathEx Source { get; set; }
+    [JsonProperty("container")]
+    public TestContainer Container { get; set; }
 
     [JsonProperty("exe")]
     public PathEx Exe { get; set; }

@@ -1,5 +1,18 @@
-{
-  "source": "<TestRoot>\\hello_world\\target\\release\\hello_world_hello_world.rusttests",
-  "exe": "<TestRoot>\\hello_world\\target\\release\\deps\\hello_world-d116900458eb29b6.exe",
-  "tests": []
-}
+[
+  {
+    "container": {
+      "ThisPath": "<TestRoot>\\hello_world\\target\\release\\hello_world_hello_world.rusttests",
+      "Manifest": "<TestRoot>\\hello_world\\Cargo.toml",
+      "TargetDir": "<TestRoot>\\hello_world\\target",
+      "AdditionalTestDiscoveryArguments": "",
+      "AdditionalTestExecutionArguments": "",
+      "TestExecutionEnvironment": "",
+      "Profile": "release",
+      "TestExes": [
+        "<TestRoot>\\hello_world\\target\\release\\deps\\hello_world-d116900458eb29b6.exe"
+      ]
+    },
+    "exe": "<TestRoot>\\hello_world\\target\\release\\deps\\hello_world-d116900458eb29b6.exe",
+    "tests": []
+  }
+]

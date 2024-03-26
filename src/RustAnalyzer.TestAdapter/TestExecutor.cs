@@ -12,16 +12,19 @@ using Newtonsoft.Json;
 
 namespace KS.RustAnalyzer.TestAdapter;
 
+/// <summary>
+/// Execution of tests happen by running an exe belonging to a test container.
+///
+/// By the time we are here, it is fine to assume that TestContainer is complete (i.e. filled with Exes).
+/// </summary>
 [ExtensionUri(Constants.ExecutorUriString)]
 public class TestExecutor : BaseTestExecutor, ITestExecutor
 {
     private bool _cancelled;
 
-    public void Cancel()
-    {
-        _cancelled = true;
-    }
-
+    /// <summary>
+    /// Signature requried by ITestExecutor.
+    /// </summary>
     public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
     {
         var ct = new CancellationToken(_cancelled);
@@ -29,8 +32,15 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         tl.L.WriteLine("RunTests starting. Executing {0} tests", tests.Count());
         var tasks = tests
             .GroupBy(t => t.Source)
-            .Select(g => (Source: g.Key, Tests: g.AsEnumerable()))
-            .Select(async x => await RunAndRecordTestResultsFromOneSourceAsync(await ((PathEx)x.Source).ReadTestContainerAsync(ct), x.Tests, runContext.IsBeingDebugged, frameworkHandle, tl, ct));
+            .Select(g => (g.Key, g.AsEnumerable()))
+            .Select(async g => (await ((PathEx)g.Item1).ReadTestContainerAsync(ct), g.Item2))
+            .Select(async x =>
+            {
+                var (c, tcs) = await x;
+                var ts = c.TestExes.Select(async exe => await RunAndRecordTestResultsFromOneExe(exe, tcs, TestRunParams.FromContainer(c), runContext.IsBeingDebugged, frameworkHandle, tl, ct));
+                Task.WaitAll(ts.ToArray());
+            });
+
         Task.WaitAll(tasks.ToArray());
     }
 
@@ -43,17 +53,28 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         Task.WaitAll(tasks.ToArray());
     }
 
-    public static async Task RunTestsTestsFromOneSourceAsync(TestContainer tc, IRunContext runContext, IFrameworkHandle fh, TL tl, CancellationToken ct)
+    /// <summary>
+    /// Each TestContainer has multiple Exes, Each exe has multiple tests.
+    /// Execution of tests happen by running the Exes. All in parallel.
+    /// </summary>
+    public static async Task RunTestsTestsFromOneSourceAsync(TestContainer container, IRunContext runContext, IFrameworkHandle fh, TL tl, CancellationToken ct)
     {
-        var testCases = await tc.DiscoverTestCasesFromOneSourceAsync(tl, ct);
-        await RunAndRecordTestResultsFromOneSourceAsync(tc, testCases, runContext.IsBeingDebugged, fh, tl, ct);
+        await foreach (var (tsi, tcs) in container.DiscoverTestCasesFromOneSourceAsync(tl, ct))
+        {
+            await RunAndRecordTestResultsFromOneExe(tsi.Exe, tcs, TestRunParams.FromContainer(container), runContext.IsBeingDebugged, fh, tl, ct);
+        }
     }
 
-    private static async Task RunAndRecordTestResultsFromOneSourceAsync(TestContainer tc, IEnumerable<TestCase> testCases, bool isBeingDebugged, IFrameworkHandle fh, TL tl, CancellationToken ct)
+    public void Cancel()
+    {
+        _cancelled = true;
+    }
+
+    private static async Task RunAndRecordTestResultsFromOneExe(PathEx exe, IEnumerable<TestCase> testCases, TestRunParams trp, bool isBeingDebugged, IFrameworkHandle fh, TL tl, CancellationToken ct)
     {
         try
         {
-            var testResults = await RunTestsFromOneSourceAsync(tc, testCases, tl, isBeingDebugged, fh, ct);
+            var testResults = await RunTestsFromOneExe(exe, testCases, trp, tl, isBeingDebugged, fh, ct);
             foreach (var testResult in testResults)
             {
                 fh.RecordResult(testResult);
@@ -67,25 +88,25 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         }
     }
 
-    private static async Task<IEnumerable<TestResult>> RunTestsFromOneSourceAsync(TestContainer tc, IEnumerable<TestCase> testCases, TL tl, bool isBeingDebugged, IFrameworkHandle fh, CancellationToken ct)
+    private static async Task<IEnumerable<TestResult>> RunTestsFromOneExe(PathEx exe, IEnumerable<TestCase> testCases, TestRunParams trp, TL tl, bool isBeingDebugged, IFrameworkHandle fh, CancellationToken ct)
     {
-        tl.L.WriteLine("RunTestsFromOneSourceAsync starting with {0}", tc.ThisPath);
-        if (tc.TestExes.Length == 0)
+        tl.L.WriteLine("RunTestsFromOneExe starting with {0}, {1}", trp.Source, exe);
+        if (!testCases.Any())
         {
-            tl.L.WriteError("RunTestsFromOneSourceAsync: Something has gone wrong. Test discovery not complete yet. {0}", tc.ThisPath);
+            tl.L.WriteError("RunTestsFromOneSourceAsync: Something has gone wrong. Asking to run empty set of test cases. {0}, {1}", trp.Source, exe);
         }
 
         var args = testCases
                 .Select(tc => tc.FullyQualifiedNameRustFormat())
                 .Concat(new[] { "--exact", "--format", "json", "-Zunstable-options", "--report-time" })
-                .Concat(tc.AdditionalTestExecutionArguments.FromNullSeparatedArray())
+                .Concat(trp.AdditionalTestExecutionArguments.FromNullSeparatedArray())
                 .ToArray();
-        var envDict = tc.TestExecutionEnvironment.OverrideProcessEnvironment();
-        tl.T.TrackEvent("RunTestsFromOneSourceAsync", ("IsBeingDebugged", $"{isBeingDebugged}"), ("Args", string.Join("|", args)), ("Env", tc.TestExecutionEnvironment.ReplaceNullWithBar()));
+        var envDict = trp.TestExecutionEnvironment.OverrideProcessEnvironment();
+        tl.T.TrackEvent("RunTestsFromOneSourceAsync", ("IsBeingDebugged", $"{isBeingDebugged}"), ("Args", string.Join("|", args)), ("Env", trp.TestExecutionEnvironment.ReplaceNullWithBar()));
         if (isBeingDebugged)
         {
             tl.L.WriteLine("RunTestsFromOneSourceAsync launching test under debugger.");
-            var rc = fh.LaunchProcessWithDebuggerAttached(tc.TestExes[0], tc.TestExes[0].GetDirectoryName(), string.Join(" ", args), envDict);
+            var rc = fh.LaunchProcessWithDebuggerAttached(exe, exe.GetDirectoryName(), string.Join(" ", args), envDict);
             if (rc != 0)
             {
                 tl.L.WriteError("RunTestsFromOneSourceAsync launching test under debugger - returned {0}.", rc);
@@ -94,7 +115,7 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
             return Enumerable.Empty<TestResult>();
         }
 
-        using var testExeProc = await ProcessRunner.RunWithLogging(tc.TestExes[0], args, tc.Manifest.GetDirectoryName(), envDict, ct, tl.L, @throw: false);
+        using var testExeProc = await ProcessRunner.RunWithLogging(exe, args, exe.GetDirectoryName(), envDict, ct, tl.L, @throw: false);
         var ec = testExeProc.ExitCode ?? 0;
         if (ec != 0)
         {
@@ -108,7 +129,7 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
             .Select(JsonConvert.DeserializeObject<TestRunInfo>)
             .Where(x => x.Event != TestRunInfo.EventType.Started)
             .OrderBy(x => x.FQN)
-            .Select(x => ToTestResult(tc.TestExes[0], x, testCasesMap));
+            .Select(x => ToTestResult(exe, x, testCasesMap));
 
         tl.T.TrackEvent("RunTestsFromOneSourceAsync", ("Results", $"{tris.Count()}"));
 
@@ -140,6 +161,25 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
                 return TestOutcome.Skipped;
             default:
                 return TestOutcome.None;
+        }
+    }
+
+    public class TestRunParams
+    {
+        public PathEx Source { get; set; }
+
+        public string AdditionalTestExecutionArguments { get; set; }
+
+        public string TestExecutionEnvironment { get; set; }
+
+        public static TestRunParams FromContainer(TestContainer tc)
+        {
+            return new TestRunParams
+            {
+                Source = tc.ThisPath,
+                AdditionalTestExecutionArguments = tc.AdditionalTestExecutionArguments,
+                TestExecutionEnvironment = tc.TestExecutionEnvironment,
+            };
         }
     }
 }

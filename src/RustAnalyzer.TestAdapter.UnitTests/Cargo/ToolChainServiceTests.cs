@@ -113,10 +113,10 @@ public sealed class ToolChainServiceTests
     }
 
     [Theory]
-    [InlineData(@"hello_world", "hello_world_hello_world.rusttests", "release")] // No tests.
-    [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests", "release")] // Has tests.
+    [InlineData(@"hello_world", "hello_world_hello_world.rusttests", "release", new string[] { "hello_world-d116900458eb29b6.exe" })] // No tests.
+    [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests", "release", new[] { "hello_lib-d9d78f0fcd1af879.exe", "int_tests-58f9d629627e8abd.exe" })] // Has tests.
     [UseReporter(typeof(RaVsDiffReporter))]
-    public async Task GetTestSuiteTestsAsync(string workspaceRelRoot, string containerName, string profile)
+    public async Task GetTestSuiteTestsAsync(string workspaceRelRoot, string containerName, string profile, string[] testExes)
     {
         NamerFactory.AdditionalInformation = workspaceRelRoot.ReplaceInvalidChars();
         var workspacePath = TestHelpers.ThisTestRoot + (PathEx)workspaceRelRoot;
@@ -125,15 +125,16 @@ public sealed class ToolChainServiceTests
         var tcPath = targetPath + (PathEx)containerName;
 
         await _tcs.DoBuildAsync(workspacePath, manifestPath, profile);
-        var testSuite = await _tcs.GetTestSuiteInfoAsync(tcPath, profile, default);
+        var testSuites = await _tcs.GetTestSuiteInfoAsync(tcPath, profile, default).ToArrayAsync();
         var tc = JsonConvert.DeserializeObject<TestContainer>(await tcPath.ReadAllTextAsync(default));
 
-        tc.TestExes[0].FileExists().Should().BeTrue();
-        tc.TestExes[0].GetExtension().Should().Be((PathEx)".exe");
+        tc.TestExes.All(e => e.FileExists()).Should().BeTrue();
+        tc.TestExes.Select(e => e.GetFileName()).Should().BeEquivalentTo(testExes.Select(e => (PathEx)e));
         tc.Profile.Should().Be(profile);
         tc.ThisPath.Should().Be(tcPath);
-        testSuite.Source.Should().Be(tcPath);
-        var normalizedStr = testSuite.SerializeAndNormalizeObject();
+        testSuites.Should().HaveCount(testExes.Length);
+        testSuites.Select(x => x.Container.ThisPath).Should().OnlyContain(x => x == tcPath);
+        var normalizedStr = testSuites.SerializeAndNormalizeObject();
         Approvals.Verify(normalizedStr);
     }
 }

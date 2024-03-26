@@ -8,14 +8,17 @@ namespace KS.RustAnalyzer.TestAdapter;
 
 public abstract class BaseTestDiscoverer
 {
-    public void DiscoverTests(PathEx source, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
-    {
-        DiscoverTests(new[] { source }, discoveryContext, logger, discoverySink);
-    }
-
+    /// <summary>
+    /// Signature requried by ITestDiscoverer.
+    /// </summary>
     public void DiscoverTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
     {
         DiscoverTests(sources.Select(s => (PathEx)s).Where(s => s != default), discoveryContext, logger, discoverySink);
+    }
+
+    public void DiscoverTests(PathEx source, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
+    {
+        DiscoverTests(new[] { source }, discoveryContext, logger, discoverySink);
     }
 
     public abstract void DiscoverTests(IEnumerable<PathEx> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink);
