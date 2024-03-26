@@ -37,7 +37,7 @@ public static class StringExtensions
         return s?.Replace("\0", "|");
     }
 
-    public static string RegexReplace(this string @this, string pattern, string replacement)
+    public static string RegexReplace(this string @this, string pattern, string replacement, RegexOptions options = RegexOptions.None)
     {
         return Regex.Replace(@this, pattern, replacement);
     }

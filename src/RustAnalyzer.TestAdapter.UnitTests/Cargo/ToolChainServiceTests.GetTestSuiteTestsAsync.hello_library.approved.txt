@@ -9,11 +9,11 @@
       "TestExecutionEnvironment": "",
       "Profile": "release",
       "TestExes": [
-        "<TestRoot>\\hello_library\\target\\release\\deps\\hello_lib-d9d78f0fcd1af879.exe",
-        "<TestRoot>\\hello_library\\target\\release\\deps\\int_tests-58f9d629627e8abd.exe"
+        "<TestRoot>\\hello_library\\target\\release\\deps\\hello_lib-*.exe",
+        "<TestRoot>\\hello_library\\target\\release\\deps\\int_tests-*.exe"
       ]
     },
-    "exe": "<TestRoot>\\hello_library\\target\\release\\deps\\hello_lib-d9d78f0fcd1af879.exe",
+    "exe": "<TestRoot>\\hello_library\\target\\release\\deps\\hello_lib-*.exe",
     "tests": [
       {
         "type": "test",
@@ -159,11 +159,11 @@
       "TestExecutionEnvironment": "",
       "Profile": "release",
       "TestExes": [
-        "<TestRoot>\\hello_library\\target\\release\\deps\\hello_lib-d9d78f0fcd1af879.exe",
-        "<TestRoot>\\hello_library\\target\\release\\deps\\int_tests-58f9d629627e8abd.exe"
+        "<TestRoot>\\hello_library\\target\\release\\deps\\hello_lib-*.exe",
+        "<TestRoot>\\hello_library\\target\\release\\deps\\int_tests-*.exe"
       ]
     },
-    "exe": "<TestRoot>\\hello_library\\target\\release\\deps\\int_tests-58f9d629627e8abd.exe",
+    "exe": "<TestRoot>\\hello_library\\target\\release\\deps\\int_tests-*.exe",
     "tests": [
       {
         "type": "test",

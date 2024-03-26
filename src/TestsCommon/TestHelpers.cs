@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Cargo;
@@ -86,7 +87,8 @@ public static class TestHelpers
             .SerializeObject(Formatting.Indented, new PathExJsonConverter())
             .Replace(((string)ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase)
             .RegexReplace(@"    ""(Start|End)Time"": ""(.*)"",", string.Empty)
-            .RegexReplace(@"    ""Duration"": ""00:00:00.2\d{6}"",", @"    ""Duration"": ""00:00:00.2000000""")
+            .RegexReplace(@"    ""Duration"": ""00:00:00.[0-2]\d{6}"",", @"    ""Duration"": ""00:00:00.2000000""")
+            .RegexReplace(@"\-[\da-f]{16}\.", "-*.", RegexOptions.IgnoreCase)
             .Replace("note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\\n", string.Empty);
     }
 

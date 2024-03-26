@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ApprovalTests;
 using ApprovalTests.Namers;
@@ -10,6 +11,7 @@ using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
 using Newtonsoft.Json;
 using Xunit;
+using static ApprovalTests.Scrubber.PdfScrubber;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 
@@ -113,8 +115,8 @@ public sealed class ToolChainServiceTests
     }
 
     [Theory]
-    [InlineData(@"hello_world", "hello_world_hello_world.rusttests", "release", new string[] { "hello_world-d116900458eb29b6.exe" })] // No tests.
-    [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests", "release", new[] { "hello_lib-d9d78f0fcd1af879.exe", "int_tests-58f9d629627e8abd.exe" })] // Has tests.
+    [InlineData(@"hello_world", "hello_world_hello_world.rusttests", "release", new string[] { "hello_world-*.exe" })] // No tests.
+    [InlineData(@"hello_library", "hello_lib_libhello_lib.rusttests", "release", new[] { "hello_lib-*.exe", "int_tests-*.exe" })] // Has tests.
     [UseReporter(typeof(RaVsDiffReporter))]
     public async Task GetTestSuiteTestsAsync(string workspaceRelRoot, string containerName, string profile, string[] testExes)
     {
@@ -129,12 +131,12 @@ public sealed class ToolChainServiceTests
         var tc = JsonConvert.DeserializeObject<TestContainer>(await tcPath.ReadAllTextAsync(default));
 
         tc.TestExes.All(e => e.FileExists()).Should().BeTrue();
-        tc.TestExes.Select(e => e.GetFileName()).Should().BeEquivalentTo(testExes.Select(e => (PathEx)e));
+        tc.TestExes.Select(e => Regex.Replace(e.GetFileName(), @"\-[\da-f]{16}\.", "-*.", RegexOptions.IgnoreCase)).Should().BeEquivalentTo(testExes);
         tc.Profile.Should().Be(profile);
         tc.ThisPath.Should().Be(tcPath);
         testSuites.Should().HaveCount(testExes.Length);
         testSuites.Select(x => x.Container.ThisPath).Should().OnlyContain(x => x == tcPath);
-        var normalizedStr = testSuites.SerializeAndNormalizeObject();
+        var normalizedStr = testSuites.OrderBy(x => (string)x.Exe).SerializeAndNormalizeObject();
         Approvals.Verify(normalizedStr);
     }
 }

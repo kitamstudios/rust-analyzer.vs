@@ -9,10 +9,10 @@
       "TestExecutionEnvironment": "",
       "Profile": "release",
       "TestExes": [
-        "<TestRoot>\\hello_world\\target\\release\\deps\\hello_world-d116900458eb29b6.exe"
+        "<TestRoot>\\hello_world\\target\\release\\deps\\hello_world-*.exe"
       ]
     },
-    "exe": "<TestRoot>\\hello_world\\target\\release\\deps\\hello_world-d116900458eb29b6.exe",
+    "exe": "<TestRoot>\\hello_world\\target\\release\\deps\\hello_world-*.exe",
     "tests": []
   }
 ]
