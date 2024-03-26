@@ -1,0 +1,26 @@
+{
+  "reason": "compiler-artifact",
+  "package_id": "path+file:///D:/src/u/rlenvs/client-rust#gymnasium@0.1.0",
+  "manifest_path": "D:\\src\\u\\rlenvs\\client-rust\\Cargo.toml",
+  "target": {
+    "kind": [ "lib" ],
+    "crate_types": [ "lib" ],
+    "name": "gymnasium",
+    "src_path": "D:\\src\\u\\rlenvs\\client-rust\\src\\lib.rs",
+    "edition": "2021",
+    "doc": true,
+    "doctest": true,
+    "test": true
+  },
+  "profile": {
+    "opt_level": "0",
+    "debuginfo": 2,
+    "debug_assertions": true,
+    "overflow_checks": true,
+    "test": false
+  },
+  "features": [],
+  "filenames": [ "D:\\src\\u\\rlenvs\\client-rust\\target\\debug\\libgymnasium.rlib", "D:\\src\\u\\rlenvs\\client-rust\\target\\debug\\deps\\libgymnasium-dfb398c6697a955e.rmeta" ],
+  "executable": null,
+  "fresh": false
+}

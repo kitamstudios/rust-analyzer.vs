@@ -125,7 +125,7 @@ public sealed class ToolChainServiceTests
         var tcPath = targetPath + (PathEx)containerName;
 
         await _tcs.DoBuildAsync(workspacePath, manifestPath, profile);
-        var testSuites = await _tcs.GetTestSuiteInfoAsync(tcPath, profile, default).ToArrayAsync();
+        var testSuites = await (await _tcs.GetTestSuiteInfoAsync(tcPath, profile, default)).ToTaskEnumerableAsync();
         var tc = JsonConvert.DeserializeObject<TestContainer>(await tcPath.ReadAllTextAsync(default));
 
         tc.TestExes.All(e => e.FileExists()).Should().BeTrue();

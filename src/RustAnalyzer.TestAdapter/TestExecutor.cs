@@ -59,7 +59,7 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
     /// </summary>
     public static async Task RunTestsTestsFromOneSourceAsync(TestContainer container, IRunContext runContext, IFrameworkHandle fh, TL tl, CancellationToken ct)
     {
-        await foreach (var (tsi, tcs) in container.DiscoverTestCasesFromOneSourceAsync(tl, ct))
+        foreach (var (tsi, tcs) in await container.DiscoverTestCasesFromOneSourceAsync(tl, ct))
         {
             await RunAndRecordTestResultsFromOneExe(tsi.Exe, tcs, TestRunParams.FromContainer(container), runContext.IsBeingDebugged, fh, tl, ct);
         }

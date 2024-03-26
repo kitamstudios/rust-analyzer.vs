@@ -20,7 +20,10 @@ public interface IToolChainService
 
     Task<Workspace> GetWorkspaceAsync(PathEx manifestPath, CancellationToken ct);
 
-    IAsyncEnumerable<TestSuiteInfo> GetTestSuiteInfoAsync(PathEx testContainerPath, string profile, CancellationToken ct);
+    /// <summary>
+    /// NOTE: This is shameful. Cannot pull in IAsyncEnumerable without getting into dependency hell.
+    /// </summary>
+    Task<IEnumerable<Task<TestSuiteInfo>>> GetTestSuiteInfoAsync(PathEx testContainerPath, string profile, CancellationToken ct);
 }
 
 public sealed class TestContainer

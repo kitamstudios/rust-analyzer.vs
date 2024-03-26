@@ -27,8 +27,11 @@ public static class BuildJsonOutputParser
             ["error: internal compiler error"] = Level.Error,
         };
 
-    private static readonly Regex CompilerArtifactMessageCracker =
+    private static readonly Regex CompilerArtifactMessageCracker1 =
         new (@"^(.*) (.*) \((.*)\+(.*)\)$", RegexOptions.Compiled);
+
+    private static readonly Regex CompilerArtifactMessageCracker2 =
+        new (@"^(.*)\+(.*)@(.*)$", RegexOptions.Compiled);
 
     public static BuildMessage[] Parse(PathEx workspaceRoot, string jsonLine, TL tl)
     {
@@ -148,13 +151,18 @@ public static class BuildJsonOutputParser
             return Array.Empty<BuildMessage>();
         }
 
-        var matches = CompilerArtifactMessageCracker.Matches(obj.package_id.Value as string);
-        var path = string.Empty;
-        if (matches[0].Groups[3].Value == "path")
+        var matches = CompilerArtifactMessageCracker1.Matches(obj.package_id.Value as string);
+        if (matches.Count != 0)
         {
-            path = $" ({new Uri(matches[0].Groups[4].Value).LocalPath})";
+            return new[] { new StringBuildMessage { Message = $"   Compiling {matches[0].Groups[1].Value} v{matches[0].Groups[2].Value} ({matches[0].Groups[4].Value})" } };
         }
 
-        return new[] { new StringBuildMessage { Message = $"   Compiling {matches[0].Groups[1].Value} v{matches[0].Groups[2].Value}{path}" } };
+        matches = CompilerArtifactMessageCracker2.Matches(obj.package_id.Value as string);
+        if (matches.Count != 0)
+        {
+            return new[] { new StringBuildMessage { Message = $"   Compiling {matches[0].Groups[2].Value} v{matches[0].Groups[3].Value}" } };
+        }
+
+        throw new InvalidDataException($"Unable to match. Will be shown as is in the output window.");
     }
 }

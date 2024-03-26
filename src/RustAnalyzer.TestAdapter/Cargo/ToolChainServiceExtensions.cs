@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -65,6 +66,18 @@ public static class ToolChainServiceExtensions
                 Formatting.Indented,
                 new PathExJsonConverter()),
             ct);
+    }
+
+    public static void CleanTestContainers(this PathEx @this, IEnumerable<PathEx> except)
+    {
+        if (!@this.DirectoryExists())
+        {
+            return;
+        }
+
+        Directory.EnumerateFiles(@this, $"*{Constants.TestsContainerExtension}")
+            .Where(f => !except.Any(c => c == (PathEx)f))
+            .ForEach(File.Delete);
     }
 
     private static PathEx GetRustupPath() => (PathEx)Environment.GetEnvironmentVariable("USERPROFILE") + (PathEx)@".rustup";

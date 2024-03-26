@@ -6,7 +6,6 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -49,9 +48,6 @@ public sealed class ToolChainService : IToolChainService
 
     public async Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
     {
-        var w = await GetWorkspaceAsync(bti.ManifestPath, ct);
-        CleanTestContainers(w.TargetDirectory.MakeProfilePath(bti.Profile));
-
         var success = await ExecuteOperationAsync(
             "build",
             bti.ManifestPath,
@@ -66,8 +62,10 @@ public sealed class ToolChainService : IToolChainService
 
         if (success)
         {
-            var tasks = w.Packages
-                .SelectMany(p => p.GetTestContainers(bti.Profile))
+            var w = await GetWorkspaceAsync(bti.ManifestPath, ct);
+            var testContainers = w.Packages.SelectMany(p => p.GetTestContainers(bti.Profile));
+            w.TargetDirectory.MakeProfilePath(bti.Profile).CleanTestContainers(testContainers.Select(x => x.Container));
+            var tasks = testContainers
                 .Select(x => x.Container.WriteTestContainerAsync(x.Target.Parent.ManifestPath, w.TargetDirectory, bti.AdditionalTestDiscoveryArguments, bti.AdditionalTestExecutionArguments, bti.TestExecutionEnvironment, bti.Profile, Array.Empty<PathEx>(), ct));
             await Task.WhenAll(tasks);
         }
@@ -149,7 +147,7 @@ public sealed class ToolChainService : IToolChainService
         }
     }
 
-    public async IAsyncEnumerable<TestSuiteInfo> GetTestSuiteInfoAsync(PathEx testContainerPath, string profile, [EnumeratorCancellation] CancellationToken ct)
+    public async Task<IEnumerable<Task<TestSuiteInfo>>> GetTestSuiteInfoAsync(PathEx testContainerPath, string profile, CancellationToken ct)
     {
         var cargoFullPath = GetCargoExePath();
         var tc = await testContainerPath.ReadTestContainerAsync(ct);
@@ -180,6 +178,13 @@ public sealed class ToolChainService : IToolChainService
             var exes = testExeBuildInfos.Select(x => x.exe);
             tc.TestExes = exes.ToArray();
             await testContainerPath.WriteTestContainerAsync(tc.Manifest, tc.TargetDir, tc.AdditionalTestDiscoveryArguments, tc.AdditionalTestExecutionArguments, tc.TestExecutionEnvironment, profile, tc.TestExes, ct);
+
+            if (!tc.TestExes.Any())
+            {
+                _tl.L.WriteError($"GetTestSuiteInfoAsync: Something is not right. No test executables found in '{tc.ThisPath}'.");
+            }
+
+            return tc.TestExes.Select(async exe => await GetTestSuiteInfoFromOneTestExeAsync(tc, exe, ct));
         }
         catch (Exception e)
         {
@@ -190,16 +195,6 @@ public sealed class ToolChainService : IToolChainService
             }
 
             throw;
-        }
-
-        if (!tc.TestExes.Any())
-        {
-            _tl.L.WriteError($"GetTestSuiteInfoAsync: Something is not right. No test executables found in '{tc.ThisPath}'.");
-        }
-
-        foreach (var exe in tc.TestExes)
-        {
-            yield return await GetTestSuiteInfoFromOneTestExeAsync(tc, exe, ct);
         }
     }
 
@@ -325,16 +320,6 @@ public sealed class ToolChainService : IToolChainService
                 return false;
             }
         }
-    }
-
-    private static void CleanTestContainers(PathEx outDir)
-    {
-        if (!outDir.DirectoryExists())
-        {
-            return;
-        }
-
-        Directory.EnumerateFiles(outDir, $"*{Constants.TestsContainerExtension}").ForEach(File.Delete);
     }
 
     private sealed class BuildOutputRedirector : ProcessOutputRedirector

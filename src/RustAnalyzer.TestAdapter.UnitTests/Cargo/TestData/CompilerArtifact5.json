@@ -1,0 +1,26 @@
+{
+  "reason": "compiler-artifact",
+  "package_id": "registry+https://github.com/rust-lang/crates.io-index#futures-util@0.3.30",
+  "manifest_path": "C:\\Users\\parth\\scoop\\persist\\rustup\\.cargo\\registry\\src\\index.crates.io-6f17d22bba15001f\\futures-util-0.3.30\\Cargo.toml",
+  "target": {
+    "kind": [ "lib" ],
+    "crate_types": [ "lib" ],
+    "name": "futures-util",
+    "src_path": "C:\\Users\\parth\\scoop\\persist\\rustup\\.cargo\\registry\\src\\index.crates.io-6f17d22bba15001f\\futures-util-0.3.30\\src\\lib.rs",
+    "edition": "2018",
+    "doc": true,
+    "doctest": true,
+    "test": true
+  },
+  "profile": {
+    "opt_level": "0",
+    "debuginfo": 2,
+    "debug_assertions": true,
+    "overflow_checks": true,
+    "test": false
+  },
+  "features": [ "alloc", "futures-io", "io", "memchr", "slab", "std" ],
+  "filenames": [ "D:\\src\\u\\rlenvs\\client-rust\\target\\debug\\deps\\libfutures_util-98553cccec1b9aaa.rlib", "D:\\src\\u\\rlenvs\\client-rust\\target\\debug\\deps\\libfutures_util-98553cccec1b9aaa.rmeta" ],
+  "executable": null,
+  "fresh": false
+}

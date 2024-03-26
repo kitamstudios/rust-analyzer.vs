@@ -30,6 +30,8 @@ public class BuildJsonOutputParserTests
     [InlineData("CompilerArtifact1.json")]
     [InlineData("CompilerArtifact2.json")]
     [InlineData("CompilerArtifact3.json")]
+    [InlineData("CompilerArtifact4.json")]
+    [InlineData("CompilerArtifact5.json")]
     public void ParseCompilerArtifiacts(string dataFile)
     {
         NamerFactory.AdditionalInformation = $"datafile-{dataFile}";

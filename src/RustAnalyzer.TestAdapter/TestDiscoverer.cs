@@ -23,8 +23,6 @@ public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
     public override void DiscoverTests(IEnumerable<PathEx> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
     {
         var tl = logger.CreateTL();
-        SignupForAssemblyResolution(tl.L);
-
         var tasks = sources
             .GroupBy(s => s)
             .Select(async g => await DiscoverAndReportTestsFromOneSource(await g.Key.ReadTestContainerAsync(default), discoverySink, tl, default));
@@ -39,7 +37,7 @@ public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
         tl.L.WriteLine("DiscoverAndReportTestsFromOneSource starting with {0}", tc.ThisPath);
         try
         {
-            await foreach (var (_, tcs) in tc.DiscoverTestCasesFromOneSourceAsync(tl, ct))
+            foreach (var (_, tcs) in await tc.DiscoverTestCasesFromOneSourceAsync(tl, ct))
             {
                 tcs.ForEach(discoverySink.SendTestCase);
             }

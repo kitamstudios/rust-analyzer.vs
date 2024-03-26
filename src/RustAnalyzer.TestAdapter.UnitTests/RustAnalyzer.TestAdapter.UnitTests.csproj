@@ -65,6 +65,12 @@
     <None Include="Cargo\TestData\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Cargo\TestData\CompilerArtifact5.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Cargo\TestData\CompilerArtifact4.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Target Name="CopyTestProjects" AfterTargets="Build">
     <ItemGroup>

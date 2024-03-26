@@ -5,6 +5,15 @@ param (
   $SrcDir = (Join-Path $PSScriptRoot "workspace_with_tests")
   , $TestAdapterLocation
 )
+if (-not $env:CI) {
+  $TestAdapterLocation = "d:\src\delme\ra.vs"
+  Write-Host -ForegroundColor Yellow "Not in CI. Setting Test Adapter Path: $TestAdapterLocation"
+  del "$TestAdapterLocation\*"
+  $taSrc = Join-Path (Split-Path $PSScriptRoot) "RustAnalyzer.TestAdapter.UnitTests\bin\Debug"
+  @("KS.RustAnalyzer.TestAdapter.dll", "KS.RustAnalyzer.TestAdapter.pdb", "Microsoft.ApplicationInsights.dll", "Microsoft.ApplicationInsights.pdb", "Ensure.That.dll")
+  | % { copy "$taSrc\$_" "$TestAdapterLocation\$_"}
+  dir $TestAdapterLocation
+}
 
 $TcTemplateDir = Join-Path $PSScriptRoot "integrationtests"
 $SrcDir = Resolve-Path $SrcDir
