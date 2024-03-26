@@ -52,12 +52,14 @@
     <Compile Include="Cargo\ToolChainServiceTests.cs" />
     <Compile Include="Cargo\WorkspaceExtensionsTests.cs" />
     <Compile Include="Common\EnvironmentExtensionsTests.cs" />
+    <Compile Include="MessageLogger.cs" />
     <Compile Include="SpyFrameworkHandle.cs" />
     <Compile Include="SpyTestCaseDiscoverySink.cs" />
     <Compile Include="TestExecutorTests.cs" />
     <Compile Include="TestDiscovererTests.cs" />
     <Compile Include="Common\PathExTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TestsWithLogger.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Cargo\TestData\**\*.*">

@@ -77,7 +77,7 @@ public class Options : BaseOptionModel<Options>, ISettingsServiceDefaults
     [Category(SettingsInfo.KindTest)]
     [DisplayName("Execution arguments")]
     [Description($"Additional arguments passed test executable test in addition to --format json --report-time. Check 'cargo help test' for more information.")]
-    public string AdditionalTestExecutionArguments { get; set; } = "--exact --show-output --test-threads 1";
+    public string AdditionalTestExecutionArguments { get; set; } = "--show-output --test-threads 1";
 
     [Browsable(true)]
     [Category(SettingsInfo.KindTest)]

@@ -1,16 +1,24 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
+using Xunit.Abstractions;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests;
 
 public class SpyFrameworkHandle : IFrameworkHandle
 {
-    private readonly List<TestResult> _results = new ();
+    private readonly ConcurrentBag<TestResult> _results = new ();
+    private readonly ITestOutputHelper _output;
 
-    public IReadOnlyList<TestResult> Results => _results;
+    public SpyFrameworkHandle(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
+    public IReadOnlyCollection<TestResult> Results => _results;
 
     public bool EnableShutdownAfterTestRun { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
@@ -41,5 +49,6 @@ public class SpyFrameworkHandle : IFrameworkHandle
 
     public void SendMessage(TestMessageLevel testMessageLevel, string message)
     {
+        _output.WriteLine("{0}: {1}", testMessageLevel, message);
     }
 }

@@ -12,12 +12,18 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using Moq;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests;
 
-public class TestExecutorTests
+public class TestExecutorTests : TestsWithLogger
 {
     private readonly IToolChainService _tcs = new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L);
+
+    public TestExecutorTests(ITestOutputHelper output)
+        : base(output)
+    {
+    }
 
     [Theory]
     [InlineData(@"hello_world", "hello_world_hello_world.rusttests", "bench")] // No tests.
@@ -29,12 +35,11 @@ public class TestExecutorTests
         var tps = workspaceRelRoot.GetTestPaths(profile);
         var tcPath = tps.TargetPath + (PathEx)containerName;
         await _tcs.DoBuildAsync(tps.WorkspacePath, tps.ManifestPath, profile, additionalTestExecutionArguments: "--exclude-should-panic", testExecutionEnvironment: "ENV_VAR_1=ENV_VAR_1_VALUE\0\0");
-        new TestDiscoverer().DiscoverTests(tcPath, Mock.Of<IDiscoveryContext>(), Mock.Of<IMessageLogger>(), Mock.Of<ITestCaseDiscoverySink>());
+        new TestDiscoverer().DiscoverTests(tcPath, Mock.Of<IDiscoveryContext>(), MessageLogger, Mock.Of<ITestCaseDiscoverySink>());
 
-        var fh = new SpyFrameworkHandle();
-        new TestExecutor().RunTests(tcPath, Mock.Of<IRunContext>(), fh);
+        new TestExecutor().RunTests(tcPath, Mock.Of<IRunContext>(), FrameworkHandle);
 
-        var normalizedStr = fh.Results
+        var normalizedStr = FrameworkHandle.Results
             .OrderBy(x => x.TestCase.FullyQualifiedName).ThenBy(x => x.TestCase.LineNumber)
             .SerializeAndNormalizeObject();
         Approvals.Verify(normalizedStr);
@@ -50,11 +55,10 @@ public class TestExecutorTests
         var testCases = tests.Select(t => t.Split('|')).Select(x => new TestCase { Source = $"{tps.TargetPath + x[0]}{Constants.TestsContainerExtension}", FullyQualifiedName = x[1], });
 
         await _tcs.DoBuildAsync(tps.WorkspacePath, tps.ManifestPath, profile);
-        new TestDiscoverer().DiscoverTests(testCases.Select(tc => tc.Source), Mock.Of<IDiscoveryContext>(), Mock.Of<IMessageLogger>(), Mock.Of<ITestCaseDiscoverySink>());
+        new TestDiscoverer().DiscoverTests(testCases.Select(tc => tc.Source), Mock.Of<IDiscoveryContext>(), MessageLogger, Mock.Of<ITestCaseDiscoverySink>());
 
-        var fh = new SpyFrameworkHandle();
-        new TestExecutor().RunTests(testCases, Mock.Of<IRunContext>(), fh);
+        new TestExecutor().RunTests(testCases, Mock.Of<IRunContext>(), FrameworkHandle);
 
-        fh.Results.Select(r => $"{((PathEx)r.TestCase.Source).GetFileNameWithoutExtension()}|{r.DisplayName}").Should().BeEquivalentTo(tests);
+        FrameworkHandle.Results.Select(r => $"{((PathEx)r.TestCase.Source).GetFileNameWithoutExtension()}|{r.DisplayName}").Should().BeEquivalentTo(tests);
     }
 }

@@ -10,12 +10,18 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using Moq;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests;
 
-public class TestDiscovererTests
+public class TestDiscovererTests : TestsWithLogger
 {
     private readonly IToolChainService _tcs = new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L);
+
+    public TestDiscovererTests(ITestOutputHelper output)
+        : base(output)
+    {
+    }
 
     [Theory]
     [InlineData(@"hello_world", "hello_world_hello_world.rusttests", "dev")] // No tests.
@@ -29,7 +35,7 @@ public class TestDiscovererTests
 
         await _tcs.DoBuildAsync(tps.WorkspacePath, tps.ManifestPath, profile);
         var sink = new SpyTestCaseDiscoverySink();
-        new TestDiscoverer().DiscoverTests(tcPath, Mock.Of<IDiscoveryContext>(), Mock.Of<IMessageLogger>(), sink);
+        new TestDiscoverer().DiscoverTests(tcPath, Mock.Of<IDiscoveryContext>(), MessageLogger, sink);
 
         var normalizedStr = sink.TestCases
             .OrderBy(x => x.FullyQualifiedName).ThenBy(x => x.LineNumber)
@@ -48,7 +54,7 @@ public class TestDiscovererTests
 
         await _tcs.DoBuildAsync(tps.WorkspacePath, tps.ManifestPath, profile, additionalBuildArgs: @"--config ""build.rustflags = '--cfg foo'""", additionalTestDiscoveryArguments: "--config\0build.rustflags = '--cfg foo'\0\0");
         var sink = new SpyTestCaseDiscoverySink();
-        new TestDiscoverer().DiscoverTests(tcPath, Mock.Of<IDiscoveryContext>(), Mock.Of<IMessageLogger>(), sink);
+        new TestDiscoverer().DiscoverTests(tcPath, Mock.Of<IDiscoveryContext>(), MessageLogger, sink);
 
         var normalizedStr = sink.TestCases
             .OrderBy(x => x.FullyQualifiedName).ThenBy(x => x.LineNumber)

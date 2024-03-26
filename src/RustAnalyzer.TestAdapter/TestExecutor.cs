@@ -116,11 +116,6 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         }
 
         using var testExeProc = await ProcessRunner.RunWithLogging(exe, args, exe.GetDirectoryName(), envDict, ct, tl.L, @throw: false);
-        var ec = testExeProc.ExitCode ?? 0;
-        if (ec != 0)
-        {
-            tl.L.WriteError("RunTestsFromOneSourceAsync test executable exited with code {0}.", ec);
-        }
 
         var testCasesMap = testCases.ToImmutableDictionary(x => x.FullyQualifiedNameRustFormat());
         var tris = testExeProc.StandardOutputLines
@@ -130,6 +125,12 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
             .Where(x => x.Event != TestRunInfo.EventType.Started)
             .OrderBy(x => x.FQN)
             .Select(x => ToTestResult(exe, x, testCasesMap));
+        var ec = testExeProc.ExitCode ?? 0;
+        if (ec != 0 && !tris.Any())
+        {
+            tl.L.WriteError("RunTestsFromOneSourceAsync test executable exited with code {0}.", ec);
+            throw new ApplicationException($"Test executable returned {ec}. Check above for the arguments passed to test executable by running it on the command line.");
+        }
 
         tl.T.TrackEvent("RunTestsFromOneSourceAsync", ("Results", $"{tris.Count()}"));
 
