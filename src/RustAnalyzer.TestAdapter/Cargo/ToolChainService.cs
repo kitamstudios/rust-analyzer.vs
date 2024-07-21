@@ -22,6 +22,14 @@ public sealed class ToolChainService : IToolChainService
 {
     private static readonly Regex TestExecutablePathCracker = new (@"^\s*Executable( unittests)? (.*) \((.*\\(.*)\-[\da-f]{16}.exe)\)$$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+    private static readonly IReadOnlyDictionary<string, string> OpNameToToolNameMapper = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        { "build", "rustc" },
+        { "clean", "rustc" },
+        { "fmt", "cargo-fmt" },
+        { "clippy", "cargo-clippy" },
+    };
+
     private readonly TL _tl;
 
     [ImportingConstructor]
@@ -155,12 +163,14 @@ public sealed class ToolChainService : IToolChainService
 
         try
         {
+            // TODO: Add the batch file stuff to here.
             var args = new[] { "test", "--no-run", "--manifest-path", tc.Manifest, "--profile", profile }
                 .Concat(tc.AdditionalTestDiscoveryArguments.FromNullSeparatedArray())
                 .ToArray();
 
             _tl.T.TrackEvent("GetTestSuiteInfoAsync", ("TestContainer", testContainerPath), ("Profile", profile), ("Args", string.Join("|", args)));
 
+            // TODO: working directory should be manifest path
             using var proc = await ProcessRunner.RunWithLogging(cargoFullPath, args, cargoFullPath?.GetDirectoryName(), ImmutableDictionary<string, string>.Empty, ct, _tl.L);
 
             var testExeBuildInfos = proc.StandardErrorLines
@@ -251,7 +261,7 @@ public sealed class ToolChainService : IToolChainService
         return w;
     }
 
-    private async Task<bool> ExecuteOperationAsync(string opName, string filePath, string arguments, string profile, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, Func<string, BuildMessage[]> outputPreprocessor, ITelemetryService ts, ILogger l, CancellationToken ct)
+    private async Task<bool> ExecuteOperationAsync(string opName, PathEx filePath, string arguments, string profile, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, Func<string, BuildMessage[]> outputPreprocessor, ITelemetryService ts, ILogger l, CancellationToken ct)
     {
         outputPane.Clear();
 
@@ -263,25 +273,21 @@ public sealed class ToolChainService : IToolChainService
 
         return await RunAsync(
             cargoFullPath.Value,
+            opName,
             arguments,
-            (PathEx)Path.GetDirectoryName(filePath),
+            filePath.GetDirectoryName(),
             redirector: new BuildOutputRedirector(outputPane, (PathEx)Path.GetDirectoryName(filePath), buildMessageReporter, outputPreprocessor),
             ct: ct);
     }
 
-    private static async Task<bool> RunAsync(PathEx cargoFullPath, string arguments, string workingDir, ProcessOutputRedirector redirector, CancellationToken ct)
+    private static async Task<bool> RunAsync(PathEx cargoFullPath, string opName, string arguments, PathEx workingDir, ProcessOutputRedirector redirector, CancellationToken ct)
     {
         EnsureArg.IsNotEmptyOrWhiteSpace(arguments, nameof(arguments));
 
-        redirector?.WriteLineWithoutProcessing($"\n=== Cargo started: {Constants.CargoExe} {arguments} ===");
-        redirector?.WriteLineWithoutProcessing($"         Path: {cargoFullPath}");
-        redirector?.WriteLineWithoutProcessing($"    Arguments: {arguments}");
-        redirector?.WriteLineWithoutProcessing($"   WorkingDir: {workingDir}");
-        redirector?.WriteLineWithoutProcessing($"");
-
+        using var runnerCmd = await CreateRunnerCmdFile(cargoFullPath, opName, arguments, workingDir, ct);
         using var process = ProcessRunner.Run(
-            cargoFullPath,
-            new[] { arguments },
+            "cmd",
+            new[] { "/c", runnerCmd.File },
             workingDir,
             env: null,
             visible: false,
@@ -308,18 +314,47 @@ public sealed class ToolChainService : IToolChainService
                 // process hasn't actually exited
                 process.Wait();
 
-                redirector.WriteLineWithoutProcessing($"==== Cargo completed ====");
-
                 return process.ExitCode == 0;
             }
             else
             {
                 process.Kill();
-                redirector.WriteErrorLineWithoutProcessing($"====  Cargo canceled ====");
+                redirector.WriteErrorLineWithoutProcessing($"===  Build step canceled ===");
 
                 return false;
             }
         }
+    }
+
+    private static async Task<DisposableTempFile> CreateRunnerCmdFile(PathEx cargoPath, string opName, string arguments, PathEx workingDir, CancellationToken ct)
+    {
+        var executable = OpNameToToolNameMapper[opName].PadLeft(14); // NOTE: Max length of the toolname to align output.
+        var cmdTemplate = $@"@echo off
+setlocal enabledelayedexpansion enableextensions
+
+rem 
+rem Runner file created by {Vsix.Name}
+rem 
+
+for /f ""tokens=*"" %%i in ('cargo --version') do set _CARGO_VERSION_=%%i
+for /f ""tokens=*"" %%i in ('{executable} --version') do set _TOOL_VERSION_=%%i
+for /f ""tokens=*"" %%i in ('where {executable}') do set _TOOL_PATH_=%%i
+
+echo ==== Build step: Started ====
+echo          cargo : !_CARGO_VERSION_! [{cargoPath}]
+echo {executable} : !_TOOL_VERSION_! [!_TOOL_PATH_!]
+echo      Arguments : {arguments}
+echo     WorkingDir : {workingDir}
+echo:
+""{cargoPath}"" {arguments} 2>&1
+SET RET_CODE=!ERRORLEVEL!
+echo:
+echo ==== Build step: Finished ====
+exit /b !RET_CODE!
+";
+        var tempCmdPath = new DisposableTempFile((PathEx)".cmd");
+        await tempCmdPath.File.WriteAllTextAsync(cmdTemplate, ct);
+        return tempCmdPath;
     }
 
     private sealed class BuildOutputRedirector : ProcessOutputRedirector

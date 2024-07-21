@@ -110,7 +110,7 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
                             Profile = profile,
                             WorkspaceRoot = target.Parent.WorkspaceRoot,
                             ManifestPath = target.Parent.ManifestPath,
-                            AdditionalBuildArgs = $"{target.AdditionalBuildArgs} {additionalBuildArgs}".Trim()
+                            AdditionalBuildArgs = $"{target.AdditionalBuildArgs} {additionalBuildArgs}".Trim(),
                         },
                         _outputPane),
                 inputFiles: new[] { (string)target.SourcePath },

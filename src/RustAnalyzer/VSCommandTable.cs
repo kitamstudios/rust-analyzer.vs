@@ -15,6 +15,9 @@ namespace KS.RustAnalyzer
         public const string guidRustAnalyzerPackageString = "d879ab25-bd3e-4e01-8b2a-cc60649c016c";
         public static Guid guidRustAnalyzerPackage = new Guid(guidRustAnalyzerPackageString);
 
+        public const string guidRustAnalyzerExecutionTargetCmdSetString = "76879a43-4f48-45d1-922c-54f713889a1f";
+        public static Guid guidRustAnalyzerExecutionTargetCmdSet = new Guid(guidRustAnalyzerExecutionTargetCmdSetString);
+
         public const string guidWorkspaceExplorerBuildActionCmdSetString = "16537f6e-cb14-44da-b087-d1387ce3bf57";
         public static Guid guidWorkspaceExplorerBuildActionCmdSet = new Guid(guidWorkspaceExplorerBuildActionCmdSetString);
 
@@ -28,6 +31,8 @@ namespace KS.RustAnalyzer
     {
         public const int CargoClippy = 0x2001;
         public const int CargoFmt = 0x2002;
+        public const int ExecutionTargetCombo = 0x3003;
+        public const int ExecutionTargetComboGetList = 0x3004;
         public const int BuildActionContext = 0x1000;
         public const int RebuildActionContext = 0x1010;
         public const int CleanActionContext = 0x1020;

@@ -3,7 +3,10 @@
 <!--
   NOTE:
   - Annotated reference at https://github.com/microsoft/VSSDK-Extensibility-Samples/blob/master/Menu_And_Commands/C%23/PkgCmd.vsct.
-  - Guids and IDs: https://learn.microsoft.com/en-us/visualstudio/extensibility/internals/guids-and-ids-of-visual-studio-menus?view=vs-2022
+  - https://learn.microsoft.com/en-us/visualstudio/extensibility/internals/guids-and-ids-of-visual-studio-toolbars?view=vs-2022
+  - https://learn.microsoft.com/en-us/visualstudio/extensibility/internals/guids-and-ids-of-visual-studio-menus?view=vs-2022
+  - https://learn.microsoft.com/en-us/visualstudio/extensibility/command-flag-element?view=vs-2022
+  - https://github.com/trufflesuite/trufflevsix/blob/master/packages/Microsoft.VSSDK.BuildTools.14.3.25407/tools/vssdk/inc/ShellCmdPlace.vsct
 -->
 
 <CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
@@ -32,6 +35,24 @@
         </Strings>
       </Button>
     </Buttons>
+
+    <Combos>
+      <Combo guid="guidRustAnalyzerTargetSystemCmdSet" id="TargetSystemCombo" priority="0x0100" type="DropDownCombo" defaultWidth="90" idCommandList="TargetSystemComboGetList">
+        <Parent guid="guidRustAnalyzerTargetSystemCmdSet" id="RustAnalyzerTargetSystemToolbarGroup"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultDisabled</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>CommandWellOnly</CommandFlag>
+        <Strings>
+          <ButtonText>Target System: </ButtonText>
+          <MenuText>Target System: </MenuText>
+          <ToolTipText>Select rust-analyzer.vs Target System</ToolTipText>
+          <CanonicalName>Target System</CanonicalName>
+          <LocCanonicalName>Target System</LocCanonicalName>
+          <CommandName>Target System</CommandName>
+        </Strings>
+      </Combo>
+    </Combos>
   </Commands>
 
   <CommandPlacements>
@@ -41,6 +62,9 @@
     <CommandPlacement guid="guidRustAnalyzerPackage" id="CargoFmt" priority="0x0301">
       <Parent guid="guidWorkspaceExplorerToolWindowPackageCmdSet" id="idgWSE_ContextMenu_BuildDebugActions"/>
     </CommandPlacement>
+    <CommandPlacement guid="guidRustAnalyzerTargetSystemCmdSet" id="TargetSystemCombo" priority="0x0100">
+      <Parent guid="guidSHLMainMenu" id="IDG_VS_TOOLSB_RUNBUILD"/>
+    </CommandPlacement>
   </CommandPlacements>
 
   <Symbols>
@@ -49,10 +73,22 @@
       <IDSymbol name="CargoFmt" value="0x2002" />
     </GuidSymbol>
 
+    <GuidSymbol name="guidRustAnalyzerTargetSystemCmdSet" value="{76879a43-4f48-45d1-922c-54f713889a1f}">
+      <IDSymbol name="RustAnalyzerTargetSystemToolbar" value="0x3001"/>
+      <IDSymbol name="RustAnalyzerTargetSystemToolbarGroup" value="0x3002"/>
+      <IDSymbol name="TargetSystemCombo" value="0x3003" />
+      <IDSymbol name="TargetSystemComboGetList" value="0x3004" />
+    </GuidSymbol>
+
     <GuidSymbol name="guidWorkspaceExplorerBuildActionCmdSet" value="{16537f6e-cb14-44da-b087-d1387ce3bf57}">
       <IDSymbol name="BuildActionContext" value="0x1000"/>
       <IDSymbol name="RebuildActionContext" value="0x1010"/>
       <IDSymbol name="CleanActionContext" value="0x1020"/>
+    </GuidSymbol>
+
+
+    <GuidSymbol name="guidVSDebugGroup" value="{C9DD4A58-47FB-11d2-83E7-00C04F9902C1}">
+      <IDSymbol name="IDM_DEBUG_TOOLBAR" value="0x0421"/>
     </GuidSymbol>
 
     <!-- This is the command set from the Open Folder / Workspace context menu. Let's us put our context menu inside theirs -->

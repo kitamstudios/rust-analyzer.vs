@@ -13,10 +13,6 @@
       "vsixId": "d7c3f904-cc5a-4d47-aa25-81fb7c36df89"
     },
     {
-      "name": "Extension Manager 2022",
-      "vsixId": "4a196712-2c3f-4730-ad1d-e7cda4185eb3"
-    },
-    {
       "name": "File Differ",
       "vsixId": "ea5c68d6-cdae-4e79-bd46-2a39e95bb256"
     },
@@ -39,6 +35,10 @@
     {
       "name": "Tweaks 2022",
       "vsixId": "0c8bd9fa-77d5-4563-ab57-9e01608c3d05"
+    },
+    {
+      "name": "VSCT IntelliSense 2022",
+      "vsixId": "6c042f35-bf5c-4cf2-826e-05d6d12e5300"
     }
   ]
 }

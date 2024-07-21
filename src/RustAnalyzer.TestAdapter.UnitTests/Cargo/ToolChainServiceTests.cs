@@ -11,7 +11,6 @@ using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
 using Newtonsoft.Json;
 using Xunit;
-using static ApprovalTests.Scrubber.PdfScrubber;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 

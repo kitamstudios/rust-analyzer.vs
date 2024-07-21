@@ -10,6 +10,8 @@ public static class PathExExtensions
 
     public static bool FileExists(this PathEx @this) => File.Exists(@this);
 
+    public static void FileDelete(this PathEx @this) => File.Delete(@this);
+
     public static bool DirectoryExists(this PathEx @this) => Directory.Exists(@this);
 
     public static PathEx GetExtension(this PathEx @this) => (PathEx)Path.GetExtension(@this);
@@ -27,6 +29,8 @@ public static class PathExExtensions
     public static PathEx GetDirectoryName(this PathEx @this) => (PathEx)Path.GetDirectoryName(@this);
 
     public static PathEx GetFileNameWithoutExtension(this PathEx @this) => (PathEx)Path.GetFileNameWithoutExtension(@this);
+
+    public static PathEx GetTempFileName() => (PathEx)Path.GetTempFileName();
 
     public static PathEx MakeRelativePath(this PathEx relativeTo, PathEx path) => (PathEx)((string)relativeTo).MakeRelativePath(path);
 
