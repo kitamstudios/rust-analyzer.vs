@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -13,6 +14,16 @@ namespace KS.RustAnalyzer.TestAdapter.Cargo;
 public static class ToolChainServiceExtensions
 {
     private static readonly Regex DefaultToolChainCracker = new (@"default_toolchain\s*=\s*\""(.*)\""");
+
+    private static readonly IReadOnlyDictionary<string, string> OpNameToToolNameMapper = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        { "cargo", "cargo" },
+        { "build", "rustc" },
+        { "clean", "rustc" },
+        { "test", "rustc" },
+        { "fmt", "cargo-fmt" },
+        { "clippy", "cargo-clippy" },
+    };
 
     public static string GetActiveToolChain()
     {
@@ -78,6 +89,21 @@ public static class ToolChainServiceExtensions
         Directory.EnumerateFiles(@this, $"*{Constants.TestsContainerExtension}")
             .Where(f => !except.Any(c => c == (PathEx)f))
             .ForEach(File.Delete);
+    }
+
+    public static async Task<string> GetCommandOutput(string opName, string versionArgs, PathEx workingDirectory, CancellationToken ct)
+    {
+        var toolName = OpNameToToolNameMapper[opName];
+        using var proc = ProcessRunner.Run("cmd.exe", new[] { "/c", $"{toolName} {versionArgs}" }, workingDirectory, ImmutableDictionary<string, string>.Empty, ct);
+
+        var ec = await proc;
+        var output = proc.StandardOutputLines.Concat(proc.StandardErrorLines).ToArray();
+        if (ec != 0)
+        {
+            return $"{toolName} returned {ec}.\nOutput: {output}";
+        }
+
+        return string.Join(string.Empty, output.Where(l => !l.IsNullOrEmptyOrWhiteSpace()));
     }
 
     private static PathEx GetRustupPath() => (PathEx)Environment.GetEnvironmentVariable("USERPROFILE") + (PathEx)@".rustup";

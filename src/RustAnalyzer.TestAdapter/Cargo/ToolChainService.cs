@@ -22,14 +22,6 @@ public sealed class ToolChainService : IToolChainService
 {
     private static readonly Regex TestExecutablePathCracker = new (@"^\s*Executable( unittests)? (.*) \((.*\\(.*)\-[\da-f]{16}.exe)\)$$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    private static readonly IReadOnlyDictionary<string, string> OpNameToToolNameMapper = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-    {
-        { "build", "rustc" },
-        { "clean", "rustc" },
-        { "fmt", "cargo-fmt" },
-        { "clippy", "cargo-clippy" },
-    };
-
     private readonly TL _tl;
 
     [ImportingConstructor]
@@ -163,15 +155,19 @@ public sealed class ToolChainService : IToolChainService
 
         try
         {
-            // TODO: Add the batch file stuff to here.
+            var workingDir = tc.Manifest.GetDirectoryName();
+            var cargoVersion = await ToolChainServiceExtensions.GetCommandOutput("cargo", "--version", workingDir, ct);
+            _tl.L.WriteLine($"Using: {cargoVersion}");
+            var rustcVersion = await ToolChainServiceExtensions.GetCommandOutput("test", "--version", workingDir, ct);
+            _tl.L.WriteLine($"Using: {rustcVersion}");
+
             var args = new[] { "test", "--no-run", "--manifest-path", tc.Manifest, "--profile", profile }
                 .Concat(tc.AdditionalTestDiscoveryArguments.FromNullSeparatedArray())
                 .ToArray();
 
             _tl.T.TrackEvent("GetTestSuiteInfoAsync", ("TestContainer", testContainerPath), ("Profile", profile), ("Args", string.Join("|", args)));
 
-            // TODO: working directory should be manifest path
-            using var proc = await ProcessRunner.RunWithLogging(cargoFullPath, args, cargoFullPath?.GetDirectoryName(), ImmutableDictionary<string, string>.Empty, ct, _tl.L);
+            using var proc = await ProcessRunner.RunWithLogging(cargoFullPath, args, workingDir, ImmutableDictionary<string, string>.Empty, ct, _tl.L);
 
             var testExeBuildInfos = proc.StandardErrorLines
                 .Select(l => TestExecutablePathCracker.Matches(l))
@@ -185,7 +181,7 @@ public sealed class ToolChainService : IToolChainService
                 throw e;
             }
 
-            var exes = testExeBuildInfos.Select(x => x.exe);
+            var exes = testExeBuildInfos.Select(x => workingDir + x.exe);
             tc.TestExes = exes.ToArray();
             await testContainerPath.WriteTestContainerAsync(tc.Manifest, tc.TargetDir, tc.AdditionalTestDiscoveryArguments, tc.AdditionalTestExecutionArguments, tc.TestExecutionEnvironment, profile, tc.TestExes, ct);
 
@@ -211,7 +207,7 @@ public sealed class ToolChainService : IToolChainService
     private async Task<TestSuiteInfo> GetTestSuiteInfoFromOneTestExeAsync(TestContainer container, PathEx testExePath, CancellationToken ct)
     {
         var workspaceRoot = container.TargetDir.GetDirectoryName();
-        using var proc = await ProcessRunner.RunWithLogging(testExePath, new[] { "--list", "--format", "json", "-Zunstable-options" }, workspaceRoot, ImmutableDictionary<string, string>.Empty, ct, _tl.L);
+        using var proc = await ProcessRunner.RunWithLogging(workspaceRoot + testExePath, new[] { "--list", "--format", "json", "-Zunstable-options" }, workspaceRoot, ImmutableDictionary<string, string>.Empty, ct, _tl.L);
 
         var tests = Enumerable.Empty<TestSuiteInfo.TestInfo>();
         if (!proc.StandardOutputLines.FirstOrDefault()?.Trim()?.StartsWith("{") ?? false)
@@ -284,10 +280,21 @@ public sealed class ToolChainService : IToolChainService
     {
         EnsureArg.IsNotEmptyOrWhiteSpace(arguments, nameof(arguments));
 
-        using var runnerCmd = await CreateRunnerCmdFile(cargoFullPath, opName, arguments, workingDir, ct);
+        var cargoVersion = await ToolChainServiceExtensions.GetCommandOutput("cargo", "--version", workingDir, ct);
+        var toolVersion = await ToolChainServiceExtensions.GetCommandOutput(opName, "--version", workingDir, ct);
+
+        redirector?.WriteLineWithoutProcessing($"");
+        redirector?.WriteLineWithoutProcessing($"==== Build step: Started ====");
+        redirector?.WriteLineWithoutProcessing($"        Using : {cargoVersion}");
+        redirector?.WriteLineWithoutProcessing($"        Using : {toolVersion}");
+        redirector?.WriteLineWithoutProcessing($"         Path : {cargoFullPath}");
+        redirector?.WriteLineWithoutProcessing($"    Arguments : {arguments}");
+        redirector?.WriteLineWithoutProcessing($"   WorkingDir : {workingDir}");
+        redirector?.WriteLineWithoutProcessing($"");
+
         using var process = ProcessRunner.Run(
-            "cmd",
-            new[] { "/c", runnerCmd.File },
+            cargoFullPath,
+            new[] { arguments },
             workingDir,
             env: null,
             visible: false,
@@ -314,47 +321,18 @@ public sealed class ToolChainService : IToolChainService
                 // process hasn't actually exited
                 process.Wait();
 
+                redirector.WriteLineWithoutProcessing($"==== Build step: Finished ====\n");
+
                 return process.ExitCode == 0;
             }
             else
             {
                 process.Kill();
-                redirector.WriteErrorLineWithoutProcessing($"===  Build step canceled ===");
+                redirector.WriteErrorLineWithoutProcessing($"====  Build step canceled ====");
 
                 return false;
             }
         }
-    }
-
-    private static async Task<DisposableTempFile> CreateRunnerCmdFile(PathEx cargoPath, string opName, string arguments, PathEx workingDir, CancellationToken ct)
-    {
-        var executable = OpNameToToolNameMapper[opName].PadLeft(14); // NOTE: Max length of the toolname to align output.
-        var cmdTemplate = $@"@echo off
-setlocal enabledelayedexpansion enableextensions
-
-rem 
-rem Runner file created by {Vsix.Name}
-rem 
-
-for /f ""tokens=*"" %%i in ('cargo --version') do set _CARGO_VERSION_=%%i
-for /f ""tokens=*"" %%i in ('{executable} --version') do set _TOOL_VERSION_=%%i
-for /f ""tokens=*"" %%i in ('where {executable}') do set _TOOL_PATH_=%%i
-
-echo ==== Build step: Started ====
-echo          cargo : !_CARGO_VERSION_! [{cargoPath}]
-echo {executable} : !_TOOL_VERSION_! [!_TOOL_PATH_!]
-echo      Arguments : {arguments}
-echo     WorkingDir : {workingDir}
-echo:
-""{cargoPath}"" {arguments} 2>&1
-SET RET_CODE=!ERRORLEVEL!
-echo:
-echo ==== Build step: Finished ====
-exit /b !RET_CODE!
-";
-        var tempCmdPath = new DisposableTempFile((PathEx)".cmd");
-        await tempCmdPath.File.WriteAllTextAsync(cmdTemplate, ct);
-        return tempCmdPath;
     }
 
     private sealed class BuildOutputRedirector : ProcessOutputRedirector
