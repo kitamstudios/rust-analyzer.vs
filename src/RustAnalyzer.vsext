@@ -1,44 +1,68 @@
 {
-  "id": "3e1ba62f-91d0-46ae-8768-270bca5890a8",
+  "id": "217dc6f8-18da-4b2d-a24b-91077e4391f2",
+  "version": "1.0",
   "name": "My Visual Studio extensions",
   "description": "A collection of my Visual Studio extensions",
-  "version": "1.0",
   "extensions": [
     {
-      "name": "Clear MEF Component Cache",
-      "vsixId": "f5028141-9dd0-4ac4-ae6d-0481ae9a940d"
-    },
-    {
+      "vsixId": "d7c3f904-cc5a-4d47-aa25-81fb7c36df89",
       "name": "Comment Remover",
-      "vsixId": "d7c3f904-cc5a-4d47-aa25-81fb7c36df89"
+      "moreInfoUrl": "https://marketplace.visualstudio.com/items?itemName=MadsKristensen.CommentRemover",
+      "downloadUrl": "https://madskristensen.gallery.vsassets.io:443/_apis/public/gallery/publisher/MadsKristensen/extension/CommentRemover/1.3.28/assetbyname/Microsoft.VisualStudio.Ide.Payload?redirect=true\u0026update=true"
     },
     {
-      "name": "File Differ",
-      "vsixId": "ea5c68d6-cdae-4e79-bd46-2a39e95bb256"
+      "vsixId": "1a973c52-a674-48d8-a276-65ddab1ac598",
+      "name": "Command Explorer",
+      "moreInfoUrl": "https://marketplace.visualstudio.com/items?itemName=MadsKristensen.CommandExplorer",
+      "downloadUrl": "https://madskristensen.gallery.vsassets.io:443/_apis/public/gallery/publisher/MadsKristensen/extension/CommandExplorer/1.1.24/assetbyname/Microsoft.VisualStudio.Ide.Payload?redirect=true\u0026update=true"
     },
     {
-      "name": "File Icons",
-      "vsixId": "3a7b4930-a5fb-46ec-a9b8-9610c8f953b8"
-    },
-    {
-      "name": "Insert Guid",
-      "vsixId": "9def4441-acfd-4dd6-bffd-4531a57dee37"
-    },
-    {
-      "name": "Output enhancer",
-      "vsixId": "VSOutputEnhancer.Nikolay Balakin.a06be4c3-f97e-425c-8a0d-bdef08ac2abb"
-    },
-    {
-      "name": "Presenter Mode",
-      "vsixId": "RecordingDefaults.aa418e38-6c48-42a8-b461-a575b9e4f26a"
-    },
-    {
-      "name": "Tweaks 2022",
-      "vsixId": "0c8bd9fa-77d5-4563-ab57-9e01608c3d05"
-    },
-    {
+      "vsixId": "6c042f35-bf5c-4cf2-826e-05d6d12e5300",
       "name": "VSCT IntelliSense 2022",
-      "vsixId": "6c042f35-bf5c-4cf2-826e-05d6d12e5300"
+      "moreInfoUrl": "https://marketplace.visualstudio.com/items?itemName=MadsKristensen.VsctIntelliSense2022",
+      "downloadUrl": "https://madskristensen.gallery.vsassets.io:443/_apis/public/gallery/publisher/MadsKristensen/extension/VsctIntelliSense2022/1.0.31/assetbyname/Microsoft.VisualStudio.Ide.Payload?redirect=true\u0026update=true"
+    },
+    {
+      "vsixId": "c38f3512-4653-4d97-a4c5-860a425209f6",
+      "name": "KnownMonikers Explorer 2022",
+      "moreInfoUrl": "https://marketplace.visualstudio.com/items?itemName=MadsKristensen.KnownMonikersExplorer2022",
+      "downloadUrl": "https://madskristensen.gallery.vsassets.io:443/_apis/public/gallery/publisher/MadsKristensen/extension/KnownMonikersExplorer2022/1.3.51/assetbyname/Microsoft.VisualStudio.Ide.Payload?redirect=true\u0026update=true"
+    },
+    {
+      "vsixId": "f5028141-9dd0-4ac4-ae6d-0481ae9a940d",
+      "name": "Clear MEF Component Cache",
+      "moreInfoUrl": "https://marketplace.visualstudio.com/items?itemName=MadsKristensen.ClearMEFComponentCache",
+      "downloadUrl": "https://madskristensen.gallery.vsassets.io:443/_apis/public/gallery/publisher/MadsKristensen/extension/ClearMEFComponentCache/1.4.31/assetbyname/Microsoft.VisualStudio.Ide.Payload?redirect=true\u0026update=true"
+    },
+    {
+      "vsixId": "9def4441-acfd-4dd6-bffd-4531a57dee37",
+      "name": "Insert Guid",
+      "moreInfoUrl": "https://marketplace.visualstudio.com/items?itemName=MadsKristensen.insertguid",
+      "downloadUrl": "https://madskristensen.gallery.vsassets.io:443/_apis/public/gallery/publisher/MadsKristensen/extension/insertguid/1.3.6/assetbyname/Microsoft.VisualStudio.Ide.Payload?redirect=true\u0026update=true"
+    },
+    {
+      "vsixId": "RainbowBraces.1dff1bc5-a8e4-477b-9054-2b9ec6bb88d1",
+      "name": "Rainbow Braces",
+      "moreInfoUrl": "https://marketplace.visualstudio.com/items?itemName=MadsKristensen.RainbowBraces",
+      "downloadUrl": "https://madskristensen.gallery.vsassets.io:443/_apis/public/gallery/publisher/MadsKristensen/extension/RainbowBraces/1.0.161/assetbyname/Microsoft.VisualStudio.Ide.Payload?redirect=true\u0026update=true"
+    },
+    {
+      "vsixId": "751759cc-53b5-45f6-8d75-43392a1dd89c",
+      "name": "VSIX Synchronizer",
+      "moreInfoUrl": "https://marketplace.visualstudio.com/items?itemName=MadsKristensen.VsixSynchronizer64",
+      "downloadUrl": "https://madskristensen.gallery.vsassets.io:443/_apis/public/gallery/publisher/MadsKristensen/extension/VsixSynchronizer64/1.0.27/assetbyname/Microsoft.VisualStudio.Ide.Payload?redirect=true\u0026update=true"
+    },
+    {
+      "vsixId": "ea5c68d6-cdae-4e79-bd46-2a39e95bb256",
+      "name": "File Differ",
+      "moreInfoUrl": "https://marketplace.visualstudio.com/items?itemName=MadsKristensen.FileDiffer",
+      "downloadUrl": "https://madskristensen.gallery.vsassets.io:443/_apis/public/gallery/publisher/MadsKristensen/extension/FileDiffer/3.0.49/assetbyname/Microsoft.VisualStudio.Ide.Payload?redirect=true\u0026update=true"
+    },
+    {
+      "vsixId": "0c8bd9fa-77d5-4563-ab57-9e01608c3d05",
+      "name": "Tweaks 2022",
+      "moreInfoUrl": "https://marketplace.visualstudio.com/items?itemName=MadsKristensen.Tweaks2022",
+      "downloadUrl": "https://madskristensen.gallery.vsassets.io:443/_apis/public/gallery/publisher/MadsKristensen/extension/Tweaks2022/1.1.143/assetbyname/Microsoft.VisualStudio.Ide.Payload?redirect=true\u0026update=true"
     }
   ]
 }

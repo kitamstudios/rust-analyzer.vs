@@ -12,14 +12,23 @@ namespace KS.RustAnalyzer
     /// </summary>
     internal sealed partial class PackageGuids
     {
+        public const string guidRustAnalyzerImageCatalogString = "9cc00aac-3dd7-49a7-9c33-502dde9199f7";
+        public static Guid guidRustAnalyzerImageCatalog = new Guid(guidRustAnalyzerImageCatalogString);
+
         public const string guidRustAnalyzerPackageString = "d879ab25-bd3e-4e01-8b2a-cc60649c016c";
         public static Guid guidRustAnalyzerPackage = new Guid(guidRustAnalyzerPackageString);
 
-        public const string guidRustAnalyzerExecutionTargetCmdSetString = "76879a43-4f48-45d1-922c-54f713889a1f";
-        public static Guid guidRustAnalyzerExecutionTargetCmdSet = new Guid(guidRustAnalyzerExecutionTargetCmdSetString);
+        public const string guidRustAnalyzerTargetSystemCmdSetString = "76879a43-4f48-45d1-922c-54f713889a1f";
+        public static Guid guidRustAnalyzerTargetSystemCmdSet = new Guid(guidRustAnalyzerTargetSystemCmdSetString);
+
+        public const string guidRustAnalyzerToolsCmdSetString = "8df214ee-7f8a-4581-8977-215e6e1bf673";
+        public static Guid guidRustAnalyzerToolsCmdSet = new Guid(guidRustAnalyzerToolsCmdSetString);
 
         public const string guidWorkspaceExplorerBuildActionCmdSetString = "16537f6e-cb14-44da-b087-d1387ce3bf57";
         public static Guid guidWorkspaceExplorerBuildActionCmdSet = new Guid(guidWorkspaceExplorerBuildActionCmdSetString);
+
+        public const string guidVSDebugGroupString = "c9dd4a58-47fb-11d2-83e7-00c04f9902c1";
+        public static Guid guidVSDebugGroup = new Guid(guidVSDebugGroupString);
 
         public const string guidWorkspaceExplorerToolWindowPackageCmdSetString = "cfb400f1-5c60-4f3c-856e-180d28def0b7";
         public static Guid guidWorkspaceExplorerToolWindowPackageCmdSet = new Guid(guidWorkspaceExplorerToolWindowPackageCmdSetString);
@@ -29,13 +38,25 @@ namespace KS.RustAnalyzer
     /// </summary>
     internal sealed partial class PackageIds
     {
-        public const int CargoClippy = 0x2001;
-        public const int CargoFmt = 0x2002;
-        public const int ExecutionTargetCombo = 0x3003;
-        public const int ExecutionTargetComboGetList = 0x3004;
-        public const int BuildActionContext = 0x1000;
-        public const int RebuildActionContext = 0x1010;
-        public const int CleanActionContext = 0x1020;
+        public const int IdIRust = 0x0001;
+        public const int IdTRustAnalyzerToolbar = 0x0001;
+        public const int IdMRustAnalyzerTools = 0x0002;
+        public const int IdGRustAnalyzerToolbar = 0x0010;
+        public const int IdGRustAnalyzerMenuOnMainToolbar = 0x0011;
+        public const int IdCargoClippy = 0x0100;
+        public const int IdCargoFmt = 0x0101;
+        public const int IdGTargetSystem = 0x0010;
+        public const int IdTargetSystemCombo = 0x0100;
+        public const int IdTargetSystemComboGetList = 0x0101;
+        public const int IdGRustAnalyzerTools = 0x0010;
+        public const int IdRustAnalyzerOptions = 0x0100;
+        public const int IdRestartLSP = 0x0101;
+        public const int IdKillOrphaned = 0x0102;
+        public const int IdSwitchToolChain = 0x0103;
+        public const int IdBuildActionContext = 0x1000;
+        public const int IdRebuildActionContext = 0x1010;
+        public const int IdCleanActionContext = 0x1020;
+        public const int IDM_DEBUG_TOOLBAR = 0x0421;
         public const int idmWSE_ContextMenu = 0x0002;
         public const int idgWSE_ContextMenu_ItemActions = 0x0010;
         public const int idgWSE_ContextMenu_CollectionActions = 0x0011;

@@ -1,8 +1,8 @@
 [$RootKey$\ShellFileAssociations\.rs]
-"DefaultIconMoniker"="C622248C-8545-475A-99B2-201AF73752BD:0"
-
-[$RootKey$\ShellFileAssociations\.toml]
 "DefaultIconMoniker"="C622248C-8545-475A-99B2-201AF73752BD:1"
 
-[$RootKey$\ShellFileAssociations\.lock]
+[$RootKey$\ShellFileAssociations\.toml]
 "DefaultIconMoniker"="C622248C-8545-475A-99B2-201AF73752BD:2"
+
+[$RootKey$\ShellFileAssociations\.lock]
+"DefaultIconMoniker"="C622248C-8545-475A-99B2-201AF73752BD:3"

@@ -5,9 +5,9 @@
     <Symbols>
         <String Name="Resources" Value="/RustAnalyzer;Component/Resources/FileIcons" />
         <Guid Name="MonikersGuid" Value="{C622248C-8545-475A-99B2-201AF73752BD}" />
-        <ID Name="rs" Value="0" />
-        <ID Name="toml" Value="1" />
-        <ID Name="lock" Value="2" />
+        <ID Name="rs" Value="1" />
+        <ID Name="toml" Value="2" />
+        <ID Name="lock" Value="3" />
     </Symbols>
     <Images>
         <Image Guid="$(MonikersGuid)" ID="$(rs)" AllowColorInversion="true">

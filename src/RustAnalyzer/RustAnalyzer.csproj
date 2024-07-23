@@ -52,9 +52,10 @@
     <Compile Include="LanguageService\CommentHelper.cs" />
     <Compile Include="LanguageService\CommentSelectionCommandHandler.cs" />
     <Compile Include="Infrastructure\StringBuildMessagePreprocessor.cs" />
+    <Compile Include="Shell\ToolsCommands.cs" />
     <Compile Include="Shell\TargetSystemCommands.cs" />
     <Compile Include="Shell\BaseRustAnalyzerCommand{T}.cs" />
-    <Compile Include="Shell\ToolChainCommands.cs" />
+    <Compile Include="Shell\ToolchainCommands.cs" />
     <Compile Include="Infrastructure\Options.cs" />
     <Compile Include="Infrastructure\StringExtensions.cs" />
     <Compile Include="NodeEnhancements\NodeBrowseObjectPropertyFilter.cs" />
@@ -107,6 +108,9 @@
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="languages.pkgdef">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="Resources\Rust.png">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Resource Include="Resources\FileIcons\rs.png" />

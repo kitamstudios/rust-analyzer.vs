@@ -17,6 +17,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RustAnalyzer.Remote", "Rust
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RustAnalyzer.Remote.UnitTests", "RustAnalyzer.Remote.UnitTests\RustAnalyzer.Remote.UnitTests.csproj", "{99B37CC5-2B5D-4CBA-923D-A8D7E3E63B6E}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8916E0EB-F35E-4791-A6F8-26AFF6B9C24B}"
+	ProjectSection(SolutionItems) = preProject
+		RustAnalyzer.vsext = RustAnalyzer.vsext
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

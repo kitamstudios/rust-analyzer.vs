@@ -15,8 +15,8 @@ public static class TemporaryTargetSystemStore
     public static string CurrentTargetSystem { get; set; } = TargetSystems[0];
 }
 
-[Command(PackageGuids.guidRustAnalyzerExecutionTargetCmdSetString, PackageIds.ExecutionTargetCombo)]
-public sealed class ExecutionTargetComboCommand : BaseRustAnalyzerCommand<ExecutionTargetComboCommand>
+[Command(PackageGuids.guidRustAnalyzerTargetSystemCmdSetString, PackageIds.IdTargetSystemCombo)]
+public sealed class TargetSystemComboCommand : BaseRustAnalyzerCommand<TargetSystemComboCommand>
 {
     protected override async Task ExecuteAsync(OleMenuCmdEventArgs eventArgs)
     {
@@ -42,8 +42,8 @@ public sealed class ExecutionTargetComboCommand : BaseRustAnalyzerCommand<Execut
     }
 }
 
-[Command(PackageGuids.guidRustAnalyzerExecutionTargetCmdSetString, PackageIds.ExecutionTargetComboGetList)]
-public sealed class ExecutionTargetComboGetListCommand : BaseCommand<ExecutionTargetComboGetListCommand>
+[Command(PackageGuids.guidRustAnalyzerTargetSystemCmdSetString, PackageIds.IdTargetSystemComboGetList)]
+public sealed class TargetSystemComboGetListCommand : BaseCommand<TargetSystemComboGetListCommand>
 {
     protected override async Task ExecuteAsync(OleMenuCmdEventArgs eventArgs)
     {
