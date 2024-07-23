@@ -70,7 +70,7 @@ jobs:
       shell: pwsh
 
     - name: Test
-      uses: microsoft/vstest-action@v1.0.0
+      uses: rusty-bender/vstest-action@main
       with:
         testAssembly: '*.UnitTests.dll'
         searchFolder: '${{ env.OutDir }}'

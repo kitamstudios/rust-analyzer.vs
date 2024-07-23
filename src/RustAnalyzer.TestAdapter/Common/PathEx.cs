@@ -29,6 +29,10 @@ public readonly struct PathEx : IEquatable<PathEx>
 
     public static PathEx operator +(PathEx a, PathEx b) => a.Combine(b);
 
+    public static PathEx operator +(string a, PathEx b) => ((PathEx)a).Combine(b);
+
+    public static PathEx operator +(PathEx a, string b) => a.Combine((PathEx)b);
+
     public override bool Equals(object obj) => obj is PathEx p && Equals(p);
 
     public override int GetHashCode()

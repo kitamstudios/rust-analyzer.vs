@@ -17,6 +17,10 @@
   <Include href="VSGlobals.vsct"/>
 
   <Commands package="guidRustAnalyzerPackage">
+    <Groups>
+      <Group guid="guidRustAnalyzerTargetSystemCmdSet" id="RustAnalyzerTargetSystemToolbarGroup" priority="0x0100" />
+    </Groups>
+
     <Buttons>
       <Button guid="guidRustAnalyzerPackage" id="CargoFmt" type="Button">
         <CommandFlag>DynamicVisibility</CommandFlag>
@@ -38,11 +42,11 @@
 
     <Combos>
       <Combo guid="guidRustAnalyzerTargetSystemCmdSet" id="TargetSystemCombo" priority="0x0100" type="DropDownCombo" defaultWidth="90" idCommandList="TargetSystemComboGetList">
-        <Parent guid="guidRustAnalyzerTargetSystemCmdSet" id="RustAnalyzerTargetSystemToolbarGroup"/>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <CommandFlag>DefaultDisabled</CommandFlag>
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>CommandWellOnly</CommandFlag>
+        <CommandFlag>AllowVisibilityChangeOnToolBar</CommandFlag>        
         <Strings>
           <ButtonText>Target System: </ButtonText>
           <MenuText>Target System: </MenuText>
@@ -61,6 +65,9 @@
     </CommandPlacement>
     <CommandPlacement guid="guidRustAnalyzerPackage" id="CargoFmt" priority="0x0301">
       <Parent guid="guidWorkspaceExplorerToolWindowPackageCmdSet" id="idgWSE_ContextMenu_BuildDebugActions"/>
+    </CommandPlacement>
+    <CommandPlacement guid="guidRustAnalyzerTargetSystemCmdSet" id="TargetSystemCombo" priority="0x0100">
+      <Parent guid="guidRustAnalyzerTargetSystemCmdSet" id="RustAnalyzerTargetSystemToolbarGroup"/>
     </CommandPlacement>
     <CommandPlacement guid="guidRustAnalyzerTargetSystemCmdSet" id="TargetSystemCombo" priority="0x0100">
       <Parent guid="guidSHLMainMenu" id="IDG_VS_TOOLSB_RUNBUILD"/>
