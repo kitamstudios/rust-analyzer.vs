@@ -13,7 +13,7 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 [Passed] add_one.tests.multiplication_tests.when_operands_are_swapped 
 [Passed] add_one.tests.should_fail 
 [Passed] add_one.tests.should_success 
-[Failed] adder.tests.it_works_failing thread 'tests::it_works_failing' panicked at adder\src\main.rs:34:9:
+[Failed] adder.tests.it_works_failing thread 'tests::it_works_failing' panicked at adder\src/main.rs:34:9:
 assertion `left == right` failed
   left: 3
  right: 5

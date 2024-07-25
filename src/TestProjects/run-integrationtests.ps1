@@ -7,12 +7,15 @@ param (
 )
 if (-not $env:CI) {
   $TestAdapterLocation = "d:\src\delme\ra.vs"
+  $vstest = "$env:ProgramFiles\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe"
   Write-Host -ForegroundColor Yellow "Not in CI. Setting Test Adapter Path: $TestAdapterLocation"
   del "$TestAdapterLocation\*"
   $taSrc = Join-Path (Split-Path $PSScriptRoot) "RustAnalyzer.TestAdapter.UnitTests\bin\Debug"
   @("KS.RustAnalyzer.TestAdapter.dll", "KS.RustAnalyzer.TestAdapter.pdb", "Microsoft.ApplicationInsights.dll", "Microsoft.ApplicationInsights.pdb", "Ensure.That.dll")
   | % { copy "$taSrc\$_" "$TestAdapterLocation\$_"}
   dir $TestAdapterLocation
+} else {
+  $vstest = "vstest.console.exe"
 }
 
 $TcTemplateDir = Join-Path $PSScriptRoot "integrationtests"
@@ -36,7 +39,7 @@ $testContainers = dir $TcTemplateDir -Recurse -Filter *.rusttests | % {
 }
 
 $trx = Join-Path $testResults "TestResults.trx"
-vstest.console.exe @testContainers /TestAdapterPath:"$TestAdapterLocation" /Parallel "/logger:console;verbosity=detailed" "/logger:trx;LogFileName=$trx"
+& $vstest @testContainers /TestAdapterPath:"$TestAdapterLocation" /Parallel "/logger:console;verbosity=detailed" "/logger:trx;LogFileName=$trx"
 cmd /c echo "Clear up the vstest.console.exe error..."
 
 $obtainedFile = Join-Path $testResults "obtained.txt"
