@@ -1,44 +1,84 @@
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
+using FluentAssertions.Extensions;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Xunit;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests.Common;
 
-public class ProcessExtensionTests
+public sealed class ProcessExtensionTests
 {
-    [Fact]
-    public void FindAliveParentProcessId()
-    {
-        var p1 = Process.Start(CreatePSI("cmd.exe", "/c timeout 5"));
+    private const int TimeoutSeconds = 6;
 
-        var ppids = Process.GetProcessesByName("timeout").Select(p => p.Id.GetParentProcessId());
-        ppids.Should().OnlyContain(x => x == p1.Id);
+    [Fact]
+    public void CanFindAliveParentProcessId()
+    {
+        var p1 = Process.Start(("cmd", $"/c timeout {TimeoutSeconds} /NOBREAK").PSI());
+
+        var ppids = "timEOut".GetProcessesByName().Select(p => p.GetParentProcessId());
+        p1.HasExited.Should().BeFalse();
+        ppids.Should().Contain(p1.Id);
 
         p1.Kill();
     }
 
     [Fact]
-    public void CannotFindDeadParentProcessId()
+    public async Task CanFindDeadParentProcessIdAsync()
     {
-        var p1 = Process.Start(CreatePSI("cmd.exe", "/c timeout 5"));
-        p1.Kill();
+        var p1 = Process.Start(("cmd", $"/c start /MIN TiMeOUT {TimeoutSeconds} /NOBREAK").PSI());
+        await Task.Delay(1.Seconds());
 
-        var ppids = Process.GetProcessesByName("timeout").Select(p => p.Id.GetParentProcessId());
-        ppids.Should().NotContain(x => x == p1.Id);
+        var procs = "timeout".GetProcessesByName();
+        var ppids = procs.Select(p => p.GetParentProcessId());
+
+        procs.Should().NotBeEmpty();
+        ppids.Should().NotBeEmpty();
+        p1.HasExited.Should().BeTrue();
+        ppids.Should().Contain(p1.Id);
     }
 
     [Fact]
-    public void TestProcessOwnerUer()
+    public void TestProcessOwnerUser()
     {
-        var p1 = Process.Start(CreatePSI("cmd.exe", "/c timeout 5"));
-        p1.GetProcessOwnerUser().Should().Be(Process.GetCurrentProcess().GetProcessOwnerUser());
+        var p1 = Process.Start(("cmd", $"/c timeout.exe {TimeoutSeconds} /NOBREAK").PSI());
+
+        p1.GetProcessOwnerUser()
+            .Should().Be(Process.GetCurrentProcess().GetProcessOwnerUser());
+
         p1.Kill();
     }
 
-    private static ProcessStartInfo CreatePSI(string name, string args)
+    [Fact]
+    public async Task TestGetOrphanedProcessesAsync()
     {
-        return new ProcessStartInfo { FileName = name, Arguments = args, WindowStyle = ProcessWindowStyle.Hidden, UseShellExecute = false };
+        Process.Start(("cmd.exe", $"/c timeout {TimeoutSeconds} /NOBREAK").PSI());
+        var pDeadParent = Process.Start(("cmd.exe", $"/c start /MIN timeout {TimeoutSeconds} /NOBREAK").PSI());
+        await Task.Delay(1.Seconds());
+
+        // NOTE: Not tested for dead parent PID reuse case.
+        "timeout".GetOrphanedProcesses()
+            .Select(x => x.GetParentProcessId())
+            .Should().Contain(pDeadParent.Id);
+    }
+
+    [Fact]
+    public async Task TestKillSafeAsync()
+    {
+        var proc = Process.Start(("cmd.exe", $"/c timeout 0").PSI());
+        await Task.Delay(1000.Milliseconds());
+        var act = () => proc.KillSafe();
+
+        proc.HasExited.Should().BeTrue();
+        act.Should().NotThrow();
+    }
+}
+
+public static class Extensions
+{
+    public static ProcessStartInfo PSI(this (string Name, string Args) startInfo)
+    {
+        return new ProcessStartInfo { FileName = startInfo.Name, Arguments = startInfo.Args, WindowStyle = ProcessWindowStyle.Hidden, UseShellExecute = false };
     }
 }

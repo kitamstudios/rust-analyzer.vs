@@ -148,10 +148,6 @@
     </Bitmaps>
   </Commands>
 
-  <VisibilityConstraints>
-    <VisibilityItem guid="guidRustAnalyzerPackage" id="IdTRustAnalyzerToolbar" context="UICONTEXT_SolutionHasSingleProject" />
-  </VisibilityConstraints>
-
   <CommandPlacements>
     <CommandPlacement guid="guidRustAnalyzerPackage" id="IdCargoClippy" priority="0x0300">
       <Parent guid="guidWorkspaceExplorerToolWindowPackageCmdSet" id="idgWSE_ContextMenu_BuildDebugActions"/>

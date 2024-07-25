@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 
@@ -13,13 +14,66 @@ namespace KS.RustAnalyzer.TestAdapter.Common;
 public static class ProcessExtensions
 {
     /// <summary>
+    /// Get processes that match the following:
+    /// - No parent or parent started after.
+    ///
+    /// NOTE:
+    /// - Will get such processes for all users.
+    /// </summary>
+    public static Process[] GetOrphanedProcesses(this string process)
+    {
+        return process
+            .GetProcessesByName()
+            .Where(p =>
+            {
+                var parent = p.GetParentProcessId().GetProcessByIdSafe();
+                return parent?.HasExited ?? true
+                    || parent?.StartTime > p.StartTime;
+            })
+            .ToArray();
+    }
+
+    public static void KillSafe(this Process proc)
+    {
+        try
+        {
+            proc.Kill();
+        }
+        catch (InvalidOperationException)
+        {
+            // NOTE: Already exited. Do nothing.
+        }
+    }
+
+    public static Process GetProcessByIdSafe(this int id)
+    {
+        try
+        {
+            return id.GetProcessById();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public static Process GetProcessById(this int id)
+    {
+        return Process.GetProcessById(id);
+    }
+
+    public static Process[] GetProcessesByName(this string name)
+    {
+        return Process.GetProcessesByName(name);
+    }
+
+    /// <summary>
     /// Gets the parent process of the current process.
     /// </summary>
     /// <returns>An instance of the Process class.</returns>
-    public static int GetParentProcessId(this int pid)
+    public static int GetParentProcessId(this Process p)
     {
-        var process = Process.GetProcessById(pid);
-        return GetProcessBasicInformation(process.Handle)
+        return GetProcessBasicInformation(p.Handle)
             .InheritedFromUniqueProcessId.ToInt32();
     }
 
