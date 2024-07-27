@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Shell;
 using CommunityVS = Community.VisualStudio.Toolkit.VS;
@@ -13,9 +15,9 @@ namespace KS.RustAnalyzer.Infrastructure;
 
 public interface IPreReqsCheckService
 {
-    Task<bool> SatisfySilentAsync();
+    Task<bool> SatisfySilentAsync(CancellationToken ct);
 
-    Task SatisfyAsync();
+    Task SatisfyAsync(CancellationToken ct);
 }
 
 [Export(typeof(IPreReqsCheckService))]
@@ -25,10 +27,12 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
     private readonly IToolChainService _cargoService;
     private readonly TL _tl;
 
-    private readonly IReadOnlyDictionary<string, Func<IToolChainService, Task<(bool, string)>>> _preReqChecks =
-        new Dictionary<string, Func<IToolChainService, Task<(bool, string)>>>
+    private readonly IReadOnlyDictionary<string, Func<IToolChainService, CancellationToken, Task<(bool, string)>>> _preReqChecks =
+        new Dictionary<string, Func<IToolChainService, CancellationToken, Task<(bool, string)>>>
         {
             [nameof(VsVersionCheck)] = VsVersionCheck.CheckAsync,
+            [nameof(CheckRustupToolchainInstallationAsync)] = CheckRustupToolchainInstallationAsync,
+            [nameof(CheckRustupAsync)] = CheckRustupAsync,
             [nameof(CheckCargoAsync)] = CheckCargoAsync,
         };
 
@@ -43,16 +47,16 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         };
     }
 
-    public async Task<bool> SatisfySilentAsync()
+    public async Task<bool> SatisfySilentAsync(CancellationToken ct)
     {
-        var results = await DoChecksAsync();
+        var results = await DoChecksAsync(ct);
 
         return results.All(x => x.success);
     }
 
-    public async Task SatisfyAsync()
+    public async Task SatisfyAsync(CancellationToken ct)
     {
-        var results = await DoChecksAsync();
+        var results = await DoChecksAsync(ct);
 
         var failures = results.Where(x => !x.success);
         if (failures.Any())
@@ -70,13 +74,13 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         }
     }
 
-    private async Task<IEnumerable<(bool success, string message)>> DoChecksAsync()
+    private async Task<IEnumerable<(bool success, string message)>> DoChecksAsync(CancellationToken ct)
     {
         var results = new List<(bool success, string message)>();
         foreach (var kv in _preReqChecks)
         {
             _tl.L.WriteLine("Running PreReqCheck: {0}...", kv.Key);
-            var (success, message) = await kv.Value(_cargoService);
+            var (success, message) = await kv.Value(_cargoService, ct);
             if (!success)
             {
                 _tl.L.WriteLine("... {0} failed: {1}.", kv.Key, message);
@@ -88,22 +92,59 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         return results;
     }
 
-    // TODO: 3. RELEASE: rustc project hangs IDE. cargo waiting for lock.
-    private static async Task<(bool, string)> CheckCargoAsync(IToolChainService cargoService)
+    private static async Task<(bool, string)> CheckCargoAsync(IToolChainService ts, CancellationToken ct)
     {
-        if (!cargoService.GetCargoExePath().HasValue)
+        try
         {
-            return (false, $"{Constants.CargoExe} component is not found in any active toolchain.");
+            if (ts.GetCargoExePath().FileExists())
+            {
+                return await (true, string.Empty).ToTask();
+            }
+        }
+        catch
+        {
         }
 
-        return await (true, string.Empty).ToTask();
+        return (false, $"{Constants.CargoExe} component is not found in any active toolchain.");
+    }
+
+    private static async Task<(bool, string)> CheckRustupAsync(IToolChainService ts, CancellationToken ct)
+    {
+        try
+        {
+            if (ToolChainServiceExtensions.GetRustupPath().FileExists())
+            {
+                return await (true, string.Empty).ToTask();
+            }
+        }
+        catch
+        {
+        }
+
+        return (false, $"{Constants.RustUpExe} not installed.");
+    }
+
+    private static async Task<(bool, string)> CheckRustupToolchainInstallationAsync(IToolChainService ts, CancellationToken ct)
+    {
+        try
+        {
+            if ((await ToolChainServiceExtensions.GetDefaultToolchainAsync((PathEx)Environment.GetEnvironmentVariable("WINDIR"), ct)).IsNullOrEmptyOrWhiteSpace())
+            {
+                return await (true, string.Empty).ToTask();
+            }
+        }
+        catch
+        {
+        }
+
+        return (false, $"Rust installation not found or is corrupted. Reinstall {Constants.RustUpExe} and toolchains.");
     }
 
     #region VsVersionCheck
 
     public static class VsVersionCheck
     {
-        public static async Task<(bool, string)> CheckAsync(IToolChainService cs)
+        public static async Task<(bool, string)> CheckAsync(IToolChainService ts, CancellationToken ct)
         {
             var version = await CommunityVS.Shell.GetVsVersionAsync();
             if (version == null)

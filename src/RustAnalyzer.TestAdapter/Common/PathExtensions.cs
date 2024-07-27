@@ -22,13 +22,11 @@ public static class PathExtensions
 
     public static string ReplaceInvalidChars(this string filename) => string.Join("_", filename.Split(Path.GetInvalidFileNameChars()));
 
-    public static bool ExistsOnPath(this string fileName) => fileName.SearchInPath() != null;
-
-    public static string SearchInPath(this string fileName)
+    public static string FindInPath(this string fileName)
     {
-        if (File.Exists(fileName))
+        if (fileName.IsPathFullyQualified() && File.Exists(fileName))
         {
-            return Path.GetFullPath(fileName);
+            return fileName;
         }
 
         var values = Environment.GetEnvironmentVariable("PATH");
@@ -42,6 +40,12 @@ public static class PathExtensions
         }
 
         return null;
+    }
+
+    public static bool IsPathFullyQualified(this string path)
+    {
+        var root = Path.GetPathRoot(path);
+        return root.StartsWith(@"\\") || (root.EndsWith(@"\") && root != @"\");
     }
 
     public static string MakeRelativePath(this string relativeTo, string path)

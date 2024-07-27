@@ -34,13 +34,12 @@ public sealed class ToolChainService : IToolChainService
         };
     }
 
-    public PathEx? GetCargoExePath()
+    /// <summary>
+    /// Not finding cargo.exe is a catastrophic error. Hence in prereq checks.
+    /// </summary>
+    public PathEx GetCargoExePath()
     {
-        PathEx? cargoExePath = (PathEx)Environment.GetEnvironmentVariable("USERPROFILE") + (PathEx)@".cargo\bin" + Constants.CargoExe2;
-        if (!cargoExePath.Value.FileExists())
-        {
-            cargoExePath = (PathEx?)Constants.CargoExe.SearchInPath();
-        }
+        var cargoExePath = (PathEx)Constants.CargoExe.FindInPath();
 
         _tl.L.WriteLine("... using {0} from '{1}'.", Constants.CargoExe, cargoExePath);
         return cargoExePath;
@@ -128,7 +127,7 @@ public sealed class ToolChainService : IToolChainService
             using var proc = await ProcessRunner.RunWithLogging(
                 cargoFullPath,
                 new[] { "metadata", "--no-deps", "--format-version", "1", "--manifest-path", manifestPath, "--offline" },
-                cargoFullPath?.GetDirectoryName(),
+                cargoFullPath.GetDirectoryName(),
                 ImmutableDictionary<string, string>.Empty,
                 ct,
                 _tl.L);
@@ -156,9 +155,9 @@ public sealed class ToolChainService : IToolChainService
         try
         {
             var workingDir = tc.Manifest.GetDirectoryName();
-            var cargoVersion = await ToolChainServiceExtensions.GetCommandOutput("cargo", "--version", workingDir, ct);
+            var cargoVersion = await ToolChainServiceExtensions.GetCommandOutputSingleLine("cargo", "--version", workingDir, ct);
             _tl.L.WriteLine($"Using: {cargoVersion}");
-            var rustcVersion = await ToolChainServiceExtensions.GetCommandOutput("test", "--version", workingDir, ct);
+            var rustcVersion = await ToolChainServiceExtensions.GetCommandOutputSingleLine("test", "--version", workingDir, ct);
             _tl.L.WriteLine($"Using: {rustcVersion}");
 
             var args = new[] { "test", "--no-run", "--manifest-path", tc.Manifest, "--profile", profile }
@@ -265,10 +264,10 @@ public sealed class ToolChainService : IToolChainService
 
         ts.TrackEvent(
             opName,
-            new[] { ("FilePath", filePath), ("Profile", profile), ("CargoPath", cargoFullPath.Value), ("Arguments", arguments) });
+            new[] { ("FilePath", filePath), ("Profile", profile), ("CargoPath", cargoFullPath), ("Arguments", arguments) });
 
         return await RunAsync(
-            cargoFullPath.Value,
+            cargoFullPath,
             opName,
             arguments,
             filePath.GetDirectoryName(),
@@ -280,8 +279,8 @@ public sealed class ToolChainService : IToolChainService
     {
         EnsureArg.IsNotEmptyOrWhiteSpace(arguments, nameof(arguments));
 
-        var cargoVersion = await ToolChainServiceExtensions.GetCommandOutput("cargo", "--version", workingDir, ct);
-        var toolVersion = await ToolChainServiceExtensions.GetCommandOutput(opName, "--version", workingDir, ct);
+        var cargoVersion = await ToolChainServiceExtensions.GetCommandOutputSingleLine("cargo", "--version", workingDir, ct);
+        var toolVersion = await ToolChainServiceExtensions.GetCommandOutputSingleLine(opName, "--version", workingDir, ct);
 
         redirector?.WriteLineWithoutProcessing($"");
         redirector?.WriteLineWithoutProcessing($"==== Build step: Started ====");

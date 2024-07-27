@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Cargo;
@@ -33,7 +34,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
     public void LaunchDebugTarget(IWorkspace workspaceContext, IServiceProvider serviceProvider, DebugLaunchActionContext debugLaunchActionContext)
     {
         var lcw = new LaunchConfigWrapper(debugLaunchActionContext.LaunchConfiguration, new TL { T = T, L = L, });
-        workspaceContext.JTF.Run(async () => await LaunchDebugTargetAsync(workspaceContext, serviceProvider, lcw));
+        workspaceContext.JTF.Run(async () => await LaunchDebugTargetAsync(workspaceContext, serviceProvider, lcw, default));
     }
 
     public bool SupportsContext(IWorkspace workspaceContext, string targetFilePath)
@@ -44,7 +45,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
         return package != null;
     }
 
-    private async Task LaunchDebugTargetAsync(IWorkspace workspaceContext, IServiceProvider serviceProvider, LaunchConfigWrapper lcw)
+    private async Task LaunchDebugTargetAsync(IWorkspace workspaceContext, IServiceProvider serviceProvider, LaunchConfigWrapper lcw, CancellationToken ct)
     {
         try
         {
@@ -80,6 +81,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
             L.WriteLine("LaunchDebugTarget with profile: {0}, launchConfiguration: {1}", profile, lcw.SerializeObject());
             T.TrackEvent("Debug", ("Target", targetFQN), ("Profile", profile), ("Manifest", package.FullPath), ("Args", args), ("Env", env.ReplaceNullWithBar()));
 
+            var binLibPaths = await ToolChainServiceExtensions.GetBinAndLibPathsAsync(package.Parent.WorkspaceRoot, ct);
             var info = new VsDebugTargetInfo
             {
                 dlo = DEBUG_LAUNCH_OPERATION.DLO_CreateProcess,
@@ -90,8 +92,8 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                     .PrependToPathInEnviroment(
                         package.GetDepsPath(profile),
                         package.GetTargetPath(profile),
-                        ToolChainServiceExtensions.GetLibPath(),
-                        ToolChainServiceExtensions.GetBinPath()).ToEnvironmentBlock(),
+                        binLibPaths.Lib,
+                        binLibPaths.Bin).ToEnvironmentBlock(),
                 bstrOptions = null,
                 bstrPortName = null,
                 bstrMdmRegisteredName = null,

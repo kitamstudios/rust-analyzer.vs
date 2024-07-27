@@ -16,6 +16,7 @@ public static class Constants
     public const string RustFileExtension = ".rs";
     public const string ManifestFileName = "Cargo.toml"; // NOTE: cargo.exe requires caps 'C'.
     public const string ManifestFileExtension = ".toml";
+    public const string RustupSettingsFileName = "settings.toml";
 
     public const string RustUpExe = "rustup.exe";
     public const string RAExeNameNoExtension = "rust-analyzer";

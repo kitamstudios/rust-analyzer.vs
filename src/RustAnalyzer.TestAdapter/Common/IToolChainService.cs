@@ -8,7 +8,7 @@ namespace KS.RustAnalyzer.TestAdapter.Common;
 
 public interface IToolChainService
 {
-    PathEx? GetCargoExePath();
+    PathEx GetCargoExePath();
 
     Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct);
 
