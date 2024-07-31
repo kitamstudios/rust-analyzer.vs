@@ -34,6 +34,13 @@
           <ToolTipText>Various Rust Tools and Utilities</ToolTipText>
         </Strings>
       </Menu>
+      <Menu guid="guidRustAnalyzerToolchainSwitcher" id="IdMSwitchToolchainMenu" priority="0x0250" type="Menu">
+        <Parent guid="guidRustAnalyzerToolsCmdSet" id="IdGRustAnalyzerTools" />
+        <Strings>
+          <ButtonText>Switch Active Toolchain</ButtonText>
+          <ToolTipText>Switch active Rust toolchain</ToolTipText>
+        </Strings>
+      </Menu>
     </Menus>
 
     <Groups>
@@ -46,6 +53,11 @@
       <Group guid="guidRustAnalyzerToolsCmdSet" id="IdGRustAnalyzerTools" priority="0x0100">
         <Parent guid="guidRustAnalyzerPackage" id="IdMRustAnalyzerTools"/>
       </Group>
+
+      <Group guid="guidRustAnalyzerToolchainSwitcher" id="IdGToolchainListGroup" priority="0x0600">
+        <Parent guid="guidRustAnalyzerToolchainSwitcher" id="IdMSwitchToolchainMenu"/>
+      </Group>
+      
     </Groups>
 
     <Buttons>
@@ -109,18 +121,14 @@
           <ToolTipText>Kill orphaned rust-analyzer.exe consuming RAM</ToolTipText>
         </Strings>
       </Button>
-
-      <Button guid="guidRustAnalyzerToolsCmdSet" id="IdSwitchToolChain" priority="0x0130" type="Button">
-        <Parent guid="guidRustAnalyzerToolsCmdSet" id="IdGRustAnalyzerTools" />
-        <Icon guid="ImageCatalogGuid" id="SwitchSourceOrTarget" />
-        <CommandFlag>IconIsMoniker</CommandFlag>
+      <Button guid="guidRustAnalyzerToolchainSwitcher" id="IdFirstToolchain" priority="0x0100" type="Button">
+        <Parent guid="guidRustAnalyzerToolchainSwitcher" id="IdGToolchainListGroup" />
+        <CommandFlag>DynamicItemStart</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
         <CommandFlag>DefaultDisabled</CommandFlag>
-        <CommandFlag>DefaultInvisible</CommandFlag>
-        <CommandFlag>AllowVisibilityChangeOnToolBar</CommandFlag>
         <Strings>
-          <ButtonText>Switch Toolchain</ButtonText>
-          <ToolTipText>Switch active Rust toolchain</ToolTipText>
+          <ButtonText>Loading...</ButtonText>
         </Strings>
       </Button>
     </Buttons>
@@ -198,7 +206,15 @@
       <IDSymbol name="IdRustAnalyzerOptions" value="0x0100" />
       <IDSymbol name="IdRestartLSP" value="0x0101" />
       <IDSymbol name="IdKillOrphaned" value="0x0102" />
-      <IDSymbol name="IdSwitchToolChain" value="0x0103" />
+    </GuidSymbol>
+
+    <GuidSymbol name="guidRustAnalyzerToolchainSwitcher" value="{a2dd2b49-2822-4624-9e54-22b415412d72}">
+      <IDSymbol name="IdMSwitchToolchainMenu" value="0x0001" />
+
+      <IDSymbol name="IdGToolchainListGroup" value="0x0010" />
+
+      <IDSymbol name="IdFirstToolchain" value="0x0101" />
+      <!-- NOTE: Last one is a dynamically generated menu dropdown, do not add any more in this symbol group -->
     </GuidSymbol>
 
     <GuidSymbol name="guidWorkspaceExplorerBuildActionCmdSet" value="{16537f6e-cb14-44da-b087-d1387ce3bf57}">

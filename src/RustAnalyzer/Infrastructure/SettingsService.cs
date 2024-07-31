@@ -17,7 +17,6 @@ public interface ISettingsService
     Task SetAsync(string type, PathEx fullItemPath, string value);
 }
 
-// TODO: SETTINGS: Unit test this to reduce dependency on manual tests.
 [ExportWorkspaceServiceFactory(WorkspaceServiceFactoryOptions.None, typeof(ISettingsService))]
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class SettingsServiceFactory : IWorkspaceServiceFactory

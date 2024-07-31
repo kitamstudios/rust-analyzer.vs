@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using Community.VisualStudio.Toolkit;
 using EnsureThat;
 using EnvDTE;
@@ -18,12 +17,11 @@ public static class TemporaryTargetSystemStore
 [Command(PackageGuids.guidRustAnalyzerTargetSystemCmdSetString, PackageIds.IdTargetSystemCombo)]
 public sealed class TargetSystemComboCommand : BaseRustAnalyzerCommand<TargetSystemComboCommand>
 {
-    protected override async Task ExecuteAsync(OleMenuCmdEventArgs eventArgs)
+    protected override void ExecuteCore(object sender, OleMenuCmdEventArgs eventArgs)
     {
         EnsureArg.IsNotNull(eventArgs);
         EnsureArg.IsTrue(eventArgs.InValue != default || eventArgs.OutValue != default);
 
-        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
         var input = eventArgs.InValue;
         var vOut = eventArgs.OutValue;
 
@@ -43,14 +41,12 @@ public sealed class TargetSystemComboCommand : BaseRustAnalyzerCommand<TargetSys
 }
 
 [Command(PackageGuids.guidRustAnalyzerTargetSystemCmdSetString, PackageIds.IdTargetSystemComboGetList)]
-public sealed class TargetSystemComboGetListCommand : BaseCommand<TargetSystemComboGetListCommand>
+public sealed class TargetSystemComboGetListCommand : BaseRustAnalyzerCommand<TargetSystemComboGetListCommand>
 {
-    protected override async Task ExecuteAsync(OleMenuCmdEventArgs eventArgs)
+    protected override void ExecuteCore(object sender, OleMenuCmdEventArgs eventArgs)
     {
         EnsureArg.IsNotNull(eventArgs);
         EnsureArg.IsNotDefault(eventArgs.OutValue);
-
-        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
         var vOut = eventArgs.OutValue;
 

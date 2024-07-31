@@ -46,14 +46,6 @@ public sealed class ToolChainServiceExtensionsTests
         installToolchains.Should().NotBeEmpty();
         installToolchains.Select(x => x.Name).Should().Contain(x => !x.IsNullOrEmptyOrWhiteSpace());
         installToolchains.Select(x => x.Version).Should().Contain(x => !x.IsNullOrEmptyOrWhiteSpace());
-        installToolchains.Where(x => x.Default).Should().HaveCount(1);
-    }
-
-    [Fact]
-    public async Task TestGetInstalledVersionFormatAsync()
-    {
-        var installToolchains = await ToolChainServiceExtensions.GetInstalledToolchainsAsync(TestHelpers.ThisTestRoot, default);
-
-        installToolchains.Select(x => x.Version).Should().Contain(x => !x.IsNullOrEmptyOrWhiteSpace());
+        installToolchains.Where(x => x.IsDefault).Should().HaveCount(1);
     }
 }

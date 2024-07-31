@@ -24,6 +24,9 @@ namespace KS.RustAnalyzer
         public const string guidRustAnalyzerToolsCmdSetString = "8df214ee-7f8a-4581-8977-215e6e1bf673";
         public static Guid guidRustAnalyzerToolsCmdSet = new Guid(guidRustAnalyzerToolsCmdSetString);
 
+        public const string guidRustAnalyzerToolchainSwitcherString = "a2dd2b49-2822-4624-9e54-22b415412d72";
+        public static Guid guidRustAnalyzerToolchainSwitcher = new Guid(guidRustAnalyzerToolchainSwitcherString);
+
         public const string guidWorkspaceExplorerBuildActionCmdSetString = "16537f6e-cb14-44da-b087-d1387ce3bf57";
         public static Guid guidWorkspaceExplorerBuildActionCmdSet = new Guid(guidWorkspaceExplorerBuildActionCmdSetString);
 
@@ -52,7 +55,9 @@ namespace KS.RustAnalyzer
         public const int IdRustAnalyzerOptions = 0x0100;
         public const int IdRestartLSP = 0x0101;
         public const int IdKillOrphaned = 0x0102;
-        public const int IdSwitchToolChain = 0x0103;
+        public const int IdMSwitchToolchainMenu = 0x0001;
+        public const int IdGToolchainListGroup = 0x0010;
+        public const int IdFirstToolchain = 0x0101;
         public const int IdBuildActionContext = 0x1000;
         public const int IdRebuildActionContext = 0x1010;
         public const int IdCleanActionContext = 0x1020;

@@ -12,7 +12,7 @@ using CommunityVS = Community.VisualStudio.Toolkit.VS;
 
 namespace KS.RustAnalyzer.Shell;
 
-public abstract class BaseToolChainCommand<T> : BaseRustAnalyzerCommand<T>
+public abstract class BaseToolChainCommand<T> : BaseCommand<T>
     where T : class, new()
 {
     protected abstract Func<IToolChainService, Func<BuildTargetInfo, BuildOutputSinks, CancellationToken, Task<bool>>> Operation { get; }

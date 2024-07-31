@@ -117,7 +117,6 @@ public sealed class ToolChainService : IToolChainService
             ct: ct);
     }
 
-    // TODO: NEW: "Build all" enabled if top level cargo.toml exists.
     public async Task<Workspace> GetWorkspaceAsync(PathEx manifestPath, CancellationToken ct)
     {
         var cargoFullPath = GetCargoExePath();

@@ -54,10 +54,10 @@ public static class ToolChainServiceExtensions
         return (root + "bin", root + $@"lib\rustlib\{DefaultTargetTriple}\lib");
     }
 
-    public static async Task<(string Name, string Version, bool Default)[]> GetInstalledToolchainsAsync(PathEx workingDirectory, CancellationToken ct)
+    public static async Task<Toolchain[]> GetInstalledToolchainsAsync(PathEx workingDirectory, CancellationToken ct)
     {
         var output = await GetCommandOutput("rustup", "show --verbose", workingDirectory, ct);
-        var nvs = output
+        var tcRaw = output
             .Select(x => x.Trim())
             .Where(x => !x.IsNullOrEmptyOrWhiteSpace())
             .SkipWhile(x => !x.Equals("installed toolchains"))
@@ -65,21 +65,43 @@ public static class ToolChainServiceExtensions
             .TakeWhile(x => !x.Equals("active toolchain"))
             .ToList();
 
-        var nvEntries = Enumerable.Range(0, nvs.Count / 2)
-            .Select(i => (nvs[i * 2], nvs[(i * 2) + 1]))
+        var tcs = Enumerable.Range(0, tcRaw.Count / 2)
+            .Select(i => (tcRaw[i * 2], tcRaw[(i * 2) + 1]))
             .Select(x => (NameCracker.Match(x.Item1), VersionCracker.Match(x.Item2)))
             .Where(x => x.Item1.Success && x.Item2.Success)
-            .Select(x => (
-                x.Item1.Groups["name"].Value,
-                $"{x.Item2.Groups["version"].Value} ({x.Item2.Groups["version"].Value})",
-                x.Item1.Groups["default"].Value.IsNotNullOrEmpty()));
+            .Select(x =>
+                new Toolchain
+                {
+                    Name = x.Item1.Groups["name"].Value,
+                    Version = $"{x.Item2.Groups["version"].Value} ({x.Item2.Groups["date"].Value})",
+                    IsDefault = false
+                })
+            .OrderBy(tc => tc.Name)
+            .ThenBy(tc => tc.Version)
+            .ToArray();
 
-        return nvEntries.ToArray();
+        var activeRaw = output
+            .Select(x => x.Trim())
+            .Where(x => !x.IsNullOrEmptyOrWhiteSpace())
+            .SkipWhile(x => !x.Equals("active toolchain"))
+            .Skip(2)
+            .FirstOrDefault()
+            .Split(' ')[0];
+        if (activeRaw != null)
+        {
+            var i = Array.FindIndex(tcs, tc => tc.Name == activeRaw);
+            if (i != -1)
+            {
+                tcs[i].IsDefault = true;
+            }
+        }
+
+        return tcs;
     }
 
     public static async Task<string> GetDefaultToolchainAsync(PathEx workingDirectory, CancellationToken ct)
     {
-        return (await GetInstalledToolchainsAsync(workingDirectory, ct)).Where(x => x.Default).First().Name;
+        return (await GetInstalledToolchainsAsync(workingDirectory, ct)).Where(x => x.IsDefault).First().Name;
     }
 
     public static async Task<TestContainer> ReadTestContainerAsync(this PathEx @this, CancellationToken ct)
@@ -119,10 +141,22 @@ public static class ToolChainServiceExtensions
             .ForEach(File.Delete);
     }
 
-    public static async Task<string[]> GetCommandOutput(string opName, string versionArgs, PathEx workingDirectory, CancellationToken ct)
+    public static async Task SetToolchainOverrideAsync(this PathEx workspaceRoot, string toolChain, ILogger l, CancellationToken ct)
+    {
+        var opName = "rustup";
+        var args = $"override set {toolChain}";
+
+        l.WriteLine("Running: {0} {1}", opName, args);
+        l.WriteLine("Workspace: {0}", workspaceRoot);
+
+        var output = await GetCommandOutput(opName, args, workspaceRoot, ct);
+        l.WriteLine("{0}", string.Join("\n", output));
+    }
+
+    public static async Task<string[]> GetCommandOutput(string opName, string args, PathEx workingDirectory, CancellationToken ct)
     {
         var toolName = OpNameToToolNameMapper[opName];
-        using var proc = ProcessRunner.Run("cmd.exe", new[] { "/c", $"{toolName} {versionArgs}" }, workingDirectory, ImmutableDictionary<string, string>.Empty, ct);
+        using var proc = ProcessRunner.Run("cmd.exe", new[] { "/c", $"{toolName} {args}" }, workingDirectory, ImmutableDictionary<string, string>.Empty, ct);
 
         var ec = await proc;
         var output = proc.StandardOutputLines.Concat(proc.StandardErrorLines).ToArray();
@@ -140,4 +174,13 @@ public static class ToolChainServiceExtensions
 
         return string.Join(string.Empty, lines.Where(l => !l.IsNullOrEmptyOrWhiteSpace()));
     }
+}
+
+public struct Toolchain
+{
+    public string Name { get; set; }
+
+    public string Version { get; set; }
+
+    public bool IsDefault { get; set; }
 }

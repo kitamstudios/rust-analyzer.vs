@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Community.VisualStudio.Toolkit;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Common;
@@ -11,15 +12,17 @@ using VSConstants = Microsoft.VisualStudio.VSConstants;
 namespace KS.RustAnalyzer.Shell;
 
 /// <summary>
-/// NOTE: Consider adding visiblity constraints https://github.com/madskristensen/VisibilityConstraintsSample
-/// TODO: Hide all this if Rust is not the current project.
+/// NOTE: Consider adding visiblity constraints https://github.com/madskristensen/VisibilityConstraintsSample.
 /// </summary>
 public abstract class BaseRustAnalyzerCommand<T> : BaseCommand<T>
     where T : class, new()
 {
     private ILogger _logger;
+    private ITelemetryService _telemetry;
     private ShellInterop.IVsSolution _solution;
     private ShellInterop.IVsDebugger _debugger;
+
+    protected ITelemetryService Telemetry => _telemetry ??= Package.GetService<SComponentModel, IComponentModel2>(false)?.GetService<ITelemetryService>();
 
     protected ILogger Logger => _logger ??= Package.GetService<SComponentModel, IComponentModel2>(false)?.GetService<ILogger>();
 
@@ -52,5 +55,27 @@ public abstract class BaseRustAnalyzerCommand<T> : BaseCommand<T>
         }
 
         return dbgMode[0] == ShellInterop.DBGMODE.DBGMODE_Design;
+    }
+
+    protected abstract void ExecuteCore(object sender, OleMenuCmdEventArgs eventArgs);
+
+    /// <summary>
+    /// NOTE: We dont use this.
+    /// </summary>
+    protected override Task ExecuteAsync(OleMenuCmdEventArgs eventArgs) => Task.CompletedTask;
+
+    protected override void Execute(object sender, EventArgs ea)
+    {
+        Telemetry.TrackEvent(typeof(T).Name);
+
+        try
+        {
+            ExecuteCore(sender, ea as OleMenuCmdEventArgs);
+        }
+        catch (Exception e)
+        {
+            Telemetry.TrackException(e, new[] { ("Command", typeof(T).Name) });
+            throw;
+        }
     }
 }

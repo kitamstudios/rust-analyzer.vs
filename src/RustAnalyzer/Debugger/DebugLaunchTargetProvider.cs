@@ -17,7 +17,6 @@ using static Microsoft.VisualStudio.VSConstants;
 
 namespace KS.RustAnalyzer.Debugger;
 
-// TODO: NEW: Close solution, do not force upgrade.
 // TODO: Workaround for https://github.com/kitamstudios/rust-analyzer.vs/issues/24. Just implementing LaunchDebugTargetProviderOptions.IsRuntimeSupportContext should be enough but it does not work, for now setting priority to low.
 [ExportLaunchDebugTarget(LaunchDebugTargetProviderOptions.IsRuntimeSupportContext, ProviderType, new[] { ".exe" }, ProviderPriority.Lowest)]
 public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider

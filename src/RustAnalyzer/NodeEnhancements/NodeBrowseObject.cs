@@ -6,7 +6,6 @@ using KS.RustAnalyzer.TestAdapter.Common;
 
 namespace KS.RustAnalyzer.NodeEnhancements;
 
-// TODO: TXP: Support doc, example, benchmark and integration tests. Run example tests as well --all-targets.
 public class NodeBrowseObject : INotifyPropertyChanged
 {
     private readonly IDictionary<string, string> _propertyValueStore = new Dictionary<string, string>();

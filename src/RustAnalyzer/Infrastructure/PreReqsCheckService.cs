@@ -128,7 +128,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
     {
         try
         {
-            if ((await ToolChainServiceExtensions.GetDefaultToolchainAsync((PathEx)Environment.GetEnvironmentVariable("WINDIR"), ct)).IsNullOrEmptyOrWhiteSpace())
+            if (!(await ToolChainServiceExtensions.GetDefaultToolchainAsync((PathEx)Environment.GetEnvironmentVariable("WINDIR"), ct)).IsNullOrEmptyOrWhiteSpace())
             {
                 return await (true, string.Empty).ToTask();
             }
