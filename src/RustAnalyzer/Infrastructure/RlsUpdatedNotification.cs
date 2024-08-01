@@ -17,18 +17,19 @@ public static class RlsUpdatedNotification
     {
         private get
         {
-            return Environment.GetEnvironmentVariable(RLSUPDATEDENVVARNAME, EnvironmentVariableTarget.Process).IsNullOrEmpty();
+            return Environment.GetEnvironmentVariable(RLSUPDATEDENVVARNAME, EnvironmentVariableTarget.Process).IsNotNullOrEmpty();
         }
 
         set
         {
-            Environment.SetEnvironmentVariable(RLSUPDATEDENVVARNAME, true.ToString(), EnvironmentVariableTarget.Process);
+            var val = value ? true.ToString() : null;
+            Environment.SetEnvironmentVariable(RLSUPDATEDENVVARNAME, val, EnvironmentVariableTarget.Process);
         }
     }
 
     public static async Task ShowAsync()
     {
-        if (Enabled)
+        if (!Enabled)
         {
             return;
         }
@@ -69,6 +70,7 @@ public static class RlsUpdatedNotification
                 _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    Enabled = false; // NOTE: Restart restores the environment variables.
                     await CommunityVS.Shell.RestartAsync();
                 });
 
