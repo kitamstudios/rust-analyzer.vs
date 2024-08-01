@@ -36,13 +36,6 @@ public class FileScannerFactory : IWorkspaceProviderFactory<IFileScanner>
             new[] { ("Location", workspaceContext.Location) });
         L.WriteLine("Creating {0}.", GetType().Name);
 
-        // TODO: Are we overdoing with the prereqs stuff? Considering removign this.
-        if (!workspaceContext.JTF.Run(() => PreReqs.SatisfySilentAsync(default)))
-        {
-            L.WriteLine("... Pre-requisites not satisfied. Returning null.");
-            return null;
-        }
-
         return new FileScanner(workspaceContext.GetService<IMetadataService>());
     }
 }

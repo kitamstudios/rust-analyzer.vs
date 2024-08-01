@@ -15,8 +15,6 @@ namespace KS.RustAnalyzer.Infrastructure;
 
 public interface IPreReqsCheckService
 {
-    Task<bool> SatisfySilentAsync(CancellationToken ct);
-
     Task SatisfyAsync(CancellationToken ct);
 }
 
@@ -45,13 +43,6 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
             T = t,
             L = l,
         };
-    }
-
-    public async Task<bool> SatisfySilentAsync(CancellationToken ct)
-    {
-        var results = await DoChecksAsync(ct);
-
-        return results.All(x => x.success);
     }
 
     public async Task SatisfyAsync(CancellationToken ct)
