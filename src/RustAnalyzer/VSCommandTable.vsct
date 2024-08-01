@@ -10,6 +10,17 @@
   - https://github.com/trufflesuite/trufflevsix/blob/master/packages/Microsoft.VSSDK.BuildTools.14.3.25407/tools/vssdk/inc/ShellCmdPlace.vsct
 -->
 
+<!--
+TODO:
+x One common group for build/clean wksp parented to the menu
+v Ctrl+Shift+B shortcut
+v Enable tools > rust selectable
+x shortcuts for rust tools
+v implement
+- cleanup
+-->
+
+
 <CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
 
   <Extern href="stdidcmd.h"/>
@@ -27,17 +38,23 @@
           <ButtonText>rustanalyzer.vs Toolbar</ButtonText>
         </Strings>
       </Menu>
-      <Menu guid="guidRustAnalyzerPackage" id="IdMRustAnalyzerTools" priority="100" type="MenuController">
+      <Menu guid="guidRustAnalyzerPackage" id="IdMRustAnalyzerToolsMC" type="MenuController">
         <CommandFlag>NotInTBList</CommandFlag>
         <Strings>
           <ButtonText>Rust Tools</ButtonText>
           <ToolTipText>Various Rust Tools and Utilities</ToolTipText>
         </Strings>
       </Menu>
+      <Menu guid="guidRustAnalyzerPackage" id="IdMRustAnalyzerToolsM" type="Menu">
+        <Strings>
+          <ButtonText>&amp;Rust Tools</ButtonText>
+          <ToolTipText>Various Rust Tools and Utilities</ToolTipText>
+        </Strings>
+      </Menu>
       <Menu guid="guidRustAnalyzerToolchainSwitcher" id="IdMSwitchToolchainMenu" priority="0x0250" type="Menu">
         <Parent guid="guidRustAnalyzerToolsCmdSet" id="IdGRustAnalyzerTools" />
         <Strings>
-          <ButtonText>Switch Active Toolchain</ButtonText>
+          <ButtonText>Switch Active &amp;Toolchain</ButtonText>
           <ToolTipText>Switch active Rust toolchain</ToolTipText>
         </Strings>
       </Menu>
@@ -50,14 +67,11 @@
       <Group guid="guidRustAnalyzerPackage" id="IdGRustAnalyzerMenuOnMainToolbar" priority="0x0600">
         <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
       </Group>
-      <Group guid="guidRustAnalyzerToolsCmdSet" id="IdGRustAnalyzerTools" priority="0x0100">
-        <Parent guid="guidRustAnalyzerPackage" id="IdMRustAnalyzerTools"/>
-      </Group>
+      <Group guid="guidRustAnalyzerToolsCmdSet" id="IdGRustAnalyzerTools" />
 
       <Group guid="guidRustAnalyzerToolchainSwitcher" id="IdGToolchainListGroup" priority="0x0600">
         <Parent guid="guidRustAnalyzerToolchainSwitcher" id="IdMSwitchToolchainMenu"/>
       </Group>
-      
     </Groups>
 
     <Buttons>
@@ -89,7 +103,7 @@
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>AllowVisibilityChangeOnToolBar</CommandFlag>
         <Strings>
-          <ButtonText>rust-analyzer.vs Settings</ButtonText>
+          <ButtonText>rust-analyzer.vs &amp;Settings</ButtonText>
           <ToolTipText>rust-analyzer.vs settings in Options dialog.</ToolTipText>
         </Strings>
       </Button>
@@ -103,7 +117,7 @@
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>AllowVisibilityChangeOnToolBar</CommandFlag>
         <Strings>
-          <ButtonText>Restart Rust Language Server</ButtonText>
+          <ButtonText>&amp;Restart Rust Language Server</ButtonText>
           <ToolTipText>Restart Rust Language Server if it slows down or consumes too much RAM</ToolTipText>
         </Strings>
       </Button>
@@ -117,10 +131,11 @@
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>AllowVisibilityChangeOnToolBar</CommandFlag>        
         <Strings>
-          <ButtonText>Kill Orphaned rust-analyzer.exe</ButtonText>
+          <ButtonText>&amp;Kill Orphaned rust-analyzer.exe</ButtonText>
           <ToolTipText>Kill orphaned rust-analyzer.exe consuming RAM</ToolTipText>
         </Strings>
       </Button>
+
       <Button guid="guidRustAnalyzerToolchainSwitcher" id="IdFirstToolchain" priority="0x0100" type="Button">
         <Parent guid="guidRustAnalyzerToolchainSwitcher" id="IdGToolchainListGroup" />
         <CommandFlag>DynamicItemStart</CommandFlag>
@@ -129,6 +144,28 @@
         <CommandFlag>DefaultDisabled</CommandFlag>
         <Strings>
           <ButtonText>Loading...</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidRustAnalyzerPackage" id="IdBuildAll" priority="0x0100" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_BUILD_SOLUTION" />
+        <Icon guid="ImageCatalogGuid" id="BuildSolution" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultDisabled</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText>&amp;Build Workspace</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidRustAnalyzerPackage" id="IdCleanAll" priority="0x0101" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_BUILD_SOLUTION" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultDisabled</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText>&amp;Clean Workspace</ButtonText>
         </Strings>
       </Button>
     </Buttons>
@@ -156,6 +193,10 @@
     </Bitmaps>
   </Commands>
 
+  <KeyBindings>
+    <KeyBinding guid="guidRustAnalyzerPackage" id="IdBuildAll" editor="guidVSStd97" key1="B" mod1="Control Alt Shift" />
+  </KeyBindings>
+  
   <CommandPlacements>
     <CommandPlacement guid="guidRustAnalyzerPackage" id="IdCargoClippy" priority="0x0300">
       <Parent guid="guidWorkspaceExplorerToolWindowPackageCmdSet" id="idgWSE_ContextMenu_BuildDebugActions"/>
@@ -169,10 +210,19 @@
     <CommandPlacement guid="guidRustAnalyzerTargetSystemCmdSet" id="IdTargetSystemCombo" priority="0x0100">
       <Parent guid="guidSHLMainMenu" id="IDG_VS_TOOLSB_RUNBUILD"/>
     </CommandPlacement>
-    <CommandPlacement guid="guidRustAnalyzerPackage" id="IdMRustAnalyzerTools" priority="0x0100">
+
+    <CommandPlacement guid="guidRustAnalyzerToolsCmdSet" id="IdGRustAnalyzerTools" priority="0x0100">
+      <Parent guid="guidRustAnalyzerPackage" id="IdMRustAnalyzerToolsMC"/>
+    </CommandPlacement>
+
+    <CommandPlacement guid="guidRustAnalyzerToolsCmdSet" id="IdGRustAnalyzerTools" priority="0x0100">
+      <Parent guid="guidRustAnalyzerPackage" id="IdMRustAnalyzerToolsM"/>
+    </CommandPlacement>
+
+    <CommandPlacement guid="guidRustAnalyzerPackage" id="IdMRustAnalyzerToolsMC" priority="0x0100">
       <Parent guid="guidRustAnalyzerPackage" id="IdGRustAnalyzerToolbar"/>
     </CommandPlacement>
-    <CommandPlacement guid="guidRustAnalyzerPackage" id="IdMRustAnalyzerTools" priority="0x0100">
+    <CommandPlacement guid="guidRustAnalyzerPackage" id="IdMRustAnalyzerToolsM" priority="0x0100">
       <Parent guid="guidRustAnalyzerPackage" id="IdGRustAnalyzerMenuOnMainToolbar"/>
     </CommandPlacement>
   </CommandPlacements>
@@ -184,13 +234,16 @@
 
     <GuidSymbol name="guidRustAnalyzerPackage" value="{d879ab25-bd3e-4e01-8b2a-cc60649c016c}">
       <IDSymbol name="IdTRustAnalyzerToolbar" value="0x0001" />
-      <IDSymbol name="IdMRustAnalyzerTools" value="0x0002" />
+      <IDSymbol name="IdMRustAnalyzerToolsMC" value="0x0002" />
+      <IDSymbol name="IdMRustAnalyzerToolsM" value="0x0003" />
 
       <IDSymbol name="IdGRustAnalyzerToolbar" value="0x0010"/>
       <IDSymbol name="IdGRustAnalyzerMenuOnMainToolbar" value="0x0011" />
 
       <IDSymbol name="IdCargoClippy" value="0x0100" />
       <IDSymbol name="IdCargoFmt" value="0x0101" />
+      <IDSymbol name="IdBuildAll" value="0x0102" />
+      <IDSymbol name="IdCleanAll" value="0x0103" />
     </GuidSymbol>
 
     <GuidSymbol name="guidRustAnalyzerTargetSystemCmdSet" value="{76879a43-4f48-45d1-922c-54f713889a1f}">

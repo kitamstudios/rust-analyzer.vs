@@ -76,15 +76,9 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
     {
         ThreadHelper.ThrowIfNotOnUIThread();
 
-        string workspaceRoot = null;
-        if (ErrorHandler.Failed(Solution?.GetSolutionInfo(out workspaceRoot, out var _, out var _) ?? VSConstants.E_FAIL))
-        {
-            base.BeforeQueryStatus(e);
-            return;
-        }
-
+        var workspaceRoot = CmdServices.GetWorkspaceRoot();
         var toolchains = ThreadHelper.JoinableTaskFactory
-            .Run(async () => await ToolChainServiceExtensions.GetInstalledToolchainsAsync((PathEx)workspaceRoot, default));
+            .Run(async () => await ToolChainServiceExtensions.GetInstalledToolchainsAsync(workspaceRoot, default));
 
         var mcs = Package.GetService<IMenuCommandService, OleMenuCommandService>();
         foreach (var (tc, pos) in toolchains.Select((x, i) => (x, i)))

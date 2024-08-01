@@ -52,6 +52,7 @@
     <Compile Include="LanguageService\CommentHelper.cs" />
     <Compile Include="LanguageService\CommentSelectionCommandHandler.cs" />
     <Compile Include="Infrastructure\StringBuildMessagePreprocessor.cs" />
+    <Compile Include="Shell\CmdServices.cs" />
     <Compile Include="Shell\ToolsCommands.cs" />
     <Compile Include="Shell\TargetSystemCommands.cs" />
     <Compile Include="Shell\BaseRustAnalyzerCommand{T}.cs" />

@@ -43,11 +43,14 @@ namespace KS.RustAnalyzer
     {
         public const int IdIRust = 0x0001;
         public const int IdTRustAnalyzerToolbar = 0x0001;
-        public const int IdMRustAnalyzerTools = 0x0002;
+        public const int IdMRustAnalyzerToolsMC = 0x0002;
+        public const int IdMRustAnalyzerToolsM = 0x0003;
         public const int IdGRustAnalyzerToolbar = 0x0010;
         public const int IdGRustAnalyzerMenuOnMainToolbar = 0x0011;
         public const int IdCargoClippy = 0x0100;
         public const int IdCargoFmt = 0x0101;
+        public const int IdBuildAll = 0x0102;
+        public const int IdCleanAll = 0x0103;
         public const int IdGTargetSystem = 0x0010;
         public const int IdTargetSystemCombo = 0x0100;
         public const int IdTargetSystemComboGetList = 0x0101;
