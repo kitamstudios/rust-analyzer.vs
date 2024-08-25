@@ -53,28 +53,31 @@
 
   <ItemGroup>
     <PackageReference Include="Ensure.That" Version="9.2.0" />
-    <PackageReference Include="DalSoft.RestClient" Version="4.4.1" />
+    <!-- <PackageReference Include="DalSoft.RestClient" Version="4.4.1" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
-    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="All" />
-    <PackageReference Include="FluentValidation" Version="10.3.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" /> -->
+    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556" PrivateAssets="All" />
+    <!-- <PackageReference Include="FluentValidation" Version="10.3.5" />
     <PackageReference Include="MediatR" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Data.Services.Client" Version="5.8.5" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
+    <PackageReference Include="Microsoft.Data.Services.Client" Version="5.8.5" /> -->
+    <PackageReference Include="AutoMapper" Version="10.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <!-- <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="10.3.4" />
     <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.21.0" />
-    <PackageReference Include="System.ComponentModel.Composition" Version="7.0.0" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1">
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" /> -->
+    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.22.0" />
+    <PackageReference Include="System.ComponentModel.Composition" Version="9.0.0-preview.7.24405.7" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="SvSoft.MSBuild.CheckUnnecessaryUsings" Version="1.0.0" PrivateAssets="all" />
+    <PackageReference Include="SvSoft.MSBuild.CheckUnnecessaryUsings" Version="1.0.1" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup Condition="('$(IsTestProject)' != 'true') And ('$(IsNetFramework)' == 'true')">
-    <PackageReference Include="Microsoft.VisualStudio.SDK.Analyzers" Version="16.10.10">
+    <PackageReference Include="Microsoft.VisualStudio.SDK.Analyzers" Version="17.7.41">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>

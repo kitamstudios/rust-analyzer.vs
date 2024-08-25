@@ -2,12 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 using Community.VisualStudio.Toolkit;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Shell;
 using CommunityVS = Community.VisualStudio.Toolkit.VS;
 
@@ -63,6 +66,93 @@ public sealed class KillOrphanedRaExesCommand : BaseRustAnalyzerCommand<KillOrph
             .GetOrphanedProcesses()
             .ForEach(x => x.KillSafe());
     }
+}
+
+/// <summary>
+/// This command will be shown even if a Rust project is not opened currently.
+/// </summary>
+[Command(PackageGuids.guidRustAnalyzerToolsCmdSetString, PackageIds.IdInstallToolchain)]
+public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToolchainCommand>
+{
+    protected override void BeforeQueryStatus(EventArgs e)
+    {
+        Command.Visible = Command.Enabled = Command.Supported = true;
+    }
+
+    protected override void ExecuteCore(object sender, OleMenuCmdEventArgs eventArgs)
+    {
+        ThreadHelper.JoinableTaskFactory.Run(ExecuteCoreAsync);
+    }
+
+    private async Task ExecuteCoreAsync()
+    {
+        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+        var targets = await ToolChainServiceExtensions.GetTargets(default);
+        CmdServices.VsUIShell.GetDialogOwnerHwnd(out IntPtr hwndOwner);
+
+        using (var wiz = new ToolchainInstallerWizard())
+        {
+            wiz.Targets = targets;
+            wiz.StartPosition = FormStartPosition.CenterParent;
+
+            CmdServices.VsUIShell.EnableModeless(0);
+            try
+            {
+                if (wiz.ShowDialog(new NativeHwndWrapper(hwndOwner)) != DialogResult.OK)
+                {
+                    return;
+                }
+
+                var model = new InfoBarModel(
+                    textSpans: new[] { new InfoBarTextSpan($"{Vsix.Name}: Starting installation of toolchain. See Output > rust-analyzer.vs pane for detailed status. Once done, you'll be notified here."), },
+                    Array.Empty<InfoBarHyperlink>(),
+                    image: KnownMonikers.StatusInformation,
+                    isCloseButtonVisible: true);
+                var infoBar = await CommunityVS.InfoBar.CreateAsync(model);
+                await infoBar.TryShowInfoBarUIAsync();
+
+                await ToolChainServiceExtensions.InstallToolchain(wiz.GetCommandLine(), default);
+
+                var model1 = new InfoBarModel(
+                    textSpans: new[] { new InfoBarTextSpan($"{Vsix.Name}: Install finished."), },
+                    Array.Empty<InfoBarHyperlink>(),
+                    image: KnownMonikers.StatusInformation,
+                    isCloseButtonVisible: true);
+                var infoBar1 = await CommunityVS.InfoBar.CreateAsync(model);
+                await infoBar.TryShowInfoBarUIAsync();
+
+                // - show info bar
+                // - run command on separate loop
+                // - show info bar on completion.
+                // TODO - change r-a.vs updated notification text
+                // TODO - show common ones up in the list
+                // TODO - bring r-a.vs pane into focus.
+                // TODO - too many resolve \Cargo.toml errors in r-a.vs window
+                // TODO - vs block, explain in error message.
+                // TODO - clean up todos
+                // TODO - build all not showing errors
+                // TODO - other todos from todo.txt
+                // TODO - out of process extension
+                // TODO - release notes
+                // TODO - some dll is named rustanalyzer.dll
+            }
+            finally
+            {
+                CmdServices.VsUIShell.EnableModeless(1);
+            }
+        }
+    }
+}
+
+public sealed class NativeHwndWrapper : IWin32Window
+{
+    public NativeHwndWrapper(IntPtr handle)
+    {
+        Handle = handle;
+    }
+
+    public IntPtr Handle { get; }
 }
 
 [Command(PackageGuids.guidRustAnalyzerToolchainSwitcherString, PackageIds.IdFirstToolchain)]

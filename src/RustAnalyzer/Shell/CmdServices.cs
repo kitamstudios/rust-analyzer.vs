@@ -21,6 +21,7 @@ public sealed class CmdServices
     private ITelemetryService _t;
     private ShellInterop.IVsSolution _solution;
     private ShellInterop.IVsDebugger _debugger;
+    private ShellInterop.IVsUIShell _vsUIShell;
     private IToolChainService _toolChainService;
     private IBuildOutputSink _buildOutputSink;
 
@@ -30,6 +31,8 @@ public sealed class CmdServices
     }
 
     public Func<AsyncPackage> GetPackage { get; }
+
+    public ShellInterop.IVsUIShell VsUIShell => _vsUIShell ??= GetPackage().GetService<ShellInterop.SVsUIShell, ShellInterop.IVsUIShell>(false);
 
     private IComponentModel2 Mef => _mef ??= GetPackage().GetService<SComponentModel, IComponentModel2>(false);
 

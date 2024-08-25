@@ -20,7 +20,7 @@ namespace KS.RustAnalyzer.TestAdapter.Cargo;
 /// </summary>
 public static class ToolChainServiceExtensions
 {
-    private const string DefaultTargetTriple = "x86_64-pc-windows-msvc";
+    private const string AlwaysAvailableTarget = "x86_64-pc-windows-msvc";
 
     private static readonly Regex NameCracker =
         new (@"^((?<name>.*)(?<default> \(default\))?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.RightToLeft);
@@ -51,7 +51,7 @@ public static class ToolChainServiceExtensions
     public static async Task<(PathEx Bin, PathEx Lib)> GetBinAndLibPathsAsync(PathEx workingDirectory, CancellationToken ct)
     {
         var root = GetRustupSettingsPath().GetDirectoryName() + @$"toolchains\{await GetDefaultToolchainAsync(workingDirectory, ct)}";
-        return (root + "bin", root + $@"lib\rustlib\{DefaultTargetTriple}\lib");
+        return (root + "bin", root + $@"lib\rustlib\{AlwaysAvailableTarget}\lib");
     }
 
     public static async Task<Toolchain[]> GetInstalledToolchainsAsync(PathEx workingDirectory, CancellationToken ct)
@@ -97,6 +97,18 @@ public static class ToolChainServiceExtensions
         }
 
         return tcs;
+    }
+
+    public static async Task<string[]> GetTargets(CancellationToken ct)
+    {
+        var output = await GetCommandOutput("rustup", "target list", GetRustupPath().GetDirectoryName(), ct);
+        var targets = output
+            .Select(x => x.Trim())
+            .Where(x => !x.IsNullOrEmptyOrWhiteSpace() && x != AlwaysAvailableTarget)
+            .Select(x => x.Replace("(default)", string.Empty))
+            .ToArray();
+
+        return targets;
     }
 
     public static async Task<string> GetDefaultToolchainAsync(PathEx workingDirectory, CancellationToken ct)
@@ -173,6 +185,11 @@ public static class ToolChainServiceExtensions
         var lines = await GetCommandOutput(opName, versionArgs, workingDirectory, ct);
 
         return string.Join(string.Empty, lines.Where(l => !l.IsNullOrEmptyOrWhiteSpace()));
+    }
+
+    public static async Task InstallToolchain(string commandline, CancellationToken ct)
+    {
+        await Task.Delay(1000);
     }
 }
 
