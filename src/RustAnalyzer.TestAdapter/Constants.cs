@@ -30,7 +30,7 @@ public static class Constants
     public const string TestsContainerExtension = ".rusttests";
     public const string TestContainersSearchPattern = $"*{TestsContainerExtension}";
 
-    public const string RlsLatestInPackageVersion = "2024-07-15";
+    public const string RlsLatestInPackageVersion = "2024-08-27";
     public static readonly Version MinimumRequiredVsVersion = new (17, 7);
 
     public static readonly PathEx TestsContainerExtension2 = (PathEx)TestsContainerExtension;

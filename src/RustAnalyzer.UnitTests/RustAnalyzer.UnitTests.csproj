@@ -35,31 +35,9 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.VisualStudio.Workspace">
-      <Version>17.1.11-preview-0002</Version>
-      <NoWarn>NU1603</NoWarn>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Workspace.Extensions">
-      <Version>17.1.11-preview-0002</Version>
-      <NoWarn>NU1603</NoWarn>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Workspace.Extensions.VS">
-      <Version>17.1.11-preview-0002</Version>
-      <NoWarn>NU1603</NoWarn>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Workspace.VSIntegration">
-      <Version>17.1.11-preview-0002</Version>
-      <NoWarn>NU1603</NoWarn>
-    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\TestsCommon\RaVsDiffReporter.cs">
@@ -82,6 +60,26 @@
     </ItemGroup>
     <Copy SourceFiles="@(TestProjectsFiles)" DestinationFolder="$(TargetDir)\Cargo\TestData\%(RecursiveDir)" SkipUnchangedFiles="true" />
   </Target>
+  <ItemGroup>
+    <Reference Include="Microsoft.VisualStudio.TestWindow.Interfaces">
+      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.TestWindow.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Workspace">
+      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.Workspace.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Workspace.Extensions">
+      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.Workspace.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Workspace.Extensions.VS">
+      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.Workspace.Extensions.VS.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Workspace.VSIntegration">
+      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.Workspace.VSIntegration.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Workspace.VSIntegration.Contracts">
+      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.Workspace.VSIntegration.Contracts.dll</HintPath>
+    </Reference>
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RustAnalyzer.TestAdapter\RustAnalyzer.TestAdapter.csproj">
       <Project>{884a1604-99de-46dc-ae8d-f5893ce1abe1}</Project>

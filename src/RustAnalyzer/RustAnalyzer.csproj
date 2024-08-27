@@ -101,11 +101,11 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\external\rust-analyzer.exe">
-      <Link>2024-07-15\rust-analyzer.exe</Link>
+      <Link>2024-08-27\rust-analyzer.exe</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="..\external\rust_analyzer.pdb">
-      <Link>2024-07-15\rust_analyzer.pdb</Link>
+      <Link>2024-08-27\rust_analyzer.pdb</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="languages.pkgdef">
@@ -144,55 +144,53 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="System" />
     <Reference Include="System.Design" />
-    <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.IO.Compression.FileSystem" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Community.VisualStudio.VSCT" Version="16.0.29.6" PrivateAssets="all" />
-    <PackageReference Include="Community.VisualStudio.Toolkit.17" Version="17.0.430" ExcludeAssets="Runtime" />
-    <PackageReference Include="Microsoft.ApplicationInsights">
-      <Version>2.21.0</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.TestPlatform.ObjectModel">
-      <Version>17.4.1</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.TestWindow.Interfaces">
-      <Version>11.0.61030</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.0.5232" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.4.33103.184" ExcludeAssets="runtime">
-      <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client">
-      <Version>17.4.1068</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Workspace">
-      <Version>17.1.11-preview-0002</Version>
-      <NoWarn>NU1603</NoWarn>
+    <Reference Include="Microsoft.VisualBasic" />
+    <PackageReference Include="System.ComponentModel.Composition" Version="9.0.0-preview.7.24405.7" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.10.48" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.11.20">
       <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Workspace.Extensions">
-      <Version>17.1.11-preview-0002</Version>
-      <NoWarn>NU1603</NoWarn>
+    <Reference Include="Microsoft.VisualStudio.LanguageServer.Client">
+      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.LanguageServer.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.TestWindow.Interfaces">
+      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.TestWindow.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Workspace">
+      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.Workspace.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Workspace.Extensions">
+      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.Workspace.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Workspace.Extensions.VS">
+      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.Workspace.Extensions.VS.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Workspace.VSIntegration">
+      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.Workspace.VSIntegration.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Workspace.VSIntegration.Contracts">
+      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.Workspace.VSIntegration.Contracts.dll</HintPath>
+    </Reference>
+    <PackageReference Include="Community.VisualStudio.VSCT" Version="16.0.29.6">
       <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Workspace.Extensions.VS">
-      <Version>17.1.11-preview-0002</Version>
-      <NoWarn>NU1603</NoWarn>
+    <PackageReference Include="Community.VisualStudio.Toolkit.17" Version="17.0.522" />
+    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.11.0" />
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.10.40171" />
+    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.11.435">
       <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Workspace.VSIntegration">
-      <Version>17.1.11-preview-0002</Version>
-      <NoWarn>NU1603</NoWarn>
-    </PackageReference>
-    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.1.4057">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    <PackageReference Include="Microsoft.VisualStudio.SDK.Analyzers" Version="17.7.41">
       <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>

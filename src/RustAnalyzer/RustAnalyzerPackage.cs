@@ -59,7 +59,14 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
     {
         await base.OnAfterPackageLoadedAsync(cancellationToken);
 
-        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+        try
+        {
+            await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
 
         await ReleaseSummaryNotification.ShowAsync(_regSettings, _tl);
         await SearchAndDisableIncompatibleExtensionsAsync();
