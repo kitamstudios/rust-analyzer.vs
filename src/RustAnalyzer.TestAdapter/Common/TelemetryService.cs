@@ -11,11 +11,11 @@ namespace KS.RustAnalyzer.TestAdapter.Common;
 
 public interface ITelemetryService
 {
-    void TrackEvent(string eventName, params (string key, string value)[] properties);
+    void TrackEvent(string eventName, params (string Key, string Value)[] properties);
 
     void TrackException(Exception e, [CallerMemberName] string siteName = null);
 
-    void TrackException(Exception e, (string key, string value)[] properties, [CallerMemberName] string siteName = null);
+    void TrackException(Exception e, (string Key, string Value)[] properties, [CallerMemberName] string siteName = null);
 }
 
 [Export(typeof(ITelemetryService))]
@@ -36,7 +36,7 @@ public sealed class TelemetryService : ITelemetryService
         _telemetryClient = new TelemetryClient(configuration);
     }
 
-    public void TrackEvent(string eventName, params (string key, string value)[] properties)
+    public void TrackEvent(string eventName, params (string Key, string Value)[] properties)
     {
         var propsDict = CreatePropsDict(properties);
         _telemetryClient.TrackEvent(eventName, propsDict);
@@ -48,19 +48,19 @@ public sealed class TelemetryService : ITelemetryService
         _telemetryClient.TrackException(e, propsDict);
     }
 
-    public void TrackException(Exception e, (string key, string value)[] properties, [CallerMemberName] string siteName = null)
+    public void TrackException(Exception e, (string Key, string Value)[] properties, [CallerMemberName] string siteName = null)
     {
         var propsDict = CreatePropsDict(properties.Concat(new[] { ("Site", siteName) }).ToArray());
         _telemetryClient.TrackException(e, propsDict);
     }
 
-    private static Dictionary<string, string> CreatePropsDict((string key, string value)[] properties)
+    private static Dictionary<string, string> CreatePropsDict((string Key, string Value)[] properties)
     {
         return properties.Aggregate(
             new Dictionary<string, string>(),
             (acc, e) =>
             {
-                acc.Add(e.key, e.value);
+                acc.Add(e.Key, e.Value);
                 return acc;
             });
     }

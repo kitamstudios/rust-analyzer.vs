@@ -20,7 +20,7 @@ namespace KS.RustAnalyzer.TestAdapter.Cargo;
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class ToolChainService : IToolChainService
 {
-    private static readonly Regex TestExecutablePathCracker = new (@"^\s*Executable( unittests)? (.*) \((.*\\(.*)\-[\da-f]{16}.exe)\)$$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex TestExecutablePathCracker = new(@"^\s*Executable( unittests)? (.*) \((.*\\(.*)\-[\da-f]{16}.exe)\)$$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private readonly TL _tl;
 

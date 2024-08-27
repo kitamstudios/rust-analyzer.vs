@@ -7,7 +7,7 @@ namespace KS.RustAnalyzer.UnitTests.Infrastructure;
 
 public class StringBuildMessagePreprocessorTests
 {
-    private readonly StringBuildMessagePreprocessor _preprocessor = new ();
+    private readonly StringBuildMessagePreprocessor _preprocessor = new();
 
     [Theory]
     [InlineData(@"[31m-    let model_a2 = ModelA2 {", new[] { "-    let model_a2 = ModelA2 {" })]

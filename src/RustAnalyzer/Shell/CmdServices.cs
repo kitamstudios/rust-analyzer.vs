@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Common;
@@ -12,7 +11,7 @@ using ShellInterop = Microsoft.VisualStudio.Shell.Interop;
 
 namespace KS.RustAnalyzer.Shell;
 
-using ToolchainOperation = Func<IToolChainService, Func<BuildTargetInfo, BuildOutputSinks, CancellationToken, Task<bool>>>;
+using ToolchainOperation = System.Func<KS.RustAnalyzer.TestAdapter.Common.IToolChainService, System.Func<KS.RustAnalyzer.TestAdapter.Common.BuildTargetInfo, KS.RustAnalyzer.TestAdapter.Common.BuildOutputSinks, System.Threading.CancellationToken, System.Threading.Tasks.Task<bool>>>;
 
 public sealed class CmdServices
 {

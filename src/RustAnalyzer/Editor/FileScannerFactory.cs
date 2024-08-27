@@ -18,7 +18,7 @@ namespace KS.RustAnalyzer.Editor;
 public class FileScannerFactory : IWorkspaceProviderFactory<IFileScanner>
 {
     public const string ProviderType = "F5628EAD-0000-4683-B597-D8314B971ED6";
-    public static readonly Guid ProviderTypeGuid = new (ProviderType);
+    public static readonly Guid ProviderTypeGuid = new(ProviderType);
 
     [Import]
     public ILogger L { get; set; }

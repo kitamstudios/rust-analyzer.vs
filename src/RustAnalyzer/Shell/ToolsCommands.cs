@@ -70,7 +70,7 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
 {
     private const string ToolchainNameProperty = "name";
 
-    private static readonly List<OleMenuCommand> CommandCache = new ();
+    private static readonly List<OleMenuCommand> CommandCache = new();
 
     protected override void BeforeQueryStatus(EventArgs e)
     {
@@ -105,7 +105,7 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
         }
 
         var name = command.Properties[ToolchainNameProperty] as string;
-        ThreadHelper.JoinableTaskFactory
+        RustAnalyzerPackage.JTF
             .RunAsync(async () => await ((PathEx)workspaceRoot).SetToolchainOverrideAsync(name, Logger, default))
             .FireAndForget();
 

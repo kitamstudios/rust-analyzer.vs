@@ -13,9 +13,9 @@ namespace KS.RustAnalyzer.TestAdapter;
 
 public static class TestDiscovererCommon
 {
-    private static readonly Regex TestExecutableFingerPrintCracker = new (@"^(.*)\-[\da-f]{16}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex TestExecutableFingerPrintCracker = new(@"^(.*)\-[\da-f]{16}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public static TL CreateTL(this IMessageLogger @this) => new () { T = new TelemetryService(), L = new TestAdapterLogger(@this) };
+    public static TL CreateTL(this IMessageLogger @this) => new() { T = new TelemetryService(), L = new TestAdapterLogger(@this) };
 
     /// <summary>
     /// Each TestContainer contains multiple Exes, each Exes has multiple tests. Each Exe is represented by a TestSuiteInfo.
@@ -30,7 +30,7 @@ public static class TestDiscovererCommon
     /// Each Exe is represented by a TestSuiteInfo.
     /// Discovery is done by running Exes in parallel => IAsyncEnumerable[(TestSuiteInfo, IEnumerable[TestCase])].
     /// </summary>
-    public static async Task<IEnumerable<(TestSuiteInfo, IEnumerable<TestCase>)>> DiscoverTestCasesFromOneSourceAsync(this TestContainer tc, TL tl, CancellationToken ct)
+    public static async Task<IEnumerable<(TestSuiteInfo TSI, IEnumerable<TestCase> TCs)>> DiscoverTestCasesFromOneSourceAsync(this TestContainer tc, TL tl, CancellationToken ct)
     {
         tl.L.WriteLine("Starting discovery of tests from {0}.", tc.ThisPath);
 

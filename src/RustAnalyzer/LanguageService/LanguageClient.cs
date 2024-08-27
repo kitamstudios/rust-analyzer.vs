@@ -13,7 +13,6 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Utilities;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
-using Newtonsoft.Json.Linq;
 using StreamJsonRpc;
 
 namespace KS.RustAnalyzer.LanguageService;
@@ -65,7 +64,7 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
     {
         var rlsPath = await RADownloader.GetExePathAsync();
         L.WriteLine("Starting rust-analyzer from path: {0}.", rlsPath);
-        ProcessStartInfo info = new ()
+        ProcessStartInfo info = new()
         {
             FileName = rlsPath,
             RedirectStandardInput = true,
@@ -76,7 +75,7 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
             WorkingDirectory = WorkspaceService.CurrentWorkspace?.Location ?? Path.GetDirectoryName(rlsPath),
         };
 
-        Process process = new ()
+        Process process = new()
         {
             StartInfo = info
         };
@@ -137,29 +136,5 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
         };
 
         return Task.FromResult(failureContext);
-    }
-
-    public class LanguageExtensionMiddleLayer : ILanguageClientMiddleLayer
-    {
-        private readonly ILogger _logger;
-
-        public LanguageExtensionMiddleLayer(ILogger logger)
-        {
-            _logger = logger;
-        }
-
-        public bool CanHandle(string methodName) => true;
-
-        public async Task HandleNotificationAsync(string methodName, JToken methodParam, Func<JToken, Task> sendNotification)
-        {
-            _logger.WriteLine("HandleNotificationAsync: {0}", methodName);
-            await sendNotification(methodParam);
-        }
-
-        public async Task<JToken> HandleRequestAsync(string methodName, JToken methodParam, Func<JToken, Task<JToken>> sendRequest)
-        {
-            _logger.WriteLine("HandleRequestAsync: {0}", methodName);
-            return await sendRequest(methodParam);
-        }
     }
 }

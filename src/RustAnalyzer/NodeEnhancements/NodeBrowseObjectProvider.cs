@@ -16,7 +16,7 @@ namespace KS.RustAnalyzer.NodeEnhancements;
 public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
 {
     private readonly TL _tl;
-    private readonly NodeBrowseObjectPropertyFilter<NodeBrowseObject> _browseObject = new (new ());
+    private readonly NodeBrowseObjectPropertyFilter<NodeBrowseObject> _browseObject = new(new());
     private readonly IPreReqsCheckService _preReqs;
 
     [ImportingConstructor]
@@ -65,7 +65,7 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
             return;
         }
 
-        ThreadHelper.JoinableTaskFactory
+        RustAnalyzerPackage.JTF
             .RunAsync(
                 async () =>
                 {

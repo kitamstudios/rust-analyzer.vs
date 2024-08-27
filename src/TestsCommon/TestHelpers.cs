@@ -20,7 +20,7 @@ public static class TestHelpers
             @"Cargo\TestData").ToLowerInvariant();
 
     public static readonly TL TL =
-        new ()
+        new()
         {
             L = Mock.Of<ILogger>(),
             T = Mock.Of<ITelemetryService>(),

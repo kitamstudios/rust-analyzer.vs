@@ -22,7 +22,7 @@ namespace KS.RustAnalyzer.TestAdapter;
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 {
-    private readonly ConcurrentDictionary<PathEx, TestContainer> _testContainersCache = new ();
+    private readonly ConcurrentDictionary<PathEx, TestContainer> _testContainersCache = new();
 
     private readonly IVsFolderWorkspaceService _workspaceFactory;
     private readonly TL _tl;
@@ -39,7 +39,7 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
             L = l,
         };
 
-        ThreadHelper.JoinableTaskFactory.RunAsync(
+        RustAnalyzerPackage.JTF.RunAsync(
             async () =>
             {
                 _currentWorkspace = _workspaceFactory.CurrentWorkspace;
@@ -50,7 +50,7 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer
 
     public event EventHandler TestContainersUpdated;
 
-    public Uri ExecutorUri => new (Constants.ExecutorUriString);
+    public Uri ExecutorUri => new(Constants.ExecutorUriString);
 
     public IEnumerable<ITestContainer> TestContainers => _testContainersCache.Values;
 

@@ -10,7 +10,7 @@ namespace KS.RustAnalyzer.Infrastructure;
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class OutputWindowLogger : ILogger
 {
-    private static readonly Guid OuputWidowPaneGuid = new ("9142a5bb-c829-4d2a-87e3-9c7b545edf30");
+    private static readonly Guid OuputWidowPaneGuid = new("9142a5bb-c829-4d2a-87e3-9c7b545edf30");
     private static readonly string OuputWidowPaneName = Vsix.Name;
     private IVsOutputWindowPane _pane;
 
@@ -24,11 +24,11 @@ public sealed class OutputWindowLogger : ILogger
     {
         try
         {
-            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            RustAnalyzerPackage.JTF.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 WriteCore(format, args);
-            });
+            }).FireAndForget();
         }
         catch (Exception e)
         {
@@ -40,11 +40,11 @@ public sealed class OutputWindowLogger : ILogger
     {
         try
         {
-            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            RustAnalyzerPackage.JTF.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 WriteCore("[ERROR]: " + format, args);
-            });
+            }).FireAndForget();
         }
         catch (Exception e)
         {

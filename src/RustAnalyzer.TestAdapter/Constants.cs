@@ -31,7 +31,7 @@ public static class Constants
     public const string TestContainersSearchPattern = $"*{TestsContainerExtension}";
 
     public const string RlsLatestInPackageVersion = "2024-08-27";
-    public static readonly Version MinimumRequiredVsVersion = new (17, 7);
+    public static readonly Version MinimumRequiredVsVersion = new(17, 7);
 
     public static readonly PathEx TestsContainerExtension2 = (PathEx)TestsContainerExtension;
     public static readonly PathEx ManifestFileName2 = (PathEx)ManifestFileName;

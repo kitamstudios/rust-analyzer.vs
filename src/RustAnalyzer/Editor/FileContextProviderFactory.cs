@@ -14,7 +14,7 @@ namespace KS.RustAnalyzer.Editor;
     supportedContextTypeGuids: new[] { BuildContextTypes.BuildContextType, BuildContextTypes.CleanContextType, })]
 public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFileContextProvider>
 {
-    public static readonly Guid ProviderTypeGuid = new (ProviderType);
+    public static readonly Guid ProviderTypeGuid = new(ProviderType);
 
     private const string ProviderType = "{72D3FCEF-0000-4266-B8DD-D3ED06E35A2B}";
 

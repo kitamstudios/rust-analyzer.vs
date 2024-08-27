@@ -33,7 +33,7 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         var tasks = tests
             .GroupBy(t => t.Source)
             .Select(g => (g.Key, g.AsEnumerable()))
-            .Select(async g => (await ((PathEx)g.Item1).ReadTestContainerAsync(ct), g.Item2))
+            .Select(async g => (await ((PathEx)g.Key).ReadTestContainerAsync(ct), g.Item2))
             .Select(async x =>
             {
                 var (c, tcs) = await x;

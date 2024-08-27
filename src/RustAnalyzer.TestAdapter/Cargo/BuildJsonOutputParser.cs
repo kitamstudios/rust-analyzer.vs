@@ -28,10 +28,10 @@ public static class BuildJsonOutputParser
         };
 
     private static readonly Regex CompilerArtifactMessageCracker1 =
-        new (@"^(.*) (.*) \((.*)\+(.*)\)$", RegexOptions.Compiled);
+        new(@"^(.*) (.*) \((.*)\+(.*)\)$", RegexOptions.Compiled);
 
     private static readonly Regex CompilerArtifactMessageCracker2 =
-        new (@"^(.*)\+(.*)@(.*)$", RegexOptions.Compiled);
+        new(@"^(.*)\+(.*)@(.*)$", RegexOptions.Compiled);
 
     public static BuildMessage[] Parse(PathEx workspaceRoot, string jsonLine, TL tl)
     {

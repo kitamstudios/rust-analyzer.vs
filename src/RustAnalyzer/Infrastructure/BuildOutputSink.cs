@@ -14,7 +14,7 @@ namespace KS.RustAnalyzer.Infrastructure;
 public sealed class BuildOutputSink : IBuildOutputSink
 {
     private static readonly Guid BuildOutputPaneGuid = VSConstants.OutputWindowPaneGuid.BuildOutputPane_guid;
-    private static readonly StringBuildMessagePreprocessor SbmPreprocessor = new ();
+    private static readonly StringBuildMessagePreprocessor SbmPreprocessor = new();
     private IVsOutputWindowPane _buildOutputPane;
 
     [Import]
@@ -27,7 +27,7 @@ public sealed class BuildOutputSink : IBuildOutputSink
     {
         try
         {
-            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            RustAnalyzerPackage.JTF.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 Initialize();
@@ -54,7 +54,7 @@ public sealed class BuildOutputSink : IBuildOutputSink
                 {
                     throw new ArgumentOutOfRangeException(nameof(message));
                 }
-            });
+            }).FireAndForget();
         }
         catch (Exception e)
         {
@@ -66,12 +66,12 @@ public sealed class BuildOutputSink : IBuildOutputSink
     {
         try
         {
-            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            RustAnalyzerPackage.JTF.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 Initialize();
                 _buildOutputPane.Clear();
-            });
+            }).FireAndForget();
         }
         catch (Exception e)
         {

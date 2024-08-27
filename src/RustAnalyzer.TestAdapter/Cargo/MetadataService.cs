@@ -15,8 +15,8 @@ public class MetadataService : IMetadataService, IDisposable
     private readonly PathEx _workspaceRoot;
     private readonly TL _tl;
     private readonly bool _synchronousEvents;
-    private readonly SemaphoreSlim _packageCacheLocker = new (1, 1);
-    private ConcurrentDictionary<PathEx, Workspace.Package> _packageCache = new ();
+    private readonly SemaphoreSlim _packageCacheLocker = new(1, 1);
+    private ConcurrentDictionary<PathEx, Workspace.Package> _packageCache = new();
     private bool _disposedValue;
 
     public MetadataService(IToolChainService cargoService, PathEx workspaceRoot, TL tl)

@@ -12,6 +12,7 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Threading;
 using CommunityVS = Community.VisualStudio.Toolkit.VS;
 using Constants = KS.RustAnalyzer.TestAdapter.Constants;
 
@@ -37,9 +38,18 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
     private IRegistrySettingsService _regSettings;
     private IPreReqsCheckService _preReqs;
     private IRlsInstallerService _raDownloader;
+    private static JoinableTaskFactory _jtf;
+
+    public static JoinableTaskFactory JTF
+    {
+        get => _jtf ?? ThreadHelper.JoinableTaskFactory;
+        private set => _jtf = value;
+    }
 
     protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
     {
+        JTF = JoinableTaskFactory;
+
         await this.RegisterCommandsAsync();
 
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);

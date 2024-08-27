@@ -49,13 +49,13 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
     {
         var results = await DoChecksAsync(ct);
 
-        var failures = results.Where(x => !x.success);
+        var failures = results.Where(x => !x.Success);
         if (failures.Any())
         {
             var line1 = failures
                 .Aggregate(
                     new StringBuilder("Prerequisite check(s) failed:"),
-                    (acc, e) => acc.AppendLine().AppendFormat("- {0}", e.message))
+                    (acc, e) => acc.AppendLine().AppendFormat("- {0}", e.Message))
                 .ToString();
             await VsCommon.ShowMessageBoxAsync(
                 line1,
@@ -65,9 +65,9 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         }
     }
 
-    private async Task<IEnumerable<(bool success, string message)>> DoChecksAsync(CancellationToken ct)
+    private async Task<IEnumerable<(bool Success, string Message)>> DoChecksAsync(CancellationToken ct)
     {
-        var results = new List<(bool success, string message)>();
+        var results = new List<(bool Success, string Message)>();
         foreach (var kv in _preReqChecks)
         {
             _tl.L.WriteLine("Running PreReqCheck: {0}...", kv.Key);
@@ -83,7 +83,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         return results;
     }
 
-    private static async Task<(bool, string)> CheckCargoAsync(IToolChainService ts, CancellationToken ct)
+    private static async Task<(bool Success, string Message)> CheckCargoAsync(IToolChainService ts, CancellationToken ct)
     {
         try
         {
@@ -99,7 +99,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         return (false, $"{Constants.CargoExe} component is not found in any active toolchain.");
     }
 
-    private static async Task<(bool, string)> CheckRustupAsync(IToolChainService ts, CancellationToken ct)
+    private static async Task<(bool Success, string Message)> CheckRustupAsync(IToolChainService ts, CancellationToken ct)
     {
         try
         {
@@ -115,7 +115,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         return (false, $"{Constants.RustUpExe} not installed.");
     }
 
-    private static async Task<(bool, string)> CheckRustupToolchainInstallationAsync(IToolChainService ts, CancellationToken ct)
+    private static async Task<(bool Success, string Message)> CheckRustupToolchainInstallationAsync(IToolChainService ts, CancellationToken ct)
     {
         try
         {
@@ -135,7 +135,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
 
     public static class VsVersionCheck
     {
-        public static async Task<(bool, string)> CheckAsync(IToolChainService ts, CancellationToken ct)
+        public static async Task<(bool Success, string Message)> CheckAsync(IToolChainService ts, CancellationToken ct)
         {
             var version = await CommunityVS.Shell.GetVsVersionAsync();
             if (version == null)

@@ -21,7 +21,7 @@ public readonly struct PathEx : IEquatable<PathEx>
 
     public static implicit operator string(PathEx p) => p._path;
 
-    public static implicit operator PathEx?(string p) => p != null ? new (p) : null;
+    public static implicit operator PathEx?(string p) => p != null ? new(p) : null;
 
     public static bool operator ==(PathEx left, PathEx right) => left.Equals(right);
 

@@ -22,7 +22,7 @@ namespace KS.RustAnalyzer.Debugger;
 public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
 {
     public const string ProviderType = "{72D3FCEF-1111-4266-B8DD-D3ED06E35A2B}";
-    public static readonly Guid ProviderTypeGuid = new (ProviderType);
+    public static readonly Guid ProviderTypeGuid = new(ProviderType);
 
     [Import]
     public ILogger L { get; set; }

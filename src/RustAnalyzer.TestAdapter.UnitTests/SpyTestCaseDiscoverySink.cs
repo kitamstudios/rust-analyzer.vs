@@ -6,7 +6,7 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests;
 
 public class SpyTestCaseDiscoverySink : ITestCaseDiscoverySink
 {
-    private readonly List<TestCase> _testCases = new ();
+    private readonly List<TestCase> _testCases = new();
 
     public IReadOnlyList<TestCase> TestCases => _testCases;
 

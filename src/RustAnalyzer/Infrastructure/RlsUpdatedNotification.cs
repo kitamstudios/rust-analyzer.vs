@@ -67,12 +67,12 @@ public static class RlsUpdatedNotification
         switch (actionContext)
         {
             case ActionContextRestartVS:
-                _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                RustAnalyzerPackage.JTF.RunAsync(async () =>
                 {
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                     Enabled = false; // NOTE: Restart restores the environment variables.
                     await CommunityVS.Shell.RestartAsync();
-                });
+                }).FireAndForget();
 
                 break;
 

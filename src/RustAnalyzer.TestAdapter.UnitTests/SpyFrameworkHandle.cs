@@ -10,7 +10,7 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests;
 
 public class SpyFrameworkHandle : IFrameworkHandle
 {
-    private readonly ConcurrentBag<TestResult> _results = new ();
+    private readonly ConcurrentBag<TestResult> _results = new();
     private readonly ITestOutputHelper _output;
 
     public SpyFrameworkHandle(ITestOutputHelper output)
