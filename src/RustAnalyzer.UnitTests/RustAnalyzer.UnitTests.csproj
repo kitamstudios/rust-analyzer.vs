@@ -62,22 +62,22 @@
   </Target>
   <ItemGroup>
     <Reference Include="Microsoft.VisualStudio.TestWindow.Interfaces">
-      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.TestWindow.Interfaces.dll</HintPath>
+      <HintPath>..\external\vs.17.11\Microsoft.VisualStudio.TestWindow.Interfaces.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Workspace">
-      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.Workspace.dll</HintPath>
+      <HintPath>..\external\vs.17.11\Microsoft.VisualStudio.Workspace.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Workspace.Extensions">
-      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.Workspace.Extensions.dll</HintPath>
+      <HintPath>..\external\vs.17.11\Microsoft.VisualStudio.Workspace.Extensions.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Workspace.Extensions.VS">
-      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.Workspace.Extensions.VS.dll</HintPath>
+      <HintPath>..\external\vs.17.11\Microsoft.VisualStudio.Workspace.Extensions.VS.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Workspace.VSIntegration">
-      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.Workspace.VSIntegration.dll</HintPath>
+      <HintPath>..\external\vs.17.11\Microsoft.VisualStudio.Workspace.VSIntegration.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Workspace.VSIntegration.Contracts">
-      <HintPath>..\external\vs.17.10\Microsoft.VisualStudio.Workspace.VSIntegration.Contracts.dll</HintPath>
+      <HintPath>..\external\vs.17.11\Microsoft.VisualStudio.Workspace.VSIntegration.Contracts.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

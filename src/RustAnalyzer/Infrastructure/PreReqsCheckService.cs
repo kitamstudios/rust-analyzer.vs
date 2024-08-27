@@ -145,7 +145,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
 
             if (version <= Constants.MinimumRequiredVsVersion)
             {
-                return (false, $"VS Version check failed. Minimum {Constants.MinimumRequiredVsVersion}, found {version}.");
+                return (false, $"VS Version check failed. Minimum {Constants.MinimumRequiredVsVersion}, found {version}. Install the latest VS update. This is a one time thing. Unfortunately it is required as VS {Constants.MinimumRequiredVsVersion} introduced breaking changes. Sorry about that!");
             }
 
             return (true, string.Empty);
