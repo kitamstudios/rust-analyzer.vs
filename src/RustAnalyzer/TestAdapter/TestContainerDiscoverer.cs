@@ -17,7 +17,6 @@ using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter;
 
-// TODO: 3. RELEASE: Fix reported exceptions in appinsights.
 [Export(typeof(ITestContainerDiscoverer))]
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class TestContainerDiscoverer : ITestContainerDiscoverer

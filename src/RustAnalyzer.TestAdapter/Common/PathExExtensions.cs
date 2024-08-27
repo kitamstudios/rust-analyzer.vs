@@ -28,6 +28,8 @@ public static class PathExExtensions
 
     public static PathEx GetDirectoryName(this PathEx @this) => (PathEx)Path.GetDirectoryName(@this);
 
+    public static PathEx GetPathRoot(this PathEx @this) => (PathEx)Path.GetPathRoot(@this);
+
     public static PathEx GetFileNameWithoutExtension(this PathEx @this) => (PathEx)Path.GetFileNameWithoutExtension(@this);
 
     public static PathEx GetTempFileName() => (PathEx)Path.GetTempFileName();

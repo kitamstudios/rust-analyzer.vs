@@ -29,7 +29,7 @@ public sealed class BuildOutputSink : IBuildOutputSink
         {
             RustAnalyzerPackage.JTF.RunAsync(async () =>
             {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
                 Initialize();
 
                 if (message is StringBuildMessage sm)
@@ -68,7 +68,7 @@ public sealed class BuildOutputSink : IBuildOutputSink
         {
             RustAnalyzerPackage.JTF.RunAsync(async () =>
             {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
                 Initialize();
                 _buildOutputPane.Clear();
             }).FireAndForget();

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 using Community.VisualStudio.Toolkit;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter;
@@ -12,8 +14,6 @@ using Microsoft.VisualStudio.Shell;
 using CommunityVS = Community.VisualStudio.Toolkit.VS;
 
 namespace KS.RustAnalyzer.Shell;
-
-// TODO: Logging and metrics for each of the commands.
 
 /// <summary>
 /// This command will be shown even if a Rust project is not opened currently.
@@ -42,7 +42,7 @@ public sealed class RestartLspCommand : BaseRustAnalyzerCommand<RestartLspComman
 
     protected override void ExecuteCore(object sender, OleMenuCmdEventArgs eventArgs)
     {
-        CommunityVS.MessageBox.Show("TODO: Restart lsp command.");
+        throw new NotImplementedException();
     }
 }
 
@@ -65,6 +65,74 @@ public sealed class KillOrphanedRaExesCommand : BaseRustAnalyzerCommand<KillOrph
     }
 }
 
+/// <summary>
+/// This command will be shown even if a Rust project is not opened currently.
+/// </summary>
+[Command(PackageGuids.guidRustAnalyzerToolsCmdSetString, PackageIds.IdInstallToolchain)]
+public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToolchainCommand>
+{
+    protected override void BeforeQueryStatus(EventArgs e)
+    {
+        Command.Visible = Command.Enabled = Command.Supported = true;
+    }
+
+    protected override void ExecuteCore(object sender, OleMenuCmdEventArgs eventArgs)
+    {
+        RustAnalyzerPackage.JTF.Run(ExecuteCoreAsync);
+    }
+
+    private async Task ExecuteCoreAsync()
+    {
+        await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
+
+        var targets = await ToolChainServiceExtensions.GetTargets(default);
+        CmdServices.VsUIShell.GetDialogOwnerHwnd(out IntPtr hwndOwner);
+
+        using var wiz = new ToolchainInstallerWizard();
+        CmdServices.VsUIShell.EnableModeless(0);
+        try
+        {
+            wiz.Targets = targets;
+            wiz.StartPosition = FormStartPosition.CenterParent;
+            if (wiz.ShowDialog(new NativeHwndWrapper(hwndOwner)) != DialogResult.OK)
+            {
+                return;
+            }
+        }
+        finally
+        {
+            CmdServices.VsUIShell.EnableModeless(1);
+        }
+
+        var (cmdLine, tcName) = wiz.GetCommandLineInfo();
+        await VsCommon.ShowInfoBarAsync(true, $"Starting installation of toolchain '{tcName}'. See Output > rust-analyzer.vs pane for detailed status. Once done, you'll be notified here.");
+        RustAnalyzerPackage.JTF.RunAsync(
+            async () =>
+            {
+                var res = await ToolChainServiceExtensions.InstallToolchain(cmdLine, CmdServices.BuildOutputSink, default);
+
+                await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
+                var msg = $"Finished installing toolchain '{tcName}'. Use Tools > Options > Rust Tools > Switch Active Toolchain to switch to it.";
+                if (!res)
+                {
+                    msg = $"Failed to install toolchain '{tcName}'. See Output > rust-analyzer.vs pane for details. Try again and maybe run from the command line.";
+                }
+
+                await VsCommon.ShowInfoBarAsync(res, msg);
+            }).FireAndForget();
+    }
+}
+
+public sealed class NativeHwndWrapper : IWin32Window
+{
+    public NativeHwndWrapper(IntPtr handle)
+    {
+        Handle = handle;
+    }
+
+    public IntPtr Handle { get; }
+}
+
 [Command(PackageGuids.guidRustAnalyzerToolchainSwitcherString, PackageIds.IdFirstToolchain)]
 public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolchainCommand>
 {
@@ -77,7 +145,7 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
         ThreadHelper.ThrowIfNotOnUIThread();
 
         var workspaceRoot = CmdServices.GetWorkspaceRoot();
-        var toolchains = ThreadHelper.JoinableTaskFactory
+        var toolchains = RustAnalyzerPackage.JTF
             .Run(async () => await ToolChainServiceExtensions.GetInstalledToolchainsAsync(workspaceRoot, default));
 
         var mcs = Package.GetService<IMenuCommandService, OleMenuCommandService>();

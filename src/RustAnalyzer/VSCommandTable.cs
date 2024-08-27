@@ -58,6 +58,7 @@ namespace KS.RustAnalyzer
         public const int IdRustAnalyzerOptions = 0x0100;
         public const int IdRestartLSP = 0x0101;
         public const int IdKillOrphaned = 0x0102;
+        public const int IdInstallToolchain = 0x0103;
         public const int IdMSwitchToolchainMenu = 0x0001;
         public const int IdGToolchainListGroup = 0x0010;
         public const int IdFirstToolchain = 0x0101;

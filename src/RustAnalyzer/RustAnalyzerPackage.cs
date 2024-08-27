@@ -52,7 +52,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
 
         await this.RegisterCommandsAsync();
 
-        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+        await JTF.SwitchToMainThreadAsync(cancellationToken);
 
         var cmServiceProvider = (IComponentModel)await GetServiceAsync(typeof(SComponentModel));
         _tl = new TL
@@ -69,14 +69,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
     {
         await base.OnAfterPackageLoadedAsync(cancellationToken);
 
-        try
-        {
-            await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex);
-        }
+        await JTF.SwitchToMainThreadAsync(cancellationToken);
 
         await ReleaseSummaryNotification.ShowAsync(_regSettings, _tl);
         await SearchAndDisableIncompatibleExtensionsAsync();
@@ -171,7 +164,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
 
         public static async Task ShowAsync(IRegistrySettingsService regSettings, TL tl)
         {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
 
             tl.L.WriteLine("Attempting to show release notes...");
             if (regSettings.InfoBarDismissedByUser)

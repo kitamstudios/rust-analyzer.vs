@@ -39,7 +39,7 @@ public static class RlsUpdatedNotification
             return;
         }
 
-        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+        await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
 
         var actionItems = new[]
         {
@@ -69,7 +69,7 @@ public static class RlsUpdatedNotification
             case ActionContextRestartVS:
                 RustAnalyzerPackage.JTF.RunAsync(async () =>
                 {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
                     Enabled = false; // NOTE: Restart restores the environment variables.
                     await CommunityVS.Shell.RestartAsync();
                 }).FireAndForget();

@@ -20,6 +20,7 @@ public sealed class CmdServices
     private ITelemetryService _t;
     private ShellInterop.IVsSolution _solution;
     private ShellInterop.IVsDebugger _debugger;
+    private ShellInterop.IVsUIShell _vsUIShell;
     private IToolChainService _toolChainService;
     private IBuildOutputSink _buildOutputSink;
 
@@ -29,6 +30,10 @@ public sealed class CmdServices
     }
 
     public Func<AsyncPackage> GetPackage { get; }
+
+    public ShellInterop.IVsUIShell VsUIShell => _vsUIShell ??= GetPackage().GetService<ShellInterop.SVsUIShell, ShellInterop.IVsUIShell>(false);
+
+    public IBuildOutputSink BuildOutputSink => _buildOutputSink ??= Mef?.GetService<IBuildOutputSink>();
 
     private IComponentModel2 Mef => _mef ??= GetPackage().GetService<SComponentModel, IComponentModel2>(false);
 
@@ -41,8 +46,6 @@ public sealed class CmdServices
     private ShellInterop.IVsDebugger Debugger => _debugger ??= GetPackage().GetService<ShellInterop.SVsShellDebugger, ShellInterop.IVsDebugger>(false);
 
     private IToolChainService ToolChainService => _toolChainService ??= Mef?.GetService<IToolChainService>();
-
-    private IBuildOutputSink BuildOutputSink => _buildOutputSink ??= Mef?.GetService<IBuildOutputSink>();
 
     public async Task ExecuteToolchainOperationAsync(ToolchainOperation op, PathEx manifestPath, Func<Options, string> getOpts)
     {

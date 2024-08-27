@@ -43,7 +43,7 @@ public abstract class BaseToolChainCommand<T> : BaseCommand<T>
 
     protected override async Task ExecuteAsync(OleMenuCmdEventArgs e)
     {
-        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+        await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
 
         var selectedPath = CmdServices.GetSelectedItems().FirstOrDefault();
         await CmdServices.ExecuteToolchainOperationAsync(Operation, selectedPath, GetOptions);
@@ -89,7 +89,7 @@ public abstract class BaseBuildToolChainCommand<T> : BaseCommand<T>
 
     protected override async Task ExecuteAsync(OleMenuCmdEventArgs e)
     {
-        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+        await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
 
         var selectedPath = GetManifestPath();
         await CmdServices.ExecuteToolchainOperationAsync(Operation, selectedPath, GetOptions);

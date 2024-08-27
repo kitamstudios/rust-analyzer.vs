@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,7 +22,12 @@ namespace KS.RustAnalyzer.TestAdapter.Cargo;
 /// </summary>
 public static class ToolChainServiceExtensions
 {
-    private const string DefaultTargetTriple = "x86_64-pc-windows-msvc";
+    public const string AlwaysAvailableTarget = "x86_64-pc-windows-msvc";
+
+    public static readonly string[] CommonTargets = new[]
+    {
+        "wasm32-unknown-unknown",
+    };
 
     private static readonly Regex NameCracker =
         new(@"^((?<name>.*)(?<default> \(default\))?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.RightToLeft);
@@ -51,7 +58,7 @@ public static class ToolChainServiceExtensions
     public static async Task<(PathEx Bin, PathEx Lib)> GetBinAndLibPathsAsync(PathEx workingDirectory, CancellationToken ct)
     {
         var root = GetRustupSettingsPath().GetDirectoryName() + @$"toolchains\{await GetDefaultToolchainAsync(workingDirectory, ct)}";
-        return (root + "bin", root + $@"lib\rustlib\{DefaultTargetTriple}\lib");
+        return (root + "bin", root + $@"lib\rustlib\{AlwaysAvailableTarget}\lib");
     }
 
     public static async Task<Toolchain[]> GetInstalledToolchainsAsync(PathEx workingDirectory, CancellationToken ct)
@@ -99,6 +106,20 @@ public static class ToolChainServiceExtensions
         return tcs;
     }
 
+    public static async Task<string[]> GetTargets(CancellationToken ct)
+    {
+        var output = await GetCommandOutput("rustup", "target list", GetRustupPath().GetDirectoryName(), ct);
+        var targets = output
+            .Where(x => !x.IsNullOrEmptyOrWhiteSpace())
+            .Select(x => x.Replace(" (installed)", string.Empty))
+            .Where(x => x != AlwaysAvailableTarget)
+            .Where(x => !CommonTargets.Contains(x))
+            .Select(x => x.Trim())
+            .OrderBy(t => t);
+
+        return CommonTargets.OrderBy(x => x).Concat(targets).ToArray();
+    }
+
     public static async Task<string> GetDefaultToolchainAsync(PathEx workingDirectory, CancellationToken ct)
     {
         return (await GetInstalledToolchainsAsync(workingDirectory, ct)).Where(x => x.IsDefault).First().Name;
@@ -141,6 +162,51 @@ public static class ToolChainServiceExtensions
             .ForEach(File.Delete);
     }
 
+    public static async Task<bool> RunAsync(this PathEx exeFullPath, string args, PathEx workingDir, ProcessOutputRedirector redirector, string finishedMsg, string cancelledMsg, CancellationToken ct)
+    {
+        using var process = ProcessRunner.Run(
+            exeFullPath,
+            new[] { args },
+            workingDir,
+            env: null,
+            visible: false,
+            redirector: redirector,
+            quoteArgs: false,
+            outputEncoding: Encoding.UTF8,
+            cancellationToken: ct);
+        var whnd = process.WaitHandle;
+        if (whnd == null)
+        {
+            // Process failed to start, and any exception message has
+            // already been sent through the redirector
+            redirector.WriteErrorLineWithoutProcessing(string.Format("Error - Failed to start '{0}'", exeFullPath));
+            return false;
+        }
+        else
+        {
+            var finished = await Task.Run(() => whnd.WaitOne());
+            if (finished)
+            {
+                Debug.Assert(process.ExitCode.HasValue, "process has not really exited");
+
+                // there seems to be a case when we're signalled as completed, but the
+                // process hasn't actually exited
+                process.Wait();
+
+                redirector.WriteLineWithoutProcessing(finishedMsg);
+
+                return process.ExitCode == 0;
+            }
+            else
+            {
+                process.Kill();
+                redirector.WriteErrorLineWithoutProcessing(cancelledMsg);
+
+                return false;
+            }
+        }
+    }
+
     public static async Task SetToolchainOverrideAsync(this PathEx workspaceRoot, string toolChain, ILogger l, CancellationToken ct)
     {
         var opName = "rustup";
@@ -173,6 +239,24 @@ public static class ToolChainServiceExtensions
         var lines = await GetCommandOutput(opName, versionArgs, workingDirectory, ct);
 
         return string.Join(string.Empty, lines.Where(l => !l.IsNullOrEmptyOrWhiteSpace()));
+    }
+
+    public static Task<bool> InstallToolchain(string commandline, IBuildOutputSink bos, CancellationToken ct)
+    {
+        bos.Clear();
+
+        var rustupPath = GetRustupPath();
+        return rustupPath.RunAsync(
+            commandline,
+            rustupPath.GetPathRoot(),
+            new BuildOutputRedirector(
+                bos,
+                rustupPath.GetFileName(),
+                _ => Task.CompletedTask,
+                x => new[] { new StringBuildMessage { Message = x } }),
+            $"==== {rustupPath.GetFileName()} done. ====\n",
+            $"==== {rustupPath.GetFileName()} cancelled.====\n",
+            ct);
     }
 }
 

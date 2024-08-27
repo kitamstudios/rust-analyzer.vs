@@ -9,8 +9,8 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter;
+using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
-using Microsoft.VisualStudio.Shell;
 using Microsoft.Win32;
 
 namespace KS.RustAnalyzer.Infrastructure;
@@ -86,7 +86,7 @@ public class RlsInstallerService : IRlsInstallerService
             var latestRelVersion = latestRelUri.Segments[latestRelUri.Segments.Length - 1];
             var latestRelDate = DateTime.ParseExact(latestRelVersion, VersionFormat, CultureInfo.InvariantCulture);
 
-            return (Uri: new Uri($"https://github.com/rust-lang/rust-analyzer/releases/download/{latestRelVersion}/rust-analyzer-x86_64-pc-windows-msvc.zip"),
+            return (Uri: new Uri($"https://github.com/rust-lang/rust-analyzer/releases/download/{latestRelVersion}/rust-analyzer-{ToolChainServiceExtensions.AlwaysAvailableTarget}.zip"),
                 Version: latestRelDate.ToString(VersionFormat, CultureInfo.InvariantCulture));
         }
         catch
@@ -116,7 +116,7 @@ public class RlsInstallerService : IRlsInstallerService
 
     private async Task CommitAsync((Uri Uri, string Version)? latestRel)
     {
-        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+        await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
         if (!_regSettings.GetPackageRegistryRoot(out var regRoot))
         {
             _tl.L.WriteError($"GetPackageRegistryRoot failed.");
@@ -144,7 +144,7 @@ public class RlsInstallerService : IRlsInstallerService
 
     private async Task<string> GetInstalledVersionAsync()
     {
-        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+        await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
 
         var installedRlsVersion = Constants.RlsLatestInPackageVersion;
         if (_regSettings.GetPackageRegistryRoot(out var regRoot))

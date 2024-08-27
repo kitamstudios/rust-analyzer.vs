@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Community.VisualStudio.Toolkit;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
@@ -45,8 +47,15 @@ public static class VsCommon
             OLEMSGBUTTON.OLEMSGBUTTON_OK);
     }
 
-    public static void Forget(this JoinableTask @this)
+    public static async Task ShowInfoBarAsync(bool success, string message)
     {
+        var model = new InfoBarModel(
+                textSpans: new[] { new InfoBarTextSpan($"{Vsix.Name}: {message}"), },
+                Array.Empty<InfoBarHyperlink>(),
+                image: success ? KnownMonikers.StatusInformation : KnownMonikers.StatusError,
+                isCloseButtonVisible: true);
+        var infoBar = await CommunityVS.InfoBar.CreateAsync(model);
+        await infoBar.TryShowInfoBarUIAsync();
     }
 
     public static string GetFullName(this VSITEMSELECTION item)

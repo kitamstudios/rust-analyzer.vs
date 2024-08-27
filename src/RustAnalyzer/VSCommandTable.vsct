@@ -10,17 +10,6 @@
   - https://github.com/trufflesuite/trufflevsix/blob/master/packages/Microsoft.VSSDK.BuildTools.14.3.25407/tools/vssdk/inc/ShellCmdPlace.vsct
 -->
 
-<!--
-TODO:
-x One common group for build/clean wksp parented to the menu
-v Ctrl+Shift+B shortcut
-v Enable tools > rust selectable
-x shortcuts for rust tools
-v implement
-- cleanup
--->
-
-
 <CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
 
   <Extern href="stdidcmd.h"/>
@@ -83,7 +72,7 @@ v implement
           <ButtonText>cargo fm&amp;t</ButtonText>
         </Strings>
       </Button>
-      
+
       <Button guid="guidRustAnalyzerPackage" id="IdCargoClippy" type="Button">
         <CommandFlag>DynamicVisibility</CommandFlag>
         <CommandFlag>DefaultDisabled</CommandFlag>
@@ -129,10 +118,24 @@ v implement
         <CommandFlag>DynamicVisibility</CommandFlag>
         <CommandFlag>DefaultDisabled</CommandFlag>
         <CommandFlag>DefaultInvisible</CommandFlag>
-        <CommandFlag>AllowVisibilityChangeOnToolBar</CommandFlag>        
+        <CommandFlag>AllowVisibilityChangeOnToolBar</CommandFlag>
         <Strings>
           <ButtonText>&amp;Kill Orphaned rust-analyzer.exe</ButtonText>
           <ToolTipText>Kill orphaned rust-analyzer.exe consuming RAM</ToolTipText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidRustAnalyzerToolsCmdSet" id="IdInstallToolchain" priority="0x0130" type="Button">
+        <Parent guid="guidRustAnalyzerToolsCmdSet" id="IdGRustAnalyzerTools" />
+        <Icon guid="ImageCatalogGuid" id="InstallerClass" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultDisabled</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>AllowVisibilityChangeOnToolBar</CommandFlag>
+        <Strings>
+          <ButtonText>&amp;Install Toolchain...</ButtonText>
+          <ToolTipText>Install additional toolchains and targets</ToolTipText>
         </Strings>
       </Button>
 
@@ -176,7 +179,7 @@ v implement
         <CommandFlag>DefaultDisabled</CommandFlag>
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>CommandWellOnly</CommandFlag>
-        <CommandFlag>AllowVisibilityChangeOnToolBar</CommandFlag>        
+        <CommandFlag>AllowVisibilityChangeOnToolBar</CommandFlag>
         <Strings>
           <ButtonText>Target System: </ButtonText>
           <MenuText>Target System: </MenuText>
@@ -196,7 +199,7 @@ v implement
   <KeyBindings>
     <KeyBinding guid="guidRustAnalyzerPackage" id="IdBuildAll" editor="guidVSStd97" key1="B" mod1="Control Alt Shift" />
   </KeyBindings>
-  
+
   <CommandPlacements>
     <CommandPlacement guid="guidRustAnalyzerPackage" id="IdCargoClippy" priority="0x0300">
       <Parent guid="guidWorkspaceExplorerToolWindowPackageCmdSet" id="idgWSE_ContextMenu_BuildDebugActions"/>
@@ -259,6 +262,7 @@ v implement
       <IDSymbol name="IdRustAnalyzerOptions" value="0x0100" />
       <IDSymbol name="IdRestartLSP" value="0x0101" />
       <IDSymbol name="IdKillOrphaned" value="0x0102" />
+      <IDSymbol name="IdInstallToolchain" value="0x0103" />
     </GuidSymbol>
 
     <GuidSymbol name="guidRustAnalyzerToolchainSwitcher" value="{a2dd2b49-2822-4624-9e54-22b415412d72}">

@@ -26,7 +26,7 @@ public sealed class OutputWindowLogger : ILogger
         {
             RustAnalyzerPackage.JTF.RunAsync(async () =>
             {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
                 WriteCore(format, args);
             }).FireAndForget();
         }
@@ -42,7 +42,7 @@ public sealed class OutputWindowLogger : ILogger
         {
             RustAnalyzerPackage.JTF.RunAsync(async () =>
             {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
                 WriteCore("[ERROR]: " + format, args);
             }).FireAndForget();
         }

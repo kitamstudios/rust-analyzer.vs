@@ -16,7 +16,7 @@ public sealed class ToolChainServiceExtensionsTests
     {
         (await ToolChainServiceExtensions.GetDefaultToolchainAsync(TestHelpers.ThisTestRoot, default))
             .Should()
-            .EndWith("-x86_64-pc-windows-msvc");
+            .EndWith($"-{ToolChainServiceExtensions.AlwaysAvailableTarget}");
     }
 
     [Fact]
@@ -47,5 +47,17 @@ public sealed class ToolChainServiceExtensionsTests
         installToolchains.Select(x => x.Name).Should().Contain(x => !x.IsNullOrEmptyOrWhiteSpace());
         installToolchains.Select(x => x.Version).Should().Contain(x => !x.IsNullOrEmptyOrWhiteSpace());
         installToolchains.Where(x => x.IsDefault).Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task TestGetTargetsAsync()
+    {
+        var targets = await ToolChainServiceExtensions.GetTargets(default);
+
+        targets.Should().NotContain(ToolChainServiceExtensions.AlwaysAvailableTarget);
+        targets.Should().OnlyContain(t => !t.Contains(" ("));
+        targets.Take(ToolChainServiceExtensions.CommonTargets.Length)
+            .Should()
+            .ContainInOrder(ToolChainServiceExtensions.CommonTargets.OrderBy(x => x));
     }
 }
