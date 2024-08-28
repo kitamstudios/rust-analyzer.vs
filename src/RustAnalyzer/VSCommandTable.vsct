@@ -21,13 +21,13 @@
     <Menus>
       <Menu guid="guidRustAnalyzerPackage" id="IdTRustAnalyzerToolbar" type="Toolbar">
         <CommandFlag>DynamicVisibility</CommandFlag>
-        <CommandFlag>AllowVisibilityChangeOnToolBar</CommandFlag>
         <CommandFlag>TextChanges</CommandFlag>
         <Strings>
           <ButtonText>rustanalyzer.vs Toolbar</ButtonText>
         </Strings>
       </Menu>
       <Menu guid="guidRustAnalyzerPackage" id="IdMRustAnalyzerToolsMC" type="MenuController">
+        <CommandFlag>IconAndText</CommandFlag>
         <CommandFlag>NotInTBList</CommandFlag>
         <Strings>
           <ButtonText>Rust Tools</ButtonText>
@@ -92,7 +92,7 @@
         <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>AllowVisibilityChangeOnToolBar</CommandFlag>
         <Strings>
-          <ButtonText>rust-analyzer.vs &amp;Settings</ButtonText>
+          <ButtonText>rust-analyzer.vs &amp;settings</ButtonText>
           <ToolTipText>rust-analyzer.vs settings in Options dialog.</ToolTipText>
         </Strings>
       </Button>
@@ -144,6 +144,7 @@
         <CommandFlag>DynamicItemStart</CommandFlag>
         <CommandFlag>DynamicVisibility</CommandFlag>
         <CommandFlag>TextChanges</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>DefaultDisabled</CommandFlag>
         <Strings>
           <ButtonText>Loading...</ButtonText>
@@ -195,6 +196,10 @@
       <Bitmap guid="guidRustAnalyzerImageCatalog" href="Resources\Rust.png" usedList="IdIRust"/>
     </Bitmaps>
   </Commands>
+  
+  <VisibilityConstraints>
+    <VisibilityItem guid="guidRustAnalyzerPackage" id="IdTRustAnalyzerToolbar" context="UICONTEXT_SolutionExists" />
+  </VisibilityConstraints>
 
   <KeyBindings>
     <KeyBinding guid="guidRustAnalyzerPackage" id="IdBuildAll" editor="guidVSStd97" key1="B" mod1="Control Alt Shift" />

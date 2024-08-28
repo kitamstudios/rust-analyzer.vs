@@ -31,6 +31,7 @@ public sealed class BuildOutputSink : IBuildOutputSink
             {
                 await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
                 Initialize();
+                _buildOutputPane.Activate();
 
                 if (message is StringBuildMessage sm)
                 {
@@ -39,7 +40,6 @@ public sealed class BuildOutputSink : IBuildOutputSink
                         return;
                     }
 
-                    _buildOutputPane.Activate();
                     foreach (var msg in SbmPreprocessor.Preprocess(rootPath, sm.Message))
                     {
                         var hr = _buildOutputPane.OutputStringThreadSafe(msg + Environment.NewLine);
@@ -83,10 +83,12 @@ public sealed class BuildOutputSink : IBuildOutputSink
     {
         ThreadHelper.ThrowIfNotOnUIThread();
 
-        if (!IsInitialized())
+        if (IsInitialized())
         {
-            _buildOutputPane = InitializeOutputPane("Rust (cargo)", BuildOutputPaneGuid);
+            return;
         }
+
+        _buildOutputPane = InitializeOutputPane(Vsix.Name, BuildOutputPaneGuid);
     }
 
     private IVsOutputWindowPane InitializeOutputPane(string title, Guid paneId)

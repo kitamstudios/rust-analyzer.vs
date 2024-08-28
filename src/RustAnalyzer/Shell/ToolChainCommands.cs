@@ -12,10 +12,10 @@ namespace KS.RustAnalyzer.Shell;
 
 using ToolchainOperation = System.Func<KS.RustAnalyzer.TestAdapter.Common.IToolchainService, System.Func<KS.RustAnalyzer.TestAdapter.Common.BuildTargetInfo, KS.RustAnalyzer.TestAdapter.Common.BuildOutputSinks, System.Threading.CancellationToken, System.Threading.Tasks.Task<bool>>>;
 
-public abstract class BaseToolChainCommand<T> : BaseCommand<T>
+public abstract class BaseToolchainCommand<T> : BaseCommand<T>
     where T : class, new()
 {
-    protected BaseToolChainCommand()
+    protected BaseToolchainCommand()
     {
         CmdServices = new CmdServices(() => Package);
     }
@@ -51,7 +51,7 @@ public abstract class BaseToolChainCommand<T> : BaseCommand<T>
 }
 
 [Command(PackageGuids.guidRustAnalyzerPackageString, PackageIds.IdCargoClippy)]
-public class CargoClippyCommand : BaseToolChainCommand<CargoClippyCommand>
+public class CargoClippyCommand : BaseToolchainCommand<CargoClippyCommand>
 {
     protected override ToolchainOperation Operation => its => its.RunClippyAsync;
 
@@ -59,7 +59,7 @@ public class CargoClippyCommand : BaseToolChainCommand<CargoClippyCommand>
 }
 
 [Command(PackageGuids.guidRustAnalyzerPackageString, PackageIds.IdCargoFmt)]
-public class CargoFmtCommand : BaseToolChainCommand<CargoFmtCommand>
+public class CargoFmtCommand : BaseToolchainCommand<CargoFmtCommand>
 {
     protected override ToolchainOperation Operation => its => its.RunFmtAsync;
 

@@ -11,6 +11,8 @@ public static class EnvironmentExtensions
     private static readonly char[] NullSep = new[] { '\0' };
     private static readonly char[] EqSep = new[] { '=' };
 
+    public static string GetEnvironmentValue(this string name) => Environment.GetEnvironmentVariable(name);
+
     public static IDictionary<string, string> OverrideProcessEnvironment(this string @this)
     {
         return @this.ToNullSeparatedDictionary()

@@ -105,7 +105,7 @@ partial class ToolchainInstallerWizard
             this.comboBoxChannel.Size = new System.Drawing.Size(622, 28);
             this.comboBoxChannel.TabIndex = 3;
             this.toolTipRoot.SetToolTip(this.comboBoxChannel, "stable | beta | nightly | <major.minor> | <major.minor.patch>");
-            this.comboBoxChannel.SelectedIndexChanged += new System.EventHandler(this.ComboBoxChannel_SelectedIndexChanged);
+            this.comboBoxChannel.TextChanged += new System.EventHandler(this.Control_TextChangedChanged);
             // 
             // dateTimePickerDate
             // 
@@ -119,7 +119,7 @@ partial class ToolchainInstallerWizard
             this.dateTimePickerDate.TabIndex = 5;
             this.toolTipRoot.SetToolTip(this.dateTimePickerDate, "YYYY-MM-DD. Keep today\'s date to not add the date component to toolchain specific" +
         "ations.");
-            this.dateTimePickerDate.ValueChanged += new System.EventHandler(this.DateTimePickerDate_ValueChanged);
+            this.dateTimePickerDate.ValueChanged += new System.EventHandler(this.Control_TextChangedChanged);
             // 
             // labelDate
             // 
@@ -151,7 +151,7 @@ partial class ToolchainInstallerWizard
             this.listBoxTargets.TabIndex = 7;
             this.toolTipRoot.SetToolTip(this.listBoxTargets, "To cross-compile to other platforms you must install one or more other target pla" +
         "tforms. x86_64-pc-windows-msvc will be installed by default.");
-            this.listBoxTargets.SelectedIndexChanged += new System.EventHandler(this.ListBox_SelectedIndexChanged);
+            this.listBoxTargets.SelectedIndexChanged += new System.EventHandler(this.Control_TextChangedChanged);
             // 
             // labelSplitter1
             // 

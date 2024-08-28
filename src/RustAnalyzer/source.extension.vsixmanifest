@@ -3,7 +3,7 @@
   xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011"
   xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="KS.RustAnalyzer.3a91e56b-fb28-4d85-b572-ec964abf8e31" Version="2.0" Language="en-US" Publisher="Kitam Studios" />
+        <Identity Id="KS.RustAnalyzer.3a91e56b-fb28-4d85-b572-ec964abf8e31" Version="3.0" Language="en-US" Publisher="Kitam Studios" />
         <DisplayName>rust-analyzer.vs</DisplayName>
         <Description xml:space="preserve">Rust language support for Visual Studio 2022</Description>
         <MoreInfo>https://github.com/kitamstudios/rust-analyzer.vs</MoreInfo>

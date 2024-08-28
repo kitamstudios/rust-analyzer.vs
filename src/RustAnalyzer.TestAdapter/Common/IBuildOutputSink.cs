@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace KS.RustAnalyzer.TestAdapter.Common;
@@ -14,11 +15,13 @@ public abstract class BuildMessage
 {
 }
 
+[DebuggerDisplay("{Message}")]
 public class StringBuildMessage : BuildMessage
 {
     public string Message { get; set; }
 }
 
+[DebuggerDisplay("{Type} {Code} {File}:{LineNumber}{ColumnNumber}: {LogMessage} ({ProjectFile})")]
 public class DetailedBuildMessage : BuildMessage
 {
     public enum Level

@@ -71,6 +71,11 @@ public sealed class TelemetryService : ITelemetryService
 
         public void Initialize(ITelemetry telemetry)
         {
+            new[]
+            {
+                Constants.RAVsVersion,
+                "VisualStudioEdition",
+            }.ForEach(x => telemetry.Context.GlobalProperties.Add(x, Environment.GetEnvironmentVariable(x)));
             telemetry.Context.Component.Version = Vsix.Version;
             telemetry.Context.User.Id = Environment.ExpandEnvironmentVariables("%USERNAME%@%COMPUTERNAME%.%USERDOMAIN%");
             telemetry.Context.Session.Id = SessionId;

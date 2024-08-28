@@ -79,7 +79,7 @@ public sealed class ToolchainService : IToolchainService
             profile: bti.Profile,
             outputPane: bos.OutputSink,
             buildMessageReporter: bos.BuildActionProgressReporter,
-            outputPreprocessor: x => new[] { new StringBuildMessage { Message = x } },
+            outputPreprocessor: OutputPreprocessorForCargoToolsWithoutJsonOutput,
             ts: _tl.T,
             l: _tl.L,
             ct: ct);
@@ -94,7 +94,7 @@ public sealed class ToolchainService : IToolchainService
             profile: bti.Profile,
             outputPane: bos.OutputSink,
             buildMessageReporter: bos.BuildActionProgressReporter,
-            outputPreprocessor: x => new[] { new StringBuildMessage { Message = x } },
+            outputPreprocessor: OutputPreprocessorForCargoToolsWithoutJsonOutput,
             ts: _tl.T,
             l: _tl.L,
             ct: ct);
@@ -109,7 +109,7 @@ public sealed class ToolchainService : IToolchainService
             profile: bti.Profile,
             outputPane: bos.OutputSink,
             buildMessageReporter: bos.BuildActionProgressReporter,
-            outputPreprocessor: x => new[] { new StringBuildMessage { Message = x } },
+            outputPreprocessor: OutputPreprocessorForCargoToolsWithoutJsonOutput,
             ts: _tl.T,
             l: _tl.L,
             ct: ct);
@@ -199,6 +199,8 @@ public sealed class ToolchainService : IToolchainService
             throw;
         }
     }
+
+    private BuildMessage[] OutputPreprocessorForCargoToolsWithoutJsonOutput(string msg) => new[] { new StringBuildMessage { Message = msg } };
 
     private async Task<TestSuiteInfo> GetTestSuiteInfoFromOneTestExeAsync(TestContainer container, PathEx testExePath, CancellationToken ct)
     {

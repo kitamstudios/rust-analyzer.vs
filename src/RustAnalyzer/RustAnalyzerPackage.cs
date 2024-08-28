@@ -48,6 +48,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
 
     protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
     {
+        Environment.SetEnvironmentVariable(Constants.RAVsVersion, (await CommunityVS.Shell.GetVsVersionAsync()).ToString(), EnvironmentVariableTarget.Process);
         JTF = JoinableTaskFactory;
 
         await this.RegisterCommandsAsync();

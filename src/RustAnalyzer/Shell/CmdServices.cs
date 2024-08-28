@@ -2,12 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Workspace;
+using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 using ShellInterop = Microsoft.VisualStudio.Shell.Interop;
+using WorkspaceBuildMessage = Microsoft.VisualStudio.Workspace.Build.BuildMessage;
 
 namespace KS.RustAnalyzer.Shell;
 
@@ -21,8 +25,9 @@ public sealed class CmdServices
     private ShellInterop.IVsSolution _solution;
     private ShellInterop.IVsDebugger _debugger;
     private ShellInterop.IVsUIShell _vsUIShell;
-    private IToolchainService _toolChainService;
+    private IToolchainService _toolchainService;
     private IBuildOutputSink _buildOutputSink;
+    private IVsFolderWorkspaceService _folderWorkspaceService;
 
     public CmdServices(Func<AsyncPackage> getPackage)
     {
@@ -45,13 +50,19 @@ public sealed class CmdServices
 
     private ShellInterop.IVsDebugger Debugger => _debugger ??= GetPackage().GetService<ShellInterop.SVsShellDebugger, ShellInterop.IVsDebugger>(false);
 
-    private IToolchainService ToolChainService => _toolChainService ??= Mef?.GetService<IToolchainService>();
+    private IToolchainService ToolchainService => _toolchainService ??= Mef?.GetService<IToolchainService>();
+
+    private IVsFolderWorkspaceService FolderWorkspaceService => _folderWorkspaceService ??= Mef?.GetService<IVsFolderWorkspaceService>();
+
+    private readonly IMapper _buildMessageMapper = new MapperConfiguration(cfg => cfg.CreateMap<DetailedBuildMessage, WorkspaceBuildMessage>()).CreateMapper();
 
     public async Task ExecuteToolchainOperationAsync(ToolchainOperation op, PathEx manifestPath, Func<Options, string> getOpts)
     {
         var profile = Mef.GetProfile(manifestPath);
         var opts = await Options.GetLiveInstanceAsync();
-        await op(ToolChainService)(
+
+        var bms = await FolderWorkspaceService.CurrentWorkspace.GetBuildMessageServiceAsync();
+        await op(ToolchainService)(
             new BuildTargetInfo
             {
                 ManifestPath = manifestPath,
@@ -59,7 +70,7 @@ public sealed class CmdServices
                 Profile = profile,
                 WorkspaceRoot = manifestPath.GetDirectoryName(),
             },
-            new BuildOutputSinks { OutputSink = BuildOutputSink, BuildActionProgressReporter = bm => Task.CompletedTask },
+            new BuildOutputSinks { OutputSink = BuildOutputSink, BuildActionProgressReporter = bm => bms.ReportBuildMessages(new[] { _buildMessageMapper.Map<WorkspaceBuildMessage>(bm) }) },
             default);
     }
 

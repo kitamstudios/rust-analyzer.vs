@@ -1,5 +1,8 @@
 namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -59,5 +62,51 @@ public sealed class ToolchainServiceExtensionsTests
         targets.Take(ToolchainServiceExtensions.CommonTargets.Length)
             .Should()
             .ContainInOrder(ToolchainServiceExtensions.CommonTargets.OrderBy(x => x));
+    }
+
+    [Theory]
+    [InlineData("/c echo success & echo error>&2", null, "success |finished", "error", true)]
+    [InlineData("/c exit /b 1", null, "finished", null, false)]
+    [InlineData("/c echo %cd% >&2", "WINDIR", "finished", null, true)]
+    public async Task TestRunAsync(string args, string cwd, string eMessage, string eError, bool eRes)
+    {
+        var por = new TestPOR();
+        var ret = await "cmd.exe".ToPath().RunAsync(args, (cwd ?? "USERPROFILE").GetEnvironmentValue().ToPath(), por, "finished", "cancelled", default);
+
+        ret.Should().Be(eRes);
+        por.Messages.Should().ContainInConsecutiveOrder(eMessage.Split('|'));
+        var cwdErr = cwd == null ? null : new[] { $"{cwd.GetEnvironmentValue()} " };
+        por.Errors.Should().ContainInConsecutiveOrder(eError?.Split('|') ?? cwdErr ?? Array.Empty<string>());
+    }
+
+    public sealed class TestPOR : ProcessOutputRedirector
+    {
+        private readonly ConcurrentQueue<string> _messages = new();
+
+        private readonly ConcurrentQueue<string> _errors = new();
+
+        public IEnumerable<string> Messages => _messages;
+
+        public IEnumerable<string> Errors => _errors;
+
+        public override void WriteErrorLine(string line)
+        {
+            _errors.Enqueue(line);
+        }
+
+        public override void WriteErrorLineWithoutProcessing(string line)
+        {
+            _errors.Enqueue(line);
+        }
+
+        public override void WriteLine(string line)
+        {
+            _messages.Enqueue(line);
+        }
+
+        public override void WriteLineWithoutProcessing(string line)
+        {
+            _messages.Enqueue(line);
+        }
     }
 }

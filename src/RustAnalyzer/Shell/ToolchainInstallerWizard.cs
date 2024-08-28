@@ -30,12 +30,13 @@ public partial class ToolchainInstallerWizard : Form
 
         string GetDatePart()
         {
-            if (dateTimePickerDate.Value == DateTime.Now)
+            var fmt = "yyyy-MM-dd";
+            var val = dateTimePickerDate.Value.ToString(fmt);
+            if (val == DateTime.Now.ToString(fmt))
             {
                 return string.Empty;
             }
 
-            var val = dateTimePickerDate.Value.ToString("yyyy-MM-dd");
             return $"-{val}";
         }
 
@@ -82,17 +83,7 @@ public partial class ToolchainInstallerWizard : Form
         listBoxTargets.Items.AddRange(Targets);
     }
 
-    private void ComboBoxChannel_SelectedIndexChanged(object sender, EventArgs e)
-    {
-        textBoxCommandLine.Text = GetCommandLineWitRustUp();
-    }
-
-    private void DateTimePickerDate_ValueChanged(object sender, EventArgs e)
-    {
-        textBoxCommandLine.Text = GetCommandLineWitRustUp();
-    }
-
-    private void ListBox_SelectedIndexChanged(object sender, EventArgs e)
+    private void Control_TextChangedChanged(object sender, EventArgs e)
     {
         textBoxCommandLine.Text = GetCommandLineWitRustUp();
     }

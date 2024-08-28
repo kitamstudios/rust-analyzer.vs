@@ -115,7 +115,7 @@ public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToo
                 var msg = $"Finished installing toolchain '{tcName}'. Use Tools > Rust Tools > Switch Active Toolchain to switch to it.";
                 if (!res)
                 {
-                    msg = $"Failed to install toolchain '{tcName}'. See Output > rust-analyzer.vs pane for details. Try again and maybe run from the command line.";
+                    msg = $"Failed to install toolchain '{tcName}'. See Output > Build pane for details. Try again and maybe run from the command line.";
                 }
 
                 await VsCommon.ShowInfoBarAsync(res, msg);

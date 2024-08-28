@@ -5,7 +5,7 @@ namespace KS.RustAnalyzer.TestAdapter;
 
 public static class Constants
 {
-    public const string ReleaseSummary = $"Bunch of usability fixes for Rust Integration tests experience. Please report any issues you face. Consider giving 5⭐ if you find this extension useful.";
+    public const string ReleaseSummary = "Toolchain install / switch & other utilities under Tools > Rust Tools + Rust Toolbar + Build / clean entire workspace + Bug fixes. Please report any issues you face. Consider giving 5⭐ if you find this extension useful.";
     public const string ReleaseNotesUrl = $"https://github.com/kitamstudios/rust-analyzer.vs/releases/{Vsix.Version}";
     public const string DiscordUrl = "https://discord.gg/JyK55EsACr";
     public const string TestExperienceDemoUrl = "https://youtu.be/pE1Vr2zVCbg?t=170";
@@ -23,6 +23,7 @@ public static class Constants
     public const string CargoExe = "cargo.exe";
 
     public const string ConfigurationSectionName = "rust-analyzer.vs";
+    public const string RAVsVersion = "RAVsVersion";
 
     public const string ExecutorUriString = "executor://RustTestExecutor/v1";
 

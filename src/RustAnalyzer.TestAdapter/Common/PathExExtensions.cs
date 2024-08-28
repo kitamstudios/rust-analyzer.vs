@@ -8,6 +8,8 @@ public static class PathExExtensions
 {
     public static readonly string[] LineSeperators = new[] { "\r", "\n", "\r\n" };
 
+    public static PathEx ToPath(this string @this) => (PathEx)@this;
+
     public static bool FileExists(this PathEx @this) => File.Exists(@this);
 
     public static void FileDelete(this PathEx @this) => File.Delete(@this);
