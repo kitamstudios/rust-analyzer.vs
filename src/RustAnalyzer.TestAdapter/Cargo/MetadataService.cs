@@ -11,7 +11,7 @@ namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
 public class MetadataService : IMetadataService, IDisposable
 {
-    private readonly IToolChainService _cargoService;
+    private readonly IToolchainService _cargoService;
     private readonly PathEx _workspaceRoot;
     private readonly TL _tl;
     private readonly bool _synchronousEvents;
@@ -19,12 +19,12 @@ public class MetadataService : IMetadataService, IDisposable
     private ConcurrentDictionary<PathEx, Workspace.Package> _packageCache = new();
     private bool _disposedValue;
 
-    public MetadataService(IToolChainService cargoService, PathEx workspaceRoot, TL tl)
+    public MetadataService(IToolchainService cargoService, PathEx workspaceRoot, TL tl)
         : this(cargoService, workspaceRoot, tl, syncEvents: false)
     {
     }
 
-    protected MetadataService(IToolChainService cargoService, PathEx workspaceRoot, TL tl, bool syncEvents = false)
+    protected MetadataService(IToolchainService cargoService, PathEx workspaceRoot, TL tl, bool syncEvents = false)
     {
         _cargoService = cargoService;
         _workspaceRoot = workspaceRoot;

@@ -6,7 +6,7 @@ using KS.RustAnalyzer.TestAdapter.Cargo;
 
 namespace KS.RustAnalyzer.TestAdapter.Common;
 
-public interface IToolChainService
+public interface IToolchainService
 {
     PathEx GetCargoExePath();
 

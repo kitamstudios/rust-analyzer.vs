@@ -11,7 +11,7 @@ using ShellInterop = Microsoft.VisualStudio.Shell.Interop;
 
 namespace KS.RustAnalyzer.Shell;
 
-using ToolchainOperation = System.Func<KS.RustAnalyzer.TestAdapter.Common.IToolChainService, System.Func<KS.RustAnalyzer.TestAdapter.Common.BuildTargetInfo, KS.RustAnalyzer.TestAdapter.Common.BuildOutputSinks, System.Threading.CancellationToken, System.Threading.Tasks.Task<bool>>>;
+using ToolchainOperation = System.Func<KS.RustAnalyzer.TestAdapter.Common.IToolchainService, System.Func<KS.RustAnalyzer.TestAdapter.Common.BuildTargetInfo, KS.RustAnalyzer.TestAdapter.Common.BuildOutputSinks, System.Threading.CancellationToken, System.Threading.Tasks.Task<bool>>>;
 
 public sealed class CmdServices
 {
@@ -21,7 +21,7 @@ public sealed class CmdServices
     private ShellInterop.IVsSolution _solution;
     private ShellInterop.IVsDebugger _debugger;
     private ShellInterop.IVsUIShell _vsUIShell;
-    private IToolChainService _toolChainService;
+    private IToolchainService _toolChainService;
     private IBuildOutputSink _buildOutputSink;
 
     public CmdServices(Func<AsyncPackage> getPackage)
@@ -45,7 +45,7 @@ public sealed class CmdServices
 
     private ShellInterop.IVsDebugger Debugger => _debugger ??= GetPackage().GetService<ShellInterop.SVsShellDebugger, ShellInterop.IVsDebugger>(false);
 
-    private IToolChainService ToolChainService => _toolChainService ??= Mef?.GetService<IToolChainService>();
+    private IToolchainService ToolChainService => _toolChainService ??= Mef?.GetService<IToolchainService>();
 
     public async Task ExecuteToolchainOperationAsync(ToolchainOperation op, PathEx manifestPath, Func<Options, string> getOpts)
     {

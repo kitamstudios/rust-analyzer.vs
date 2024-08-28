@@ -22,11 +22,11 @@ public interface IPreReqsCheckService
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class PreReqsCheckService : IPreReqsCheckService
 {
-    private readonly IToolChainService _cargoService;
+    private readonly IToolchainService _cargoService;
     private readonly TL _tl;
 
-    private readonly IReadOnlyDictionary<string, Func<IToolChainService, CancellationToken, Task<(bool, string)>>> _preReqChecks =
-        new Dictionary<string, Func<IToolChainService, CancellationToken, Task<(bool, string)>>>
+    private readonly IReadOnlyDictionary<string, Func<IToolchainService, CancellationToken, Task<(bool, string)>>> _preReqChecks =
+        new Dictionary<string, Func<IToolchainService, CancellationToken, Task<(bool, string)>>>
         {
             [nameof(VsVersionCheck)] = VsVersionCheck.CheckAsync,
             [nameof(CheckRustupToolchainInstallationAsync)] = CheckRustupToolchainInstallationAsync,
@@ -35,7 +35,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         };
 
     [ImportingConstructor]
-    public PreReqsCheckService([Import] IToolChainService cargoService, [Import] ITelemetryService t, [Import] ILogger l)
+    public PreReqsCheckService([Import] IToolchainService cargoService, [Import] ITelemetryService t, [Import] ILogger l)
     {
         _cargoService = cargoService;
         _tl = new TL
@@ -83,7 +83,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         return results;
     }
 
-    private static async Task<(bool Success, string Message)> CheckCargoAsync(IToolChainService ts, CancellationToken ct)
+    private static async Task<(bool Success, string Message)> CheckCargoAsync(IToolchainService ts, CancellationToken ct)
     {
         try
         {
@@ -99,11 +99,11 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         return (false, $"{Constants.CargoExe} component is not found in any active toolchain.");
     }
 
-    private static async Task<(bool Success, string Message)> CheckRustupAsync(IToolChainService ts, CancellationToken ct)
+    private static async Task<(bool Success, string Message)> CheckRustupAsync(IToolchainService ts, CancellationToken ct)
     {
         try
         {
-            if (ToolChainServiceExtensions.GetRustupPath().FileExists())
+            if (ToolchainServiceExtensions.GetRustupPath().FileExists())
             {
                 return await (true, string.Empty).ToTask();
             }
@@ -115,11 +115,11 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         return (false, $"{Constants.RustUpExe} not installed.");
     }
 
-    private static async Task<(bool Success, string Message)> CheckRustupToolchainInstallationAsync(IToolChainService ts, CancellationToken ct)
+    private static async Task<(bool Success, string Message)> CheckRustupToolchainInstallationAsync(IToolchainService ts, CancellationToken ct)
     {
         try
         {
-            if (!(await ToolChainServiceExtensions.GetDefaultToolchainAsync((PathEx)Environment.GetEnvironmentVariable("WINDIR"), ct)).IsNullOrEmptyOrWhiteSpace())
+            if (!(await ToolchainServiceExtensions.GetDefaultToolchainAsync((PathEx)Environment.GetEnvironmentVariable("WINDIR"), ct)).IsNullOrEmptyOrWhiteSpace())
             {
                 return await (true, string.Empty).ToTask();
             }
@@ -135,7 +135,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
 
     public static class VsVersionCheck
     {
-        public static async Task<(bool Success, string Message)> CheckAsync(IToolChainService ts, CancellationToken ct)
+        public static async Task<(bool Success, string Message)> CheckAsync(IToolchainService ts, CancellationToken ct)
         {
             var version = await CommunityVS.Shell.GetVsVersionAsync();
             if (version == null)
@@ -145,7 +145,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
 
             if (version <= Constants.MinimumRequiredVsVersion)
             {
-                return (false, $"VS Version check failed. Minimum {Constants.MinimumRequiredVsVersion}, found {version}. Install the latest VS update. This is a one time thing. Unfortunately it is required as VS {Constants.MinimumRequiredVsVersion} introduced breaking changes. Sorry about that!");
+                return (false, $"VS Version check failed. Minimum {Constants.MinimumRequiredVsVersion}, found {version}.\n\nInstall the latest VS update.\n\nThis is a one time thing. Unfortunately it is required as VS {Constants.MinimumRequiredVsVersion} introduced breaking changes. Sorry about that!");
             }
 
             return (true, string.Empty);

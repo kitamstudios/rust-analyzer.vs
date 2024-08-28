@@ -19,7 +19,7 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
     public ILogger L { get; set; }
 
     [Import]
-    public IToolChainService CargoService { get; set; }
+    public IToolchainService CargoService { get; set; }
 
     public object CreateService(IWorkspace workspaceContext)
     {

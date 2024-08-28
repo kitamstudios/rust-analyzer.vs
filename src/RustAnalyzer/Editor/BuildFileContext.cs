@@ -10,7 +10,7 @@ namespace KS.RustAnalyzer.Editor;
 
 public class BuildFileContext : BuildFileContextBase
 {
-    public BuildFileContext(IToolChainService cs, BuildTargetInfo bti, IBuildOutputSink outputPane)
+    public BuildFileContext(IToolchainService cs, BuildTargetInfo bti, IBuildOutputSink outputPane)
         : base(bti, outputPane, cs.BuildAsync)
     {
     }
@@ -18,7 +18,7 @@ public class BuildFileContext : BuildFileContextBase
 
 public class CleanFileContext : BuildFileContextBase
 {
-    public CleanFileContext(IToolChainService cs, BuildTargetInfo bti, IBuildOutputSink outputPane)
+    public CleanFileContext(IToolchainService cs, BuildTargetInfo bti, IBuildOutputSink outputPane)
         : base(bti, outputPane, cs.CleanAsync)
     {
     }

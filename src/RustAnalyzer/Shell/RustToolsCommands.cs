@@ -85,7 +85,7 @@ public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToo
     {
         await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
 
-        var targets = await ToolChainServiceExtensions.GetTargets(default);
+        var targets = await ToolchainServiceExtensions.GetTargets(default);
         CmdServices.VsUIShell.GetDialogOwnerHwnd(out IntPtr hwndOwner);
 
         using var wiz = new ToolchainInstallerWizard();
@@ -109,7 +109,7 @@ public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToo
         RustAnalyzerPackage.JTF.RunAsync(
             async () =>
             {
-                var res = await ToolChainServiceExtensions.InstallToolchain(cmdLine, CmdServices.BuildOutputSink, default);
+                var res = await ToolchainServiceExtensions.InstallToolchain(cmdLine, CmdServices.BuildOutputSink, default);
 
                 await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
                 var msg = $"Finished installing toolchain '{tcName}'. Use Tools > Rust Tools > Switch Active Toolchain to switch to it.";
@@ -146,7 +146,7 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
 
         var workspaceRoot = CmdServices.GetWorkspaceRoot();
         var toolchains = RustAnalyzerPackage.JTF
-            .Run(async () => await ToolChainServiceExtensions.GetInstalledToolchainsAsync(workspaceRoot, default));
+            .Run(async () => await ToolchainServiceExtensions.GetInstalledToolchainsAsync(workspaceRoot, default));
 
         var mcs = Package.GetService<IMenuCommandService, OleMenuCommandService>();
         foreach (var (tc, pos) in toolchains.Select((x, i) => (x, i)))

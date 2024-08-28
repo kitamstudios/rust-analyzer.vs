@@ -14,16 +14,16 @@ using Newtonsoft.Json;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
-[Export(typeof(IToolChainService))]
+[Export(typeof(IToolchainService))]
 [PartCreationPolicy(CreationPolicy.Shared)]
-public sealed class ToolChainService : IToolChainService
+public sealed class ToolchainService : IToolchainService
 {
     private static readonly Regex TestExecutablePathCracker = new(@"^\s*Executable( unittests)? (.*) \((.*\\(.*)\-[\da-f]{16}.exe)\)$$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private readonly TL _tl;
 
     [ImportingConstructor]
-    public ToolChainService([Import] ITelemetryService t, [Import] ILogger l)
+    public ToolchainService([Import] ITelemetryService t, [Import] ILogger l)
     {
         _tl = new TL
         {
@@ -152,9 +152,9 @@ public sealed class ToolChainService : IToolChainService
         try
         {
             var workingDir = tc.Manifest.GetDirectoryName();
-            var cargoVersion = await ToolChainServiceExtensions.GetCommandOutputSingleLine("cargo", "--version", workingDir, ct);
+            var cargoVersion = await ToolchainServiceExtensions.GetCommandOutputSingleLine("cargo", "--version", workingDir, ct);
             _tl.L.WriteLine($"Using: {cargoVersion}");
-            var rustcVersion = await ToolChainServiceExtensions.GetCommandOutputSingleLine("test", "--version", workingDir, ct);
+            var rustcVersion = await ToolchainServiceExtensions.GetCommandOutputSingleLine("test", "--version", workingDir, ct);
             _tl.L.WriteLine($"Using: {rustcVersion}");
 
             var args = new[] { "test", "--no-run", "--manifest-path", tc.Manifest, "--profile", profile }
@@ -276,8 +276,8 @@ public sealed class ToolChainService : IToolChainService
     {
         EnsureArg.IsNotEmptyOrWhiteSpace(arguments, nameof(arguments));
 
-        var cargoVersion = await ToolChainServiceExtensions.GetCommandOutputSingleLine("cargo", "--version", workingDir, ct);
-        var toolVersion = await ToolChainServiceExtensions.GetCommandOutputSingleLine(opName, "--version", workingDir, ct);
+        var cargoVersion = await ToolchainServiceExtensions.GetCommandOutputSingleLine("cargo", "--version", workingDir, ct);
+        var toolVersion = await ToolchainServiceExtensions.GetCommandOutputSingleLine(opName, "--version", workingDir, ct);
 
         redirector?.WriteLineWithoutProcessing($"");
         redirector?.WriteLineWithoutProcessing($"==== Build step: Started ====");

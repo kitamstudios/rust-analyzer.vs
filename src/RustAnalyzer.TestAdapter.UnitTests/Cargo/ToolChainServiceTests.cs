@@ -14,9 +14,9 @@ using Xunit;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 
-public sealed class ToolChainServiceTests
+public sealed class ToolchainServiceTests
 {
-    private readonly IToolChainService _tcs = new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L);
+    private readonly IToolchainService _tcs = new ToolchainService(TestHelpers.TL.T, TestHelpers.TL.L);
 
     [Theory]
     [InlineData(@"hello_world")]

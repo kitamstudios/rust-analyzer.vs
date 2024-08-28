@@ -18,7 +18,7 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests;
 
 public class TestExecutorTests : TestsWithLogger
 {
-    private readonly IToolChainService _tcs = new ToolChainService(TestHelpers.TL.T, TestHelpers.TL.L);
+    private readonly IToolchainService _tcs = new ToolchainService(TestHelpers.TL.T, TestHelpers.TL.L);
 
     public TestExecutorTests(ITestOutputHelper output)
         : base(output)

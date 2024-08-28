@@ -86,7 +86,7 @@ public class RlsInstallerService : IRlsInstallerService
             var latestRelVersion = latestRelUri.Segments[latestRelUri.Segments.Length - 1];
             var latestRelDate = DateTime.ParseExact(latestRelVersion, VersionFormat, CultureInfo.InvariantCulture);
 
-            return (Uri: new Uri($"https://github.com/rust-lang/rust-analyzer/releases/download/{latestRelVersion}/rust-analyzer-{ToolChainServiceExtensions.AlwaysAvailableTarget}.zip"),
+            return (Uri: new Uri($"https://github.com/rust-lang/rust-analyzer/releases/download/{latestRelVersion}/rust-analyzer-{ToolchainServiceExtensions.AlwaysAvailableTarget}.zip"),
                 Version: latestRelDate.ToString(VersionFormat, CultureInfo.InvariantCulture));
         }
         catch

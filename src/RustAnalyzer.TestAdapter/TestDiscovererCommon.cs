@@ -23,7 +23,7 @@ public static class TestDiscovererCommon
     /// </summary>
     public static async Task<IEnumerable<Task<TestSuiteInfo>>> FindTestsInSourceAsync(this TestContainer tc, TL tl, CancellationToken ct)
     {
-        return await new ToolChainService(tl.T, tl.L).GetTestSuiteInfoAsync(tc.ThisPath, tc.Profile, ct);
+        return await new ToolchainService(tl.T, tl.L).GetTestSuiteInfoAsync(tc.ThisPath, tc.Profile, ct);
     }
 
     /// <summary>

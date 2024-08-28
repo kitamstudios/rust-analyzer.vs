@@ -10,7 +10,7 @@ using Microsoft.VisualStudio.Shell;
 
 namespace KS.RustAnalyzer.Shell;
 
-using ToolchainOperation = System.Func<KS.RustAnalyzer.TestAdapter.Common.IToolChainService, System.Func<KS.RustAnalyzer.TestAdapter.Common.BuildTargetInfo, KS.RustAnalyzer.TestAdapter.Common.BuildOutputSinks, System.Threading.CancellationToken, System.Threading.Tasks.Task<bool>>>;
+using ToolchainOperation = System.Func<KS.RustAnalyzer.TestAdapter.Common.IToolchainService, System.Func<KS.RustAnalyzer.TestAdapter.Common.BuildTargetInfo, KS.RustAnalyzer.TestAdapter.Common.BuildOutputSinks, System.Threading.CancellationToken, System.Threading.Tasks.Task<bool>>>;
 
 public abstract class BaseToolChainCommand<T> : BaseCommand<T>
     where T : class, new()

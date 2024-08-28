@@ -9,20 +9,20 @@ using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
 using Xunit;
 
-public sealed class ToolChainServiceExtensionsTests
+public sealed class ToolchainServiceExtensionsTests
 {
     [Fact]
     public async Task TestGetActiveToolChainAsync()
     {
-        (await ToolChainServiceExtensions.GetDefaultToolchainAsync(TestHelpers.ThisTestRoot, default))
+        (await ToolchainServiceExtensions.GetDefaultToolchainAsync(TestHelpers.ThisTestRoot, default))
             .Should()
-            .EndWith($"-{ToolChainServiceExtensions.AlwaysAvailableTarget}");
+            .EndWith($"-{ToolchainServiceExtensions.AlwaysAvailableTarget}");
     }
 
     [Fact]
     public async Task TestGetBinAndLibPathsAsync()
     {
-        var (binPath, libPath) = await ToolChainServiceExtensions.GetBinAndLibPathsAsync(TestHelpers.ThisTestRoot, default);
+        var (binPath, libPath) = await ToolchainServiceExtensions.GetBinAndLibPathsAsync(TestHelpers.ThisTestRoot, default);
 
         Directory.EnumerateFiles(libPath, "std-*.*")
             .Select(x => Path.GetFileName(x).Remove(3, "-cef76c2685dfb4ca".Length))
@@ -41,7 +41,7 @@ public sealed class ToolChainServiceExtensionsTests
     [Fact]
     public async Task TestGetInstalledToolchainsBasicAsync()
     {
-        var installToolchains = await ToolChainServiceExtensions.GetInstalledToolchainsAsync(TestHelpers.ThisTestRoot, default);
+        var installToolchains = await ToolchainServiceExtensions.GetInstalledToolchainsAsync(TestHelpers.ThisTestRoot, default);
 
         installToolchains.Should().NotBeEmpty();
         installToolchains.Select(x => x.Name).Should().Contain(x => !x.IsNullOrEmptyOrWhiteSpace());
@@ -52,12 +52,12 @@ public sealed class ToolChainServiceExtensionsTests
     [Fact]
     public async Task TestGetTargetsAsync()
     {
-        var targets = await ToolChainServiceExtensions.GetTargets(default);
+        var targets = await ToolchainServiceExtensions.GetTargets(default);
 
-        targets.Should().NotContain(ToolChainServiceExtensions.AlwaysAvailableTarget);
+        targets.Should().NotContain(ToolchainServiceExtensions.AlwaysAvailableTarget);
         targets.Should().OnlyContain(t => !t.Contains(" ("));
-        targets.Take(ToolChainServiceExtensions.CommonTargets.Length)
+        targets.Take(ToolchainServiceExtensions.CommonTargets.Length)
             .Should()
-            .ContainInOrder(ToolChainServiceExtensions.CommonTargets.OrderBy(x => x));
+            .ContainInOrder(ToolchainServiceExtensions.CommonTargets.OrderBy(x => x));
     }
 }

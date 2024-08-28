@@ -20,7 +20,7 @@ namespace KS.RustAnalyzer.TestAdapter.Cargo;
 ///
 /// Hence they are in prereq checks.
 /// </summary>
-public static class ToolChainServiceExtensions
+public static class ToolchainServiceExtensions
 {
     public const string AlwaysAvailableTarget = "x86_64-pc-windows-msvc";
 

@@ -35,7 +35,7 @@ public static class TestHelpers
     {
         // NOTE: This simulates the case when a folder with multiple workspaces is opened.
         var root = @this.GetDirectoryName();
-        return MetadataServices.GetOrAdd(root, (wr) => new MetadataService(new ToolChainService(TL.T, TL.L), wr, TL));
+        return MetadataServices.GetOrAdd(root, (wr) => new MetadataService(new ToolchainService(TL.T, TL.L), wr, TL));
     }
 
     public static string Replace(this string str, string old, string @new, StringComparison comparison)
@@ -57,7 +57,7 @@ public static class TestHelpers
     }
 
     public static Task<bool> DoBuildAsync(
-        this IToolChainService @this,
+        this IToolchainService @this,
         PathEx workspacePath,
         PathEx manifestPath,
         string profile,

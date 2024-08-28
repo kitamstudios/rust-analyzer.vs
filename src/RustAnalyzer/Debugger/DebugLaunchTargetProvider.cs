@@ -79,7 +79,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
             L.WriteLine("LaunchDebugTarget with profile: {0}, launchConfiguration: {1}", profile, lcw.SerializeObject());
             T.TrackEvent("Debug", ("Target", targetFQN), ("Profile", profile), ("Manifest", package.FullPath), ("Args", args), ("Env", env.ReplaceNullWithBar()));
 
-            var binLibPaths = await ToolChainServiceExtensions.GetBinAndLibPathsAsync(package.Parent.WorkspaceRoot, ct);
+            var binLibPaths = await ToolchainServiceExtensions.GetBinAndLibPathsAsync(package.Parent.WorkspaceRoot, ct);
             var info = new VsDebugTargetInfo
             {
                 dlo = DEBUG_LAUNCH_OPERATION.DLO_CreateProcess,

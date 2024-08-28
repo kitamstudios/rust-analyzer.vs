@@ -41,7 +41,7 @@ public partial class ToolchainInstallerWizard : Form
 
         string GetTargetPart()
         {
-            return $"-{ToolChainServiceExtensions.AlwaysAvailableTarget}";
+            return $"-{ToolchainServiceExtensions.AlwaysAvailableTarget}";
         }
 
         string GetAdditionalTargetsArg()
