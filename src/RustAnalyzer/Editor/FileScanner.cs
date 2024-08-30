@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Workspace;
@@ -12,7 +14,7 @@ using Microsoft.VisualStudio.Workspace.Indexing;
 
 namespace KS.RustAnalyzer.Editor;
 
-public class FileScanner : IFileScanner
+public class FileScanner : IFileScanner, IFileScannerUpToDateCheck
 {
     private readonly IMetadataService _mds;
 
@@ -44,6 +46,32 @@ public class FileScanner : IFileScanner
         {
             throw new NotImplementedException();
         }
+    }
+
+    public virtual async Task<bool> IsUpToDateAsync(DateTimeOffset? lastScanTimestamp, string filePath, FileScannerType scannerType, CancellationToken cancellationToken)
+    {
+        if (await IsValidFileAsync(filePath))
+        {
+            try
+            {
+                var lastWrite = File.GetLastWriteTimeUtc(filePath);
+                return lastScanTimestamp.HasValue && lastWrite < lastScanTimestamp.Value.UtcDateTime;
+            }
+            catch (Exception exc) when (exc is IOException || exc is UnauthorizedAccessException)
+            {
+                // We have already loaded the file in VS,
+                // so any I/O related exceptions are very unlikely
+                // and we def. don't want to crash VS on that.
+            }
+        }
+
+        return false;
+    }
+
+    private Task<bool> IsValidFileAsync(string filePath)
+    {
+        var ext = ((PathEx)filePath).GetExtension();
+        return (ext.Equals(Constants.RustFileExtension) || ext.Equals(Constants.ManifestFileExtension)).ToTask();
     }
 
     private List<FileDataValue> GetFileDataValues(Workspace.Package package, PathEx filePath)

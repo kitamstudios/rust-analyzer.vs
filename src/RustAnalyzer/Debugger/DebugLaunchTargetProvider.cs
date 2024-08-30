@@ -45,6 +45,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
 
     private async Task LaunchDebugTargetAsync(IWorkspace workspaceContext, IServiceProvider serviceProvider, LaunchConfigWrapper lcw, CancellationToken ct)
     {
+        const string diagMessage = "Delete the .vs folder and try again. If that does not work please file a bug with the repro steps.";
         try
         {
             var mds = workspaceContext.GetService<IMetadataService>();
@@ -54,20 +55,20 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
             var target = package.GetTargets().FirstOrDefault(t => t.QualifiedTargetFileName == targetFQN);
             if (target == null)
             {
-                string message = string.Format("Cannot find target '{0}' in '{1}', for profile '{2}'. This indicates a bug in the manifest parsing logic. Unable to start debugging.", targetFQN, package?.FullPath, profile);
+                string message = string.Format("Cannot find target '{0}' in '{1}', for profile '{2}'.", targetFQN, package?.FullPath, profile);
                 L.WriteError(message);
                 T.TrackException(new ArgumentOutOfRangeException("target", message));
-                await VsCommon.ShowMessageBoxAsync(message, "Try again after deleting the .vs folder. If that does not work please file a bug.");
+                await VsCommon.ShowMessageBoxAsync(message, diagMessage);
                 return;
             }
 
             var processName = target.GetPath(profile);
             if (!File.Exists(processName))
             {
-                var message = string.Format("Unable to find file: '{0}'. This indicates a bug with the Manifest parsing logic. Unable to start debugging.", processName);
+                var message = string.Format("Unable to find file: '{0}'.", processName);
                 L.WriteLine(message);
                 T.TrackException(new FileNotFoundException(message, processName));
-                await VsCommon.ShowMessageBoxAsync(message, "Try again after deleting the .vs folder. If that does not work please file a bug.");
+                await VsCommon.ShowMessageBoxAsync(message, diagMessage);
                 return;
             }
 
