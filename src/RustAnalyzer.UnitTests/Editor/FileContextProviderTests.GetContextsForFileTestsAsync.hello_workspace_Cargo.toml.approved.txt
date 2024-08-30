@@ -1,5 +1,5 @@
 [0] = {
-  "ProviderType": "72d3fcef-0000-4266-b8dd-d3ed06e35a2b",
+  "ProviderType": "72d3fcef-0001-4266-b8dd-d3ed06e35a2b",
   "ContextType": "1b8311d1-09ce-4d9f-a2a5-c885f5763a4a",
   "Context": {
     "BuildConfiguration": "dev",
@@ -14,7 +14,7 @@
   "DisplayName": "dev"
 }
 [1] = {
-  "ProviderType": "72d3fcef-0000-4266-b8dd-d3ed06e35a2b",
+  "ProviderType": "72d3fcef-0001-4266-b8dd-d3ed06e35a2b",
   "ContextType": "1a775558-a872-4a07-8e1f-5103b1105cf3",
   "Context": {
     "BuildConfiguration": "dev",
@@ -29,7 +29,7 @@
   "DisplayName": "dev"
 }
 [2] = {
-  "ProviderType": "72d3fcef-0000-4266-b8dd-d3ed06e35a2b",
+  "ProviderType": "72d3fcef-0001-4266-b8dd-d3ed06e35a2b",
   "ContextType": "1b8311d1-09ce-4d9f-a2a5-c885f5763a4a",
   "Context": {
     "BuildConfiguration": "release",
@@ -44,7 +44,7 @@
   "DisplayName": "release"
 }
 [3] = {
-  "ProviderType": "72d3fcef-0000-4266-b8dd-d3ed06e35a2b",
+  "ProviderType": "72d3fcef-0001-4266-b8dd-d3ed06e35a2b",
   "ContextType": "1a775558-a872-4a07-8e1f-5103b1105cf3",
   "Context": {
     "BuildConfiguration": "release",
@@ -59,7 +59,7 @@
   "DisplayName": "release"
 }
 [4] = {
-  "ProviderType": "72d3fcef-0000-4266-b8dd-d3ed06e35a2b",
+  "ProviderType": "72d3fcef-0001-4266-b8dd-d3ed06e35a2b",
   "ContextType": "1b8311d1-09ce-4d9f-a2a5-c885f5763a4a",
   "Context": {
     "BuildConfiguration": "test",
@@ -74,7 +74,7 @@
   "DisplayName": "test"
 }
 [5] = {
-  "ProviderType": "72d3fcef-0000-4266-b8dd-d3ed06e35a2b",
+  "ProviderType": "72d3fcef-0001-4266-b8dd-d3ed06e35a2b",
   "ContextType": "1a775558-a872-4a07-8e1f-5103b1105cf3",
   "Context": {
     "BuildConfiguration": "test",
@@ -89,7 +89,7 @@
   "DisplayName": "test"
 }
 [6] = {
-  "ProviderType": "72d3fcef-0000-4266-b8dd-d3ed06e35a2b",
+  "ProviderType": "72d3fcef-0001-4266-b8dd-d3ed06e35a2b",
   "ContextType": "1b8311d1-09ce-4d9f-a2a5-c885f5763a4a",
   "Context": {
     "BuildConfiguration": "bench",
@@ -104,7 +104,7 @@
   "DisplayName": "bench"
 }
 [7] = {
-  "ProviderType": "72d3fcef-0000-4266-b8dd-d3ed06e35a2b",
+  "ProviderType": "72d3fcef-0001-4266-b8dd-d3ed06e35a2b",
   "ContextType": "1a775558-a872-4a07-8e1f-5103b1105cf3",
   "Context": {
     "BuildConfiguration": "bench",
