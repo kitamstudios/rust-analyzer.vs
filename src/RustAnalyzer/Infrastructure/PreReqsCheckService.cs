@@ -29,7 +29,9 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         new Dictionary<string, Func<IToolchainService, CancellationToken, Task<(bool, string)>>>
         {
             [nameof(VsVersionCheck)] = VsVersionCheck.CheckAsync,
-            [nameof(CheckRustupToolchainInstallationAsync)] = CheckRustupToolchainInstallationAsync,
+
+            // TODO: https://github.com/kitamstudios/rust-analyzer.vs/issues/54
+            // [nameof(CheckRustupToolchainInstallationAsync)] = CheckRustupToolchainInstallationAsync,
             [nameof(CheckRustupAsync)] = CheckRustupAsync,
             [nameof(CheckCargoAsync)] = CheckCargoAsync,
         };
