@@ -4,7 +4,7 @@
 
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
-  "editor.renderWhitespace": "boundary",
+  "editor.renderWhitespace": "none",
   "editor.rulers": [120],
   "editor.formatOnSave": false,
   "files.encoding": "utf8",

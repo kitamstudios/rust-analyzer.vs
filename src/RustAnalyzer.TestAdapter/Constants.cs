@@ -5,7 +5,7 @@ namespace KS.RustAnalyzer.TestAdapter;
 
 public static class Constants
 {
-    public const string ReleaseSummary = "Toolchain install / switch & other utilities under Tools > Rust Tools + Rust Toolbar + Build / clean entire workspace + Bug fixes. Please report any issues you face. Consider giving 5⭐ if you find this extension useful.";
+    public const string ReleaseSummary = "Bug fixes. Consider giving 5⭐ if you find this extension useful.";
     public const string ReleaseNotesUrl = $"https://github.com/kitamstudios/rust-analyzer.vs/releases/{Vsix.Version}";
     public const string DiscordUrl = "https://discord.gg/JyK55EsACr";
     public const string TestExperienceDemoUrl = "https://youtu.be/pE1Vr2zVCbg?t=170";
@@ -31,8 +31,8 @@ public static class Constants
     public const string TestsContainerExtension = ".rusttests";
     public const string TestContainersSearchPattern = $"*{TestsContainerExtension}";
 
-    public const string RlsLatestInPackageVersion = "2024-08-27";
-    public static readonly Version MinimumRequiredVsVersion = new(17, 11);
+    public const string RlsLatestInPackageVersion = "2024-11-25";
+    public static readonly Version MinimumRequiredVsVersion = new(17, 12);
 
     public static readonly PathEx TestsContainerExtension2 = (PathEx)TestsContainerExtension;
     public static readonly PathEx ManifestFileName2 = (PathEx)ManifestFileName;
