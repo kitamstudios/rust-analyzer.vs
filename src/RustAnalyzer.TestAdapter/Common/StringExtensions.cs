@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -40,5 +41,10 @@ public static class StringExtensions
     public static string RegexReplace(this string @this, string pattern, string replacement, RegexOptions options = RegexOptions.None)
     {
         return Regex.Replace(@this, pattern, replacement);
+    }
+
+    public static IEnumerable<IEnumerable<string>> PartitionBasedOnMaxCombinedLength(this IEnumerable<string> @this, int maxLength)
+    {
+        return new[] { @this };
     }
 }
