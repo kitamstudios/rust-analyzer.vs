@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -45,6 +46,31 @@ public static class StringExtensions
 
     public static IEnumerable<IEnumerable<string>> PartitionBasedOnMaxCombinedLength(this IEnumerable<string> @this, int maxLength)
     {
-        return new[] { @this };
+        List<List<string>> grps = new();
+        List<string> currGrp = new();
+        int currGrpLen = 0;
+
+        foreach (var str in @this)
+        {
+            if (currGrpLen + str.Length > maxLength)
+            {
+                if (currGrp.Count > 0)
+                {
+                    grps.Add(new List<string>(currGrp));
+                    currGrp.Clear();
+                    currGrpLen = 0;
+                }
+            }
+
+            currGrp.Add(str);
+            currGrpLen += str.Length;
+        }
+
+        if (currGrp.Any())
+        {
+            grps.Add(currGrp);
+        }
+
+        return grps;
     }
 }

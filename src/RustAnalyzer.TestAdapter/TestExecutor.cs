@@ -71,7 +71,7 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
 
     private static void RunAndRecordTestResultsFromOneExe(PathEx exe, IEnumerable<TestCase> testCases, TestRunParams trp, bool isBeingDebugged, IFrameworkHandle fh, TL tl, CancellationToken ct)
     {
-        tl.L.WriteLine("RunTestsFromOneExe starting with {0}, {1}, {2}", trp.Source, exe, testCases.Count());
+        tl.L.WriteLine("RunAndRecordTestResultsFromOneExe starting with {0}, {1}, {2}", trp.Source, exe, testCases.Count());
         if (!testCases.Any())
         {
             tl.L.WriteError("RunTestsFromOneSourceAsync: Something has gone wrong. Asking to run empty set of test cases. {0}, {1}", trp.Source, exe);
@@ -104,6 +104,7 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
 
     private static async Task RunTestsFromOneExe(PathEx exe, string[] args, IReadOnlyDictionary<string, TestCase> testCasesMap, IDictionary<string, string> envDict, TL tl, bool isBeingDebugged, IFrameworkHandle fh, CancellationToken ct)
     {
+        tl.L.WriteLine("... RunTestsFromOneExe starting with {0}, {1}", exe, args.Length);
         tl.T.TrackEvent("RunTestsFromOneSourceAsync", ("IsBeingDebugged", $"{isBeingDebugged}"), ("Args", string.Join("|", args)));
         var trs = Enumerable.Empty<TestResult>();
         if (isBeingDebugged)
