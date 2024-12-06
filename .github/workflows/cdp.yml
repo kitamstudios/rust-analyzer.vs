@@ -69,6 +69,24 @@ jobs:
         [io.compression.zipfile]::OpenRead($dst).Entries.Name | % { "- $_"}
       shell: pwsh
 
+    - uses: darenm/Setup-VSTest@v1.2
+
+    - name: Test (new)
+      continue-on-error: true
+      run: |
+        cd $env:OutDir
+        pwd
+        vstest.console.exe *.UnitTests.dll --ListTests
+        vstest.console.exe *.UnitTests.dll /Parallel "/logger:console;verbosity=detailed" "/logger:trx;LogFileName=TestResults.trx"
+
+    - name: Generate test report (new)
+      uses: dorny/test-reporter@v1
+      with:
+        name: Tests Results (new)
+        path: ${{ env.OutDir }}*.trx
+        reporter: dotnet-trx
+        fail-on-error: true
+
     - name: Test
       uses: rusty-bender/vstest-action@main
       with:
