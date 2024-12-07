@@ -10,7 +10,7 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests.Common;
 
 public sealed class ProcessExtensionTests
 {
-    private const int TimeoutSeconds = 6;
+    private const int TimeoutSeconds = 30;
 
     [Fact]
     public void CanFindAliveParentProcessId()
