@@ -76,20 +76,16 @@ jobs:
         echo "Downloading & installing test-window package..."
         Invoke-WebRequest -Uri "https://ksapplications.blob.core.windows.net/public/test-window.zip" -OutFile "/tw/test-window.zip"
         Expand-Archive -Path "/tw/test-window.zip" -DestinationPath /tw
-        echo "Checking install..."
-        dir env:\
-        cd $env:OutDir
-        pwd
-        dir
         echo "Running tests..."
-        & "\tw\vstest.console.exe" RustAnalyzer.TestAdapter.UnitTests.dll "/logger:console;verbosity=detailed" "/logger:trx;LogFileName=TestResults.trx"
+        cd $env:OutDir
+        & "\tw\vstest.console.exe" RustAnalyzer.TestAdapter.UnitTests.dll "/logger:console;verbosity=detailed" "/logger:trx;LogFileName=test-results.new.trx"
 
     - name: Generate test report (new)
       uses: dorny/test-reporter@v1
       continue-on-error: true
       with:
         name: Tests Results
-        path: ${{ env.OutDir }}TestResults.trx
+        path: ${{ env.OutDir }}TestResults\test-results.new.trx
         reporter: dotnet-trx
         fail-on-error: false
 

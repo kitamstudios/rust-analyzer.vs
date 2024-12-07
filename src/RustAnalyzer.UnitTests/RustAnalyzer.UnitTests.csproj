@@ -7,8 +7,8 @@
     <ProjectGuid>{D272BC7C-1B01-4489-A03B-461778DE7A51}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>RustAnalyzer.UnitTests</RootNamespace>
-    <AssemblyName>RustAnalyzer.UnitTests</AssemblyName>
+    <AssemblyName>KS.$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace>KS.$(MSBuildProjectName)</RootNamespace>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
