@@ -82,7 +82,7 @@ jobs:
         pwd
         dir
         echo "Running tests..."
-        & "\tw\vstest.console.exe" *.UnitTests.dll "/logger:console;verbosity=detailed" "/logger:trx;LogFileName=TestResults.trx"
+        & "\tw\vstest.console.exe" RustAnalyzer.TestAdapter.UnitTests.dll "/logger:console;verbosity=detailed" "/logger:trx;LogFileName=TestResults.trx"
 
     - name: Generate test report (new)
       uses: dorny/test-reporter@v1
