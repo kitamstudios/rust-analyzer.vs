@@ -69,23 +69,29 @@ jobs:
         [io.compression.zipfile]::OpenRead($dst).Entries.Name | % { "- $_"}
       shell: pwsh
 
-    - uses: darenm/Setup-VSTest@v1.2
-
     - name: Test (new)
       continue-on-error: true
       run: |
+        mkdir /tw
+        echo "Downloading & installing test-window package..."
+        Invoke-WebRequest -Uri "https://ksapplications.blob.core.windows.net/public/test-window.zip" -OutFile "/tw/test-window.zip"
+        Expand-Archive -Path "/tw/test-window.zip" -DestinationPath /tw
+        echo "Checking install..."
+        dir env:\
         cd $env:OutDir
         pwd
-        vstest.console.exe *.UnitTests.dll --ListTests
-        vstest.console.exe *.UnitTests.dll /Parallel "/logger:console;verbosity=detailed" "/logger:trx;LogFileName=TestResults.trx"
+        dir
+        echo "Running tests..."
+        & "\tw\vstest.console.exe" *.UnitTests.dll "/logger:console;verbosity=detailed" "/logger:trx;LogFileName=TestResults.trx"
 
     - name: Generate test report (new)
       uses: dorny/test-reporter@v1
+      continue-on-error: true
       with:
-        name: Tests Results (new)
-        path: ${{ env.OutDir }}*.trx
+        name: Tests Results
+        path: ${{ env.OutDir }}TestResults.trx
         reporter: dotnet-trx
-        fail-on-error: true
+        fail-on-error: false
 
     - name: Test
       uses: rusty-bender/vstest-action@main
