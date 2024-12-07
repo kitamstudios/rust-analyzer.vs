@@ -10,12 +10,12 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests.Common;
 
 public sealed class ProcessExtensionTests
 {
-    private const int TimeoutSeconds = 30;
+    private const int TimeoutSeconds = 15;
 
     [Fact]
     public void CanFindAliveParentProcessId()
     {
-        var p1 = Process.Start(("cmd", $"/c timeout {TimeoutSeconds} /NOBREAK").PSI());
+        var p1 = Process.Start(("cmd", $"/k timeout {TimeoutSeconds} /NOBREAK").PSI());
 
         var ppids = "timEOut".GetProcessesByName().Select(p => p.GetParentProcessId());
         p1.HasExited.Should().BeFalse();
@@ -42,7 +42,7 @@ public sealed class ProcessExtensionTests
     [Fact]
     public void TestProcessOwnerUser()
     {
-        var p1 = Process.Start(("cmd", $"/c timeout.exe {TimeoutSeconds} /NOBREAK").PSI());
+        var p1 = Process.Start(("cmd", $"/k timeout.exe {TimeoutSeconds} /NOBREAK").PSI());
 
         p1.GetProcessOwnerUser()
             .Should().Be(Process.GetCurrentProcess().GetProcessOwnerUser());
