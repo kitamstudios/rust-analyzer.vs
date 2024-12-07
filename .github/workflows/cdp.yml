@@ -78,7 +78,7 @@ jobs:
         Expand-Archive -Path "/tw/test-window.zip" -DestinationPath /tw
         echo "Running tests..."
         cd $env:OutDir
-        & "\tw\vstest.console.exe" RustAnalyzer.TestAdapter.UnitTests.dll "/logger:console;verbosity=detailed" "/logger:trx;LogFileName=test-results.new.trx"
+        & "\tw\vstest.console.exe" *.UnitTests.dll "/logger:console;verbosity=detailed" "/logger:trx;LogFileName=test-results.new.trx"
 
     - name: Generate test report (new)
       uses: dorny/test-reporter@v1
