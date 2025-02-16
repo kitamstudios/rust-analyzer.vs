@@ -51,6 +51,8 @@ namespace KS.RustAnalyzer
         public const int IdCargoFmt = 0x0101;
         public const int IdBuildAll = 0x0102;
         public const int IdCleanAll = 0x0103;
+        public const int IdClippyAll = 0x0104;
+        public const int IdFmtAll = 0x0105;
         public const int IdGTargetSystem = 0x0010;
         public const int IdTargetSystemCombo = 0x0100;
         public const int IdTargetSystemComboGetList = 0x0101;

@@ -172,6 +172,28 @@
           <ButtonText>&amp;Clean Workspace</ButtonText>
         </Strings>
       </Button>
+
+      <Button guid="guidRustAnalyzerPackage" id="IdClippyAll" priority="0x0102" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_BUILD_SOLUTION" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultDisabled</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText>C&amp;lippy Workspace</ButtonText>
+        </Strings>
+      </Button>
+
+      <Button guid="guidRustAnalyzerPackage" id="IdFmtAll" priority="0x0103" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_BUILD_SOLUTION" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultDisabled</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <Strings>
+          <ButtonText>&amp;Fmt Workspace</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
 
     <Combos>
@@ -203,6 +225,8 @@
 
   <KeyBindings>
     <KeyBinding guid="guidRustAnalyzerPackage" id="IdBuildAll" editor="guidVSStd97" key1="B" mod1="Control Alt Shift" />
+    <KeyBinding guid="guidRustAnalyzerPackage" id="IdClippyAll" editor="guidVSStd97" key1="L" mod1="Control Alt Shift" />
+    <KeyBinding guid="guidRustAnalyzerPackage" id="IdFmtAll" editor="guidVSStd97" key1="F" mod1="Control Alt Shift" />
   </KeyBindings>
 
   <CommandPlacements>
@@ -252,6 +276,8 @@
       <IDSymbol name="IdCargoFmt" value="0x0101" />
       <IDSymbol name="IdBuildAll" value="0x0102" />
       <IDSymbol name="IdCleanAll" value="0x0103" />
+      <IDSymbol name="IdClippyAll" value="0x0104" />
+      <IDSymbol name="IdFmtAll" value="0x0105" />
     </GuidSymbol>
 
     <GuidSymbol name="guidRustAnalyzerTargetSystemCmdSet" value="{76879a43-4f48-45d1-922c-54f713889a1f}">

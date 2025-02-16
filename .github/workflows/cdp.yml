@@ -87,14 +87,14 @@ jobs:
         fail-on-error: true
 
     - name: Upload VSIX
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ github.event.repository.name }}.zip
         path: ${{ env.OutDir }}${{ env.VsixFileName }}
         if-no-files-found: error
 
     - name: Upload TestAdapter
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.TestAdapterNameNoExt }}.zip
         path: ${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.zip

@@ -95,12 +95,15 @@ public abstract class BaseBuildToolChainCommand<T> : BaseCommand<T>
         await CmdServices.ExecuteToolchainOperationAsync(Operation, selectedPath, GetOptions);
     }
 
-    private PathEx GetManifestPath()
+    protected PathEx GetManifestPath()
     {
         ThreadHelper.ThrowIfNotOnUIThread();
 
         return CmdServices.GetWorkspaceRoot() + Constants.ManifestFileName2;
     }
+
+    protected string GetToolArgsFromSettings(string argName)
+        => RustAnalyzerPackage.JTF.Run(async () => await CmdServices.SettingsService.GetAsync(argName, GetManifestPath()));
 
     private bool IsCommandActive()
     {
@@ -116,7 +119,7 @@ public class BuildAllCommand : BaseBuildToolChainCommand<BuildAllCommand>
 {
     protected override ToolchainOperation Operation => its => its.BuildAsync;
 
-    protected override string GetOptions(Options opts) => opts.AdditionalBuildArguments;
+    protected override string GetOptions(Options opts) => GetToolArgsFromSettings(SettingsInfo.TypeAdditionalBuildArguments);
 }
 
 [Command(PackageGuids.guidRustAnalyzerPackageString, PackageIds.IdCleanAll)]
@@ -125,4 +128,20 @@ public class CleanAllCommand : BaseBuildToolChainCommand<CleanAllCommand>
     protected override ToolchainOperation Operation => its => its.CleanAsync;
 
     protected override string GetOptions(Options opts) => string.Empty;
+}
+
+[Command(PackageGuids.guidRustAnalyzerPackageString, PackageIds.IdClippyAll)]
+public class ClippyAll : BaseBuildToolChainCommand<ClippyAll>
+{
+    protected override ToolchainOperation Operation => its => its.RunClippyAsync;
+
+    protected override string GetOptions(Options opts) => opts.DefaultCargoClippyArgs;
+}
+
+[Command(PackageGuids.guidRustAnalyzerPackageString, PackageIds.IdFmtAll)]
+public class FmtAllCommand : BaseBuildToolChainCommand<FmtAllCommand>
+{
+    protected override ToolchainOperation Operation => its => its.RunFmtAsync;
+
+    protected override string GetOptions(Options opts) => opts.DefaultCargoFmtArgs;
 }

@@ -21,11 +21,11 @@ public sealed class CmdServices
 {
     private IComponentModel2 _mef;
     private ILogger _l;
-    private ITelemetryService _t;
     private ShellInterop.IVsSolution _solution;
     private ShellInterop.IVsDebugger _debugger;
     private ShellInterop.IVsUIShell _vsUIShell;
     private IToolchainService _toolchainService;
+    private ISettingsService _settingsService;
     private IBuildOutputSink _buildOutputSink;
     private IVsFolderWorkspaceService _folderWorkspaceService;
 
@@ -40,19 +40,19 @@ public sealed class CmdServices
 
     public IBuildOutputSink BuildOutputSink => _buildOutputSink ??= Mef?.GetService<IBuildOutputSink>();
 
-    private IComponentModel2 Mef => _mef ??= GetPackage().GetService<SComponentModel, IComponentModel2>(false);
+    public IComponentModel2 Mef => _mef ??= GetPackage().GetService<SComponentModel, IComponentModel2>(false);
 
-    private ITelemetryService T => _t ??= Mef?.GetService<ITelemetryService>();
+    public ILogger L => _l ??= Mef?.GetService<ILogger>();
 
-    private ILogger L => _l ??= Mef?.GetService<ILogger>();
+    public ShellInterop.IVsSolution Solution => _solution ??= GetPackage().GetService<ShellInterop.SVsSolution, ShellInterop.IVsSolution>(false);
 
-    private ShellInterop.IVsSolution Solution => _solution ??= GetPackage().GetService<ShellInterop.SVsSolution, ShellInterop.IVsSolution>(false);
+    public ShellInterop.IVsDebugger Debugger => _debugger ??= GetPackage().GetService<ShellInterop.SVsShellDebugger, ShellInterop.IVsDebugger>(false);
 
-    private ShellInterop.IVsDebugger Debugger => _debugger ??= GetPackage().GetService<ShellInterop.SVsShellDebugger, ShellInterop.IVsDebugger>(false);
+    public IToolchainService ToolchainService => _toolchainService ??= Mef?.GetService<IToolchainService>();
 
-    private IToolchainService ToolchainService => _toolchainService ??= Mef?.GetService<IToolchainService>();
+    public ISettingsService SettingsService => _settingsService ??= FolderWorkspaceService?.CurrentWorkspace?.GetService<ISettingsService>();
 
-    private IVsFolderWorkspaceService FolderWorkspaceService => _folderWorkspaceService ??= Mef?.GetService<IVsFolderWorkspaceService>();
+    public IVsFolderWorkspaceService FolderWorkspaceService => _folderWorkspaceService ??= Mef?.GetService<IVsFolderWorkspaceService>();
 
     private readonly IMapper _buildMessageMapper = new MapperConfiguration(cfg => cfg.CreateMap<DetailedBuildMessage, WorkspaceBuildMessage>()).CreateMapper();
 

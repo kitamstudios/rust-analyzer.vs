@@ -11,7 +11,6 @@ using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
-using CommunityVS = Community.VisualStudio.Toolkit.VS;
 
 namespace KS.RustAnalyzer.Shell;
 
