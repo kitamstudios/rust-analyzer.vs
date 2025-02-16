@@ -103,7 +103,13 @@ public abstract class BaseBuildToolChainCommand<T> : BaseCommand<T>
     }
 
     protected string GetToolArgsFromSettings(string argName)
-        => RustAnalyzerPackage.JTF.Run(async () => await CmdServices.SettingsService.GetAsync(argName, GetManifestPath()));
+        => RustAnalyzerPackage.JTF.Run(
+            async () =>
+            {
+                await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
+
+                return await CmdServices.SettingsService.GetAsync(argName, GetManifestPath());
+            });
 
     private bool IsCommandActive()
     {
