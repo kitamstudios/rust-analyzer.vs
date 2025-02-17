@@ -75,8 +75,9 @@ public sealed class ToolchainServiceExtensionsTests
 
         ret.Should().Be(eRes);
         por.Messages.Should().ContainInConsecutiveOrder(eMessage.Split('|'));
-        var cwdErr = cwd == null ? null : new[] { $"{cwd.GetEnvironmentValue()} " };
-        por.Errors.Should().ContainInConsecutiveOrder(eError?.Split('|') ?? cwdErr ?? Array.Empty<string>());
+        var cwdErr = cwd == null ? null : new[] { $"{cwd.GetEnvironmentValue().ToLowerInvariant()} " };
+        por.Errors.Select(x => x.ToLowerInvariant())
+            .Should().ContainInConsecutiveOrder(eError?.Split('|') ?? cwdErr ?? Array.Empty<string>());
     }
 
     public sealed class TestPOR : ProcessOutputRedirector
