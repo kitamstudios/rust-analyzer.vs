@@ -1,6 +1,7 @@
 [Passed] add_one.tests.fibonacci_test.case_1 
 [Passed] add_one.tests.fibonacci_test.case_2 
-[Failed] add_one.tests.fibonacci_test.case_3 thread 'tests::fibonacci_test::case_3' panicked at add_one\src\lib.rs:31:9:
+[Failed] add_one.tests.fibonacci_test.case_3 
+thread 'tests::fibonacci_test::case_3' panicked at add_one\src\lib.rs:31:9:
 assertion `left == right` failed
   left: 1
  right: 2
@@ -13,14 +14,16 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 [Passed] add_one.tests.multiplication_tests.when_operands_are_swapped 
 [Passed] add_one.tests.should_fail 
 [Passed] add_one.tests.should_success 
-[Failed] adder.tests.it_works_failing thread 'tests::it_works_failing' panicked at adder\src\main.rs:34:9:
+[Failed] adder.tests.it_works_failing 
+thread 'tests::it_works_failing' panicked at adder\src\main.rs:34:9:
 assertion `left == right` failed
   left: 3
  right: 5
 
 [Passed] adder.tests.it_works_passing 
 [NotExecuted] adder.tests.it_works_skipped this is a test for ignore aka skip
-[Failed] adder.tests1.tests1.it_works_failing2 thread 'tests1::tests1::it_works_failing2' panicked at adder\src\tests1.rs:20:9:
+[Failed] adder.tests1.tests1.it_works_failing2 
+thread 'tests1::tests1::it_works_failing2' panicked at adder\src\tests1.rs:20:9:
 assertion `left == right` failed
   left: 3
  right: 6
@@ -28,7 +31,8 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 
 [Passed] adder.tests1.tests1.it_works_passing2 
 [NotExecuted] adder.tests1.tests1.it_works_skipped2 this is a test for ignore aka skip
-[Failed] integration_tests_2.integration_test_2 thread 'integration_test_2' panicked at add_one\tests\integration_tests_2.rs:3:5:
+[Failed] integration_tests_2.integration_test_2 
+thread 'integration_test_2' panicked at add_one\tests\integration_tests_2.rs:3:5:
 assertion `left == right` failed
   left: 4
  right: 5
