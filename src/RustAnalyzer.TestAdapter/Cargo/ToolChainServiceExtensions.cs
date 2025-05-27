@@ -30,10 +30,13 @@ public static class ToolchainServiceExtensions
     };
 
     private static readonly Regex NameCracker =
-        new(@"^((?<name>.*)(?<default> \(default\))?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.RightToLeft);
+        new(@"^((?<name>.*)(?<default> \((active, )?default\))?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.RightToLeft);
 
-    private static readonly Regex VersionCracker =
+    private static readonly Regex ToolchainVersionCracker =
         new(@"^rustc (?<version>\d+.\d+.\d+(-.*)?) (\(.* (?<date>\d{4}-\d{2}-\d{2})\))$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    private static readonly Regex RustupVersionCracker =
+        new(@"^rustup (?<version>\d+.\d+.\d+(-.*)?) (\(.* (?<date>\d{4}-\d{2}-\d{2})\))$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private static readonly IReadOnlyDictionary<string, string> OpNameToToolNameMapper = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
@@ -63,6 +66,9 @@ public static class ToolchainServiceExtensions
 
     public static async Task<Toolchain[]> GetInstalledToolchainsAsync(PathEx workingDirectory, CancellationToken ct)
     {
+        var rustupVersionOutput = await GetCommandOutput("rustup", "--version", workingDirectory, ct);
+        var rustupVersion = Version.Parse(RustupVersionCracker.Match(rustupVersionOutput[0]).Groups["version"].Value);
+
         var output = await GetCommandOutput("rustup", "show --verbose", workingDirectory, ct);
         var tcRaw = output
             .Select(x => x.Trim())
@@ -72,9 +78,12 @@ public static class ToolchainServiceExtensions
             .TakeWhile(x => !x.Equals("active toolchain"))
             .ToList();
 
-        var tcs = Enumerable.Range(0, tcRaw.Count / 2)
-            .Select(i => (tcRaw[i * 2], tcRaw[(i * 2) + 1]))
-            .Select(x => (NameCracker.Match(x.Item1), VersionCracker.Match(x.Item2)))
+        // If the rustup version is less 1.28.2, each toolchain will have 2 lines of output.
+        int linesPerToolchain = (rustupVersion >= new Version(1, 28, 2)) ? 3 : 2;
+
+        var tcs = Enumerable.Range(0, tcRaw.Count / linesPerToolchain)
+            .Select(i => (tcRaw[i * linesPerToolchain], tcRaw[(i * linesPerToolchain) + 1]))
+            .Select(x => (NameCracker.Match(x.Item1), ToolchainVersionCracker.Match(x.Item2)))
             .Where(x => x.Item1.Success && x.Item2.Success)
             .Select(x =>
                 new Toolchain
@@ -93,7 +102,7 @@ public static class ToolchainServiceExtensions
             .SkipWhile(x => !x.Equals("active toolchain"))
             .Skip(2)
             .FirstOrDefault()
-            .Split(' ')[0];
+            .Split(' ')[1];
         if (activeRaw != null)
         {
             var i = Array.FindIndex(tcs, tc => tc.Name == activeRaw);
