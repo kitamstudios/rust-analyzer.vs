@@ -97,6 +97,21 @@ public static class ToolchainServiceExtensions
         if (activeRaw != null)
         {
             var i = Array.FindIndex(tcs, tc => tc.Name == activeRaw);
+
+            // 1.Background: There are cases where projects are pinned to specific Rust versions, and it's also possible that users have installed multiple Rust versions.
+
+            // 2.Result: This leads to matching failures during exact name matching.
+
+            // Example(e.g.):
+            //   Actual Name: `1.85.1 - x86_64 - pc - windows - msvc(active)`
+            //   activeRaw: `1.85.1 - x86_64 - pc - windows - msvc`
+
+            // This results in the error: "Sequence contains no elements"
+            if (i == -1)
+            {
+                i = Array.FindIndex(tcs, t => t.Name.StartsWith(activeRaw));
+            }
+
             if (i != -1)
             {
                 tcs[i].IsDefault = true;
