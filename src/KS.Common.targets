@@ -11,7 +11,7 @@
     <Product>rust-analyzer.vs - Rust language support for Visual Studio 2022</Product>
     <StrictCodeAnalysisEnabled>true</StrictCodeAnalysisEnabled> <!-- On by default -->
     <StrictCodeAnalysisEnabled Condition="'$(BuildingForLiveUnitTesting)' == 'true' Or '$(Configuration)' != 'Release'">false</StrictCodeAnalysisEnabled>
-    <NoWarn>$(NoWarn);NU1603;NU1902;NU1903</NoWarn>
+    <NoWarn>$(NoWarn);NU1603;NU1902;NU1903;NU1605</NoWarn>
     <!-- Source link -->
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
