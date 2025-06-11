@@ -145,7 +145,7 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
 
         var workspaceRoot = CmdServices.GetWorkspaceRoot();
         var toolchains = RustAnalyzerPackage.JTF
-            .Run(async () => await ToolchainServiceExtensions.GetInstalledToolchainsAsync(workspaceRoot, default));
+            .Run(async () => await ToolchainServiceExtensions.GetInstalledToolchainsAsync(new ToolchainServiceExtensions.RustupShowOutput.Real(), workspaceRoot, default));
 
         var mcs = Package.GetService<IMenuCommandService, OleMenuCommandService>();
         foreach (var (tc, pos) in toolchains.Select((x, i) => (x, i)))
@@ -210,7 +210,7 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
     {
         command.Enabled = command.Supported = command.Visible = true;
         command.Text = $"{tc.Name} [{tc.Version}]";
-        command.Checked = tc.IsDefault;
+        command.Checked = tc.IsActive;
         command.Properties[ToolchainNameProperty] = tc.Name;
     }
 }

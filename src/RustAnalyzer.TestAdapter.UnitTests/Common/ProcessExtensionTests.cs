@@ -12,14 +12,14 @@ public sealed class ProcessExtensionTests
 {
     private const int TimeoutSeconds = 15;
 
-    [Fact(Skip = "Unblocking release, will switch to pwsh")]
+    [Fact]
     public void CanFindAliveParentProcessId()
     {
         var p1 = Process.Start(("cmd", $"/k timeout {TimeoutSeconds} /NOBREAK").PSI());
 
         var ppids = "timEOut".GetProcessesByName().Select(p => p.GetParentProcessId());
-        p1.HasExited.Should().BeFalse();
         ppids.Should().Contain(p1.Id);
+        p1.HasExited.Should().BeFalse();
 
         p1.Kill();
     }
@@ -42,12 +42,10 @@ public sealed class ProcessExtensionTests
     [Fact]
     public void TestProcessOwnerUser()
     {
-        var p1 = Process.Start(("cmd", $"/k timeout.exe {TimeoutSeconds} /NOBREAK").PSI());
+        var p1 = Process.Start(("cmd", $"/c timeout.exe {TimeoutSeconds} /NOBREAK").PSI());
 
         p1.GetProcessOwnerUser()
             .Should().Be(Process.GetCurrentProcess().GetProcessOwnerUser());
-
-        p1.Kill();
     }
 
     [Fact]

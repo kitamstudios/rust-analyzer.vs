@@ -30,7 +30,7 @@ public static class ToolchainServiceExtensions
     };
 
     private static readonly Regex NameCracker =
-        new(@"^((?<name>.*)(?<default> \(default\))?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.RightToLeft);
+        new(@"^((?<name>.*)(?<aOrD> \((active|active, default|default)\))?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.RightToLeft);
 
     private static readonly Regex VersionCracker =
         new(@"^rustc (?<version>\d+.\d+.\d+(-.*)?) (\(.* (?<date>\d{4}-\d{2}-\d{2})\))$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -61,9 +61,48 @@ public static class ToolchainServiceExtensions
         return (root + "bin", root + $@"lib\rustlib\{AlwaysAvailableTarget}\lib");
     }
 
-    public static async Task<Toolchain[]> GetInstalledToolchainsAsync(PathEx workingDirectory, CancellationToken ct)
+    public abstract class RustupShowOutput
     {
-        var output = await GetCommandOutput("rustup", "show --verbose", workingDirectory, ct);
+        private RustupShowOutput()
+        {
+        }
+
+        public sealed class Simulated : RustupShowOutput
+        {
+            public string[] Value { get; }
+
+            public Simulated(string[] value) => Value = value;
+        }
+
+        public sealed class Real : RustupShowOutput
+        {
+            public Real()
+            {
+            }
+        }
+    }
+
+    public static async Task<Toolchain[]> GetInstalledToolchainsAsync(RustupShowOutput rustupShowOutput, PathEx workingDirectory, CancellationToken ct)
+    {
+        string[] output = null;
+        switch (rustupShowOutput)
+        {
+            case RustupShowOutput.Simulated simulated:
+                {
+                    output = simulated.Value;
+                    break;
+                }
+
+            case RustupShowOutput.Real _:
+                {
+                    output = await GetCommandOutput("rustup", "show --verbose", workingDirectory, ct);
+                    break;
+                }
+
+            default:
+                throw new NotSupportedException($"Unsupported rustup show output type: {rustupShowOutput.GetType()}");
+        }
+
         var tcRaw = output
             .Select(x => x.Trim())
             .Where(x => !x.IsNullOrEmptyOrWhiteSpace())
@@ -72,8 +111,9 @@ public static class ToolchainServiceExtensions
             .TakeWhile(x => !x.Equals("active toolchain"))
             .ToList();
 
-        var tcs = Enumerable.Range(0, tcRaw.Count / 2)
-            .Select(i => (tcRaw[i * 2], tcRaw[(i * 2) + 1]))
+        var tcs1 = Enumerable.Range(0, tcRaw.Count / 3)
+            .Select(i => (tcRaw[i * 3], tcRaw[(i * 3) + 1]));
+        var tcs = tcs1
             .Select(x => (NameCracker.Match(x.Item1), VersionCracker.Match(x.Item2)))
             .Where(x => x.Item1.Success && x.Item2.Success)
             .Select(x =>
@@ -81,42 +121,11 @@ public static class ToolchainServiceExtensions
                 {
                     Name = x.Item1.Groups["name"].Value,
                     Version = $"{x.Item2.Groups["version"].Value} ({x.Item2.Groups["date"].Value})",
-                    IsDefault = false
+                    IsActive = x.Item1.Groups["aOrD"].Value?.Contains("active") ?? false,
                 })
             .OrderBy(tc => tc.Name)
             .ThenBy(tc => tc.Version)
             .ToArray();
-
-        var activeRaw = output
-            .Select(x => x.Trim())
-            .Where(x => !x.IsNullOrEmptyOrWhiteSpace())
-            .SkipWhile(x => !x.Equals("active toolchain"))
-            .Skip(2)
-            .FirstOrDefault()
-            .Split(' ')[0];
-        if (activeRaw != null)
-        {
-            var i = Array.FindIndex(tcs, tc => tc.Name == activeRaw);
-
-            // 1.Background: There are cases where projects are pinned to specific Rust versions, and it's also possible that users have installed multiple Rust versions.
-
-            // 2.Result: This leads to matching failures during exact name matching.
-
-            // Example(e.g.):
-            //   Actual Name: `1.85.1 - x86_64 - pc - windows - msvc(active)`
-            //   activeRaw: `1.85.1 - x86_64 - pc - windows - msvc`
-
-            // This results in the error: "Sequence contains no elements"
-            if (i == -1)
-            {
-                i = Array.FindIndex(tcs, t => t.Name.StartsWith(activeRaw));
-            }
-
-            if (i != -1)
-            {
-                tcs[i].IsDefault = true;
-            }
-        }
 
         return tcs;
     }
@@ -137,7 +146,7 @@ public static class ToolchainServiceExtensions
 
     public static async Task<string> GetDefaultToolchainAsync(PathEx workingDirectory, CancellationToken ct)
     {
-        return (await GetInstalledToolchainsAsync(workingDirectory, ct)).Where(x => x.IsDefault).First().Name;
+        return (await GetInstalledToolchainsAsync(new RustupShowOutput.Real(), workingDirectory, ct)).Where(x => x.IsActive).First().Name;
     }
 
     public static async Task<TestContainer> ReadTestContainerAsync(this PathEx @this, CancellationToken ct)
@@ -281,5 +290,5 @@ public struct Toolchain
 
     public string Version { get; set; }
 
-    public bool IsDefault { get; set; }
+    public bool IsActive { get; set; }
 }

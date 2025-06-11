@@ -1,0 +1,25 @@
+[0] = {
+  "Name": "1.75.0-x86_64-pc-windows-msvc",
+  "Version": "1.75.0 (2023-12-21)",
+  "IsActive": false
+}
+[1] = {
+  "Name": "1.76.0-x86_64-pc-windows-msvc",
+  "Version": "1.76.0 (2024-02-04)",
+  "IsActive": false
+}
+[2] = {
+  "Name": "nightly-2024-03-27-x86_64-pc-windows-msvc",
+  "Version": "1.79.0-nightly (2024-03-26)",
+  "IsActive": false
+}
+[3] = {
+  "Name": "nightly-x86_64-pc-windows-msvc",
+  "Version": "1.89.0-nightly (2025-05-12)",
+  "IsActive": true
+}
+[4] = {
+  "Name": "stable-x86_64-pc-windows-msvc",
+  "Version": "1.86.0 (2025-03-31)",
+  "IsActive": false
+}

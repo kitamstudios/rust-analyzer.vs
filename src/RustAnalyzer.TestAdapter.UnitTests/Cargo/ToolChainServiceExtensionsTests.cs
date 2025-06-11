@@ -6,10 +6,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using ApprovalTests;
+using ApprovalTests.Namers;
+using ApprovalTests.Reporters;
 using FluentAssertions;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
+using Newtonsoft.Json;
 using Xunit;
 
 public sealed class ToolchainServiceExtensionsTests
@@ -41,15 +45,100 @@ public sealed class ToolchainServiceExtensionsTests
         (binPath + Constants.CargoExe).FileExists().Should().BeTrue();
     }
 
-    [Fact]
-    public async Task TestGetInstalledToolchainsBasicAsync()
-    {
-        var installToolchains = await ToolchainServiceExtensions.GetInstalledToolchainsAsync(TestHelpers.ThisTestRoot, default);
+    /// <summary>
+    /// In cases of test failure:
+    /// a. use "rustup show --verbose" to update the inline data first.
+    /// b. 2 cases: one with same active and default toolchain, and another with separate active &amp; default toolchains.
+    /// </summary>
+    [Theory]
+    [UseReporter(typeof(RaVsDiffReporter))]
+    [InlineData(
+#pragma warning disable SA1118 // Parameter should not span multiple lines
+        "separate_active_and_default",
+        @"Default host: x86_64-pc-windows-msvc
+rustup home:  C:\Users\parth\scoop\persist\rustup\.rustup
 
-        installToolchains.Should().NotBeEmpty();
-        installToolchains.Select(x => x.Name).Should().Contain(x => !x.IsNullOrEmptyOrWhiteSpace());
-        installToolchains.Select(x => x.Version).Should().Contain(x => !x.IsNullOrEmptyOrWhiteSpace());
-        installToolchains.Where(x => x.IsDefault).Should().HaveCount(1);
+installed toolchains
+--------------------
+stable-x86_64-pc-windows-msvc (active)
+  rustc 1.86.0 (05f9846f8 2025-03-31)
+  path: C:\Users\parth\scoop\persist\rustup\.rustup\toolchains\stable-x86_64-pc-windows-msvc
+
+nightly-x86_64-pc-windows-msvc (default)
+  rustc 1.89.0-nightly (8405332bd 2025-05-12)
+  path: C:\Users\parth\scoop\persist\rustup\.rustup\toolchains\nightly-x86_64-pc-windows-msvc
+
+nightly-2024-03-27-x86_64-pc-windows-msvc
+  rustc 1.79.0-nightly (47ecded35 2024-03-26)
+  path: C:\Users\parth\scoop\persist\rustup\.rustup\toolchains\nightly-2024-03-27-x86_64-pc-windows-msvc
+
+1.75.0-x86_64-pc-windows-msvc
+  rustc 1.75.0 (82e1608df 2023-12-21)
+  path: C:\Users\parth\scoop\persist\rustup\.rustup\toolchains\1.75.0-x86_64-pc-windows-msvc
+
+1.76.0-x86_64-pc-windows-msvc
+  rustc 1.76.0 (07dca489a 2024-02-04)
+  path: C:\Users\parth\scoop\persist\rustup\.rustup\toolchains\1.76.0-x86_64-pc-windows-msvc
+
+active toolchain
+----------------
+name: stable-x86_64-pc-windows-msvc
+active because: directory override for 'D:\'
+compiler: rustc 1.86.0 (05f9846f8 2025-03-31)
+path: C:\Users\parth\scoop\persist\rustup\.rustup\toolchains\stable-x86_64-pc-windows-msvc
+installed targets:
+  aarch64-unknown-none
+  wasm32-unknown-unknown
+  x86_64-pc-windows-msvc")]
+#pragma warning restore SA1118 // Parameter should not span multiple lines
+    [InlineData(
+#pragma warning disable SA1118 // Parameter should not span multiple lines
+        "same_active_and_default",
+        @"Default host: x86_64-pc-windows-msvc
+rustup home:  C:\Users\parth\scoop\persist\rustup\.rustup
+
+installed toolchains
+--------------------
+stable-x86_64-pc-windows-msvc
+  rustc 1.86.0 (05f9846f8 2025-03-31)
+  path: C:\Users\parth\scoop\persist\rustup\.rustup\toolchains\stable-x86_64-pc-windows-msvc
+
+nightly-x86_64-pc-windows-msvc (active, default)
+  rustc 1.89.0-nightly (8405332bd 2025-05-12)
+  path: C:\Users\parth\scoop\persist\rustup\.rustup\toolchains\nightly-x86_64-pc-windows-msvc
+
+nightly-2024-03-27-x86_64-pc-windows-msvc
+  rustc 1.79.0-nightly (47ecded35 2024-03-26)
+  path: C:\Users\parth\scoop\persist\rustup\.rustup\toolchains\nightly-2024-03-27-x86_64-pc-windows-msvc
+
+1.75.0-x86_64-pc-windows-msvc
+  rustc 1.75.0 (82e1608df 2023-12-21)
+  path: C:\Users\parth\scoop\persist\rustup\.rustup\toolchains\1.75.0-x86_64-pc-windows-msvc
+
+1.76.0-x86_64-pc-windows-msvc
+  rustc 1.76.0 (07dca489a 2024-02-04)
+  path: C:\Users\parth\scoop\persist\rustup\.rustup\toolchains\1.76.0-x86_64-pc-windows-msvc
+
+active toolchain
+----------------
+name: nightly-x86_64-pc-windows-msvc
+active because: directory override for 'D:\src'
+compiler: rustc 1.89.0-nightly (8405332bd 2025-05-12)
+path: C:\Users\parth\scoop\persist\rustup\.rustup\toolchains\nightly-x86_64-pc-windows-msvc
+installed targets:
+  aarch64-unknown-none
+  wasm32-unknown-unknown
+  x86_64-pc-windows-msvc")]
+#pragma warning restore SA1118 // Parameter should not span multiple lines
+    public async Task TestGetInstalledToolchainsBasicAsync(string testName, string output)
+    {
+        NamerFactory.AdditionalInformation = testName;
+        var installToolchains = await ToolchainServiceExtensions.GetInstalledToolchainsAsync(
+            new ToolchainServiceExtensions.RustupShowOutput.Simulated(output.Split('\r', '\n')),
+            TestHelpers.ThisTestRoot,
+            default);
+
+        Approvals.VerifyAll(installToolchains.OrderBy(x => x.Name).Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }
 
     [Fact]
@@ -58,7 +147,7 @@ public sealed class ToolchainServiceExtensionsTests
         var targets = await ToolchainServiceExtensions.GetTargets(default);
 
         targets.Should().NotContain(ToolchainServiceExtensions.AlwaysAvailableTarget);
-        targets.Should().OnlyContain(t => !t.Contains(" ("));
+        targets.Should().OnlyContain(t => !t.Contains("("));
         targets.Take(ToolchainServiceExtensions.CommonTargets.Length)
             .Should()
             .ContainInOrder(ToolchainServiceExtensions.CommonTargets.OrderBy(x => x));
