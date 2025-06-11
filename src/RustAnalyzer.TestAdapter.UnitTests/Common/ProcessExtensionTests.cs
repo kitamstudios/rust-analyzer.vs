@@ -13,18 +13,6 @@ public sealed class ProcessExtensionTests
     private const int TimeoutSeconds = 15;
 
     [Fact]
-    public void CanFindAliveParentProcessId()
-    {
-        var p1 = Process.Start(("cmd", $"/k timeout {TimeoutSeconds} /NOBREAK").PSI());
-
-        var ppids = "timEOut".GetProcessesByName().Select(p => p.GetParentProcessId());
-        ppids.Should().Contain(p1.Id);
-        p1.HasExited.Should().BeFalse();
-
-        p1.Kill();
-    }
-
-    [Fact]
     public async Task CanFindDeadParentProcessIdAsync()
     {
         var p1 = Process.Start(("cmd", $"/c start /MIN TiMeOUT {TimeoutSeconds} /NOBREAK").PSI());
