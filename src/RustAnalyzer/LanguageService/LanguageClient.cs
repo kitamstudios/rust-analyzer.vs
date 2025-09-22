@@ -50,7 +50,7 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
         }
     }
 
-    public object InitializationOptions => null;
+    public object InitializationOptions { get; set; } = null;
 
     public IEnumerable<string> FilesToWatch => null;
 
@@ -62,6 +62,7 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
 
     public async Task<Connection> ActivateAsync(CancellationToken token)
     {
+        var options = await Options.GetLiveInstanceAsync();
         var rlsPath = await RADownloader.GetExePathAsync();
         L.WriteLine("Starting rust-analyzer from path: {0}.", rlsPath);
         ProcessStartInfo info = new()
@@ -69,19 +70,44 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
             FileName = rlsPath,
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
+            RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true,
             WindowStyle = ProcessWindowStyle.Minimized,
             WorkingDirectory = WorkspaceService.CurrentWorkspace?.Location ?? Path.GetDirectoryName(rlsPath),
         };
 
+        foreach (var prop in options.GetRustAnalyzerEnvArguments().Properties())
+        {
+            // Value will never be null, see Options.cs::GetRustAnalyzerEnvArguments implementation
+            info.EnvironmentVariables[prop.Name] = (string)prop.Value!;
+        }
+
         Process process = new()
         {
             StartInfo = info
         };
 
+        string topDir = WorkspaceService.CurrentWorkspace?.Location;
+        var mergedOptions = options.GetMergedLspInitializationOptions(topDir);
+
+        InitializationOptions = mergedOptions;
+        L.WriteLine("Parsing lsp initializationOptions: {0}", InitializationOptions.SerializeObject(Newtonsoft.Json.Formatting.Indented));
+
         if (process.Start())
         {
+            if (options.EnableRustAnalyzerStderrLogging)
+            {
+                _ = Task.Run(async () =>
+                {
+                    string line;
+                    while ((line = await process.StandardError.ReadLineAsync()) != null)
+                    {
+                        L.WriteLine("[rust-analyzer stderr] {0}", line);
+                    }
+                });
+            }
+
             L.WriteLine("Done starting rust-analyzer from path. PID: {0}", process.Id);
             T.TrackEvent("rust-analyzer-start", ("Path", rlsPath));
 
