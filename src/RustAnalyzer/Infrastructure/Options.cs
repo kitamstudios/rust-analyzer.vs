@@ -92,17 +92,17 @@ public class Options : BaseOptionModel<Options>, ISettingsServiceDefaults
     [Browsable(true)]
     [Category(SettingsInfo.KindTest)]
     [DisplayName("Execution environment")]
-    [Description($"Additioanal environment variables to set for test execution. Default: RUST_BACKTRACE=full. Example: RUST_BACKTRACE=1.")]
+    [Description($"Additional environment variables to set for test execution. Default: RUST_BACKTRACE=full. Example: RUST_BACKTRACE=1.")]
     public string TestExecutionEnvironment { get; set; } = "RUST_BACKTRACE=full";
 
     [Browsable(true)]
     [Category(SettingsInfo.KindConfig)]
-    [DisplayName("Rust analyzer lsp initialization initializationOptions")]
-    [Description("JSON object parsed to initializationOptions, see https://rust-analyzer.github.io/book/configuration\n" +
-        "you can overwrite this global setting by placing a file named 'lsp_initializationOptions.json' in your top level project directory" +
-        "the two files will then get merged using a deep merge strategy (see https://jsoncompare.com/json-merge-tool)\n" +
-        "!!Make shure the json you enter is escaped correctly (no\\ in Windows paths or sth)\n" +
-        "Restarting VS is required for changes to this settign (or the .json) to take effect")]
+    [DisplayName("LSP Initialization Options")]
+    [Description("JSON object for LSP initializationOptions, see https://rust-analyzer.github.io/book/configuration.\n" +
+        "You can override this global setting by placing a file named 'lsp_initializationOptions.json' in your top-level project directory. " +
+        "The two JSON objects will be deep-merged.\n" +
+        "Make sure the JSON is valid and strings are correctly escaped (e.g., use '\\\\' or just '/' for paths in Windows).\n" +
+        "Reopening the Solution is required for changes to this setting to take effect.")]
     [Editor(typeof(System.ComponentModel.Design.MultilineStringEditor), typeof(UITypeEditor))]
     public string LspInitializationOptions { get; set; } = "{}";
 
@@ -121,7 +121,7 @@ public class Options : BaseOptionModel<Options>, ISettingsServiceDefaults
             }
             catch (System.Exception ex)
             {
-                RustAnalyzerPackage.JTF.RunAsync(async () => 
+                RustAnalyzerPackage.JTF.RunAsync(async () =>
                 {
                     await VsCommon.ShowErrorMessageAsync(
                         "Rust Analyzer",
@@ -143,7 +143,7 @@ public class Options : BaseOptionModel<Options>, ISettingsServiceDefaults
             }
             catch (IOException ex)
             {
-                RustAnalyzerPackage.JTF.RunAsync(async () => 
+                RustAnalyzerPackage.JTF.RunAsync(async () =>
                 {
                     await VsCommon.ShowErrorMessageAsync(
                         "Rust Analyzer",
@@ -153,7 +153,7 @@ public class Options : BaseOptionModel<Options>, ISettingsServiceDefaults
             }
             catch (System.Exception ex)
             {
-                RustAnalyzerPackage.JTF.RunAsync(async () => 
+                RustAnalyzerPackage.JTF.RunAsync(async () =>
                 {
                     await VsCommon.ShowErrorMessageAsync(
                         "Rust Analyzer",
@@ -173,10 +173,10 @@ public class Options : BaseOptionModel<Options>, ISettingsServiceDefaults
         }
         catch (System.Exception ex)
         {
-            RustAnalyzerPackage.JTF.RunAsync(async () => 
+            RustAnalyzerPackage.JTF.RunAsync(async () =>
             {
                 await VsCommon.ShowErrorMessageAsync(
-                    "Rust Analyzer", 
+                    "Rust Analyzer",
                     $"Error merging LSP initialization options: {ex.Message}");
             }).FireAndForget();
             return new JObject();
@@ -187,8 +187,9 @@ public class Options : BaseOptionModel<Options>, ISettingsServiceDefaults
 
     [Browsable(true)]
     [Category(SettingsInfo.KindConfig)]
-    [DisplayName("Rust analyzer environment variables")]
-    [Description("Environment variables passed to rust-analyzer.exe, example:\nRA_LOG=info Env2=Test Env3=Hello")]
+    [DisplayName("Environment variables")]
+    [Description("Environment variables passed to rust-analyzer.exe, example:'''\nRA_LOG=info Env2=Test Env3=Hello\n'''\n" +
+        "Reopening the Solution is required for changes to this setting to take effect.")]
     public string RustAnalyzerEnvArguments { get; set; } = string.Empty;
 
     public JObject GetRustAnalyzerEnvArguments()
@@ -214,7 +215,8 @@ public class Options : BaseOptionModel<Options>, ISettingsServiceDefaults
     [Browsable(true)]
     [Category(SettingsInfo.KindConfig)]
     [DisplayName("Enable Rust Analyzer Stderr Logging")]
-    [Description("If enabled, output from rust-analyzer will be logged to the Output window.")]
+    [Description("If enabled, output from rust-analyzer will be logged to the Output window.\n" +
+        "Reopening the Solution is required for changes to this setting to take effect.")]
     public bool EnableRustAnalyzerStderrLogging { get; set; } = false;
 
 }
