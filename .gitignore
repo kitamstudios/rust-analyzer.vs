@@ -33,6 +33,7 @@ sas_url
 *.userprefs
 
 # Build results
+/_built/
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/

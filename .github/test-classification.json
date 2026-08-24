@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "policy": "transitional-fqn",
+  "expectedDiscoveredTests": 195,
+  "expectedUnitTests": 76,
+  "expectedIntegrationTests": 118,
+  "expectedExternalTests": 1,
+  "integration": [
+    {
+      "prefix": "KS.RustAnalyzer.UnitTests.Editor.FileContextProviderTests.",
+      "expectedMatches": 19
+    },
+    {
+      "prefix": "KS.RustAnalyzer.UnitTests.Editor.FileScannerTests.",
+      "expectedMatches": 38
+    },
+    {
+      "prefix": "KS.RustAnalyzer.TestAdapter.UnitTests.Common.ProcessExtensionTests.",
+      "expectedMatches": 4
+    },
+    {
+      "prefix": "KS.RustAnalyzer.TestAdapter.UnitTests.Cargo.ToolchainServiceExtensionsTests.TestGetActiveToolChainAsync",
+      "expectedMatches": 1
+    },
+    {
+      "prefix": "KS.RustAnalyzer.TestAdapter.UnitTests.Cargo.ToolchainServiceExtensionsTests.TestGetBinAndLibPathsAsync",
+      "expectedMatches": 1
+    },
+    {
+      "prefix": "KS.RustAnalyzer.TestAdapter.UnitTests.Cargo.ToolchainServiceExtensionsTests.TestGetTargetsAsync",
+      "expectedMatches": 1
+    },
+    {
+      "prefix": "KS.RustAnalyzer.TestAdapter.UnitTests.Cargo.ToolchainServiceExtensionsTests.TestRunAsync",
+      "expectedMatches": 3
+    },
+    {
+      "prefix": "KS.RustAnalyzer.TestAdapter.UnitTests.Cargo.ToolchainServiceTests.",
+      "expectedMatches": 20
+    },
+    {
+      "prefix": "KS.RustAnalyzer.TestAdapter.UnitTests.TestDiscovererTests.",
+      "expectedMatches": 3
+    },
+    {
+      "prefix": "KS.RustAnalyzer.TestAdapter.UnitTests.TestExecutorTests.",
+      "expectedMatches": 3
+    },
+    {
+      "prefix": "KS.RustAnalyzer.TestAdapter.UnitTests.Cargo.MetadataServiceTests.WorkspaceWithoutRootCargoManifestAsync",
+      "expectedMatches": 2
+    },
+    {
+      "prefix": "KS.RustAnalyzer.TestAdapter.UnitTests.Cargo.MetadataServiceTests.InvalidOperationExceptionOnInvalidManifestAsync",
+      "expectedMatches": 2
+    },
+    {
+      "prefix": "KS.RustAnalyzer.TestAdapter.UnitTests.Cargo.WorkspaceExtensionsTests.CanHaveExecutableTargetsTestsAsync",
+      "expectedMatches": 10
+    },
+    {
+      "prefix": "KS.RustAnalyzer.TestAdapter.UnitTests.Common.EnvironmentExtensionsTests.EnvDictToEnvBlockRoundTripTests",
+      "expectedMatches": 1
+    },
+    {
+      "prefix": "KS.RustAnalyzer.TestAdapter.UnitTests.Common.EnvironmentExtensionsTests.OverrideWithEnvironmentBlockTests",
+      "expectedMatches": 5
+    },
+    {
+      "prefix": "KS.RustAnalyzer.TestAdapter.UnitTests.Common.PathExtensionsTests.TestFindInpath",
+      "expectedMatches": 5
+    }
+  ],
+  "external": [
+    {
+      "prefix": "KS.RustAnalyzer.UnitTests.RlsReleaseTests.LastUpdateShouldNotBeOlderThan30DaysAsync",
+      "expectedMatches": 1
+    }
+  ]
+}
