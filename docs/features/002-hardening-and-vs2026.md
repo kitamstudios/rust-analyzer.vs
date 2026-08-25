@@ -1,81 +1,61 @@
 # Feature: Hardening and Visual Studio 2026
 **Branch:** vibe/002-hardening-and-vs2026
-**Status:** Selected for redesign
-
-> Planning archive awaiting Anders redesign. Feature 002 is now limited to the candidates selected in
-> [`docs/backlog.md`](../backlog.md): extension-model analysis only, gate portfolio/runtime review,
-> VS 2026/prerequisite readiness, dependency modernization, the VS 2022/2026 compatibility matrix,
-> and GitHub release notes in the extension. The broader material below preserves evidence and
-> decisions but is not the selected implementation scope.
+**Status:** In Progress
 
 ## Requirements
 
-Redesign this archive into the selected feature-002 scope: analyze VSSDK versus
-VisualStudio.Extensibility without migrating models; review gate purpose and runtime; support Visual
-Studio 2022 17.12+ and Visual Studio 2026 while replacing the prerequisite install/restart loop;
-modernize VSSDK and direct libraries; validate both host generations end to end; and show trusted,
-offline-tolerant GitHub release notes in the extension.
+Six candidates, delivered in this order: (2) gate portfolio and runtime review, (3) VS 2026 and
+prerequisite readiness, (4) VSSDK and library modernization, (5) VS 2022/2026 compatibility matrix,
+(6) GitHub release notes in the extension. Candidate (1), the extension-architecture analysis, runs
+**in parallel** from the moment candidate 2 merges; it ships no behaviour. Candidate 4 does **not**
+wait on candidate 1 — cohort upgrades are reversible and independently gated, and blocking them on an
+analysis that produces only a recommendation would stall modernization for no verification gain.
 
-Feature 001 already aligned local and CI gates, completed durable trait ownership, and resolved the
-current Cargo executable-discovery, sysroot-layout, and approval-output failures. All broader
-hardening candidates below remain planning evidence in this archive and stay in `docs/backlog.md`
-unless the human selects them for a later feature.
+### Candidate 2, as stated by Sir (verbatim)
 
-Feature 001 resolved the current approval-output failures with narrow incidental normalization.
-Broader cross-version ApprovalTests resilience remains S10 work and must stay fail closed.
+> "okay i want to revert back to previous cdp.yml. the steps there are all the steps for the quick
+> gate and long gate. there is no extra steps needed. delete all the ps1 garbage created for the
+> gates e.g. checking format etc (the build steps for release build checks formatting). additionally
+> quick gate (dave's) runs only unit tests, bhaskar's gate runs both unit and integration tests. to
+> reflect this also add another step in cdp.yml. once done raise the PR and track the PR merge gate.
+> done-done for this is PR gates also pass."
 
-Feature 001 completed durable trait-based test ownership and removed its transitional FQN manifest.
+### Ground truth this feature starts from
 
-## Design Options (Ox)
+- **CI has never been green.** Run `32805906008` failed at `Lint` with
+  `MSB3061 … _built\EmptyFiles\image\empty.jpc`; Quick, Full, Zip TestAdapter and both uploads were
+  skipped. Run `32806128787` was cancelled. No merge gate has ever passed on this workflow.
+- **The separate lint pass has no marginal analyzer coverage.** `src/KS.Common.targets:11-30` sets
+  `StrictCodeAnalysisEnabled` on for Release and drives `TreatWarningsAsErrors`,
+  `EnforceCodeStyleInBuild`, and `CodeAnalysisTreatWarningsAsErrors` from it, with
+  `_codeanalysis/codeanalysis.ruleset` at `<IncludeAll Action="Error"/>`. The Release build already
+  fails on every StyleCop/IDE/FxCop diagnostic, including SA1028 trailing whitespace. The lint pass's
+  only genuine delta was MSBuild-level `/warnAsError` — immediately re-holed by
+  `/warnNotAsError:MSB3277`. Sir's "the build steps for release build checks formatting" is correct.
+- **The lint failure is an artefact of the gate layer, not of the product.** `Invoke-Build.ps1`
+  deliberately omits `/p:OutDir` in `-AnalyzerCheck` mode, but `cdp.yml` sets `OutDir` as a **job-level**
+  env, so the analyzer `Rebuild` targeted `_built\` and its clean step tried to delete an ApprovalTests
+  `EmptyFiles` payload. Nothing in the product was wrong.
+- **The real content of candidate 2 is de-scripting, not reverting.** The old `cdp.yml` had
+  `continue-on-error` on both test steps and no acceptance gate worth the name; restoring it verbatim
+  would restore unenforced tests. What is restored is the **shape** (multi-job, inline steps, no gate
+  wrappers); what is kept is fail-closed policy.
+- **The acceptance harness has never gated anything in CI.** In the old workflow it ran under
+  `continue-on-error: true`; in the current workflow it runs inside `Invoke-Tests.ps1 -Full`, which
+  never ran because Lint failed first.
 
-### O1 — Ordered vertical hardening slices
-- Description: Align fail-closed CI with feature 001's green local full gate and complete remaining
-  P0 gate hardening first, establish the startup state boundary second, then harden each external
-  boundary in dependency order and finish with a two-version smoke matrix.
-- Pros: Every later slice starts with trustworthy verification; each slice remains independently
-  reviewable; the suspension gate then gives later process/network/UI work one consistent contract.
-- Cons: Temporary adapters may be needed while old and new boundaries coexist.
+### Standing constraints
 
-### O2 — Big-bang platform and infrastructure rewrite
-- Description: Replace startup, toolchain, updater, telemetry, process, and CI behavior together.
-- Pros: No transitional state.
-- Cons: High regression risk across package activation, LSP, Cargo, tests, and release; difficult to
-  review or roll back; contradicts the repository's surgical-change constraint.
+Gate-3 assistant bootstrap is retained and working and is not touched by this feature. `OutDir` stays
+`${{ github.workspace }}\_built\` and is set **per step, never as job env**. The nightly toolchain is
+pinned to a dated channel in exactly one source, read by both the bootstrap and the workflow. Runner
+label and VS major are `config`-job knobs, not literals scattered through the file. `docs/design.md`
+is corrected in the same slice that changes behaviour. Everything is fail-closed: no
+`continue-on-error`, no soft failure, no quarantine. Agents never deploy (golden rule #4).
 
-### O3 — Manifest-only Visual Studio 2026 enablement
-- Description: Widen the VSIX range and defer startup/infrastructure work.
-- Pros: Small apparent change.
-- Cons: Claims compatibility without runtime proof and leaves the restart/startup loop in the first
-  VS2026 experience; explicitly rejected by the accepted product decisions.
+## Accepted product & UX decisions (candidate 3)
 
-**Recommended: O1 — the human made green fail-closed verification P0, followed immediately by the
-accepted startup/readiness product boundary.**
-
-## Current evidence
-
-Line references describe the baseline reviewed for feature 001; symbols are the durable locator.
-
-| Area | Evidence | Finding |
-|------|----------|---------|
-| Activation/startup | `src/RustAnalyzer/RustAnalyzerPackage.cs`, `InitializeAsync` and `OnAfterPackageLoadedAsync` (about lines 49-80) | Package load serially performs command/MEF setup, release notes, incompatibility checks, prerequisites, install/update, and notification. |
-| Prerequisites/restart | `src/RustAnalyzer/Infrastructure/PreReqsCheckService.cs`, `CheckAsync`, `CheckRustupCargoAsync`, and `CheckVsVersion` (about lines 28-158) | PATH/tool checks, browser UI, and restart behavior are coupled and can repeat; resolution is incomplete. |
-| Compatibility | `src/RustAnalyzer/source.extension.vsixmanifest` (about lines 13-31); `src/RustAnalyzer.TestAdapter/Constants.cs`, minimum VS constant | Manifest currently stops below version 18 while runtime minimum is 17.12. |
-| LSP process | `src/RustAnalyzer/LanguageService/LanguageClient.cs`, `ActivateAsync` (about lines 63-93) | Starts a rust-analyzer process and returns its streams without a complete owned lifetime contract. |
-| Process runner | `src/RustAnalyzer.TestAdapter/Common/ProcessRunner.cs`; `ToolChainServiceExtensions.RunAsync` (about lines 189-230) | Kill/dispose/cancellation behavior is distributed and callers can lose ownership. |
-| Test cancellation | `src/RustAnalyzer.TestAdapter/TestExecutor.cs`, `Cancel`/`RunTests` (about lines 23-128) | Cancellation includes shared flags and child-process behavior that is not uniformly token-owned. |
-| Async failures | `src/RustAnalyzer.TestAdapter/Common/TaskExtensions.cs`, `Forget` (about lines 7-14), used by `MetadataService`, `BuildOutputSink`, `TestContainerDiscoverer`, and `OutputWindowLogger` | Current fire-and-forget helper does not observe or report eventual faults. |
-| Telemetry | `src/RustAnalyzer.TestAdapter/Common/TelemetryService.cs` (about lines 12-115) | Connection configuration is embedded and a machine/user-derived identifier is emitted. |
-| Updater | `src/RustAnalyzer/Infrastructure/RlsInstallerService.cs` (about lines 45-175) | Startup performs GitHub download/extraction into the extension area and stores registry state without a transactional, independently verified install. |
-| Cargo protocol | `src/RustAnalyzer.TestAdapter/Cargo/ToolChainService.cs`, `GetWorkspaceAsync`, build/test discovery, and test listing (about lines 118-229) | Metadata and test executable discovery use structured Cargo JSON; test listing still depends on unstable nightly JSON, and remaining text protocols are S7 work. |
-| Latest-nightly gate evidence | Feature-001 full validation with rustc `1.100.0-nightly` | Feature 001 resolved build-script misselection through structured compiler artifacts and replaced fixed sysroot-layout assumptions with rustc-reported paths plus semantic runtime/import-library checks. |
-| Rustup protocol | `src/RustAnalyzer.TestAdapter/Cargo/ToolChainServiceExtensions.cs`, rustup show/target methods (about lines 16-285) | Human-readable rustup output and environment assumptions are parsed directly. |
-| Workspace/UI cost | `src/RustAnalyzer/Shell/RustToolsCommands.cs`, dynamic toolchain menu (about lines 135-215); `src/RustAnalyzer/Infrastructure/BuildOutputSink.cs`; `MetadataService` events | Query-status and event paths repeatedly enumerate/cache/update and dispatch fire-and-forget UI work. |
-| Path behavior | `PreReqsCheckService`, `LanguageClient`, `EnvironmentExtensions`, `ToolChainServiceExtensions`, and `DebugLaunchTargetProvider` | Executable lookup, working directories, environment inheritance, quoting, and normalization do not share one explicit contract. |
-| CI | `.github/workflows/cdp.yml`, unit/integration test steps and action references | Test steps use `continue-on-error`; publish can follow weakly enforced tests; dependencies include mutable or old action refs. |
-
-## Accepted product and UX decisions
-
-These are decided requirements, not unresolved design questions:
+Preserved verbatim from the planning archive. These are decided requirements, not open questions.
 
 1. Support Visual Studio 2022 17.12+ and Visual Studio 2026. Express open-ended compatibility intent
    where packaging permits and validate the actual host version/capabilities at runtime.
@@ -103,423 +83,334 @@ These are decided requirements, not unresolved design questions:
 12. Cancellation before prompting returns to retryable `Unknown`; it must not cache readiness,
     suspension, or a consumed-dialog state.
 
-## Slices (Sx)
+## Design Options (Ox)
 
-A slice is defined in `docs/meta-design.md`. Execution order is the table order.
+### O1 — Faithful de-script, one job
+- Description: Delete the five gate scripts, inline every step into the existing single
+  `build-test-deploy` job, add the separate quick and full test steps, fix `OutDir` scoping.
+- Pros: Smallest diff; one checkout; no artifact plumbing; fastest to green.
+- Cons: The acceptance harness keeps pointing `/TestAdapterPath` at `_built\`, which holds the whole
+  build output — a file missing from the shipped zip stays undetectable. Build and acceptance failures
+  are not separable in the run UI. Does not match "revert back to previous cdp.yml", which was
+  multi-job.
+
+### O2 — De-script **and** restore the multi-job shape *(recommended, chosen by Sir)*
+- Description: Delete the five gate scripts; restore `config` → `build-and-test` → `acceptance` →
+  `publish`; inline every step; replace deprecated actions with shell; make the acceptance job consume
+  the **published TestAdapter zip** rather than `_built\`; fail closed everywhere.
+- Pros: Matches the previous topology Sir asked for. The crux: the acceptance job is the only test of
+  the **shipped artefact** — today's inline harness resolves adapters out of `_built\`, so an assembly
+  omitted from `KS.RustAnalyzer.TestAdapter.zip` is invisible, yet the zip is exactly what customers
+  consume. Consuming the zip converts a packaging omission from a customer report into a red gate. Job
+  separation also isolates a VS/VSTest-host failure from a build failure.
+- Cons: Two checkouts, artifact upload/download, slightly longer wall clock; two rustup installs.
+
+### O3 — Minimal patch
+- Description: Move `OutDir` to the build step, leave the scripts in place.
+- Pros: Could be green today.
+- Cons: Leaves exactly the "ps1 garbage" Sir asked to delete, keeps a lint pass with no marginal
+  coverage, and never tests the shipped zip. Rejected.
+
+**Recommended: O2 — it is the only option that both removes the gate layer and puts the shipped
+artefact under test. Chosen by Sir.**
+
+## Slices (Sx)
 
 | Slice | Outcome | Depends on |
 |-------|---------|------------|
-| S0 (P0) | Preserve feature 001's green local full gate, align CI fail closed, remove `MSB3277`, and re-enable validated quality tools. | - |
-| S1 | Visual Studio 2022 17.12+/2026 packaging and runtime compatibility plus the prerequisite startup/readiness redesign. | S0 |
-| S2 | Telemetry has an approved data/configuration contract with no embedded secret-like configuration or machine/user identity. | S1 |
-| S3 | Remaining CI supply-chain, artifact, dependency, and release controls are immutable/auditable. | S0, S1 |
-| S4 | Every LSP/Cargo/rustup/test child process has explicit ownership, cancellation, bounded shutdown, and disposal. | S1 |
-| S5 | Fire-and-forget work observes and reports faults without crashing VS or hiding failure. | S2, S4 |
-| S6 | Rust-analyzer update/install is safe, offline-tolerant, verified, transactional, and recoverable. | S1, S4, S5 |
-| S7 | Remaining Cargo/rustup/test and path/environment boundaries use typed protocols and one correct Windows resolution/quoting contract. | S0, S1, S4 |
-| S8 | Workspace/UI updates are batched and dynamic menu query paths are bounded, cached, and free of process/network work. | S1, S5, S7 |
-| S9 | A repeatable VS 2022 17.12+ and VS 2026 smoke matrix validates activation through LSP, Cargo, tests, run/debug, suspend, and update/offline flows. | S2-S8 |
-| S10 | Broader cross-version ApprovalTests fixture/update strategy remains deterministic and human-reviewed beyond the feature-001 fixes. | S0, S7, S9 |
-| S11 | Durable trait-based unit/integration/external ownership. | Complete in feature 001 |
+| S1 | Candidate 2: gate scripts deleted, portfolio measured, CI restored to the O2 multi-job topology with acceptance consuming the published zip, fail-closed, and **green for the first time**. | - |
+| S2 | Candidate 3a: VS 2022 17.12+ **and** VS 2026 packaging plus runtime proof. | S1 |
+| S3 | Candidate 3b: one process-scoped readiness evaluation, one dialog, one session InfoBar, process-only suspension. | S2 |
+| S4 | Candidate 4: dependency modernization in reviewed compatibility cohorts. | S1 |
+| S5 | Candidate 5: VS 2022/2026 compatibility matrix executed and recorded. | S2, S3, S4 |
+| S6 | Candidate 6: GitHub release notes in the extension. | S3 |
+| S7 | Candidate 1: record the decision to stay on the in-process VSSDK model, with evidence and revisit triggers. Ships no behaviour; runs in parallel with S2–S6 once S1 merges. | S1 |
 
 ## Tasks (Tx)
 
-### S0 (P0) — Align CI and complete mandatory gate hardening
+### S1 — Candidate 2 (execution granularity)
 
-Feature 001 completed local/CI gate alignment and durable test ownership. `MSB3277` cleanup and
-optional quality-tool redesign remain in the backlog and are not prerequisites for the narrowed
-feature 002 scope. Feature 002 will instead review the gate portfolio and runtime from measured
-evidence.
+| #  | Slice | Task | Status | Commit |
+|----|-------|------|--------|--------|
+| T1 | S1 | **Pin nightly to a dated channel in exactly one source** read by both `Initialize-RustNightly.ps1` and `cdp.yml`. Default to `.github/rust-nightly-channel` (a one-line file, e.g. `nightly-2026-08-20`) unless three probes clear `rust-toolchain.toml`: **(a)** `ToolchainServiceExtensionsTests.TestGetActiveToolChainAsync` and `TestGetBinAndLibPathsAsync` resolve the active toolchain from `TestHelpers.ThisTestRoot`, a repo-relative working directory, so a repo-root `rust-toolchain.toml` becomes a **directory override** — the same suite already approves rustup text containing `active because: directory override for 'D:\src'`, so the override reason is observable and can break approvals; **(b)** the `rustup override set` product path still behaves with a toolchain file present; **(c)** a `rust-toolchain.toml` makes rustup **auto-install** the named channel on the first cargo invocation, which would let a consumer implicitly acquire a toolchain and breach the assistant-only bootstrap boundary. Any probe failing ⇒ use the channel file. Record the probe results in this file. | Pending | - |
+| T2 | S1 | **Test execution mechanism and classification invariants** (Ruling A, first half). (a) Move the three assembly suites off `vstest.console.exe` to the native **xUnit console runner** (`xunit.runner.console`, `tools\net472\xunit.console.exe`), copied into `_built\` by the test projects' targets; the projects are legacy non-SDK `ToolsVersion="15.0"` / `TargetFrameworkVersion v4.8` with PackageReference, so `dotnet test` cannot drive them (`docs/design.md`: "not currently a safe `dotnet test`/Coverlet target") and the .NET Framework console runner is the runner that can. (b) Preserve gate semantics with `-trait "type=UnitTests"` (quick) and `-notrait "scope=External"` (full), `-parallel all`. (c) **Delete the PowerShell discovery preflight and its hardcoded `204/96/108/1`**; replace it with a reflection-based `TraitTaxonomyTests` xUnit test in the unit suite asserting the *invariants*: every case carries exactly one `type` trait, no case carries both, every `scope=External` case is also `type=IntegrationTests`, unit + integration = total, total > 0. Numbers stop being inputs. (d) Verify before switching: app-domain/loading behaviour for `KS.RustAnalyzer.UnitTests` (it references `src/external/vs.17.11` VS assemblies), the ApprovalTests path (`RaVsDiffReporter.INSTANCE` is `XUnit2Reporter.INSTANCE` — runner-agnostic, it fails through xUnit), and that `xunit.runner.visualstudio` is retained for in-IDE Test Explorer. (e) Accept the one loss: the console runner emits xUnit XML, not TRX; the TRX consumer was `dorny/test-reporter`, already deleted under D3, so TRX becomes an artifact-only concern. | Pending | - |
+| T3 | S1 | **Re-point the Commands table and both recipes at de-scripted commands** (Ruling C). `build`, `lint`, `format:check`, `format:fix` all resolve to the single Release build command — that build *is* the C# style and analyzer enforcement. `test:quick` and `test:full` become one-line xUnit console invocations; `test:full` stays a **single process** (see N3). No `none` values, no `.ps1` wrappers, no framework divergence: `.github/skills/build-test.md` and `build-test-full.md` need **no edit**. See N2 for the exact values and the double-invocation consequence. | Pending | - |
+| T4 | S1 | **Delete the five scripts and repair the cascade.** Delete `Invoke-Build.ps1`, `Invoke-Format.ps1`, `Invoke-Tests.ps1`, `Initialize-CISession.ps1`, `CIProvenance.psm1`. `RustNightly.psm1:4` imports `CIProvenance.psm1` and `Get-RustNightlyManifest` falls back to `Get-CIBootstrapProvenance`; remove both, along with the `GITHUB_ACTIONS` branch of `Get-RustNightlyHandoffMessage`. CI no longer needs provenance because it never runs the assistant bootstrap — the workflow sets `RUSTUP_TOOLCHAIN` directly. Retain `Initialize-AssistantSession.ps1`, `Initialize-RustNightly.ps1`, `AssistantBootstrap.psm1`, `RustNightly.psm1`, `SessionState.psm1`, `Test-SessionBootstrap.ps1`, and `VisualStudio.psm1`. | Pending | - |
+| T5 | S1 | **Verify runner-label ↔ VS-major against `actions/runner-images`** before wiring the `config` knob. Current lead, **unverified and load-bearing**: `windows-2022` carries VS 2022 (major 17) and preinstalled rustup; `windows-2025` may now carry VS 2026 (major 18) after a mid-2026 image migration. Confirm against the image manifests and record the exact label→major mapping here. Do **not** move the default gate off VS 17 on the strength of a search result. | Pending | - |
+| T6 | S1 | **Rewrite `cdp.yml` to the O2 topology**: `config` → `build-and-test` → `acceptance` → `publish`. `config` (literal runner) checks out, reads the T1 channel file, and outputs `runner`, `vs-major`, `nightly-channel`; downstream jobs use `runs-on: ${{ needs.config.outputs.runner }}` — verified legal, since `runs-on` accepts `needs.*.outputs` but **not** `env`. `build-and-test`: shell rustup install of the pinned channel, MSBuild resolved through `VisualStudio.psm1`, inline VSIX version stamp, Release build with **step-level** `OutDir`, then **two separate steps** per Sir — "Quick tests (unit)" and "Full tests (unit + integration)" — then Zip TestAdapter and upload VSIX + zip + xUnit XML. `acceptance`: downloads and expands `KS.RustAnalyzer.TestAdapter.zip` to `.\testadapter` and runs `src/TestProjects/run-integrationtests.ps1 -TestAdapterLocation .\testadapter -VisualStudioMajorVersion ${{ needs.config.outputs.vs-major }}`, i.e. **against the shipped artefact**. `publish` needs `[config, build-and-test, acceptance]`. No `continue-on-error` anywhere. All deprecated actions replaced by shell per Ruling B and N5. | Pending | - |
+| T7 | S1 | **Correct `docs/design.md`**: the "Build, test, and release flow" section (script-implemented gates, the six numbered steps, the 204/96/108/203 counts, the separate lint pass, the CI-provenance paragraph, the `.github/workflows/cdp.yml` single-job description) and the `MSB3277` constraint entry, which now records that the grandfather is gone because the pass that carried it is gone. Also correct the acceptance sentence to say the harness consumes the published zip in CI. | Pending | - |
+| T8 | S1 | **Drive CI to its first green run** on the pushed branch. Green means: build, quick, full, acceptance, zip, and both uploads all succeed with no soft-failure switch anywhere. | Pending | - |
+| T9 | S1 | **Measure the gate portfolio on the pushed branch** and fill the table below — per-gate wall clock, trigger, what it uniquely catches, and the retained risk of every removed gate. Includes the measured cost of the repeated Release build invocation (N2). | Pending | - |
+| T10 | S1 | **Raise the PR and track the merge gate to pass.** Done-done for candidate 2 is the PR gate green, not a local green. | Pending | - |
 
-| # | Slice | Task | Status | Commit |
-|---|-------|------|--------|--------|
-| T14 | S0 | Make build, quick, full, standalone acceptance, format, and analyzer failures block locally and in CI; remove test `continue-on-error` behavior and make CI invoke the same policy as Bhaskar. | Complete (Feature 001) | - |
-| T15 | S0 | Enforce trait-based quick/full/external ownership in local and CI execution; keep external freshness intentional and make classification drift fail closed. | Complete (Feature 001) | - |
-| T32 | S0 | Consume Cargo compiler artifacts for test-executable/container discovery instead of display text, using `profile.test`, target kind, and the authoritative structured executable across Cargo layouts. | Complete (Feature 001) | - |
-| T46 | S0 | Redesign and re-enable dry4csharp, mutate4csharp, and crap4csharp. Decide whether fresh `master` acquisition/build remains per session; define deterministic assistant/session ownership and provenance; validate all three against real changed production targets; prove legacy `dotnet test`/Coverlet compatibility; enforce reviewed DRY/CRAP thresholds and documented mutation/CLI exits; measure full-gate performance cost; keep every enabled gate fail closed. | Pending | - |
-| T47 | S0 | Resolve every underlying `MSB3277` assembly dependency conflict, remove feature 001's `/warnNotAsError:MSB3277` grandfathering, and restore a zero-`MSB3277` fail-closed lint/build gate. | Pending | - |
-| T48 | S0 | Resolve the current panic-ID, Duration, hash/path, and standalone approved-output failures without auto-approval or semantic suppression. | Complete (Feature 001) | - |
-| T50 | S0 | Replace the brittle nightly sysroot-layout assumptions exercised by `ToolChainServiceExtensionsTests.TestGetBinAndLibPathsAsync` with rustc-reported paths and semantic runtime/import-library assertions. | Complete (Feature 001) | - |
+### S2 — Candidate 3a: VS 2022 17.12+ and VS 2026 packaging + runtime proof
 
-Feature-001 resolutions retained as P0 evidence:
+| #  | Slice | Task | Status | Commit |
+|----|-------|------|--------|--------|
+| T11 | S2 | Research the supported manifest expression for both hosts. Current `source.extension.vsixmanifest` declares three amd64 `InstallationTarget`s at `Version="[17.0, 18.0)"` and a `Microsoft.VisualStudio.Component.CoreEditor` prerequisite at `[17.0,)`; determine what VS 2026's installer accepts and record it. | Pending | - |
+| T12 | S2 | Separate **packaging claim** from **runtime support**: keep the runtime minimum at 17.12 in `Constants`, add explicit host-capability validation, and make an unsupported host produce a truthful classified result rather than a crash or a silent no-op. | Pending | - |
+| T13 | S2 | Widen the manifest range **only after** T14 proves install + activation on a real VS 2026 host. Until then the manifest is unchanged. | Pending | - |
+| T14 | S2 | **[HUMAN]** VS 2026 install and activation smoke on a real host: install the VSIX, open a Rust folder, confirm package activation and no activity-log/MEF errors. Sir has answered "unsure" on VS 2026 host availability; this is the escalation point (Ruling D). | Pending | - |
 
-- The local configured full gate is now green: 203/203 assembly tests pass and the standalone
-  18-result semantic baseline matches.
-- Cargo test executable discovery consumes structured `compiler-artifact` records and no longer
-  parses human-readable executable paths.
-- Sysroot paths use `rustc --print sysroot` / `--print target-libdir`; tests require rustc/cargo plus
-  a matching standard-library runtime DLL/import library without fixed hashes/PDB layout.
-- Current ApprovalTests/standalone failures were resolved by narrow incidental normalization; no
-  test was skipped, quarantined, or auto-approved.
-- Broader ApprovalTests-based execution can still become brittle across future paths, Cargo/rustup
-  versions, ordering, newlines, durations, or toolchain formatting.
-- Likely shared/reporting surface: `src/TestsCommon/RaVsDiffReporter.cs`.
-- Likely artifacts include `*.approved.txt` / ignored `*.received.txt` pairs for Cargo, rustup,
-  discovery, and execution.
-- Standalone approved output is owned by
-  `src/TestProjects/workspace_with_tests/integrationtests.approved.txt` and
-  `src/TestProjects/run-integrationtests.ps1`.
-- Future nightly panic output may contain transient numeric thread/process IDs; feature 001's narrow
-  normalization treats only those identifiers as incidental noise.
-- Any regression that selects `target/.../build/.../out` instead of a structured test executable is
-  a semantic product/protocol failure; it must never be normalized away or approved as incidental
-  output.
-- Feature 001 disabled DRY/mutation/CRAP and removed their bootstrap scaffolding. P0 must preserve
-  prior requirements while redesigning acquisition/build cadence, deterministic session ownership,
-  real-production execution, legacy Coverlet compatibility, thresholds/exits, and performance cost.
+### S3 — Candidate 3b: readiness, one dialog, one InfoBar, process-only suspension
 
-P0 acceptance criteria:
+| #  | Slice | Task | Status | Commit |
+|----|-------|------|--------|--------|
+| T15 | S3 | Introduce the process-scoped readiness state (`Unknown` → evaluating → `Ready` \| `Suspended`) owned by one service; no registry or user-environment persistence (decisions 9, 12). | Pending | - |
+| T16 | S3 | Implement a pure resolver result distinguishing found tools, repairable process PATH, classified missing prerequisites, persisted-PATH change that may benefit from restart, and unexpected faults (decisions 2, 11). | Pending | - |
+| T17 | S3 | Probe process PATH, persisted user/machine PATH, `CARGO_HOME`, `RUSTUP_HOME`, `%USERPROFILE%\.cargo\bin`; validate executables; add only validated directories to the **process** PATH (decision 2). | Pending | - |
+| T18 | S3 | `AsyncLazy` compute-once evaluation and dialog coordination; reset to `Unknown` only on cancellation before prompting; fail open on unexpected exceptions (decisions 10, 11, 12). | Pending | - |
+| T19 | S3 | **[HUMAN]** Dialog and InfoBar copy, including the honest "restart is unlikely to help" wording and the InfoBar's recovery actions (decisions 3, 4, 8). Product copy is Sir's call. | Pending | - |
+| T20 | S3 | Implement the three-action dialog, explicit-only browser launch, never-automatic restart (decisions 3, 4, 5). | Pending | - |
+| T21 | S3 | Implement process-only `Suspended` and exactly one non-modal InfoBar per session; fresh `devenv` starts at `Unknown` (decisions 6, 8, 9). | Pending | - |
+| T22 | S3 | Route command visibility and every LSP/updater/Cargo/test/debug/workspace entry point through the readiness result; no persistent VSIX disable or unload (decisions 6, 7). | Pending | - |
+| T23 | S3 | Unit tests for resolver classification, state transitions, races, and cancellation; integration tests for one-evaluation/one-dialog/one-InfoBar and feature gating under suspension. | Pending | - |
 
-- The complete local Bhaskar full gate is green from a clean supported environment, and CI runs and
-  agrees with the same gate membership, filters, manifests, tool versions, and failure policy.
-- No regression is skipped, quarantined, silently ignored, converted to a baseline, or hidden behind
-  `continue-on-error`.
-- Quick contains only hermetic unit tests; full runs the intended integration set and standalone
-  adapter harness; external freshness remains explicitly separate.
-- Approval normalization covers only known incidental dimensions such as machine paths, supported
-  versions, deterministic ordering/newlines, transient thread IDs, and legitimate duration noise.
-  Semantic changes use stable assertions or fail with actionable diffs. Approval tests have no
-  timing, network, release-freshness, or mutable external-state dependence.
-- Approved-file updates require an explicit documented command/workflow and human review. No test or
-  tool auto-approves or silently overwrites unexpected output.
-- Approval/Cargo/rustup fixtures cover each supported tool/host compatibility band relevant to the
-  asserted protocol.
-- Expected failing Rust tests are handled deterministically only when their exact semantic result set
-  matches the reviewed standalone baseline; infrastructure/discovery failures remain fatal.
-- Cargo test discovery selects the intended test executables across the supported Cargo/nightly
-  matrix, and sysroot path logic passes supported-version fixtures.
-- DRY, mutation, and CRAP are re-enabled only after all three run against real changed production
-  targets under the approved acquisition/ownership policy. Missing/empty coverage, legacy-project
-  incompatibility, duplication/CRAP threshold findings, surviving mutants, and documented non-zero
-  tool errors are hard failures; measured cost fits the approved full-gate budget.
-- Build/lint emit zero `MSB3277`, the feature-001 exception is deleted, and reintroducing the warning
-  fails both local and CI gates.
-- Every currently red full-gate behavior is either fixed with regression coverage or explicitly
-  returned to the human as a product decision; P0 cannot pass by weakening a mandatory gate.
+### S4 — Candidate 4: VSSDK and library modernization
 
-### S1 — Visual Studio 2026 and startup/readiness prerequisite
+| #  | Slice | Task | Status | Commit |
+|----|-------|------|--------|--------|
+| T24 | S4 | Inventory every direct dependency with current and candidate versions: VSSDK, Community.VisualStudio.Toolkit, VS Threading/analyzers, Microsoft.NET.Test.Sdk 17.11.0, xunit 2.9.0 / xunit.runner.visualstudio 2.8.2 / xunit.analyzers 1.15.0 / **xunit.runner.console** (new in T2), FluentAssertions 6.12.0, Moq 4.20.70, ApprovalTests 5.8.0, StyleCop.Analyzers 1.2.0-beta.556, AutoMapper 10.1.1, Newtonsoft.Json 13.0.3, Microsoft.ApplicationInsights 2.22.0, Ensure.That, DalSoft.RestClient, System.Linq.Async, SourceLink. | Pending | - |
+| T25 | S4 | **[HUMAN]** Approve the cohort plan: which packages move together, which major-version jumps are in scope, and what happens to preview pins (StyleCop beta) and licence-changed packages (FluentAssertions 8). | Pending | - |
+| T26 | S4 | Execute cohort 1 (test/analyzer stack) — each cohort is its own commit, gated by the full CI portfolio. | Pending | - |
+| T27 | S4 | Execute cohort 2 (VSSDK/Toolkit/Threading), the cohort most likely to interact with S2. | Pending | - |
+| T28 | S4 | Execute cohort 3 (runtime libraries: AutoMapper, Newtonsoft, ApplicationInsights, REST client). | Pending | - |
+| T29 | S4 | Replace checked-in `src/external/vs.17.11` host assemblies with supported package references where one exists; document provenance and hashes for whatever must remain a binary. | Pending | - |
+| T30 | S4 | Record before/after versions and release-note risks per cohort in this file. | Pending | - |
 
-| # | Slice | Task | Status | Commit |
-|---|-------|------|--------|--------|
-| T53 | S1 | Decide between the in-process VSSDK and out-of-process VisualStudio.Extensibility models using a capability/migration matrix for Open Folder, LSP, testing, debugging, commands, options, MEF, updates, deployment, and VS 2022/2026 support; prototype any uncertain critical capability before selecting the extension architecture. | Pending | - |
-| T1 | S1 | Research the supported VSIX manifest/SDK expression for VS 2022 17.12+ and open-ended VS 2026 intent; update package references/manifest only with runtime proof. | Pending | - |
-| T2 | S1 | Introduce a process-scoped readiness state (`Unknown`, evaluating/awaited result, `Ready`, `Suspended`) owned by one service; no registry or user-environment persistence. | Pending | - |
-| T3 | S1 | Implement a pure resolver result that distinguishes found tools, repairable process PATH, classified missing/invalid prerequisites, persisted-PATH change that may benefit from restart, and unexpected faults. | Pending | - |
-| T4 | S1 | Probe process PATH, persisted user/machine PATH, `CARGO_HOME`, `RUSTUP_HOME`, and `%USERPROFILE%\.cargo\bin`; validate executables; add only validated directories to process PATH. | Pending | - |
-| T5 | S1 | Add compute-once asynchronous evaluation/dialog coordination. Reset to `Unknown` only when cancellation happens before prompting; fail open on unexpected exceptions. | Pending | - |
-| T6 | S1 | Implement the one-dialog three-action UX, explicit-only browser launch, never-automatic restart, and honest warning copy when restart is unlikely to help. | Pending | - |
-| T7 | S1 | Implement process-only Continue/Suspended behavior and exactly one session InfoBar; fresh `devenv` starts at `Unknown`. | Pending | - |
-| T8 | S1 | Route command visibility and all LSP/download/Cargo/test/debug/workspace entry points through the readiness result, with no persistent VSIX disable/unload. | Pending | - |
-| T9 | S1 | Add unit tests for resolver/state transitions/races/cancellation/classification and integration tests for one-dialog/one-InfoBar and feature gating. | Pending | - |
+### S5 — Candidate 5: VS 2022/2026 compatibility matrix
 
-S1 acceptance criteria:
+| #  | Slice | Task | Status | Commit |
+|----|-------|------|--------|--------|
+| T31 | S5 | Define the matrix: hosts × scenarios (install, activation, Open Folder/MEF, LSP, Cargo, test discovery/execution, run/debug, suspend/recovery, updater/offline, shutdown). | Pending | - |
+| T32 | S5 | Build the repeatable clean-experimental-instance procedure with captured VS/extension/rustup/cargo/rust-analyzer versions and logs. | Pending | - |
+| T33 | S5 | **[HUMAN]** Execute the matrix on VS 2022 17.12+. | Pending | - |
+| T34 | S5 | **[HUMAN]** Execute the matrix on VS 2026. | Pending | - |
+| T35 | S5 | Reconcile observed support with the manifest claim and `docs/design.md`; document any capability-specific degradation. | Pending | - |
 
-- The extension architecture decision records required capability coverage, process/isolation and
-  compatibility tradeoffs, migration cost, deployment constraints, and evidence for uncertain
-  critical capabilities before VSSDK/package modernization proceeds.
-- Manifest/package installation and a manual experimental-instance launch work on supported VS 2022
-  and VS 2026 hosts; unsupported hosts receive a truthful runtime result.
-- N concurrent startup consumers cause one evaluation and no more than one modal dialog.
-- Process PATH can be repaired from every accepted location without persistent writes.
-- Each accepted button behavior matches decisions 3-8 above, including restart-always-offered copy.
-- Cancellation before prompt is retryable; cancellation after a user choice cannot duplicate UI.
-- Classified prerequisite absence suspends; resolver defects and unexpected exceptions fail open and
-  are observable.
-- In `Suspended`, no Rust command, LSP process, download, Cargo, test, debugger, or workspace
-  integration work starts.
+### S6 — Candidate 6: GitHub release notes in the extension
 
-### S2 — Safe telemetry
+| #  | Slice | Task | Status | Commit |
+|----|-------|------|--------|--------|
+| T36 | S6 | **[HUMAN]** Product design: what is shown, when, where, and what the user can do with it. | Pending | - |
+| T37 | S6 | Define the release-data contract and the trusted source; treat all fetched content as untrusted input. | Pending | - |
+| T38 | S6 | Sanitize/render safely — no arbitrary HTML or script, no navigation without explicit user action. | Pending | - |
+| T39 | S6 | Cache with explicit offline behaviour; never block activation on the network. | Pending | - |
+| T40 | S6 | Accessibility and theming for the surface chosen in T36. | Pending | - |
+| T41 | S6 | Privacy: no identity or path data leaves the machine; respect the suspension gate from S3. | Pending | - |
+| T42 | S6 | Tests: contract, sanitization, cache/offline, failure paths, and one-notification-per-session behaviour. | Pending | - |
 
-| # | Slice | Task | Status | Commit |
-|---|-------|------|--------|--------|
-| T10 | S2 | Inventory every event/property/exception call and classify necessary operational data versus identity, path, command, source, or environment data. | Pending | - |
-| T11 | S2 | Remove machine/user/domain-derived identifiers and redact paths, arguments, source content, environment values, and exception payloads under an approved policy. | Pending | - |
-| T12 | S2 | Remove embedded connection configuration; inject approved configuration at build/deploy/runtime or disable telemetry safely when absent. | Pending | - |
-| T13 | S2 | Add deterministic tests proving disablement, redaction, bounded event schemas, and no telemetry from tests/experimental instances. | Pending | - |
+### S7 — Candidate 1: extension-architecture decision (parallel, ships no behaviour)
 
-S2 acceptance criteria:
+**Decision taken by Sir: the extension stays on the in-process VSSDK model. No migration to
+`Microsoft.VisualStudio.Extensibility`.** The analysis that produced this decision is complete, so the
+slice no longer seeks a recommendation — it records one and preserves the conditions for revisiting it.
 
-- No credential, connection string, stable user/machine identifier, source text, full local path, or
-  environment value is present in source or emitted telemetry.
-- Missing/invalid telemetry configuration is a no-op and never blocks activation.
-- The human approves the final event allow-list and retention/consent posture before enablement.
+Evidence behind the decision:
 
-### S3 — Remaining CI supply-chain and release hardening
+- Four capabilities this extension depends on have **no verified out-of-process replacement**: Open
+  Folder/workspace integration (`IWorkspaceProviderFactory`, `IFileScanner`, file contexts), debugging
+  (the new model offers *visualizers*, not launch providers), the `ITestContainerDiscoverer` → Test
+  Explorer bridge, and MEF (exports cannot move out-of-process).
+- Migration is **not** a route to closing the editor gaps in
+  [#22](https://github.com/kitamstudios/rust-analyzer.vs/issues/22),
+  [#28](https://github.com/kitamstudios/rust-analyzer.vs/issues/28),
+  [#35](https://github.com/kitamstudios/rust-analyzer.vs/issues/35), and
+  [#46](https://github.com/kitamstudios/rust-analyzer.vs/issues/46)–[#49](https://github.com/kitamstudios/rust-analyzer.vs/issues/49).
+  Microsoft issue [#426](https://github.com/microsoft/VSExtensibility/issues/426) confirms
+  `workspace/configuration` was missing from the new model and was closed *because of* that gap. Those
+  issues need protocol-level probes against the existing LSP broker, not an architecture change.
+- Cost of the path not taken: ~3–6 engineer-weeks for prototypes alone; 8–14 engineer-months for full
+  parity, at low confidence.
 
-| # | Slice | Task | Status | Commit |
-|---|-------|------|--------|--------|
-| T16 | S3 | Pin third-party actions to reviewed immutable commits, minimize workflow permissions, and replace unsupported/deprecated setup actions. | Pending | - |
-| T17 | S3 | Separate build/test artifacts from release authorization; publish only exact verified artifacts from the successful run. | Pending | - |
-| T18 | S3 | Define dependency/update review for NuGet, Rust toolchains, bundled binaries, and action pins; produce provenance/checksum evidence where feasible. | Pending | - |
-| T52 | S3 | Inventory and upgrade the VSSDK, Community.VisualStudio.Toolkit, VS Threading/analyzers, Test Platform, .NET/NuGet, ApprovalTests/xUnit, and other direct libraries in reviewed compatibility cohorts; remove obsolete/preview dependencies where supported replacements exist. | Pending | - |
+| #  | Slice | Task | Status | Commit |
+|----|-------|------|--------|--------|
+| T43 | S7 | Record the decision in `docs/design.md` as a dated architecture decision: stay on in-process VSSDK, with the evidence summary above and the revisit triggers from T44. | Pending | - |
+| T44 | S7 | Capture the revisit trigger list alongside T43 — the conditions that would reopen this, chiefly **Microsoft announcing deprecation or reduced support for the 17.x VSSDK APIs this extension uses**, plus out-of-process parity arriving for the four blocking capabilities. | Pending | - |
+| T45 | S7 | Update `docs/backlog.md`: retire the analysis candidate as decided, and correct the two stale premises — that the analysis "must inform dependency modernization" (resolved: it does not gate S4) and that it addresses the editor gaps (it does not; reframe those toward LSP-broker probes). | Done | - |
+| T46 | S7 | ~~Cost the migration.~~ **Dropped** — decision taken; costing served a choice that is now made. | Dropped | - |
+| T47 | S7 | ~~**[HUMAN]** Reconcile the analysis with the S4 cohort outcomes and decide the next program.~~ **Dropped** — the decision is independent of the S4 outcome, and S4 was never gated on it. | Dropped | - |
 
-S3 acceptance criteria:
+### Completed in feature 001 (evidence)
 
-- Workflow actions are immutable, permissions least-privilege, and publish consumes only artifacts
-  built and verified by the same approved run.
-- Dependency/action/toolchain updates have an auditable review and provenance/checksum policy.
-- Library upgrades record before/after versions and release-note risks, keep related VSSDK packages
-  compatible, and avoid unreviewed major-version jumps or permanent preview dependencies.
-- Each upgrade cohort passes the local/CI gates plus VS 2022 17.12+ and VS 2026 VSIX install,
-  MEF-composition, package-activation, LSP, Open Folder, Test Explorer, and debugging smoke coverage
-  relevant to the changed APIs. Supported package references replace checked-in host assemblies
-  where practical; unavoidable binaries retain documented provenance and hashes.
-- Publishing authorization cannot bypass or substitute for P0's already-green local/CI verification.
+| # | Task | Status |
+|---|------|--------|
+| 001-T14 | Make build, quick, full, standalone acceptance, format, and analyzer failures block locally and in CI; remove test `continue-on-error`. | Complete (Feature 001) |
+| 001-T15 | Enforce trait-based quick/full/external ownership; make classification drift fail closed. | Complete (Feature 001) |
+| 001-T32 | Consume Cargo `compiler-artifact` records for test-executable/container discovery instead of display text. | Complete (Feature 001) |
+| 001-T48 | Resolve the panic-ID, Duration, hash/path, and standalone approved-output failures without auto-approval or semantic suppression. | Complete (Feature 001) |
+| 001-T49 | Implement explicit xUnit type traits and the external overlay; remove `.github/test-classification.json` and FQN filters. | Complete (Feature 001) |
+| 001-T50 | Replace brittle nightly sysroot-layout assumptions with rustc-reported paths and semantic runtime/import-library assertions. | Complete (Feature 001) |
 
-### S4 — Process ownership and cancellation
+## Gate portfolio (measured)
 
-| # | Slice | Task | Status | Commit |
-|---|-------|------|--------|--------|
-| T19 | S4 | Define one child-process abstraction with owner, cancellation token, output completion, exit result, timeout policy, and async disposal. | Pending | - |
-| T20 | S4 | Move LSP process lifetime under the language client's shutdown/disposal contract, including process-tree cleanup. | Pending | - |
-| T21 | S4 | Migrate Cargo, rustup, build, test discovery, test execution, and helper processes from shared flags/manual kill paths to token-owned operations. | Pending | - |
-| T22 | S4 | Add race tests for cancellation-before-start, during output, natural exit, kill failure, VS shutdown, and concurrent operations; assert no orphan processes. | Pending | - |
+Filled by T9 from the first green run. Every removed gate carries an explicit retained risk.
 
-S4 acceptance criteria:
-
-- Every spawned process has exactly one owner and awaited output/exit/disposal path.
-- Cancellation is token-based, idempotent, bounded, kills owned descendants when required, and never
-  kills unrelated processes.
-- VS shutdown, workspace close, test cancellation, and LSP restart leave no owned process or pipe
-  behind.
-
-### S5 — Asynchronous failure visibility
-
-| # | Slice | Task | Status | Commit |
-|---|-------|------|--------|--------|
-| T23 | S5 | Replace `TaskExtensions.Forget` with an exception-observing helper that requires a named logger/error sink and deliberately handles cancellation. | Pending | - |
-| T24 | S5 | Audit every fire-and-forget call; await work where ordering matters and use the helper only at true event/UI boundaries. | Pending | - |
-| T25 | S5 | Add tests proving eventual faults are observed once, cancellations are not reported as faults, and reporting cannot recursively fail. | Pending | - |
-
-S5 acceptance criteria:
-
-- No task is discarded through `ConfigureAwait(false)` or an equivalent no-op.
-- Every non-awaited task has an explicit owner and fault sink; unexpected asynchronous failure appears
-  once in safe logs/telemetry and does not crash Visual Studio.
-
-### S6 — Safe/offline transactional updater
-
-| # | Slice | Task | Status | Commit |
-|---|-------|------|--------|--------|
-| T26 | S6 | Separate update check, acquisition, verification, staging, activation, rollback, and notification into testable boundaries. | Pending | - |
-| T27 | S6 | Define and implement trusted version/integrity metadata; reject redirects, archives, paths, hashes/signatures, or executable identities outside policy. | Pending | - |
-| T28 | S6 | Download to a unique staging location, prevent archive traversal, verify before activation, atomically switch versions, and retain a known-good rollback. | Pending | - |
-| T29 | S6 | Make offline/timeouts/rate limits/non-success responses non-blocking; continue with the packaged or last-known-good analyzer and avoid repeated session prompts. | Pending | - |
-| T30 | S6 | Add fault-injection integration tests for interrupted download/extract/swap, corrupt or malicious archive, locked files, no network, and rollback. | Pending | - |
-
-S6 acceptance criteria:
-
-- Startup never requires network access and never executes an unverified or partially installed
-  binary.
-- A failed update leaves the previous/package analyzer usable and reports one actionable non-modal
-  result.
-- Staging cannot write outside its root; activation is transactional; recovery works after process
-  termination at every phase.
-
-### S7 — Machine-readable protocols and path/environment correctness
-
-| # | Slice | Task | Status | Commit |
-|---|-------|------|--------|--------|
-| T31 | S7 | Inventory each Cargo, rustup, rustc, and Rust test command; prefer stable JSON/message-format output and retain typed versioned adapters only where no machine format exists. | Pending | - |
-| T33 | S7 | Encapsulate rustup/toolchain/target parsing with invariant culture, explicit version probes, fixture tests, and actionable unsupported-version errors. | Pending | - |
-| T34 | S7 | Decide and implement the nightly test-listing compatibility policy, including capability detection and a truthful degraded mode. | Pending | - |
-| T35 | S7 | Centralize Windows executable resolution, PATH composition, environment block merge, working-directory validation, path normalization, and argument quoting without invoking a shell. | Pending | - |
-| T36 | S7 | Add spaces/Unicode/UNC/long-path/mixed-case/missing-variable/duplicate-PATH tests and real-toolchain integration coverage. | Pending | - |
-
-S7 acceptance criteria:
-
-- Machine-readable output is used wherever the tool offers it; remaining text parsers are isolated,
-  version-probed, fixture-tested, culture-invariant, and fail with bounded diagnostics.
-- Paths and arguments round-trip correctly without shell interpretation. Process, persisted, Cargo,
-  rustup, and default-user locations obey the S1 resolver precedence and do not persist repairs.
-- Tool capability absence yields a classified/degraded result rather than malformed test discovery.
-
-### S8 — UI batching and menu performance
-
-| # | Slice | Task | Status | Commit |
-|---|-------|------|--------|--------|
-| T37 | S8 | Measure package activation, workspace-change bursts, command query-status, dynamic toolchain menu, and output-pane dispatch with repeatable traces. | Pending | - |
-| T38 | S8 | Cache immutable readiness/toolchain/menu snapshots; invalidate on explicit workspace/settings/toolchain changes, not every query. | Pending | - |
-| T39 | S8 | Batch/coalesce workspace and test-container events, deduplicate affected packages, and marshal one minimal UI update per batch. | Pending | - |
-| T40 | S8 | Ensure `QueryStatus`/visibility performs no process, network, blocking wait, or unbounded enumeration and immediately hides commands while suspended. | Pending | - |
-| T41 | S8 | Add burst/load tests and UI-thread assertions with agreed latency/allocation budgets. | Pending | - |
-
-S8 acceptance criteria:
-
-- Dynamic menu/status reads a bounded in-memory snapshot and reflects suspension immediately.
-- A burst of equivalent filesystem changes produces one deduplicated model/UI update.
-- No package/menu path blocks the UI thread or starts process/network work; measured budgets are met
-  on both supported Visual Studio generations.
-
-### S9 — Visual Studio 2026 smoke validation
-
-| # | Slice | Task | Status | Commit |
-|---|-------|------|--------|--------|
-| T42 | S9 | Automate or document a repeatable clean experimental-instance matrix for latest supported VS 2022 and VS 2026 with captured versions/logs. | Pending | - |
-| T43 | S9 | Smoke install/activation, Open Folder/MEF, LSP, metadata, build/clippy/fmt, test discovery/execution, run/debug, menus/options, update/offline, and shutdown. | Pending | - |
-| T44 | S9 | Exercise every S1 resolver/dialog/suspend/restart/InfoBar path once per fresh process and verify no state survives a new `devenv`. | Pending | - |
-| T45 | S9 | Gate release compatibility claims on the matrix and document any capability-specific degradation. | Pending | - |
-
-S9 acceptance criteria:
-
-- Both host generations complete the critical smoke path without activity-log/MEF composition errors,
-  leaked processes, repeated prompts, hidden async faults, or unsupported API use.
-- Evidence identifies exact VS, extension, rustup, Cargo, toolchain, and rust-analyzer versions.
-- Compatibility documentation and manifest claims match observed runtime support.
-
-### S10 — Broader ApprovalTests resilience
-
-| # | Slice | Task | Status | Commit |
-|---|-------|------|--------|--------|
-| T51 | S10 | Design the longer-term cross-supported-version fixture matrix, semantic-assertion versus snapshot boundaries, reusable normalizer APIs, actionable reporter diffs, and explicit human-reviewed approved-file update workflow. Never auto-approve unexpected output. | Pending | - |
-
-Feature 001 resolved the currently red panic-ID, duration, build-hash/path, and standalone output
-cases. S10 is limited to broader future resilience across supported Visual Studio/Rust/Cargo/rustup
-bands and must not reopen those fixes as permissive normalization.
-
-### S11 — Durable unit/integration/external test taxonomy
-
-| # | Slice | Task | Status | Commit |
-|---|-------|------|--------|--------|
-| T49 | S11 | Implement explicit xUnit type traits, external integration overlay, direct trait filters, and fail-closed ownership/drift checks; remove `.github/test-classification.json` and FQN filters. | Complete (Feature 001) | - |
-
-S11 requirements and acceptance criteria:
-
-- Every xUnit test has explicit, reviewable `UnitTests` or `IntegrationTests` ownership.
-- Quick contains only tests that do not cross a process boundary.
-- Full runs unit + integration coverage, including the standalone adapter acceptance harness.
-- External freshness/network checks remain intentional, separately invokable, and excluded from the
-  deterministic default full release gate unless the human changes that policy.
-- Added, removed, renamed, moved, or reclassified tests produce an actionable classification-drift
-  failure rather than silently changing gate membership.
-- The chosen mechanism works with VSTest/xUnit and the mutation/CRAP coverage path; no test is dropped
-  through incompatible filter keys.
-- Feature 001 removed the FQN manifest. Verified discovery is 96 unit and 108 integration, with one
-  external integration overlay; default full selects 203 and explicit full+external selects 204.
-- Missing, dual, overlapping, external-outside-integration, count, and filtered-selection drift fail
-  before execution.
-
-## Execution rules and dependencies
-
-1. S0/P0 is mandatory first. No product slice starts while local or CI full verification is red.
-2. S1 (VS2026 + prerequisite startup/readiness) starts immediately after P0. No later slice may
-   invent a separate prerequisite check or suspension rule.
-3. S2 and S3 can proceed independently after S1. S4 establishes the lifetime primitive consumed by
-   updater/protocol work.
-4. S5 follows S2/S4 so its fault sink is safe and process completion is observable.
-5. S6 and S7 then harden remaining network/tool boundaries in parallel only if they share the S1/S4
-   contracts rather than duplicating them.
-6. S8 consumes stable readiness, async, and protocol snapshots.
-7. S9 is the final release claim, not a substitute for slice-level unit/integration tests.
-8. S10 handles broader cross-version approval resilience after the supported matrix is known.
-9. S11 was completed in feature 001; later gate work preserves its trait ownership and drift checks.
-10. Every slice updates this file with actual decisions, tests, evidence, and commit references.
-
-## Unresolved decisions requiring the human
-
-- U1: Exact VSIX SDK/package upgrades and manifest syntax that best express open-ended VS 2022
-  17.12+/VS 2026 intent while remaining accepted by both installers.
-- U2: Final dialog and InfoBar copy, icons, command placement, and what the explicit Restart action
-  does when VS reports unsaved/blocking state. It must never restart automatically.
-- U3: Telemetry posture: remove entirely, explicit opt-in, or approved minimal operational allow-list;
-  configuration injection, endpoint ownership, consent, and retention.
-- U4: Rust-analyzer trust policy: publisher signature versus maintained checksums/attestation, trusted
-  release hosts, retention count, and whether automatic acquisition remains enabled by default.
-- U5: Nightly test protocol policy: minimum supported nightly, stable fallback when available, and
-  which degraded test features are acceptable without nightly.
-- U6: CI release authorization/provenance mechanism and whether external freshness failures block a
-  scheduled maintenance signal but never a deterministic PR build.
-- U7: Quantitative activation, query-status, workspace-batch, cancellation, and updater timeout
-  budgets.
-- U8: Whether to make the legacy test projects safely consumable by `dotnet test`/Coverlet, introduce
-  a dedicated coverage-compatible test assembly, or adopt another explicit bridge for mutation/CRAP.
-  No wrapper may fake coverage or reinterpret a compatibility failure as success.
-- U11: P0 quality-tool policy: whether fresh `master` acquisition/build remains per assistant
-  session, the deterministic ownership/provenance mechanism, reviewed DRY/CRAP thresholds, mutation
-  scope/worker limits, and acceptable full-gate time budget.
-- U12: S10's long-term boundary between versioned fixtures, semantic assertions, and approved
-  snapshots, plus the reviewed update tooling; feature-001's narrow normalizers are not blanket
-  precedent.
-
-Implementation must stop for the relevant human decision rather than silently choosing.
+| Gate | Trigger | Runtime | What it uniquely catches | Retained risk |
+|------|---------|---------|--------------------------|---------------|
+| build (Release) | fast + full + CI | _T9_ | Compile errors; **all** StyleCop/IDE/FxCop diagnostics and SA1028 trailing whitespace, via `<IncludeAll Action="Error"/>` + `TreatWarningsAsErrors` in Release | - |
+| test:quick (unit) | fast + CI | _T9_ | In-process regressions; trait-taxonomy invariants via `TraitTaxonomyTests` | - |
+| test:full (unit + integration) | full + CI | _T9_ | Cargo/rustup/process-boundary regressions on the pinned nightly | - |
+| acceptance (VSTest, published zip) | full + CI | _T9_ | Customer-visible adapter behaviour **and** packaging omissions in the shipped zip | - |
+| external (`scope=External`) | manual/scheduled | _T9_ | Network/freshness drift | Excluded from the deterministic gate by design |
+| *removed:* separate lint pass | — | — | — | MSBuild-level warnings are no longer promoted to errors. Concretely, `MSB3277` assembly conflicts stay **non-fatal** (D2) — the `/warnNotAsError:MSB3277` grandfather disappears with the pass that carried it. Compiler/analyzer/style coverage is unchanged because Release already enforces it. |
+| *removed:* non-C# formatter | — | — | — | Trailing whitespace in `.ps1`/`.yml`/`.json`/`.md` is no longer normalized by a gate. `.editorconfig` (`trim_trailing_whitespace = true`) remains the IDE-level contract; C# is still enforced by SA1028 at build. |
+| *removed:* PowerShell classification preflight | — | — | — | Four `vstest.console /ListTests` discovery passes per gate are gone; the invariants now run as a unit test inside both gates (T2c), so drift still fails closed but numbers are no longer hardcoded. |
 
 ## Risks (Rx)
 
-- R1: VS 2026 may have VSSDK/MEF/LSP/Test Window behavioral changes that compile against existing
-  references but fail at runtime.
-- R2: Readiness gates cross many entry points; a missed path could start Rust work while suspended.
-- R3: Compute-once initialization can accidentally cache cancellation/fault/suspension or deadlock the
-  UI thread if state and prompting are not separated.
-- R4: Process-tree termination can kill unrelated reused PIDs if ownership identity is weak.
-- R5: Protocol output differs by Cargo/rustup/toolchain version and locale; degraded-mode behavior must
-  not silently lose tests.
-- R6: Transactional replacement is complicated by antivirus, locked executable files, VS shutdown,
-  and power loss.
-- R7: Telemetry redaction after serialization is insufficient; sensitive fields must be excluded at
-  the event boundary.
-- R8: Fail-closed CI will expose the current warning/test debt and can halt releases until that debt is
-  explicitly fixed rather than suppressed.
-- R9: Caching/batching can serve stale command or workspace state unless invalidation ownership is
-  explicit and tested.
-- R10: Open-ended manifest compatibility can overclaim future support; runtime capability validation
-  and release smoke evidence are required.
-- R11: DRY/mutation/CRAP are disabled in feature 001. Re-enabling without real-target, legacy
-  Coverlet, ownership, threshold/exit, and performance proof could create false confidence or an
-  unusably slow gate; P0 must resolve all of them together.
-- R12: The feature-001 `MSB3277` grandfather can conceal runtime assembly-binding risk if it outlives
-  its temporary scope; P0 must remove it rather than expand the exempt warning set.
-- R13: Over-broad approval normalization or automatic baseline updates can hide real regressions;
-  feature 001 normalized only proven incidental dimensions, and S10 must keep unexpected semantic
-  output fail closed.
-- R14: Trait ownership is fail closed for the inventoried assemblies, but adding a new test project
-  requires adding that assembly to discovery or it can escape classification checks.
+- R1: The xUnit console runner loads the three net48 assemblies differently from the VSTest host (app domains, working directory, `Microsoft.NET.Test.Sdk` entry-point assumptions); a suite could pass under one and fail under the other. T2(d) probes this before the switch.
+- R2: Loss of TRX from the assembly suites; xUnit XML is not a drop-in for any tool expecting TRX. Only consumer was `dorny/test-reporter`, already deleted (D3).
+- R3: A repo-root `rust-toolchain.toml` becomes a rustup **directory override** that changes the "active because" reason the approval corpus asserts, and can implicitly auto-install a channel — breaching the assistant-only bootstrap boundary. T1's probes exist for exactly this.
+- R4: The `windows-2025` ⇒ VS 2026 mapping is unverified (T5). Building the `config` knob on it without confirmation would silently move the default gate to an unproven host.
+- R5: Consuming the published zip in the acceptance job will likely go red first — that is the gate working, but it means candidate 2's "first green" may require fixing the zip's file list before T10.
+- R6: Two rustup installs (build-and-test, acceptance) can resolve to different channels if T1's single source is bypassed in one job.
+- R7: Hand-rolled version stamping must preserve both the `source.extension.vsixmanifest` `Identity/@Version` and the `Vsix.Version` constant in the generated `source.extension.cs`, plus the `version-number` job output `publish` consumes; a mismatch produces an unpublishable or wrongly-tagged release.
+- R8: `MSB3277` conflicts stay non-fatal after the lint pass is deleted; a real assembly-binding failure could reach a customer without a gate failing (D2).
+- R9: `build`/`lint`/`format:*` resolving to one command means a single regression in that command removes four nominal gates at once.
+- R10: VS 2026 packaging changes may not be expressible in the current manifest schema; S2 could stall on T14's human step.
+- R11: The readiness redesign touches many entry points; a missed path could start Rust work while suspended.
+- R12: Compute-once initialization can cache a cancellation/fault or deadlock the UI thread if state and prompting are not separated.
+- R13: Dependency cohorts can compile and still fail at runtime inside VS; only S5's matrix proves otherwise.
+- R14: Release-notes rendering is an untrusted-content surface (injection, navigation, privacy leakage).
+- R15: The publish path cannot be validated by any PR (it runs only on `[release]` push to trunk), so a regression there surfaces only when Sir ships — see A6.
 
 ## Assumptions (Ax)
 
-- A1: Windows amd64 remains the supported host architecture unless the human expands scope.
-- A2: Visual Studio 2022 minimum remains 17.12, and Visual Studio 2026 is major version 18 in the
-  target environment.
-- A3: A packaged or last-known-good rust-analyzer remains available so offline mode can fail open.
-- A4: Process-only state and environment mutation are acceptable; persistent readiness, suspension,
-  PATH repair, VSIX disable, or unload are not.
-- A5: Feature 001's trait ownership and fail-on-drift checks are the current gate contract.
-- A6: Current public extension behavior remains compatible except where the accepted prerequisite UX
-  deliberately replaces restart/disable behavior.
+- A1: Windows amd64 remains the supported host architecture.
+- A2: VS 2022 minimum stays 17.12; VS 2026 is major version 18.
+- A3: rustup is preinstalled on the target runner image; if T5 finds otherwise, the shell step acquires it before installing the pinned channel.
+- A4: Process-only state and process-only environment mutation are acceptable; persistent readiness, suspension, PATH repair, VSIX disable, or unload are not.
+- A5: Feature 001's trait ownership is the gate contract; T2 changes the *runner*, not the taxonomy.
+- A6: **"Deprecated actions" excludes the publish path.** `timheuer/openvsixpublish@v1`, `cezarypiatek/VsixPublisherAction@0.1`, and `softprops/action-gh-release@v0.1.15` are old pins, not archived actions. They run only on `[release]` push to trunk, so **no PR can validate a change to them** — a break would surface only when Sir ships, and agents never deploy (golden rule #4). They are left exactly as-is. Sir can overturn this; if he does, it becomes a supervised release-time change, not a PR-gated one.
+- A7: Current public extension behaviour stays compatible except where the accepted prerequisite UX deliberately replaces the restart/disable behaviour.
 
 ## Deferrals (Dx)
 
-- D1: New Rust editor features, project templates, package management, and unrelated UI redesign are
-  outside this hardening program.
-- D2: Non-Windows and non-amd64 hosts are outside scope unless separately approved.
-- D3: A wholesale project-system rewrite or migration away from Visual Studio Open Folder is outside
-  scope.
-- D4: No reconciled review finding listed in Requirements is deferred beyond feature 002; deferrals
-  apply only to unrelated product expansion.
-- D5: **GitHub release notes in the extension UI.** Selected for feature 002 design. Planning must define the detailed UX,
-  release-data contract, caching/offline behavior, trust/sanitization, navigation, accessibility,
-  telemetry/privacy, and failure behavior before implementation. Likely current touchpoints include
-  `ReleaseSummaryNotification`, package startup release-summary handling, `RlsInstallerService`, and
-  the GitHub release/update notification surfaces. This entry records only the desired product
-  outcome and likely evidence locations; it deliberately makes no UI, data, cache, or security design
-  decision now.
-- D7: **Durable test taxonomy:** completed in feature 001 with explicit traits and fail-closed
-  discovery/filter validation.
+- D1: Archive T46 — DRY, mutation, and CRAP redesign/re-enablement → `docs/backlog.md`. Not a prerequisite for the narrowed scope; the rows stay `none`.
+- D2: Archive T47 — `MSB3277` resolution → `docs/backlog.md`. Note that deleting the lint pass also deletes the `/warnNotAsError:MSB3277` grandfather, so the conflicts simply **stay non-fatal** rather than being suppressed by an exception. Nothing is hidden; the debt is recorded here and in the portfolio table.
+- D3: No `dorny/test-reporter` (or equivalent) is restored. Test outcomes are read from job status and uploaded result artifacts.
+- D4: `OutDir` is **not** reverted to the old `\_built\` value; it stays `${{ github.workspace }}\_built\`, set per step.
+- D5: No extension-model migration — in this feature or as a planned program. Sir has decided the
+  extension stays on the in-process VSSDK model; S7 records that decision and its revisit triggers.
+  Reopening requires one of the T44 triggers to fire.
+- D6: SHA-pinning of actions, least-privilege `permissions:`, and release provenance → `docs/backlog.md` (CI supply chain). Candidate 2 restores a *working* gate; supply-chain hardening is its own program.
+- D7: Broader cross-version ApprovalTests fixture strategy → `docs/backlog.md`.
+- D8: Telemetry, updater, process ownership, async failure visibility, tool protocols, and UI performance → `docs/backlog.md` (hardening sequence).
+- D9: ARM64, non-Windows hosts, project templates, and new editor features are out of scope.
 
 ## Notes & Decisions
 
-- The prerequisite result is a session capability boundary, not an installation switch. `Suspended`
-  means "this `devenv` process will not start Rust functionality."
-- Restart is an explicit user action and remains visible even when diagnostics indicate it is
-  unlikely to help. Honest copy is required; automatic restart is forbidden.
-- **Open prerequisites** is the only action that opens a browser.
-- A fresh process is the only automatic reset. No registry or user-environment sentinel may suppress
-  future checks.
-- Unexpected resolver/programming errors fail open; only enumerated prerequisite failures may
-  suspend. All such errors must still be observable through the safe S2/S5 channels.
-- External/freshness tests remain separate from deterministic release evidence throughout CI
-  hardening.
-- Mutation and CRAP remain fail closed. Feature 002 must validate their real production-target path;
-  it must not weaken exits, skip required coverage, or treat legacy test/Coverlet incompatibility as
-  a clean result.
-- `MSB3277` is the only feature-001 lint grandfather. Feature 002 must resolve the conflicts, remove
-  the command-line exception, and make any recurrence fatal.
+### Sir's rulings applied
+
+| Ruling | Decision | Applied in |
+|--------|----------|-----------|
+| A | "switch to xUnit entirely, away from VSTest, unless there's a good reason. update the cdp.yml appropriately." | T2, T3, T6, portfolio; **split verdict** — see N3, N4 |
+| B | "for the deprecated gh actions, use your alternatives as required" / "yeah lets switch to shell completely for any deprecated actions." | T6, N5 |
+| C | "these are logical steps… they dont have to [be] separate, do not necessarily need a ps1 wrapper… as long as they happen." | T3, N2 — **supersedes the earlier N2** |
+| D | VS 2026 host availability: **"unsure."** | T14, T33, T34 remain `[HUMAN]`; S2 ships no widened manifest on assumption |
+
+### N1 — O2's crux: the acceptance job consumes the published zip
+
+The inline harness points `/TestAdapterPath` at `_built\`, which holds the entire build output, so any
+assembly missing from `KS.RustAnalyzer.TestAdapter.zip` is undetectable — yet the zip is what customers
+consume. In the O2 topology the acceptance job downloads the uploaded zip, expands it to a clean
+directory, and points the harness there. This is the single strongest reason to prefer O2 over O1.
+
+### N2 — Commands table under Ruling C (supersedes the earlier N2)
+
+The earlier N2 proposed `none` values and a framework-divergence note for `format:*`/`lint`. **Overruled.**
+Every row stays Required with a real value, and neither skill file changes.
+
+| Command | Value (T3) |
+|---------|------------|
+| `build` | `pwsh -NoLogo -NoProfile -NonInteractive -Command "Import-Module .\.github\scripts\VisualStudio.psm1 -Force; & (Get-VisualStudioTool -Name MSBuild) src\RustAnalyzer.sln /m /nologo /nr:false /restore /t:Build /p:Configuration=Release /p:DeployExtension=false /p:OutDir=$PWD\_built\ /verbosity:minimal"` |
+| `lint` | *same command as `build`* |
+| `format:check` | *same command as `build`* |
+| `format:fix` | *same command as `build`* |
+| `test:quick` | `pwsh -NoLogo -NoProfile -NonInteractive -Command "& .\_built\xunit.console.exe .\_built\KS.RustAnalyzer.UnitTests.dll .\_built\KS.RustAnalyzer.TestAdapter.UnitTests.dll .\_built\KS.RustAnalyzer.Remote.UnitTests.dll -trait type=UnitTests -parallel all -xml .\_built\quick.xml"` |
+| `test:full` | one `pwsh -Command` that imports `RustNightly.psm1`, calls `Enable-SessionRustNightly`, runs the same three assemblies with `-notrait scope=External`, then runs `src\TestProjects\run-integrationtests.ps1` — **in one process** (N3) |
+
+Rationale: the Release build *is* the lint and the C# format check —
+`src/KS.Common.targets:11-30` turns on `TreatWarningsAsErrors`, `EnforceCodeStyleInBuild`, and
+`CodeAnalysisTreatWarningsAsErrors` for Release, and `codeanalysis.ruleset` is `<IncludeAll Action="Error"/>`,
+so SA1028 trailing whitespace and every style rule already fail the build.
+
+Two honest consequences, both accepted:
+1. **`format:fix` does not write.** No headless auto-fixer exists for these legacy non-SDK projects
+   (`dotnet format` cannot load them). The Release build reports every violation as an error and the
+   agent fixes them. The row is a real command that makes the logical step happen; it is not a writer.
+2. **Repeat invocation.** Dave's recipe runs `format:fix` → `build` → `lint`, i.e. the same command
+   three times; Bhaskar's runs it three times too. The 2nd and 3rd are incremental no-ops (`/t:Build`,
+   not `Rebuild` — the old lint pass's `Rebuild` is exactly what produced the `MSB3061` failure).
+   **Decision: acceptable, no note in the skills, no second Rebuild.** T9 measures the actual cost; if
+   it turns out non-trivial, that is a datum to bring back to Sir, not a reason to diverge now.
+
+### N3 — `test:full` stays one process (constraint re-derived, Ruling A)
+
+The earlier N3 justified this from the VSTest invocation shape. That derivation was wrong, and the
+conclusion survives anyway on the correct grounds: `Enable-SessionRustNightly` sets
+`$env:RUSTUP_TOOLCHAIN = "nightly"` **in the calling process** (`RustNightly.psm1`), and child processes
+inherit it. The constraint is process-environment inheritance, not VSTest — so it is unaffected by the
+runner change. A de-scripted `test:full` must therefore validate the manifest and run both the assembly
+suites and the acceptance harness in **one** `pwsh` process. In CI the constraint does not arise: the
+workflow sets `RUSTUP_TOOLCHAIN` to the T1-pinned channel as step-level env, which is why deleting
+`Initialize-CISession.ps1`/`CIProvenance.psm1` costs CI nothing (T4).
+
+### N4 — The acceptance harness stays VSTest (Ruling A's escape clause, invoked deliberately)
+
+Ruling A has two halves with different answers.
+
+- **The xUnit suites move.** 96 unit + 108 integration cases currently run under `vstest.console.exe`
+  purely as a host. `xunit.runner.console` runs them natively, preserves trait filtering
+  (`-trait` / `-notrait`), parallelism, and the ApprovalTests path, and — a real gain for S5 — decouples
+  test execution from whichever Visual Studio the runner image happens to carry. Comply.
+- **The standalone acceptance harness cannot move, and this is the good reason the ruling asks for.**
+  The product under test **is a VSTest adapter**. `docs/design.md`: *"VSTest loads `TestDiscoverer` and
+  `TestExecutor` from the packaged adapter"* and *"the standalone VSTest adapter harness is its
+  acceptance gate."* Driving Rust tests through `vstest.console.exe /TestAdapterPath` is the literal
+  customer scenario; `docs/meta-design.md#writing-tests` explicitly says to *"retain the stack's
+  acceptance gate rather than adding an xUnit wrapper only for a trait."* Replacing it with xUnit would
+  delete the only test of the shipped artefact — and under O2's own rationale (N1) that is precisely the
+  gate that must stay. Rewriting it in xUnit would mean an xUnit test that shells out to
+  `vstest.console.exe`: the same VSTest dependency, one indirection deeper, and a worse failure diff.
+
+  **So: `vstest.console.exe` remains in exactly one place — the acceptance job.** `VisualStudio.psm1` is
+  retained for it (`Get-VisualStudioTool -Name VSTest`, plus `Invoke-VSTestProcess` and its `windir`
+  environment-casing workaround, which is VSTest-specific and load-bearing). This is stated explicitly so
+  Sir sees the boundary and can overturn it deliberately.
+
+### N5 — Deprecated actions → shell (Ruling B)
+
+| Action | Replacement | Note |
+|--------|-------------|------|
+| `actions-rs/toolchain@v1` (archived) | shell `rustup toolchain install <T1 channel>` (+ `rustup component add rustfmt clippy`) | T5 confirms rustup is preinstalled; if not, the step acquires rustup first (A3). |
+| `darenm/Setup-VSTest@v1.2` | none needed | Runners carry VS; `VisualStudio.psm1` resolves `vstest.console.exe` via `vswhere`. After N4 the acceptance job is its only consumer. |
+| `timheuer/bootstrap-dotnet@v1` | inline `vswhere` MSBuild resolution through `VisualStudio.psm1` | Same resolution the local gate uses — one mechanism, not two. |
+| `timheuer/vsix-version-stamp@v1` | inline shell | Must write **both** the manifest `Identity/@Version` and the `Vsix.Version` constant in the generated `src/RustAnalyzer/source.extension.cs` (a listed generated artifact, written only by CI — never hand-edited), **and** emit the `version-number` job output that `publish` consumes (R7). Base version today is `3.0` in both files. |
+| `rusty-bender/vstest-action@main` | not restored | **Retained-risk record:** the old workflow pinned a third-party action to a **mutable branch**. That is exactly the class of dependency the restored file must not reintroduce. |
+| `dorny/test-reporter@v1` | not restored | D3. |
+| `actions/checkout@v2` | **version-bump to `@v4`, not shell-replaced** | I put this to Sir and was not overruled. It is first-party and maintained; `v2` is an outdated *version*, not a deprecated action. Hand-rolling `git clone` means re-implementing credential handling, `fetch-depth`, ref resolution, and submodules — strictly more risk for no supply-chain gain. If Sir disagrees, say so and I will take it back. |
+| `actions/upload-artifact@v4`, `actions/download-artifact@v4` | unchanged | Current, first-party. |
+| publish-path actions | unchanged | A6. |
+
+**Shape constraint:** every replacement is **inline in the workflow** or reuses the retained
+`VisualStudio.psm1`. Creating new `.ps1` wrappers under `.github/scripts` would undo candidate 2.
+
+### N6 — Numbers stop being inputs
+
+`Invoke-Tests.ps1` hardcoded `204/96/108/1` and ran four `/ListTests` discovery passes to defend them.
+That gate is replaced by a `TraitTaxonomyTests` xUnit test asserting *invariants* by reflection
+(T2c). Drift still fails closed and now fails with a stack trace instead of a PowerShell throw; adding a
+test no longer requires editing a script, a skill, and a design doc. Adding a new **test assembly** must
+still register it with that test — R14 from the archive persists in its new home.
+
+### Execution rules
+
+1. S1 is mandatory first and its done-done is the **PR merge gate green**, not a local green (Sir).
+2. S7 (candidate 1) starts the moment S1 merges and runs in parallel with S2–S6. It ships no behaviour.
+3. S4 (candidate 4) does not wait on S7.
+4. No slice may reintroduce a gate wrapper script under `.github/scripts`, a soft-failure switch, or a
+   job-level `OutDir`.
+5. Every slice updates this file with actual decisions, evidence, and commit references.
+6. Anything marked `[HUMAN]` stops and returns to Sir; no agent decides it by inference.
