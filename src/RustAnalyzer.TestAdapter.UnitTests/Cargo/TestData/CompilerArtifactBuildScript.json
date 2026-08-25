@@ -1,0 +1,11 @@
+{
+  "reason": "compiler-artifact",
+  "target": {
+    "kind": [ "custom-build" ],
+    "name": "build-script-build"
+  },
+  "profile": {
+    "test": true
+  },
+  "executable": "D:\\src\\test\\target\\release\\build\\build-script-build.exe"
+}

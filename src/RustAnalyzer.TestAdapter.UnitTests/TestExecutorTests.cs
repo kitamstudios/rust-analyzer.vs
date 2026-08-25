@@ -16,6 +16,7 @@ using Xunit.Abstractions;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests;
 
+[Trait("type", "IntegrationTests")]
 public class TestExecutorTests : TestsWithLogger
 {
     private readonly IToolchainService _tcs = new ToolchainService(TestHelpers.TL.T, TestHelpers.TL.L);

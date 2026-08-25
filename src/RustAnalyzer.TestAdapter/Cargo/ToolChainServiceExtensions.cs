@@ -57,8 +57,9 @@ public static class ToolchainServiceExtensions
 
     public static async Task<(PathEx Bin, PathEx Lib)> GetBinAndLibPathsAsync(PathEx workingDirectory, CancellationToken ct)
     {
-        var root = GetRustupSettingsPath().GetDirectoryName() + @$"toolchains\{await GetDefaultToolchainAsync(workingDirectory, ct)}";
-        return (root + "bin", root + $@"lib\rustlib\{AlwaysAvailableTarget}\lib");
+        var sysroot = (PathEx)await GetCommandOutputSingleLine("test", "--print sysroot", workingDirectory, ct);
+        var targetLibDir = (PathEx)await GetCommandOutputSingleLine("test", "--print target-libdir", workingDirectory, ct);
+        return (sysroot + "bin", targetLibDir);
     }
 
     public abstract class RustupShowOutput

@@ -41,7 +41,7 @@ public static class StringExtensions
 
     public static string RegexReplace(this string @this, string pattern, string replacement, RegexOptions options = RegexOptions.None)
     {
-        return Regex.Replace(@this, pattern, replacement);
+        return Regex.Replace(@this, pattern, replacement, options);
     }
 
     public static IEnumerable<IEnumerable<string>> PartitionBasedOnMaxCombinedLength(this IEnumerable<string> @this, int maxLength)

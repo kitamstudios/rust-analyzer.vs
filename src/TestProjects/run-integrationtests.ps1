@@ -3,54 +3,110 @@
 
 param (
   $SrcDir = (Join-Path $PSScriptRoot "workspace_with_tests")
-  , $TestAdapterLocation
+  , $TestAdapterLocation = (Join-Path $PSScriptRoot "..\..\_built")
+  , $VSTestPath
+  , [ValidateRange(1, 99)] $VisualStudioMajorVersion = 17
 )
-if (-not $env:CI) {
-  $TestAdapterLocation = "d:\src\delme\ra.vs"
-  $vstest = "$env:ProgramFiles\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe"
-  Write-Host -ForegroundColor Yellow "Not in CI. Setting Test Adapter Path: $TestAdapterLocation"
-  del "$TestAdapterLocation\*"
-  $taSrc = Join-Path (Split-Path $PSScriptRoot) "RustAnalyzer.TestAdapter.UnitTests\bin\Debug"
-  @("KS.RustAnalyzer.TestAdapter.dll", "KS.RustAnalyzer.TestAdapter.pdb", "Microsoft.ApplicationInsights.dll", "Microsoft.ApplicationInsights.pdb", "Ensure.That.dll")
-  | % { copy "$taSrc\$_" "$TestAdapterLocation\$_"}
-  dir $TestAdapterLocation
-} else {
-  $vstest = "vstest.console.exe"
+
+$visualStudioModule = Join-Path $PSScriptRoot "..\..\.github\scripts\VisualStudio.psm1"
+Import-Module $visualStudioModule -Force
+if (-not $VSTestPath) {
+  $VSTestPath = Get-VisualStudioTool -Name VSTest -MajorVersion $VisualStudioMajorVersion
 }
 
 $TcTemplateDir = Join-Path $PSScriptRoot "integrationtests"
-$SrcDir = Resolve-Path $SrcDir
-$SrcName = Split-Path $SrcDir
+$SrcDir = (Resolve-Path -LiteralPath $SrcDir).Path
+$TestAdapterLocation = (Resolve-Path -LiteralPath $TestAdapterLocation).Path
 $targetDir = Join-Path $SrcDir "target"
 $tcDir = Join-Path $targetDir "debug"
-mkdir -Force $tcDir | Out-Null
+New-Item -ItemType Directory -Path $tcDir -Force | Out-Null
 $testResults = Join-Path $SrcDir "TestResults"
-mkdir -Force $testResults | Out-Null
+New-Item -ItemType Directory -Path $testResults -Force | Out-Null
 
-$testContainers = dir $TcTemplateDir -Recurse -Filter *.rusttests | % {
+$testContainerTemplates = @(Get-ChildItem -LiteralPath $TcTemplateDir -Recurse -Filter *.rusttests)
+if ($testContainerTemplates.Count -eq 0) {
+  throw "No .rusttests templates were found under '$TcTemplateDir'."
+}
+
+$testContainers = @($testContainerTemplates | ForEach-Object {
   $tcPath = Join-Path $tcDir $_.Name
   $tcJson = [System.IO.File]::ReadAllText($_).Replace("|ROOT|", "$SrcDir".Replace("\", "\\"))
   [System.IO.File]::WriteAllText($tcPath, $tcJson)
 
   Write-Host -ForegroundColor Blue "TC: $tcPath"
-  Write-Host -ForegroundColor Blue "Contents: $(gc $tcPath)"
+  Write-Host -ForegroundColor Blue "Contents: $([System.IO.File]::ReadAllText($tcPath))"
   Write-Host ""
   $tcPath
-}
+})
 
 $trx = Join-Path $testResults "TestResults.trx"
-& $vstest @testContainers /TestAdapterPath:"$TestAdapterLocation" /Parallel "/logger:console;verbosity=detailed" "/logger:trx;LogFileName=$trx"
-cmd /c echo "Clear up the vstest.console.exe error..."
+if (Test-Path -LiteralPath $trx) {
+  Remove-Item -LiteralPath $trx -Force
+}
+
+$vstestArguments = @(
+  $testContainers
+  "/TestAdapterPath:$TestAdapterLocation"
+  "/Parallel"
+  "/logger:console;verbosity=detailed"
+  "/logger:trx;LogFileName=$trx"
+)
+$vstestExitCode = Invoke-VSTestProcess -VSTestPath $VSTestPath -Arguments $vstestArguments
+if ($vstestExitCode -notin 0, 1) {
+  throw "VSTest failed with infrastructure exit code $vstestExitCode."
+}
+
+if (-not (Test-Path -LiteralPath $trx -PathType Leaf)) {
+  throw "VSTest exited with code $vstestExitCode but did not produce TRX results at '$trx'."
+}
+
+try {
+  [xml] $xml = [System.IO.File]::ReadAllText($trx)
+}
+catch {
+  throw "VSTest produced invalid TRX XML at '$trx': $($_.Exception.Message)"
+}
+
+$testRunNode = $xml.SelectSingleNode("/*[local-name()='TestRun']")
+if (-not $testRunNode) {
+  throw "TRX '$trx' does not contain a TestRun root element."
+}
+
+$resultsNode = $xml.SelectSingleNode("/*[local-name()='TestRun']/*[local-name()='Results']")
+if (-not $resultsNode) {
+  throw "TRX '$trx' does not contain a Results element. VSTest exit code: $vstestExitCode."
+}
+
+$resultNodes = @($resultsNode.SelectNodes("./*[local-name()='UnitTestResult']"))
+if ($resultNodes.Count -eq 0) {
+  throw "TRX '$trx' contains no UnitTestResult entries. Verify test-adapter discovery. VSTest exit code: $vstestExitCode."
+}
 
 $obtainedFile = Join-Path $testResults "obtained.txt"
-$xml = [xml] (gc $trx)
-($xml.TestRun.Results.UnitTestResult | Sort-Object -Property testName | % { "[$($_.outcome)] $($_.testName) $($_.Output.ErrorInfo.Message)" }) >$obtainedFile
-$expected = gc (Join-Path $SrcDir "integrationtests.approved.txt") | % { $_.TrimEnd() }
-$obtained = gc $obtainedFile | % { $_.TrimEnd() }
+$obtainedLines = @($resultNodes |
+  Sort-Object { $_.GetAttribute("testName") } |
+  ForEach-Object {
+    $messageNode = $_.SelectSingleNode("./*[local-name()='Output']/*[local-name()='ErrorInfo']/*[local-name()='Message']")
+    $message = if ($messageNode) { $messageNode.InnerText } else { "" }
+    $message = [regex]::Replace(
+      $message,
+      "(?m)^(thread '[^']+') \(\d+\) panicked at ",
+      '$1 panicked at ')
+    "[$($_.GetAttribute("outcome"))] $($_.GetAttribute("testName")) $message"
+  })
+[System.IO.File]::WriteAllLines($obtainedFile, [string[]] $obtainedLines)
 
-$diff = Compare-Object $expected $obtained -CaseSensitive
-if ($diff.Length)
-{
+$approvedFile = Join-Path $SrcDir "integrationtests.approved.txt"
+if (-not (Test-Path -LiteralPath $approvedFile -PathType Leaf)) {
+  throw "Approved integration baseline not found: '$approvedFile'."
+}
+
+$expected = @([System.IO.File]::ReadAllLines($approvedFile) | ForEach-Object { $_.TrimEnd() })
+$obtained = @([System.IO.File]::ReadAllLines($obtainedFile) | ForEach-Object { $_.TrimEnd() })
+$diff = @(Compare-Object $expected $obtained -CaseSensitive)
+if ($diff.Count -gt 0) {
   $diff | Format-Table
   throw "Test failed. See above for the diff."
 }
+
+Write-Host "Standalone acceptance harness matched $($resultNodes.Count) test result(s). VSTest exit code: $vstestExitCode."

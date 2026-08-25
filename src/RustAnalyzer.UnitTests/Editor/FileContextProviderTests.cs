@@ -15,6 +15,7 @@ using Xunit;
 
 namespace KS.RustAnalyzer.UnitTests.Editor;
 
+[Trait("type", "IntegrationTests")]
 public class FileContextProviderTests
 {
     public static IEnumerable<object[]> GetTestData() => TestData.Get();

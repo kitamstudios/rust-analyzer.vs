@@ -5,6 +5,7 @@ using Xunit;
 
 namespace KS.RustAnalyzer.UnitTests.Infrastructure;
 
+[Trait("type", "UnitTests")]
 public class StringBuildMessagePreprocessorTests
 {
     private readonly StringBuildMessagePreprocessor _preprocessor = new();

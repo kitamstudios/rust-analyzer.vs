@@ -27,7 +27,8 @@ jobs:
     env:
       Configuration: Release
       DeployExtension: False
-      OutDir: \_built\
+      OutDir: ${{ github.workspace }}\_built\
+      RUST_ANALYZER_VS_SESSION_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-build-test-deploy
 
     steps:
     - uses: actions/checkout@v2
@@ -48,6 +49,12 @@ jobs:
         default: true
         components: rustfmt, clippy
 
+    - name: Initialize CI test session
+      run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Initialize-CISession.ps1
+
+    - name: Format check
+      run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Format.ps1 -Mode Check
+
     - name: Increment VSIX version
       id: vsix_version
       uses: timheuer/vsix-version-stamp@v1
@@ -56,7 +63,26 @@ jobs:
         vsix-token-source-file: ${{ env.VsixManifestSourcePath }}
 
     - name: Build
-      run: msbuild $env:SolutionPath /m /t:rebuild /restore /p:OutDir=$env:OutDir
+      run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Build.ps1
+
+    - name: Lint
+      run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Build.ps1 -NoRestore -AnalyzerCheck
+
+    - name: Quick tests
+      run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Tests.ps1
+
+    - name: Full tests
+      run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Tests.ps1 -Full
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: |
+          TestResults/*.trx
+          src/TestProjects/**/TestResults/*.trx
+        if-no-files-found: ignore
 
     - name: Zip TestAdapter
       run: |
@@ -68,23 +94,6 @@ jobs:
         echo "listing files in zip..."
         [io.compression.zipfile]::OpenRead($dst).Entries.Name | % { "- $_"}
       shell: pwsh
-
-    - name: Test
-      uses: rusty-bender/vstest-action@main
-      continue-on-error: true
-      with:
-        testAssembly: '*.UnitTests.dll'
-        searchFolder: '${{ env.OutDir }}'
-        runInParallel: true
-        resultLogsArtifactName: unit-tests-results-log
-
-    - name: Generate test report
-      uses: dorny/test-reporter@v1
-      with:
-        name: Tests Results
-        path: TestResults/*.trx
-        reporter: dotnet-trx
-        fail-on-error: true
 
     - name: Upload VSIX
       uses: actions/upload-artifact@v4
@@ -100,52 +109,10 @@ jobs:
         path: ${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.zip
         if-no-files-found: warn
 
-  run-integration-tests:
-    name: Integration tests
-    needs: build-test-deploy
-    runs-on: windows-2022
-    env:
-      TestAdapterLocation: \testadapter
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: nightly
-        target: x86_64-pc-windows-msvc
-        default: true
-        components: rustfmt, clippy
-
-    - uses: darenm/Setup-VSTest@v1.2
-
-    - name: Download TestAdapter
-      id: itdownloadta
-      uses: actions/download-artifact@v4
-      with:
-        name: ${{ env.TestAdapterNameNoExt }}.zip
-
-    - name: Prepare for integration tests
-      run: |
-        $adapterPathNoExt = "${env:itdownloadta}\${env:TestAdapterNameNoExt}"
-        mkdir $env:TestAdapterLocation
-        Expand-Archive "${env:itdownloadta}\${env:TestAdapterNameNoExt}.zip" -DestinationPath $env:TestAdapterLocation
-      shell: pwsh
-      env:
-        itdownloadta: ${{ steps.itdownloadta.outputs.download-path }}
-
-    - name: Run integration tests
-      continue-on-error: true
-      run: |
-        .\src\TestProjects\run-integrationtests.ps1 .\src\TestProjects\workspace_with_tests $env:TestAdapterLocation
-      shell: pwsh
-
   publish:
     name: Publish
     if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
-    needs: [build-test-deploy, run-integration-tests]
+    needs: [build-test-deploy]
     runs-on: windows-2022
 
     steps:

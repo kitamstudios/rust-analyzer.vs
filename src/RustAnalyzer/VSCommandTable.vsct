@@ -218,7 +218,7 @@
       <Bitmap guid="guidRustAnalyzerImageCatalog" href="Resources\Rust.png" usedList="IdIRust"/>
     </Bitmaps>
   </Commands>
-  
+
   <VisibilityConstraints>
     <VisibilityItem guid="guidRustAnalyzerPackage" id="IdTRustAnalyzerToolbar" context="UICONTEXT_SolutionExists" />
   </VisibilityConstraints>

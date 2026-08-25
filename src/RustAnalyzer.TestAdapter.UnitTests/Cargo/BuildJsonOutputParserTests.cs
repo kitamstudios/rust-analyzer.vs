@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
+using FluentAssertions;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
@@ -12,6 +13,7 @@ using Xunit;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 
+[Trait("type", "UnitTests")]
 public class BuildJsonOutputParserTests
 {
     [Fact]
@@ -55,5 +57,42 @@ public class BuildJsonOutputParserTests
         var output = BuildJsonOutputParser.Parse((PathEx)@"d:\src\dpt\pls\test_app", jsonOutput, TestHelpers.TL);
 
         Approvals.VerifyAll(output.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
+    }
+
+    [Theory]
+    [InlineData("CompilerArtifactTestExecutableDeps.json", true)]
+    [InlineData("CompilerArtifactTestExecutableBuildDir.json", true)]
+    [InlineData("CompilerArtifactBuildScript.json", false)]
+    [InlineData("CompilerArtifactNonTestExecutable.json", false)]
+    public void ParseTestExecutable(string dataFile, bool expected)
+    {
+        var jsonOutput = File.ReadAllText(TestHelpers.ThisTestRoot.Combine((PathEx)dataFile));
+
+        BuildJsonOutputParser.ParseTestExecutable(jsonOutput).HasValue.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ParseTestExecutablesIgnoresUnrelatedOutput()
+    {
+        var firstArtifact = File.ReadAllText(TestHelpers.ThisTestRoot.Combine((PathEx)"CompilerArtifactTestExecutableDeps.json"));
+        var customBuild = File.ReadAllText(TestHelpers.ThisTestRoot.Combine((PathEx)"CompilerArtifactBuildScript.json"));
+        var secondArtifact = File.ReadAllText(TestHelpers.ThisTestRoot.Combine((PathEx)"CompilerArtifactTestExecutableBuildDir.json"));
+
+        var executables = BuildJsonOutputParser.ParseTestExecutables(
+            new[] { "Compiling dependency", firstArtifact, "warning: unrelated", customBuild, "Finished tests", secondArtifact }).ToArray();
+
+        executables.Should().Equal(
+            (PathEx)@"D:\src\test\target\release\deps\hello_lib-0123456789abcdef.exe",
+            (PathEx)@"D:\src\test\target\release\build\hello_lib\0123456789abcdef\out\int_tests-0123456789abcdef.exe");
+    }
+
+    [Fact]
+    public void ParseTestExecutablesRejectsMalformedJson()
+    {
+        var act = () => BuildJsonOutputParser.ParseTestExecutables(new[] { "Compiling dependency", "{not-json" }).ToArray();
+
+        act.Should().Throw<InvalidDataException>()
+            .WithMessage("Malformed Cargo JSON protocol record at stdout line 2:*")
+            .Where(e => e.InnerException is JsonReaderException);
     }
 }

@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "container": {
       "ThisPath": "<TestRoot>\\hello_library\\target\\release\\hello_lib_libhello_lib.rusttests",
@@ -9,11 +9,11 @@
       "TestExecutionEnvironment": "",
       "Profile": "release",
       "TestExes": [
-        "<TestRoot>\\hello_library\\target\\release\\deps\\hello_lib-*.exe",
-        "<TestRoot>\\hello_library\\target\\release\\deps\\int_tests-*.exe"
+        "<TestRoot>\\hello_library\\target\\release\\build\\hello_lib\\*\\out\\hello_lib-*.exe",
+        "<TestRoot>\\hello_library\\target\\release\\build\\hello_lib\\*\\out\\int_tests-*.exe"
       ]
     },
-    "exe": "<TestRoot>\\hello_library\\target\\release\\deps\\hello_lib-*.exe",
+    "exe": "<TestRoot>\\hello_library\\target\\release\\build\\hello_lib\\*\\out\\hello_lib-*.exe",
     "tests": [
       {
         "type": "test",
@@ -159,11 +159,11 @@
       "TestExecutionEnvironment": "",
       "Profile": "release",
       "TestExes": [
-        "<TestRoot>\\hello_library\\target\\release\\deps\\hello_lib-*.exe",
-        "<TestRoot>\\hello_library\\target\\release\\deps\\int_tests-*.exe"
+        "<TestRoot>\\hello_library\\target\\release\\build\\hello_lib\\*\\out\\hello_lib-*.exe",
+        "<TestRoot>\\hello_library\\target\\release\\build\\hello_lib\\*\\out\\int_tests-*.exe"
       ]
     },
-    "exe": "<TestRoot>\\hello_library\\target\\release\\deps\\int_tests-*.exe",
+    "exe": "<TestRoot>\\hello_library\\target\\release\\build\\hello_lib\\*\\out\\int_tests-*.exe",
     "tests": [
       {
         "type": "test",

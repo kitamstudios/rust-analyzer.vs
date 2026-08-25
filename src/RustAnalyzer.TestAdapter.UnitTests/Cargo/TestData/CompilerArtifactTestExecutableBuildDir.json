@@ -1,0 +1,11 @@
+{
+  "reason": "compiler-artifact",
+  "target": {
+    "kind": [ "test" ],
+    "name": "int_tests"
+  },
+  "profile": {
+    "test": true
+  },
+  "executable": "D:\\src\\test\\target\\release\\build\\hello_lib\\0123456789abcdef\\out\\int_tests-0123456789abcdef.exe"
+}

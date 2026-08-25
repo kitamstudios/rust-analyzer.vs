@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -14,6 +15,7 @@ using Xunit;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 
+[Trait("type", "IntegrationTests")]
 public sealed class ToolchainServiceTests
 {
     private readonly IToolchainService _tcs = new ToolchainService(TestHelpers.TL.T, TestHelpers.TL.L);
@@ -134,7 +136,7 @@ public sealed class ToolchainServiceTests
         tc.ThisPath.Should().Be(tcPath);
         testSuites.Should().HaveCount(testExes.Length);
         testSuites.Select(x => x.Container.ThisPath).Should().OnlyContain(x => x == tcPath);
-        var normalizedStr = testSuites.OrderBy(x => (string)x.Exe).SerializeAndNormalizeObject();
+        var normalizedStr = testSuites.OrderBy(x => (string)x.Exe.GetFileName(), StringComparer.OrdinalIgnoreCase).SerializeAndNormalizeObject();
         Approvals.Verify(normalizedStr);
     }
 }

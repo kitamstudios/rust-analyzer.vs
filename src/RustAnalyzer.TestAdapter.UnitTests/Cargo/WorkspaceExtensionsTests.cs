@@ -10,6 +10,7 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 public class WorkspaceExtensionsTests
 {
     [Theory]
+    [Trait("type", "UnitTests")]
     [InlineData(@"hello_library\src\lib.rs", "hello_library", @"hello_library\Cargo.toml")]
     [InlineData(@"hello_library\Cargo.toml", "hello_library", @"hello_library\Cargo.toml")]
     [InlineData(@"hello_workspace\main\src\main.rs", "hello_workspace", @"hello_workspace\main\Cargo.toml")]
@@ -27,6 +28,7 @@ public class WorkspaceExtensionsTests
     }
 
     [Theory]
+    [Trait("type", "UnitTests")]
     [InlineData(@"c:\workspace_with_example\lib\examples\eg1.rs", "workspace_with_example")]
     [InlineData(@"not_a_project\src\main.rs", "not_a_project")]
     [InlineData(@"not_a_project\src", "not_a_project")]
@@ -41,6 +43,7 @@ public class WorkspaceExtensionsTests
     }
 
     [Theory]
+    [Trait("type", "IntegrationTests")]
     [InlineData(@"not_a_project\src\main.rs", "not_a_project", false, false)]
     [InlineData(@"hello_library\src\lib.rs", "hello_library", false, true)]
     [InlineData(@"hello_library\Cargo.toml", "hello_library", false, true)]

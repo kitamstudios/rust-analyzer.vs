@@ -1,0 +1,11 @@
+{
+  "reason": "compiler-artifact",
+  "target": {
+    "kind": [ "lib" ],
+    "name": "hello_lib"
+  },
+  "profile": {
+    "test": true
+  },
+  "executable": "D:\\src\\test\\target\\release\\deps\\hello_lib-0123456789abcdef.exe"
+}
