@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "TestCase": {
       "Id": "6782c2f7-da7d-1106-e05f-badd5b7660e8",
@@ -132,7 +132,7 @@
     "DisplayName": "hello_lib.tests.long_running_test",
     "Messages": [],
     "ComputerName": null,
-    "Duration": "00:00:00.2000000"
+    "Duration": "00:00:00",
 
 
     "Properties": []

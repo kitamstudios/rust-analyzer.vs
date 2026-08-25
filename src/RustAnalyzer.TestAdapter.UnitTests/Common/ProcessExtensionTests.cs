@@ -8,6 +8,7 @@ using Xunit;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests.Common;
 
+[Trait("type", "IntegrationTests")]
 public sealed class ProcessExtensionTests
 {
     private const int TimeoutSeconds = 15;

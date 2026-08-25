@@ -90,16 +90,16 @@ Anthropic `Claude Opus 5 (copilot)`, OpenAI `GPT-5.6 Sol (copilot)`.
 
 | Role — file | `anthropic` | `openai` | `both` (default) |
 |-------------|-------------|----------|------------------|
-| Architect — `agents/anders.md`            | Opus 5 | GPT-5.6 Sol | **GPT-5.6 Sol** |
-| Coder — `agents/dave.md`                  | Opus 5 | GPT-5.6 Sol | **GPT-5.6 Sol** |
-| Verifier — `agents/bhaskar.md`            | Opus 5 | GPT-5.6 Sol | **Opus 5**      |
-| Driver — the binder `agents/<Persona>.md` | Opus 5 | GPT-5.6 Sol | **Opus 5**      |
+| Architect — `agents/anders.md`            | Opus 5 | GPT-5.6 Sol | **Opus 5**      |
+| Coder — `agents/dave.md`                  | Opus 5 | GPT-5.6 Sol | **Opus 5**      |
+| Verifier — `agents/bhaskar.md`            | Opus 5 | GPT-5.6 Sol | **GPT-5.6 Sol** |
+| Driver — the binder `agents/<Persona>.md` | Opus 5 | GPT-5.6 Sol | **GPT-5.6 Sol** |
 
 - **`anthropic`** — every agent on Claude Opus 5.
 - **`openai`** — every agent on GPT-5.6 Sol.
-- **`both`** (recommended) — GPT-5.6 Sol designs & codes, Opus 5 verifies & drives; keeps **coder ≠
+- **`both`** (recommended) — Opus 5 designs & codes, GPT-5.6 Sol verifies & drives; keeps **coder ≠
   verifier vendor** so the independent check doesn't inherit the coder's blind spots. In a **1-pack**
-  only the binder ships, so `both` collapses to that one agent's vendor (Opus 5) — the cross-vendor
+  only the binder ships, so `both` collapses to that one agent's vendor (GPT-5.6 Sol) — the cross-vendor
   benefit is a 4-pack property.
 
 ## Install (new target) · PowerShell sketch
@@ -118,8 +118,8 @@ Anthropic `Claude Opus 5 (copilot)`, OpenAI `GPT-5.6 Sol (copilot)`.
     if ($modelProfile -notin 'anthropic','openai','both') { throw "Pick a model profile: anthropic | openai | both (default both)." }
     $maxA = 'Claude Opus 5 (copilot)'; $maxO = 'GPT-5.6 Sol (copilot)'          # per-vendor MAX SKUs; reasoning is 'max' for every role
     #   role -> model:  anthropic => all $maxA;  openai => all $maxO;
-    #   both => architect(anders)+coder(dave) = $maxO, verifier(bhaskar)+driver(binder) = $maxA
-    $bothModels = @{ anders = $maxO; dave = $maxO; bhaskar = $maxA; binder = $maxA } # authoritative both-profile stamp map
+    #   both => architect(anders)+coder(dave) = $maxA, verifier(bhaskar)+driver(binder) = $maxO
+    $bothModels = @{ anders = $maxA; dave = $maxA; bhaskar = $maxO; binder = $maxO } # authoritative both-profile stamp map
     Copy-Item "$src/AGENTS.md","$src/.editorconfig","$src/.gitignore","$src/.gitattributes" $dst
     New-Item "$dst/.github/agents","$dst/.github/skills", `
              "$dst/.github/agent-roles","$dst/.github/personas" -ItemType Directory -Force

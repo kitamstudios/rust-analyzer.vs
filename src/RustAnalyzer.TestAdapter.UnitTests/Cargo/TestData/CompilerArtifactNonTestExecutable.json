@@ -1,0 +1,11 @@
+{
+  "reason": "compiler-artifact",
+  "target": {
+    "kind": [ "bin" ],
+    "name": "application"
+  },
+  "profile": {
+    "test": false
+  },
+  "executable": "D:\\src\\test\\target\\release\\application.exe"
+}

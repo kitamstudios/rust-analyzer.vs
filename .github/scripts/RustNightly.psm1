@@ -1,6 +1,7 @@
 Set-StrictMode -Version Latest
 
 Import-Module (Join-Path $PSScriptRoot "AssistantBootstrap.psm1") -Force
+Import-Module (Join-Path $PSScriptRoot "CIProvenance.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "SessionState.psm1") -Force
 
 function Get-RustNightlyHandoffMessage {
@@ -8,6 +9,10 @@ function Get-RustNightlyHandoffMessage {
         [Parameter(Mandatory)]
         [string] $Message
     )
+
+    if ($env:GITHUB_ACTIONS -eq "true") {
+        return "$Message The trusted workflow must run Initialize-CISession.ps1 before test gates."
+    }
 
     return "$Message Hand back to JARVIS to run the assistant-only session startup bootstrap."
 }
@@ -62,7 +67,12 @@ function Get-RustNightlyManifest {
         $provenance = Get-AssistantBootstrapProvenance -AllowedPhases @("ready")
     }
     catch {
-        throw (Get-RustNightlyHandoffMessage $_.Exception.Message)
+        try {
+            $provenance = Get-CIBootstrapProvenance
+        }
+        catch {
+            throw (Get-RustNightlyHandoffMessage "Neither assistant nor trusted GitHub Actions provenance is valid. $($_.Exception.Message)")
+        }
     }
 
     $sessionId = Get-RepositorySessionId
@@ -84,7 +94,7 @@ function Get-RustNightlyManifest {
         throw (Get-RustNightlyHandoffMessage "The Rust nightly manifest belongs to a different repository checkout.")
     }
 
-    if ($manifest.BootstrapOwner -ne "assistant" -or
+    if ($manifest.BootstrapOwner -ne $provenance.Owner -or
         $manifest.BootstrapPhase -ne "ready" -or
         $manifest.BootstrapTokenHash -ne $provenance.TokenHash) {
         throw (Get-RustNightlyHandoffMessage "The Rust nightly manifest lacks matching assistant bootstrap provenance.")

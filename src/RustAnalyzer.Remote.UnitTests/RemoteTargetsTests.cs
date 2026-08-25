@@ -3,6 +3,7 @@ using Xunit;
 
 namespace KS.RustAnalyzer.Remote.UnitTests;
 
+[Trait("type", "UnitTests")]
 public class RemoteTargetsTests
 {
     [Fact]

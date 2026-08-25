@@ -1,36 +1,37 @@
 # Feature: Hardening and Visual Studio 2026
 **Branch:** vibe/002-hardening-and-vs2026
-**Status:** Planning
+**Status:** Selected for redesign
+
+> Planning archive awaiting Anders redesign. Feature 002 is now limited to the candidates selected in
+> [`docs/backlog.md`](../backlog.md): extension-model analysis only, gate portfolio/runtime review,
+> VS 2026/prerequisite readiness, dependency modernization, the VS 2022/2026 compatibility matrix,
+> and GitHub release notes in the extension. The broader material below preserves evidence and
+> decisions but is not the selected implementation scope.
 
 ## Requirements
 
-Deliver every remaining reconciled review finding as one ordered program. First stabilize CI and
-restore a green mandatory full gate: the loop cannot safely verify later product slices while its
-verifier remains red. Immediately after that P0, support Visual Studio 2022 17.12+ and Visual Studio
-2026 while replacing the prerequisite startup loop with a single-evaluation, process-scoped
-readiness/suspension experience. Then address unsafe telemetry, broader supply-chain risk, process
-ownership/cancellation, updater safety and offline behavior, remaining Cargo/rustup/test protocols,
-UI batching/menu cost, lost asynchronous failures, Visual Studio 2026 smoke coverage, and
-path/environment correctness.
+Redesign this archive into the selected feature-002 scope: analyze VSSDK versus
+VisualStudio.Extensibility without migrating models; review gate purpose and runtime; support Visual
+Studio 2022 17.12+ and Visual Studio 2026 while replacing the prerequisite install/restart loop;
+modernize VSSDK and direct libraries; validate both host generations end to end; and show trusted,
+offline-tolerant GitHub release notes in the extension.
 
-Feature 001 only records this plan. No item below is current behavior until its slice is implemented
-and verified.
+Feature 001 already aligned local and CI gates, completed durable trait ownership, and resolved the
+current Cargo executable-discovery, sysroot-layout, and approval-output failures. All broader
+hardening candidates below remain planning evidence in this archive and stay in `docs/backlog.md`
+unless the human selects them for a later feature.
 
-Separately retain a deferred backlog item for showing GitHub release notes inside the extension UI.
-That item is intentionally planning/design deferred and is not part of the sequenced hardening
-slices below.
+Feature 001 resolved the current approval-output failures with narrow incidental normalization.
+Broader cross-version ApprovalTests resilience remains S10 work and must stay fail closed.
 
-ApprovalTests resilience is no longer a later deferred slice: current brittleness is part of P0
-because it prevents a trustworthy green full gate.
-
-Retain a separate durable-test-taxonomy slice. Feature 001's reviewed FQN/count manifest is explicitly
-temporary and must not become the long-term ownership model.
+Feature 001 completed durable trait-based test ownership and removed its transitional FQN manifest.
 
 ## Design Options (Ox)
 
 ### O1 — Ordered vertical hardening slices
-- Description: Restore a green local/CI full gate first, establish the startup state boundary second,
-  then harden each external boundary in dependency order and finish with a two-version smoke matrix.
+- Description: Align fail-closed CI with feature 001's green local full gate and complete remaining
+  P0 gate hardening first, establish the startup state boundary second, then harden each external
+  boundary in dependency order and finish with a two-version smoke matrix.
 - Pros: Every later slice starts with trustworthy verification; each slice remains independently
   reviewable; the suspension gate then gives later process/network/UI work one consistent contract.
 - Cons: Temporary adapters may be needed while old and new boundaries coexist.
@@ -65,8 +66,8 @@ Line references describe the baseline reviewed for feature 001; symbols are the 
 | Async failures | `src/RustAnalyzer.TestAdapter/Common/TaskExtensions.cs`, `Forget` (about lines 7-14), used by `MetadataService`, `BuildOutputSink`, `TestContainerDiscoverer`, and `OutputWindowLogger` | Current fire-and-forget helper does not observe or report eventual faults. |
 | Telemetry | `src/RustAnalyzer.TestAdapter/Common/TelemetryService.cs` (about lines 12-115) | Connection configuration is embedded and a machine/user-derived identifier is emitted. |
 | Updater | `src/RustAnalyzer/Infrastructure/RlsInstallerService.cs` (about lines 45-175) | Startup performs GitHub download/extraction into the extension area and stores registry state without a transactional, independently verified install. |
-| Cargo protocol | `src/RustAnalyzer.TestAdapter/Cargo/ToolChainService.cs`, `GetWorkspaceAsync`, build/test discovery, and test listing (about lines 118-229) | Metadata uses JSON, but test executable discovery still consumes text and test listing depends on unstable nightly JSON. |
-| Latest-nightly gate evidence | Feature-001 full validation with rustc `1.100.0-nightly` | Cargo test discovery selected `target/.../build/.../out` build-script executables instead of `deps` test executables in two cases, and current sysroot layout broke `GetBinAndLibPathsAsync`; P0 must resolve these as protocol/path compatibility rather than accepting new snapshots blindly. |
+| Cargo protocol | `src/RustAnalyzer.TestAdapter/Cargo/ToolChainService.cs`, `GetWorkspaceAsync`, build/test discovery, and test listing (about lines 118-229) | Metadata and test executable discovery use structured Cargo JSON; test listing still depends on unstable nightly JSON, and remaining text protocols are S7 work. |
+| Latest-nightly gate evidence | Feature-001 full validation with rustc `1.100.0-nightly` | Feature 001 resolved build-script misselection through structured compiler artifacts and replaced fixed sysroot-layout assumptions with rustc-reported paths plus semantic runtime/import-library checks. |
 | Rustup protocol | `src/RustAnalyzer.TestAdapter/Cargo/ToolChainServiceExtensions.cs`, rustup show/target methods (about lines 16-285) | Human-readable rustup output and environment assumptions are parsed directly. |
 | Workspace/UI cost | `src/RustAnalyzer/Shell/RustToolsCommands.cs`, dynamic toolchain menu (about lines 135-215); `src/RustAnalyzer/Infrastructure/BuildOutputSink.cs`; `MetadataService` events | Query-status and event paths repeatedly enumerate/cache/update and dispatch fire-and-forget UI work. |
 | Path behavior | `PreReqsCheckService`, `LanguageClient`, `EnvironmentExtensions`, `ToolChainServiceExtensions`, and `DebugLaunchTargetProvider` | Executable lookup, working directories, environment inheritance, quoting, and normalization do not share one explicit contract. |
@@ -108,7 +109,7 @@ A slice is defined in `docs/meta-design.md`. Execution order is the table order.
 
 | Slice | Outcome | Depends on |
 |-------|---------|------------|
-| S0 (P0) | Stabilize CI and restore a green full gate from a clean supported environment, locally and in CI. | - |
+| S0 (P0) | Preserve feature 001's green local full gate, align CI fail closed, remove `MSB3277`, and re-enable validated quality tools. | - |
 | S1 | Visual Studio 2022 17.12+/2026 packaging and runtime compatibility plus the prerequisite startup/readiness redesign. | S0 |
 | S2 | Telemetry has an approved data/configuration contract with no embedded secret-like configuration or machine/user identity. | S1 |
 | S3 | Remaining CI supply-chain, artifact, dependency, and release controls are immutable/auditable. | S0, S1 |
@@ -118,44 +119,51 @@ A slice is defined in `docs/meta-design.md`. Execution order is the table order.
 | S7 | Remaining Cargo/rustup/test and path/environment boundaries use typed protocols and one correct Windows resolution/quoting contract. | S0, S1, S4 |
 | S8 | Workspace/UI updates are batched and dynamic menu query paths are bounded, cached, and free of process/network work. | S1, S5, S7 |
 | S9 | A repeatable VS 2022 17.12+ and VS 2026 smoke matrix validates activation through LSP, Cargo, tests, run/debug, suspend, and update/offline flows. | S2-S8 |
-| S11 | Unit, integration, and external tests have an explicit durable ownership mechanism and feature-001 FQN policy is removed. | S0, S3, S7 |
+| S10 | Broader cross-version ApprovalTests fixture/update strategy remains deterministic and human-reviewed beyond the feature-001 fixes. | S0, S7, S9 |
+| S11 | Durable trait-based unit/integration/external ownership. | Complete in feature 001 |
 
 ## Tasks (Tx)
 
-### S0 (P0) — Stabilize CI and restore a green full gate
+### S0 (P0) — Align CI and complete mandatory gate hardening
 
-This slice is the mandatory first work. Do not begin VS2026/prerequisite product changes until local
-Bhaskar verification and CI agree on a green full gate from a clean supported environment.
+Feature 001 completed local/CI gate alignment and durable test ownership. `MSB3277` cleanup and
+optional quality-tool redesign remain in the backlog and are not prerequisites for the narrowed
+feature 002 scope. Feature 002 will instead review the gate portfolio and runtime from measured
+evidence.
 
 | # | Slice | Task | Status | Commit |
 |---|-------|------|--------|--------|
-| T14 | S0 | Make build, quick, full integration, standalone harness, format, analyzer, and enabled quality failures block locally and in CI; remove test `continue-on-error` behavior and make CI invoke the same policy as Bhaskar. | Pending | - |
-| T15 | S0 | Enforce the repository quick/full/external ownership contract in local and CI execution; keep external freshness separately intentional and make classification drift fail closed. | Pending | - |
-| T32 | S0 | Consume Cargo compiler artifacts for test-executable/container discovery instead of display text, fixing current selection of `target/.../build/.../out` build-script executables instead of `deps` test executables. | Pending | - |
+| T14 | S0 | Make build, quick, full, standalone acceptance, format, and analyzer failures block locally and in CI; remove test `continue-on-error` behavior and make CI invoke the same policy as Bhaskar. | Complete (Feature 001) | - |
+| T15 | S0 | Enforce trait-based quick/full/external ownership in local and CI execution; keep external freshness intentional and make classification drift fail closed. | Complete (Feature 001) | - |
+| T32 | S0 | Consume Cargo compiler artifacts for test-executable/container discovery instead of display text, using `profile.test`, target kind, and the authoritative structured executable across Cargo layouts. | Complete (Feature 001) | - |
 | T46 | S0 | Redesign and re-enable dry4csharp, mutate4csharp, and crap4csharp. Decide whether fresh `master` acquisition/build remains per session; define deterministic assistant/session ownership and provenance; validate all three against real changed production targets; prove legacy `dotnet test`/Coverlet compatibility; enforce reviewed DRY/CRAP thresholds and documented mutation/CLI exits; measure full-gate performance cost; keep every enabled gate fail closed. | Pending | - |
 | T47 | S0 | Resolve every underlying `MSB3277` assembly dependency conflict, remove feature 001's `/warnNotAsError:MSB3277` grandfathering, and restore a zero-`MSB3277` fail-closed lint/build gate. | Pending | - |
-| T48 | S0 | Make ApprovalTests-based and standalone approved-output coverage deterministic and resilient without auto-approving unexpected output; use semantic assertions where snapshots are inappropriate and define an explicit human-reviewed update workflow. | Pending | - |
-| T50 | S0 | Replace the brittle nightly sysroot-layout assumptions exercised by `ToolChainServiceExtensionsTests.TestGetBinAndLibPathsAsync` with supported-version behavior and fixtures. | Pending | - |
+| T48 | S0 | Resolve the current panic-ID, Duration, hash/path, and standalone approved-output failures without auto-approval or semantic suppression. | Complete (Feature 001) | - |
+| T50 | S0 | Replace the brittle nightly sysroot-layout assumptions exercised by `ToolChainServiceExtensionsTests.TestGetBinAndLibPathsAsync` with rustc-reported paths and semantic runtime/import-library assertions. | Complete (Feature 001) | - |
 
-Current red-gate evidence and likely surfaces:
+Feature-001 resolutions retained as P0 evidence:
 
-- Feature-001 full validation currently fails two
-  `ToolchainServiceTests.GetTestSuiteTestsAsync` cases because Cargo discovery selects build-script
-  `out` executables, plus `TestGetBinAndLibPathsAsync` because the nightly sysroot layout changed.
-- ApprovalTests-based execution remains brittle when paths, Cargo/rustup versions, ordering, newlines,
-  durations, or toolchain formatting change.
+- The local configured full gate is now green: 203/203 assembly tests pass and the standalone
+  18-result semantic baseline matches.
+- Cargo test executable discovery consumes structured `compiler-artifact` records and no longer
+  parses human-readable executable paths.
+- Sysroot paths use `rustc --print sysroot` / `--print target-libdir`; tests require rustc/cargo plus
+  a matching standard-library runtime DLL/import library without fixed hashes/PDB layout.
+- Current ApprovalTests/standalone failures were resolved by narrow incidental normalization; no
+  test was skipped, quarantined, or auto-approved.
+- Broader ApprovalTests-based execution can still become brittle across future paths, Cargo/rustup
+  versions, ordering, newlines, durations, or toolchain formatting.
 - Likely shared/reporting surface: `src/TestsCommon/RaVsDiffReporter.cs`.
-- `src/TestsCommon/TestHelpers.cs` has genuinely intermittent duration normalization: its current
-  StartTime/EndTime assumptions and narrow Duration pattern allow raw Duration values to leak.
 - Likely artifacts include `*.approved.txt` / ignored `*.received.txt` pairs for Cargo, rustup,
   discovery, and execution.
 - Standalone approved output is owned by
   `src/TestProjects/workspace_with_tests/integrationtests.approved.txt` and
   `src/TestProjects/run-integrationtests.ps1`.
-- Current nightly panic output contains transient numeric thread/process IDs. That is incidental
-  normalization noise.
-- Cargo choosing `target/.../build/.../out` instead of `deps` is a semantic product/protocol failure;
-  it must never be normalized away or approved as incidental output.
+- Future nightly panic output may contain transient numeric thread/process IDs; feature 001's narrow
+  normalization treats only those identifiers as incidental noise.
+- Any regression that selects `target/.../build/.../out` instead of a structured test executable is
+  a semantic product/protocol failure; it must never be normalized away or approved as incidental
+  output.
 - Feature 001 disabled DRY/mutation/CRAP and removed their bootstrap scaffolding. P0 must preserve
   prior requirements while redesigning acquisition/build cadence, deterministic session ownership,
   real-production execution, legacy Coverlet compatibility, thresholds/exits, and performance cost.
@@ -193,6 +201,7 @@ P0 acceptance criteria:
 
 | # | Slice | Task | Status | Commit |
 |---|-------|------|--------|--------|
+| T53 | S1 | Decide between the in-process VSSDK and out-of-process VisualStudio.Extensibility models using a capability/migration matrix for Open Folder, LSP, testing, debugging, commands, options, MEF, updates, deployment, and VS 2022/2026 support; prototype any uncertain critical capability before selecting the extension architecture. | Pending | - |
 | T1 | S1 | Research the supported VSIX manifest/SDK expression for VS 2022 17.12+ and open-ended VS 2026 intent; update package references/manifest only with runtime proof. | Pending | - |
 | T2 | S1 | Introduce a process-scoped readiness state (`Unknown`, evaluating/awaited result, `Ready`, `Suspended`) owned by one service; no registry or user-environment persistence. | Pending | - |
 | T3 | S1 | Implement a pure resolver result that distinguishes found tools, repairable process PATH, classified missing/invalid prerequisites, persisted-PATH change that may benefit from restart, and unexpected faults. | Pending | - |
@@ -205,6 +214,9 @@ P0 acceptance criteria:
 
 S1 acceptance criteria:
 
+- The extension architecture decision records required capability coverage, process/isolation and
+  compatibility tradeoffs, migration cost, deployment constraints, and evidence for uncertain
+  critical capabilities before VSSDK/package modernization proceeds.
 - Manifest/package installation and a manual experimental-instance launch work on supported VS 2022
   and VS 2026 hosts; unsupported hosts receive a truthful runtime result.
 - N concurrent startup consumers cause one evaluation and no more than one modal dialog.
@@ -239,12 +251,19 @@ S2 acceptance criteria:
 | T16 | S3 | Pin third-party actions to reviewed immutable commits, minimize workflow permissions, and replace unsupported/deprecated setup actions. | Pending | - |
 | T17 | S3 | Separate build/test artifacts from release authorization; publish only exact verified artifacts from the successful run. | Pending | - |
 | T18 | S3 | Define dependency/update review for NuGet, Rust toolchains, bundled binaries, and action pins; produce provenance/checksum evidence where feasible. | Pending | - |
+| T52 | S3 | Inventory and upgrade the VSSDK, Community.VisualStudio.Toolkit, VS Threading/analyzers, Test Platform, .NET/NuGet, ApprovalTests/xUnit, and other direct libraries in reviewed compatibility cohorts; remove obsolete/preview dependencies where supported replacements exist. | Pending | - |
 
 S3 acceptance criteria:
 
 - Workflow actions are immutable, permissions least-privilege, and publish consumes only artifacts
   built and verified by the same approved run.
 - Dependency/action/toolchain updates have an auditable review and provenance/checksum policy.
+- Library upgrades record before/after versions and release-note risks, keep related VSSDK packages
+  compatible, and avoid unreviewed major-version jumps or permanent preview dependencies.
+- Each upgrade cohort passes the local/CI gates plus VS 2022 17.12+ and VS 2026 VSIX install,
+  MEF-composition, package-activation, LSP, Open Folder, Test Explorer, and debugging smoke coverage
+  relevant to the changed APIs. Supported package references replace checked-in host assemblies
+  where practical; unavoidable binaries retain documented provenance and hashes.
 - Publishing authorization cannot bypass or substitute for P0's already-green local/CI verification.
 
 ### S4 — Process ownership and cancellation
@@ -348,29 +367,37 @@ S9 acceptance criteria:
 - Evidence identifies exact VS, extension, rustup, Cargo, toolchain, and rust-analyzer versions.
 - Compatibility documentation and manifest claims match observed runtime support.
 
+### S10 — Broader ApprovalTests resilience
+
+| # | Slice | Task | Status | Commit |
+|---|-------|------|--------|--------|
+| T51 | S10 | Design the longer-term cross-supported-version fixture matrix, semantic-assertion versus snapshot boundaries, reusable normalizer APIs, actionable reporter diffs, and explicit human-reviewed approved-file update workflow. Never auto-approve unexpected output. | Pending | - |
+
+Feature 001 resolved the currently red panic-ID, duration, build-hash/path, and standalone output
+cases. S10 is limited to broader future resilience across supported Visual Studio/Rust/Cargo/rustup
+bands and must not reopen those fixes as permissive normalization.
+
 ### S11 — Durable unit/integration/external test taxonomy
 
 | # | Slice | Task | Status | Commit |
 |---|-------|------|--------|--------|
-| T49 | S11 | Design and implement durable test ownership using reviewed traits, separate projects/assemblies, or another explicit mechanism; migrate every transitional FQN rule, remove `.github/test-classification.json` and FQN filters, and make classification drift fail closed. | Pending | - |
+| T49 | S11 | Implement explicit xUnit type traits, external integration overlay, direct trait filters, and fail-closed ownership/drift checks; remove `.github/test-classification.json` and FQN filters. | Complete (Feature 001) | - |
 
 S11 requirements and acceptance criteria:
 
-- Every test has explicit, reviewable ownership as hermetic unit, integration, or external/freshness;
-  ownership cannot depend indefinitely on an implicit "unlisted means unit" convention.
-- Quick contains only hermetic unit tests and fails if a process, network, real toolchain, mutable
-  filesystem/environment, timing, or end-to-end test can enter it.
-- Full runs unit + integration coverage, including the standalone adapter harness.
+- Every xUnit test has explicit, reviewable `UnitTests` or `IntegrationTests` ownership.
+- Quick contains only tests that do not cross a process boundary.
+- Full runs unit + integration coverage, including the standalone adapter acceptance harness.
 - External freshness/network checks remain intentional, separately invokable, and excluded from the
   deterministic default full release gate unless the human changes that policy.
 - Added, removed, renamed, moved, or reclassified tests produce an actionable classification-drift
   failure rather than silently changing gate membership.
 - The chosen mechanism works with VSTest/xUnit and the mutation/CRAP coverage path; no test is dropped
   through incompatible filter keys.
-- Feature-001's FQN-prefix/count manifest and generated filter expressions are completely removed
-  after migration, with parity evidence for the prior 76 unit / 118 integration / 1 external split.
-- Detailed choice among traits, physical assemblies/projects, or another mechanism is deferred until
-  S11 starts; this task records required outcomes rather than selecting the design now.
+- Feature 001 removed the FQN manifest. Verified discovery is 96 unit and 108 integration, with one
+  external integration overlay; default full selects 203 and explicit full+external selects 204.
+- Missing, dual, overlapping, external-outside-integration, count, and filtered-selection drift fail
+  before execution.
 
 ## Execution rules and dependencies
 
@@ -384,9 +411,9 @@ S11 requirements and acceptance criteria:
    contracts rather than duplicating them.
 6. S8 consumes stable readiness, async, and protocol snapshots.
 7. S9 is the final release claim, not a substitute for slice-level unit/integration tests.
-8. S11 replaces the transitional FQN policy only after its durable mechanism proves quick/full/external
-   parity and drift detection.
-9. Every slice updates this file with actual decisions, tests, evidence, and commit references.
+8. S10 handles broader cross-version approval resilience after the supported matrix is known.
+9. S11 was completed in feature 001; later gate work preserves its trait ownership and drift checks.
+10. Every slice updates this file with actual decisions, tests, evidence, and commit references.
 
 ## Unresolved decisions requiring the human
 
@@ -407,12 +434,12 @@ S11 requirements and acceptance criteria:
 - U8: Whether to make the legacy test projects safely consumable by `dotnet test`/Coverlet, introduce
   a dedicated coverage-compatible test assembly, or adopt another explicit bridge for mutation/CRAP.
   No wrapper may fake coverage or reinterpret a compatibility failure as success.
-- U10: S11's durable taxonomy mechanism: traits, separate projects/assemblies, or another explicit
-  model. Decide after evaluating VSTest filtering, coverage tooling, migration cost, and drift
-  enforcement; do not preserve FQN prefixes by default.
 - U11: P0 quality-tool policy: whether fresh `master` acquisition/build remains per assistant
   session, the deterministic ownership/provenance mechanism, reviewed DRY/CRAP thresholds, mutation
   scope/worker limits, and acceptable full-gate time budget.
+- U12: S10's long-term boundary between versioned fixtures, semantic assertions, and approved
+  snapshots, plus the reviewed update tooling; feature-001's narrow normalizers are not blanket
+  precedent.
 
 Implementation must stop for the relevant human decision rather than silently choosing.
 
@@ -442,10 +469,10 @@ Implementation must stop for the relevant human decision rather than silently ch
 - R12: The feature-001 `MSB3277` grandfather can conceal runtime assembly-binding risk if it outlives
   its temporary scope; P0 must remove it rather than expand the exempt warning set.
 - R13: Over-broad approval normalization or automatic baseline updates can hide real regressions;
-  P0 must normalize only known incidental dimensions and keep unexpected semantic output fail closed.
-- R14: The feature-001 FQN policy treats unlisted tests as unit and is intentionally brittle. Without
-  exact count/prefix validation, a renamed or new non-hermetic test could leak into quick; S11 must
-  replace it, not relax its fail-on-drift checks.
+  feature 001 normalized only proven incidental dimensions, and S10 must keep unexpected semantic
+  output fail closed.
+- R14: Trait ownership is fail closed for the inventoried assemblies, but adding a new test project
+  requires adding that assembly to discovery or it can escape classification checks.
 
 ## Assumptions (Ax)
 
@@ -455,8 +482,7 @@ Implementation must stop for the relevant human decision rather than silently ch
 - A3: A packaged or last-known-good rust-analyzer remains available so offline mode can fail open.
 - A4: Process-only state and environment mutation are acceptable; persistent readiness, suspension,
   PATH repair, VSIX disable, or unload are not.
-- A5: Feature 001's fail-on-drift FQN split remains the temporary gate contract until S11 replaces
-  it; P0 may fix gate stability but must not silently weaken test ownership.
+- A5: Feature 001's trait ownership and fail-on-drift checks are the current gate contract.
 - A6: Current public extension behavior remains compatible except where the accepted prerequisite UX
   deliberately replaces restart/disable behavior.
 
@@ -469,16 +495,15 @@ Implementation must stop for the relevant human decision rather than silently ch
   scope.
 - D4: No reconciled review finding listed in Requirements is deferred beyond feature 002; deferrals
   apply only to unrelated product expansion.
-- D5: **GitHub release notes in the extension UI.** Later planning must define the detailed UX,
+- D5: **GitHub release notes in the extension UI.** Selected for feature 002 design. Planning must define the detailed UX,
   release-data contract, caching/offline behavior, trust/sanitization, navigation, accessibility,
   telemetry/privacy, and failure behavior before implementation. Likely current touchpoints include
   `ReleaseSummaryNotification`, package startup release-summary handling, `RlsInstallerService`, and
   the GitHub release/update notification surfaces. This entry records only the desired product
   outcome and likely evidence locations; it deliberately makes no UI, data, cache, or security design
   decision now.
-- D7: **Durable test taxonomy detailed design.** S11 owns the choice among traits, separate
-  projects/assemblies, or another explicit mechanism. Feature 001 keeps only the reviewed
-  fail-on-drift FQN bridge and makes no permanent taxonomy decision.
+- D7: **Durable test taxonomy:** completed in feature 001 with explicit traits and fail-closed
+  discovery/filter validation.
 
 ## Notes & Decisions
 

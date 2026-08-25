@@ -142,6 +142,10 @@ foreach ($relativePath in $formatFiles) {
     }
 
     $path = Join-Path $repoRoot $relativePath
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+        continue
+    }
+
     $bytes = [IO.File]::ReadAllBytes($path)
     $formattedBytes = Get-FormattedBytes -Bytes $bytes
     if ([Collections.StructuralComparisons]::StructuralEqualityComparer.Equals($bytes, $formattedBytes)) {

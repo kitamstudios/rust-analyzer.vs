@@ -8,9 +8,11 @@ using Xunit;
 
 namespace KS.RustAnalyzer.UnitTests;
 
+[Trait("type", "IntegrationTests")]
 public sealed class RlsReleaseTests
 {
     [Fact]
+    [Trait("scope", "External")]
     public async Task LastUpdateShouldNotBeOlderThan30DaysAsync()
     {
         var ret = await RlsInstallerService.GetLatestRlsReleaseRedirectUriAsync();

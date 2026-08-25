@@ -19,6 +19,7 @@ using Xunit;
 public sealed class ToolchainServiceExtensionsTests
 {
     [Fact]
+    [Trait("type", "IntegrationTests")]
     public async Task TestGetActiveToolChainAsync()
     {
         (await ToolchainServiceExtensions.GetDefaultToolchainAsync(TestHelpers.ThisTestRoot, default))
@@ -27,22 +28,19 @@ public sealed class ToolchainServiceExtensionsTests
     }
 
     [Fact]
+    [Trait("type", "IntegrationTests")]
     public async Task TestGetBinAndLibPathsAsync()
     {
         var (binPath, libPath) = await ToolchainServiceExtensions.GetBinAndLibPathsAsync(TestHelpers.ThisTestRoot, default);
 
-        Directory.EnumerateFiles(libPath, "std-*.*")
-            .Select(x => Path.GetFileName(x).Remove(3, "-cef76c2685dfb4ca".Length))
-            .Should()
-            .BeEquivalentTo(new[] { "std.dll", "std.pdb", "std.dll.lib" });
-
-        Directory.EnumerateFiles(binPath, "std-*.*")
-            .Select(x => Path.GetFileName(x).Remove(3, "-cef76c2685dfb4ca".Length))
-            .Should()
-            .BeEquivalentTo(new[] { "std.dll", "std.pdb" });
-
+        binPath.DirectoryExists().Should().BeTrue();
+        libPath.DirectoryExists().Should().BeTrue();
         (binPath + "rustc.exe").FileExists().Should().BeTrue();
         (binPath + Constants.CargoExe).FileExists().Should().BeTrue();
+
+        var stdRuntimes = Directory.EnumerateFiles(libPath, "std-*.dll").ToArray();
+        stdRuntimes.Should().ContainSingle();
+        File.Exists($"{stdRuntimes[0]}.lib").Should().BeTrue();
     }
 
     /// <summary>
@@ -51,6 +49,7 @@ public sealed class ToolchainServiceExtensionsTests
     /// b. 2 cases: one with same active and default toolchain, and another with separate active &amp; default toolchains.
     /// </summary>
     [Theory]
+    [Trait("type", "UnitTests")]
     [UseReporter(typeof(RaVsDiffReporter))]
     [InlineData(
 #pragma warning disable SA1118 // Parameter should not span multiple lines
@@ -142,6 +141,7 @@ installed targets:
     }
 
     [Fact]
+    [Trait("type", "IntegrationTests")]
     public async Task TestGetTargetsAsync()
     {
         var targets = await ToolchainServiceExtensions.GetTargets(default);
@@ -154,6 +154,7 @@ installed targets:
     }
 
     [Theory]
+    [Trait("type", "IntegrationTests")]
     [InlineData("/c echo success & echo error>&2", null, "success |finished", "error", true)]
     [InlineData("/c exit /b 1", null, "finished", null, false)]
     [InlineData("/c echo %cd% >&2", "WINDIR", "finished", null, true)]

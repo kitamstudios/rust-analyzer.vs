@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using static KS.RustAnalyzer.TestAdapter.Common.DetailedBuildMessage;
 
@@ -66,6 +67,49 @@ public static class BuildJsonOutputParser
         }
 
         return Array.Empty<BuildMessage>();
+    }
+
+    public static PathEx? ParseTestExecutable(string jsonLine)
+    {
+        var obj = JObject.Parse(jsonLine);
+        if (!string.Equals(obj.Value<string>("reason"), "compiler-artifact", StringComparison.Ordinal) ||
+            obj.SelectToken("profile.test")?.Value<bool>() != true ||
+            obj.SelectToken("target.kind")?.Values<string>().Contains("custom-build") == true)
+        {
+            return null;
+        }
+
+        var executable = obj.Value<string>("executable");
+        return string.IsNullOrWhiteSpace(executable) ? null : (PathEx)executable;
+    }
+
+    public static IEnumerable<PathEx> ParseTestExecutables(IEnumerable<string> outputLines)
+    {
+        var lineNumber = 0;
+        foreach (var line in outputLines)
+        {
+            lineNumber++;
+            if (string.IsNullOrWhiteSpace(line) || !line.TrimStart().StartsWith("{", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            PathEx? executable;
+            try
+            {
+                executable = ParseTestExecutable(line);
+            }
+            catch (JsonException e)
+            {
+                var preview = line.Length <= 256 ? line : $"{line.Substring(0, 256)}...";
+                throw new InvalidDataException($"Malformed Cargo JSON protocol record at stdout line {lineNumber}: {preview}", e);
+            }
+
+            if (executable.HasValue)
+            {
+                yield return executable.Value;
+            }
+        }
     }
 
     private static BuildMessage[] ParseCompilerMessage(PathEx workspaceRoot, dynamic obj)

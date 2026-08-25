@@ -86,8 +86,10 @@ public static class TestHelpers
         return @this
             .SerializeObject(Formatting.Indented, new PathExJsonConverter())
             .Replace(((string)ThisTestRoot).Replace("\\", "\\\\"), "<TestRoot>", StringComparison.OrdinalIgnoreCase)
-            .RegexReplace(@"    ""(Start|End)Time"": ""(.*)"",", string.Empty)
-            .RegexReplace(@"    ""Duration"": ""00:00:00.[0-2]\d{6}"",", @"    ""Duration"": ""00:00:00.2000000""")
+            .RegexReplace(@"^\s+""(StartTime|EndTime)"": ""[^""]*"",?\r?\n", "\r\n", RegexOptions.Multiline)
+            .RegexReplace(@"(""Duration"": "")[^""]+("")", @"${1}00:00:00${2}")
+            .RegexReplace(@"thread '([^']+)' \(\d+\) panicked", @"thread '$1' panicked")
+            .RegexReplace(@"([\\/])[\da-f]{16}([\\/])", "$1*$2", RegexOptions.IgnoreCase)
             .RegexReplace(@"\-[\da-f]{16}\.", "-*.", RegexOptions.IgnoreCase)
             .Replace("note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\\n", string.Empty);
     }

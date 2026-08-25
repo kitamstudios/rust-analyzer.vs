@@ -7,6 +7,7 @@ using Xunit;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests.Common;
 
+[Trait("type", "UnitTests")]
 public class EnvironmentExtensionsTests
 {
     [Theory]

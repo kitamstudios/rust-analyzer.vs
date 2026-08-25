@@ -35,107 +35,119 @@ $assemblies = @(
     $path
 }
 
-$classificationPath = Join-Path $repoRoot ".github\test-classification.json"
-if (-not (Test-Path -LiteralPath $classificationPath -PathType Leaf)) {
-    throw "Transitional test classification is missing: $classificationPath."
-}
+$expectedDiscoveredTests = 204
+$expectedUnitTests = 96
+$expectedIntegrationTests = 108
+$expectedExternalTests = 1
+$unitFilter = "type=UnitTests"
+$integrationFilter = "type=IntegrationTests"
+$externalFilter = "scope=External"
+$defaultFullFilter = "scope!=External"
 
-$classification = Get-Content -LiteralPath $classificationPath -Raw | ConvertFrom-Json
-if ($classification.SchemaVersion -ne 1 -or $classification.Policy -ne "transitional-fqn") {
-    throw "Unsupported transitional test-classification schema or policy."
-}
+function Get-DiscoveredTests {
+    param ([string] $Filter)
 
-$listOutput = @(& $vstest @assemblies /ListTests 2>&1)
-if ($LASTEXITCODE -ne 0) {
-    $listOutput | ForEach-Object { Write-Host $_ }
-    throw "VSTest test discovery failed with exit code $LASTEXITCODE."
-}
-
-$discoveredTests = @($listOutput |
-    ForEach-Object { ([string]$_).Trim() } |
-    Where-Object { $_ -match "^KS\.RustAnalyzer\." })
-if ($discoveredTests.Count -ne $classification.ExpectedDiscoveredTests) {
-    throw "Test-classification drift: discovered $($discoveredTests.Count) tests; expected $($classification.ExpectedDiscoveredTests). Review .github/test-classification.json."
-}
-
-$integrationRules = @($classification.Integration)
-$externalRules = @($classification.External)
-foreach ($rule in @($integrationRules + $externalRules)) {
-    if ([string]::IsNullOrWhiteSpace($rule.Prefix) -or $rule.ExpectedMatches -lt 1) {
-        throw "Test-classification contains an invalid prefix/count rule."
+    $listArguments = @($assemblies) + "/ListTests"
+    if (-not [string]::IsNullOrEmpty($Filter)) {
+        $listArguments += "/TestCaseFilter:$Filter"
     }
 
-    $matches = @($discoveredTests |
-        Where-Object { $_.StartsWith($rule.Prefix, [StringComparison]::Ordinal) })
-    if ($matches.Count -ne $rule.ExpectedMatches) {
-        throw "Test-classification drift for '$($rule.Prefix)': matched $($matches.Count); expected $($rule.ExpectedMatches)."
-    }
-}
-
-$integrationTests = [Collections.Generic.List[string]]::new()
-$externalTests = [Collections.Generic.List[string]]::new()
-foreach ($test in $discoveredTests) {
-    $integrationMatches = @($integrationRules |
-        Where-Object { $test.StartsWith($_.Prefix, [StringComparison]::Ordinal) })
-    $externalMatches = @($externalRules |
-        Where-Object { $test.StartsWith($_.Prefix, [StringComparison]::Ordinal) })
-    if ($integrationMatches.Count + $externalMatches.Count -gt 1) {
-        throw "Test-classification overlap for '$test'."
-    }
-
-    if ($integrationMatches.Count -eq 1) {
-        $integrationTests.Add($test)
-    }
-    elseif ($externalMatches.Count -eq 1) {
-        $externalTests.Add($test)
-    }
-}
-
-$unitCount = $discoveredTests.Count - $integrationTests.Count - $externalTests.Count
-if ($unitCount -ne $classification.ExpectedUnitTests -or
-    $integrationTests.Count -ne $classification.ExpectedIntegrationTests -or
-    $externalTests.Count -ne $classification.ExpectedExternalTests) {
-    throw "Test-classification totals drifted: unit=$unitCount, integration=$($integrationTests.Count), external=$($externalTests.Count)."
-}
-
-$integrationFilter = @($integrationRules | ForEach-Object { "FullyQualifiedName!~$($_.Prefix)" })
-$externalFilter = @($externalRules | ForEach-Object { "FullyQualifiedName!~$($_.Prefix)" })
-$filter = if ($Full) {
-    if ($IncludeExternal) { $null } else { $externalFilter -join "&" }
-}
-else {
-    @($integrationFilter + $externalFilter) -join "&"
-}
-
-$selectedTestCount = if ($Full) {
-    if ($IncludeExternal) { $discoveredTests.Count } else { $discoveredTests.Count - $externalTests.Count }
-}
-else {
-    $unitCount
-}
-Write-Host "Classification: unit=$unitCount, integration=$($integrationTests.Count), external=$($externalTests.Count)."
-Write-Host "Selected by gate: $selectedTestCount test(s)."
-if ($ValidateClassificationOnly) {
-    $filteredListArguments = @($assemblies) + "/ListTests"
-    if ($filter) {
-        $filteredListArguments += "/TestCaseFilter:$filter"
-    }
-
-    $filteredListOutput = @(& $vstest @filteredListArguments 2>&1)
+    $listOutput = @(& $vstest @listArguments 2>&1)
     if ($LASTEXITCODE -ne 0) {
-        $filteredListOutput | ForEach-Object { Write-Host $_ }
-        throw "Filtered VSTest discovery failed with exit code $LASTEXITCODE."
+        $listOutput | ForEach-Object { Write-Host $_ }
+        throw "VSTest discovery failed for filter '$(if ($Filter) { $Filter } else { "<none>" })' with exit code $LASTEXITCODE."
     }
 
-    $filteredTests = @($filteredListOutput |
+    @($listOutput |
         ForEach-Object { ([string]$_).Trim() } |
         Where-Object { $_ -match "^KS\.RustAnalyzer\." })
-    if ($filteredTests.Count -ne $selectedTestCount) {
-        throw "VSTest filter drift: selected $($filteredTests.Count) tests; expected $selectedTestCount."
-    }
+}
 
-    Write-Host "Filtered VSTest discovery matched $($filteredTests.Count) test(s)."
+$discoveredTests = @(Get-DiscoveredTests)
+$unitTests = @(Get-DiscoveredTests -Filter $unitFilter)
+$integrationTests = @(Get-DiscoveredTests -Filter $integrationFilter)
+$externalTests = @(Get-DiscoveredTests -Filter $externalFilter)
+
+$unitSet = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+$integrationSet = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+foreach ($test in $unitTests) {
+    $null = $unitSet.Add($test)
+}
+
+foreach ($test in $integrationTests) {
+    $null = $integrationSet.Add($test)
+}
+
+$missingTypeTests = @($discoveredTests |
+    Where-Object { -not $unitSet.Contains($_) -and -not $integrationSet.Contains($_) })
+if ($missingTypeTests.Count -ne 0) {
+    throw "Test classification is missing type=UnitTests or type=IntegrationTests for: $(@($missingTypeTests | Select-Object -First 5) -join "; ")."
+}
+
+$bothTypeTests = @($unitTests | Where-Object { $integrationSet.Contains($_) })
+if ($bothTypeTests.Count -ne 0) {
+    throw "Tests cannot carry both type=UnitTests and type=IntegrationTests: $(@($bothTypeTests | Select-Object -First 5) -join "; ")."
+}
+
+$externalOutsideIntegration = @($externalTests | Where-Object { -not $integrationSet.Contains($_) })
+if ($externalOutsideIntegration.Count -ne 0) {
+    throw "Every scope=External test must also be type=IntegrationTests: $(@($externalOutsideIntegration | Select-Object -First 5) -join "; ")."
+}
+
+if ($discoveredTests.Count -ne $expectedDiscoveredTests -or
+    $unitTests.Count -ne $expectedUnitTests -or
+    $integrationTests.Count -ne $expectedIntegrationTests -or
+    $externalTests.Count -ne $expectedExternalTests) {
+    throw "Test-classification drift: total=$($discoveredTests.Count) (expected $expectedDiscoveredTests), unit=$($unitTests.Count) (expected $expectedUnitTests), integration=$($integrationTests.Count) (expected $expectedIntegrationTests), external subset=$($externalTests.Count) (expected $expectedExternalTests). Explicitly classify every added or renamed xUnit test."
+}
+
+$filter = if ($Full) {
+    if ($IncludeExternal) { $null } else { $defaultFullFilter }
+}
+else {
+    $unitFilter
+}
+
+$selectedTests = @(
+    if (-not $Full) {
+        $unitTests
+    }
+    elseif ($IncludeExternal) {
+        $discoveredTests
+    }
+    else {
+        Get-DiscoveredTests -Filter $defaultFullFilter
+    }
+)
+$selectedTestCount = if ($Full -and $IncludeExternal) {
+    $expectedDiscoveredTests
+}
+elseif ($Full) {
+    $expectedDiscoveredTests - $expectedExternalTests
+}
+else {
+    $expectedUnitTests
+}
+if ($selectedTests.Count -ne $selectedTestCount) {
+    throw "VSTest gate-filter drift for '$($filter ?? "<none>")': selected $($selectedTests.Count) tests; expected $selectedTestCount."
+}
+
+Write-Host "Classification: unit=$($unitTests.Count), integration=$($integrationTests.Count) (external subset=$($externalTests.Count)), assembly total=$($discoveredTests.Count)."
+Write-Host "Gate filter '$($filter ?? "<none>")' selected $($selectedTests.Count) assembly test(s)."
+if ($Full) {
+    Write-Host "The full gate runs the standalone acceptance harness after the assembly tests."
+}
+
+if ($ValidateClassificationOnly) {
     return
+}
+
+$testResultsDirectory = Join-Path $repoRoot "TestResults"
+New-Item -ItemType Directory -Path $testResultsDirectory -Force | Out-Null
+$testResultName = if ($Full) { "full.trx" } else { "quick.trx" }
+$testResultPath = Join-Path $testResultsDirectory $testResultName
+if (Test-Path -LiteralPath $testResultPath) {
+    Remove-Item -LiteralPath $testResultPath -Force
 }
 
 $nightlyManifest = $null
@@ -149,6 +161,7 @@ $vstestArguments = @(
     $assemblies
     "/Parallel"
     "/Logger:console;verbosity=normal"
+    "/Logger:trx;LogFileName=$testResultPath"
 )
 if ($filter) {
     $vstestArguments += "/TestCaseFilter:$filter"
@@ -159,18 +172,18 @@ Write-Host "Using VSTest: $vstest"
 Write-Host "Test filter: $(if ($filter) { $filter } else { "<none>" })"
 $assemblyTestExitCode = Invoke-VSTestProcess -VSTestPath $vstest -Arguments $vstestArguments
 
-$integrationFailure = $null
+$acceptanceFailure = $null
 if ($Full) {
-    $integrationScript = Join-Path $repoRoot "src\TestProjects\run-integrationtests.ps1"
+    $acceptanceScript = Join-Path $repoRoot "src\TestProjects\run-integrationtests.ps1"
     try {
-        & $integrationScript `
+        & $acceptanceScript `
             -SrcDir (Join-Path $repoRoot "src\TestProjects\workspace_with_tests") `
             -TestAdapterLocation $outputDirectory `
             -VSTestPath $vstest `
             -VisualStudioMajorVersion $VisualStudioMajorVersion
     }
     catch {
-        $integrationFailure = $_
+        $acceptanceFailure = $_
     }
 }
 
@@ -178,10 +191,10 @@ if ($assemblyTestExitCode -ne 0) {
     Write-Error "VSTest failed with exit code $assemblyTestExitCode." -ErrorAction Continue
 }
 
-if ($integrationFailure) {
-    Write-Error "The standalone test-adapter integration harness failed: $integrationFailure" -ErrorAction Continue
+if ($acceptanceFailure) {
+    Write-Error "The standalone test-adapter acceptance harness failed: $acceptanceFailure" -ErrorAction Continue
 }
 
-if ($assemblyTestExitCode -ne 0 -or $integrationFailure) {
+if ($assemblyTestExitCode -ne 0 -or $acceptanceFailure) {
     throw "One or more test groups failed."
 }

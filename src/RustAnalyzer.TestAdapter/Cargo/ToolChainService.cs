@@ -5,7 +5,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel.Composition;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using EnsureThat;
@@ -18,8 +17,6 @@ namespace KS.RustAnalyzer.TestAdapter.Cargo;
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class ToolchainService : IToolchainService
 {
-    private static readonly Regex TestExecutablePathCracker = new(@"^\s*Executable( unittests)? (.*) \((.*\\(.*)\-[\da-f]{16}.exe)\)$$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
     private readonly TL _tl;
 
     [ImportingConstructor]
@@ -157,7 +154,7 @@ public sealed class ToolchainService : IToolchainService
             var rustcVersion = await ToolchainServiceExtensions.GetCommandOutputSingleLine("test", "--version", workingDir, ct);
             _tl.L.WriteLine($"Using: {rustcVersion}");
 
-            var args = new[] { "test", "--no-run", "--manifest-path", tc.Manifest, "--profile", profile }
+            var args = new[] { "test", "--no-run", "--message-format=json", "--manifest-path", tc.Manifest, "--profile", profile }
                 .Concat(tc.AdditionalTestDiscoveryArguments.FromNullSeparatedArray())
                 .ToArray();
 
@@ -165,20 +162,20 @@ public sealed class ToolchainService : IToolchainService
 
             using var proc = await ProcessRunner.RunWithLogging(cargoFullPath, args, workingDir, ImmutableDictionary<string, string>.Empty, ct, _tl.L);
 
-            var testExeBuildInfos = proc.StandardErrorLines
-                .Select(l => TestExecutablePathCracker.Matches(l))
-                .Where(m => m.Count > 0 && m[0].Groups.Count == 5)
-                .Select(m => (tc: (PathEx)m[0].Groups[4].Value, exe: (PathEx)m[0].Groups[3].Value, src: (PathEx)m[0].Groups[2].Value));
-            if (!testExeBuildInfos.Any())
+            var testExes = BuildJsonOutputParser.ParseTestExecutables(proc.StandardOutputLines)
+                .Distinct()
+                .OrderBy(exe => (string)exe.GetFileName(), StringComparer.OrdinalIgnoreCase)
+                .ThenBy(exe => (string)exe, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            if (testExes.Length == 0)
             {
-                var e = new InvalidOperationException(string.Format("Unable to parse output of cargo test to obtain test exe paths. Command line '{0}'. Exit code: {1}", proc.Arguments, proc.ExitCode));
+                var e = new InvalidOperationException(string.Format("Cargo produced no structured test executable artifacts. Command line '{0}'. Exit code: {1}", proc.Arguments, proc.ExitCode));
                 _tl.L.WriteError(e.Message);
                 _tl.T.TrackException(e);
                 throw e;
             }
 
-            var exes = testExeBuildInfos.Select(x => workingDir + x.exe);
-            tc.TestExes = exes.ToArray();
+            tc.TestExes = testExes;
             await testContainerPath.WriteTestContainerAsync(tc.Manifest, tc.TargetDir, tc.AdditionalTestDiscoveryArguments, tc.AdditionalTestExecutionArguments, tc.TestExecutionEnvironment, profile, tc.TestExes, ct);
 
             if (!tc.TestExes.Any())
@@ -346,4 +343,3 @@ public sealed class BuildOutputRedirector : ProcessOutputRedirector
             });
     }
 }
-

@@ -4,6 +4,7 @@ using Xunit;
 
 namespace KS.RustAnalyzer.UnitTests.Infrastructure;
 
+[Trait("type", "UnitTests")]
 public class StringExtensionsTests
 {
     [Theory]

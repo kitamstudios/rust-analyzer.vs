@@ -33,12 +33,13 @@ is a **misconfiguration**: **stop and report it** (never silently skip). The ski
 only to the **optional** rows (`dry-check`, `mutation-test`, `crap-check`), which run in the full gate —
 the fast gate has none.
 
-**Unit-only.** Feature 001 uses the reviewed transitional FQN policy in
-`.github/test-classification.json`; it does not modify test source with traits. Before execution,
-`test:quick` lists all tests, validates every prefix/count and the exact unit/integration/external
-totals, then excludes integration and external FQNs. Any missing, renamed, added, or overlapping test
-fails classification instead of silently entering quick. Integration, network/freshness, and optional
-gates (DRY, mutation, CRAP) belong to Bhaskar's full gate
+**Unit-only, trait-driven.** Test categories follow
+[`docs/meta-design.md#writing-tests`](../../docs/meta-design.md#writing-tests). Before execution,
+`test:quick` discovers all 204 assembly cases and fails unless `type=UnitTests` selects 96,
+`type=IntegrationTests` selects 108, and the single `scope=External` case is an integration test.
+Missing, dual-classified, added, or otherwise drifting cases fail actionably. Quick then runs exactly
+the 96 `type=UnitTests` cases; Cargo/process integration, the external freshness overlay, the
+standalone acceptance harness, and optional gates (DRY, mutation, CRAP) belong to Bhaskar's full gate
 (`.github/skills/build-test-full.md`).
 
 DRY, mutation, and CRAP are disabled in feature 001 (`none`) and deferred to feature 002 P0.

@@ -4,6 +4,7 @@ using FluentAssertions;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Xunit;
 
+[Trait("type", "UnitTests")]
 public sealed class PathExtensionsTests
 {
     [Theory]

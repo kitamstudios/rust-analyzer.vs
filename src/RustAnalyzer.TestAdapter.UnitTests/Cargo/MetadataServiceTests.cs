@@ -13,6 +13,7 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 public sealed class MetadataServiceTests
 {
     [Theory]
+    [Trait("type", "IntegrationTests")]
     [InlineData(@"hello_library", "hello_lib")]
     [InlineData(@"hello_world", "hello_world")]
     public async Task WorkspaceWithoutRootCargoManifestAsync(string workspaceRelRoot, string packageName)
@@ -28,6 +29,7 @@ public sealed class MetadataServiceTests
     }
 
     [Theory]
+    [Trait("type", "IntegrationTests")]
     [InlineData("corrupted_manifest")]
     [InlineData("corrupted_manifest2")]
     public async Task InvalidOperationExceptionOnInvalidManifestAsync(string workspaceRelRoot)
@@ -42,6 +44,7 @@ public sealed class MetadataServiceTests
     }
 
     [Theory]
+    [Trait("type", "UnitTests")]
     [InlineData(@"hello_world")]
     public async Task PackagesShouldBeCachedAsync(string workspaceRelRoot)
     {
@@ -56,6 +59,7 @@ public sealed class MetadataServiceTests
     }
 
     [Theory]
+    [Trait("type", "UnitTests")]
     [InlineData(@"hello_world")]
     public async Task PackagesCacheShouldBeInvalidatedAsync(string workspaceRelRoot)
     {
@@ -73,6 +77,7 @@ public sealed class MetadataServiceTests
     }
 
     [Theory]
+    [Trait("type", "UnitTests")]
     [InlineData(@"hello_world")]
     public async Task PackagesAddedRemovedEventsGetFiredAsync(string workspaceRelRoot)
     {
@@ -103,6 +108,7 @@ public sealed class MetadataServiceTests
     }
 
     [Theory]
+    [Trait("type", "UnitTests")]
     [InlineData(@"hello_world")]
     public async Task TestContainerUpdatedEventsGetFiredAsync(string workspaceRelRoot)
     {

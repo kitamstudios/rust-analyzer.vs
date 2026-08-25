@@ -88,6 +88,10 @@ $obtainedLines = @($resultNodes |
   ForEach-Object {
     $messageNode = $_.SelectSingleNode("./*[local-name()='Output']/*[local-name()='ErrorInfo']/*[local-name()='Message']")
     $message = if ($messageNode) { $messageNode.InnerText } else { "" }
+    $message = [regex]::Replace(
+      $message,
+      "(?m)^(thread '[^']+') \(\d+\) panicked at ",
+      '$1 panicked at ')
     "[$($_.GetAttribute("outcome"))] $($_.GetAttribute("testName")) $message"
   })
 [System.IO.File]::WriteAllLines($obtainedFile, [string[]] $obtainedLines)
@@ -105,4 +109,4 @@ if ($diff.Count -gt 0) {
   throw "Test failed. See above for the diff."
 }
 
-Write-Host "Standalone integration baseline matched $($resultNodes.Count) test result(s). VSTest exit code: $vstestExitCode."
+Write-Host "Standalone acceptance harness matched $($resultNodes.Count) test result(s). VSTest exit code: $vstestExitCode."

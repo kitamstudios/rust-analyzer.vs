@@ -1,6 +1,6 @@
 ---
 name: build-test-full
-description: Runs the full build/test gate — format check, lint, build, the complete test suite (unit + integration), plus every optional quality gate that is set. Bhaskar's full done-done gate.
+description: Runs the full build/test gate — format check, lint, build, the complete test suite (unit + integration + acceptance), plus every optional quality gate that is set. Bhaskar's full done-done gate.
 ---
 
 Framework-owned **recipe** — no placeholders. It runs the commands named in the **Project profile →
@@ -29,7 +29,7 @@ Run these commands in order, resolving each name from the Commands table:
 1. `format:check` — check formatting only; this variant does **not** write
 2. `build` — Release restore/rebuild, which prepares assets for the no-restore analyzer pass
 3. `lint` — a second Release rebuild with analyzers enabled, no restore, and warnings promoted to errors
-4. `test:full` — unit + integration
+4. `test:full` — unit + integration + acceptance
 5. `dry-check` — duplication/DRY checker _(if set)_
 6. `mutation-test` — mutation tester _(if set)_
 7. `crap-check` — CRAP metric, complexity × coverage _(if set)_
@@ -49,13 +49,15 @@ optional rows gets a stricter gate.
 001, so Bhaskar skips them under the optional-command rule. Feature 002 P0 owns redesign and
 re-enablement.
 
-**Transitional test classification.** Feature 001 does not add traits to test source. `test:full`
-loads `.github/test-classification.json`, lists all tests, validates every reviewed FQN prefix/count
-and exact unit/integration/external totals, then runs unit + integration FQNs and
-`src/TestProjects/run-integrationtests.ps1`. It excludes the explicit `RlsReleaseTests` external FQN
-unless `-IncludeExternal` is deliberately requested for a manual/scheduled freshness check. Any
-missing, renamed, added, or overlapping test fails classification; tests cannot silently escape.
-Feature 002 must replace this temporary policy with a designed durable taxonomy.
+**Trait-driven test classification.** Test categories follow
+[`docs/meta-design.md#writing-tests`](../../docs/meta-design.md#writing-tests). `test:full` discovers
+all 204 assembly cases and fails unless `type=UnitTests` selects 96, `type=IntegrationTests` selects
+108, and the single `scope=External` case is a subset of integration. Missing, dual-classified,
+added, or otherwise drifting cases fail actionably. By default, full uses `scope!=External` to run
+203 assembly cases (96 unit + 107 integration), then the standalone
+`src/TestProjects/run-integrationtests.ps1` acceptance harness, which validates 18 customer-visible
+VSTest results. `-Full -IncludeExternal` runs all 204 assembly cases before the same acceptance
+harness. The external network/freshness overlay is never part of the default gate.
 
 **Rust nightly.** JARVIS's preflight Gate 3 installs/updates and records the current session's nightly
 toolchain. `test:full` validates that exact manifest and exports process-only

@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "container": {
       "ThisPath": "<TestRoot>\\hello_world\\target\\release\\hello_world_hello_world.rusttests",
@@ -9,10 +9,10 @@
       "TestExecutionEnvironment": "",
       "Profile": "release",
       "TestExes": [
-        "<TestRoot>\\hello_world\\target\\release\\deps\\hello_world-*.exe"
+        "<TestRoot>\\hello_world\\target\\release\\build\\hello_world\\*\\out\\hello_world-*.exe"
       ]
     },
-    "exe": "<TestRoot>\\hello_world\\target\\release\\deps\\hello_world-*.exe",
+    "exe": "<TestRoot>\\hello_world\\target\\release\\build\\hello_world\\*\\out\\hello_world-*.exe",
     "tests": []
   }
 ]

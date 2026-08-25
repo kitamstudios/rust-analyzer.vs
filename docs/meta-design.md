@@ -11,6 +11,23 @@ The human provides the requirements that constitute a feature.
 Delivering a feature is done in **Slices**. Each slice is a full, independently deployable and
 end-to-end verifiable change. Rarely, a slice is split (e.g. frontend/backend) — consult the human first.
 
+## Writing tests
+
+Classify tests by boundary, not duration.
+
+| Type | Boundary and purpose | Directional scale | xUnit trait | Gate filter |
+|------|----------------------|-------------------|-------------|-------------|
+| Unit | Fine-grained, fast, and does not cross a process boundary. | Thousands | `[Trait("type", "UnitTests")]` | `type=UnitTests` |
+| Integration | Validates critical integration between cohesive components; may cross process or network boundaries. | Hundreds | `[Trait("type", "IntegrationTests")]` | `type=IntegrationTests` |
+| Acceptance | Exercises critical end-to-end customer scenarios by performing actions and verifying outcomes as a customer would. | Tens | `[Trait("type", "AcceptanceTests")]` | `type=AcceptanceTests` |
+
+The scales are directional guidelines, not classification criteria or hard quotas. Preflight checks
+automate linters, analyzers, dependency validation, and similar policy so the correct path is easiest.
+Specialized suites supplement these categories, and automated tests do not replace team exploratory
+testing. Do not specify numeric time limits. Non-xUnit acceptance marking and execution are
+stack-specific; retain the stack's acceptance gate rather than adding an xUnit wrapper only for a
+trait.
+
 ## Designing a feature
 
 Feature design has the following meta-structure (x is a number):
