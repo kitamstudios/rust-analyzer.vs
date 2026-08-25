@@ -147,9 +147,9 @@ artefact under test. Chosen by Sir.**
 
 | #  | Slice | Task | Status | Commit |
 |----|-------|------|--------|--------|
-| T11 | S2 | Research the supported manifest expression for both hosts. Current `source.extension.vsixmanifest` declares three amd64 `InstallationTarget`s at `Version="[17.0, 18.0)"` and a `Microsoft.VisualStudio.Component.CoreEditor` prerequisite at `[17.0,)`; determine what VS 2026's installer accepts and record it. | Pending | - |
+| T11 | S2 | Research the supported manifest expression for **both hosts — VS 2022 17.12+ and VS 2026 — which is a hard requirement (Ruling E)**. Current `source.extension.vsixmanifest` declares three amd64 `InstallationTarget`s at `Version="[17.0, 18.0)"` and a `Microsoft.VisualStudio.Component.CoreEditor` prerequisite at `[17.0,)`. **Specifically verify the standing finding that VS 2026 exposes 17.x APIs and *ignores the upper bound* of existing `InstallationTarget` ranges** — if true, the current range already admits VS 2026 and T13 becomes a no-op or a narrower edit. Record the evidence either way; do not carry the finding forward unverified. | Pending | - |
 | T12 | S2 | Separate **packaging claim** from **runtime support**: keep the runtime minimum at 17.12 in `Constants`, add explicit host-capability validation, and make an unsupported host produce a truthful classified result rather than a crash or a silent no-op. | Pending | - |
-| T13 | S2 | Widen the manifest range **only after** T14 proves install + activation on a real VS 2026 host. Until then the manifest is unchanged. | Pending | - |
+| T13 | S2 | Change the manifest **only if T11 proves a change is needed**, and **only after** T14 proves install + activation on a real VS 2026 host. If T11 confirms VS 2026 ignores the upper bound, the correct action is to leave the range alone and record why. Whatever the outcome, **VS 2022 17.12+ support must not regress** — both hosts ship (Ruling E). | Pending | - |
 | T14 | S2 | **[HUMAN]** VS 2026 install and activation smoke on a real host: install the VSIX, open a Rust folder, confirm package activation and no activity-log/MEF errors. Sir has answered "unsure" on VS 2026 host availability; this is the escalation point (Ruling D). | Pending | - |
 
 ### S3 — Candidate 3b: readiness, one dialog, one InfoBar, process-only suspension
@@ -309,6 +309,9 @@ Filled by T9 from the first green run. Every removed gate carries an explicit re
 | B | "for the deprecated gh actions, use your alternatives as required" / "yeah lets switch to shell completely for any deprecated actions." | T6, N5 |
 | C | "these are logical steps… they dont have to [be] separate, do not necessarily need a ps1 wrapper… as long as they happen." | T3, N2 — **supersedes the earlier N2** |
 | D | VS 2026 host availability: **"unsure."** | T14, T33, T34 remain `[HUMAN]`; S2 ships no widened manifest on assumption |
+| E | "3 i need to support both 2022 and 2026" (2026-08-25) | Supporting **both** VS 2022 17.12+ and VS 2026 is a hard requirement, not a preference. T11 verifies the upper-bound finding; T13 must not regress 2022 |
+| F | "first lets get the gates and the ci green" (2026-08-25) | **S1 has absolute priority.** No S2–S7 work starts until S1's PR gate is green. The VS 2026 host question is deferred, not dropped |
+| G | Third-party actions → shell; first-party `actions/*` → version-bump (2026-08-25) | Refines Ruling B; see N5 |
 
 ### N1 — O2's crux: the acceptance job consumes the published zip
 
@@ -357,7 +360,7 @@ suites and the acceptance harness in **one** `pwsh` process. In CI the constrain
 workflow sets `RUSTUP_TOOLCHAIN` to the T1-pinned channel as step-level env, which is why deleting
 `Initialize-CISession.ps1`/`CIProvenance.psm1` costs CI nothing (T4).
 
-### N4 — The acceptance harness stays VSTest (Ruling A's escape clause, invoked deliberately)
+### N4 — The acceptance harness stays VSTest (Ruling A's escape clause, **approved by Sir 2026-08-25**)
 
 Ruling A has two halves with different answers.
 
@@ -380,7 +383,12 @@ Ruling A has two halves with different answers.
   environment-casing workaround, which is VSTest-specific and load-bearing). This is stated explicitly so
   Sir sees the boundary and can overturn it deliberately.
 
-### N5 — Deprecated actions → shell (Ruling B)
+### N5 — Deprecated actions → shell (Ruling B, refined)
+
+**Sir's rule, stated 2026-08-25:** *all third-party actions move to shell; first-party (`actions/*`)
+actions are version-bumped, not replaced.* This is a supply-chain rule, not a style rule — the goal is
+to remove third-party code from the critical path, and re-implementing maintained first-party actions
+in shell adds risk without removing any third-party dependency.
 
 | Action | Replacement | Note |
 |--------|-------------|------|
@@ -390,7 +398,7 @@ Ruling A has two halves with different answers.
 | `timheuer/vsix-version-stamp@v1` | inline shell | Must write **both** the manifest `Identity/@Version` and the `Vsix.Version` constant in the generated `src/RustAnalyzer/source.extension.cs` (a listed generated artifact, written only by CI — never hand-edited), **and** emit the `version-number` job output that `publish` consumes (R7). Base version today is `3.0` in both files. |
 | `rusty-bender/vstest-action@main` | not restored | **Retained-risk record:** the old workflow pinned a third-party action to a **mutable branch**. That is exactly the class of dependency the restored file must not reintroduce. |
 | `dorny/test-reporter@v1` | not restored | D3. |
-| `actions/checkout@v2` | **version-bump to `@v4`, not shell-replaced** | I put this to Sir and was not overruled. It is first-party and maintained; `v2` is an outdated *version*, not a deprecated action. Hand-rolling `git clone` means re-implementing credential handling, `fetch-depth`, ref resolution, and submodules — strictly more risk for no supply-chain gain. If Sir disagrees, say so and I will take it back. |
+| `actions/checkout@v2` | **version-bump to `@v4`** | **Approved by Sir 2026-08-25** under the first-party rule above. `v2` is an outdated *version*, not a deprecated action. Hand-rolling `git clone` would mean re-implementing credential handling, `fetch-depth`, ref resolution, and submodules — more risk, no supply-chain gain. |
 | `actions/upload-artifact@v4`, `actions/download-artifact@v4` | unchanged | Current, first-party. |
 | publish-path actions | unchanged | A6. |
 
