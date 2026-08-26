@@ -162,9 +162,9 @@ artefact under test. Chosen by Sir.**
 | T6b | S1 | **Give the TestAdapter zip file list one home** (Sir, 2026-08-25). The list lives inline in `cdp.yml:99` as a six-element array — `KS.RustAnalyzer.TestAdapter.dll`/`.pdb`, `Microsoft.ApplicationInsights.dll`/`.pdb`, `System.Collections.Immutable.dll`, `Ensure.That.dll`. Under Ruling K it becomes load-bearing on **both** sides, so it cannot stay in the workflow. Sir's first suggestion was `Invoke-Tests.ps1`; under **Ruling Q** that file survives, but it is still the wrong home — it is the *test-gate policy*, not a package manifest, and the CI zip step must read the list without importing the gate. Put the list in a data file — `src/RustAnalyzer.TestAdapter/testadapter-package.txt`, one relative file name per line, comments allowed — beside the project whose output it describes, with exactly one reader script that both the local gate and the CI `acceptance`/zip steps call. **Do not derive it from project references:** the adapter references `System.ComponentModel.Composition`, `Microsoft.TestPlatform.ObjectModel` and `System.Security.Principal.Windows`, none of which ship, because the VSTest host supplies them. The list is a curated statement of *what the host does not provide* and must stay curated; a naive derivation would bloat the zip and hide the judgement. Keep `Compress-Archive`'s fail-on-missing-file behaviour — a name in the list that is not built must stay a hard error. **Sequence BEFORE T6** (corrected 2026-08-26, Anders): the old "sequence after T6 so there is only one workflow rewrite" was self-defeating — T6 *is* the rewrite, so T6b-after-T6 means writing the zip step twice. T6b first makes T6's zip step one line calling the reader. **T3b consumes this reader too.** | Done | - |
 | T3b | S1 | **Ruling K's local half** (promoted from a clause inside T3 on 2026-08-26; it was real work with no owning task). The local `test:full` acceptance leg must run against an expanded copy of `KS.RustAnalyzer.TestAdapter.zip`, never `_built\`, with no fallback — see N9. Today `Invoke-Tests.ps1:98` passes `-TestAdapterLocation $outputDirectory`, i.e. `_built`, so the local half of Ruling K is currently **not implemented at all**. **Anders also found the fallback at its source:** `src/TestProjects/run-integrationtests.ps1:6` *defaults* `$TestAdapterLocation` to `..\..\_built` — literally the unguarded fallback N9 says "must not exist", and no task had named it. Make the parameter `[Parameter(Mandatory)]`; that one line closes the ruling at the source rather than at each call site. Then have the gate build/locate the zip, expand it to a scratch directory, and pass that. **Depends on T6b's reader.** | Done | - |
 | T7 | S1 | **Re-home the architectural facts orphaned by Sir's `design.md` cut** (re-scoped 2026-08-26). Sir deleted 126 lines — the whole "Build, test, and release flow", "Generated and external artifacts" and "Known architectural constraints" block — rather than correcting it. That was right for the *gate-implementation* prose: it described five scripts (three now deleted) and the hardcoded counts N6 killed. But it swept out three **architectural** facts that were merely co-located with implementation detail, and one of them is a live governance hole. (a) **`src/external` acquisition rule — open hole, fix first.** The deleted paragraph was golden rule #5's *only* coverage of the packaged rust-analyzer, and N12 explicitly leaned on it. `.github/copilot-instructions.md`'s Generated-artifacts line lists `**/bin/`, `**/obj/`, `_built/`, `*.vsix` and the `source.extension.cs` version field — **not `src/external`**. As of today an agent may hand-edit a 38 MB binary and violate nothing. Do **not** restore it to `design.md`; golden rule #5 says the consuming project lists its artifacts in the **Project profile**, which is why a `design.md` edit could delete it. Add one bullet there for *acquired* (not generated) binaries under `src/external/` — packaged `rust-analyzer.exe`/`rust_analyzer.pdb` and the `vs.17.11` host assemblies — replaced only through the documented hash-verified acquisition process. Fold in the two other items the deletion dropped that the profile does not cover: `VSCommandTable.cs` and session nightly provenance under `%LOCALAPPDATA%`. (b) **"not a safe `dotnet test`/Coverlet target"** — verified still true (`RustAnalyzer.UnitTests.csproj:2` `ToolsVersion="15.0"`, `:12` `v4.8`, PackageReference via `KS.Tests.Common.targets`) and still load-bearing: it is the stated premise for **T2's runner choice** and **D1's** deferral of DRY/mutation/CRAP, and T2 quotes `docs/design.md` for it, so that citation now dangles. Re-home one sentence to `design.md` §"Projects and dependency direction" and repoint T2's citation. (c) **vswhere-based VS-major resolution** — `VisualStudio.psm1:3-14`, `:17-72` (`-MajorVersion`, default 17, requires a complete install, throws on mismatch), consumed by `run-integrationtests.ps1:8,14` and `Invoke-Tests.ps1:9-10`. The load-bearing sentence was *"a later completed VS major is never selected silently"* — a **host-binding contract**, not gate mechanics, and **Ruling E makes it more load-bearing, not less**; it is the mechanism S5's matrix (T31–T35) will use. Re-home two sentences near the VS platform section. **S-e (Anders):** also sweep the surviving text for floating-`nightly` and CI-provenance claims — the assistant-bootstrap paragraph said "installs or updates rustup's `nightly` toolchain", false after T1's pin. **Standing rule established here:** `design.md` holds **contracts and constraints**; gate mechanics live in the skill recipes and the Commands table, versioned next to the thing they describe. | Done | - |
-| T8 | S1 | **Drive CI to its first green run** on the pushed branch. Green means: build, quick, full, acceptance, zip, and both uploads all succeed with no soft-failure switch anywhere. | Pending | - |
-| T9 | S1 | **Measure the gate portfolio on the pushed branch** and fill the table below — per-gate wall clock, trigger, what it uniquely catches, and the retained risk of every removed gate. Includes the measured cost of the repeated Release build invocation (N2). | Pending | - |
-| T10 | S1 | **Raise the PR and track the merge gate to pass.** Done-done for candidate 2 is the PR gate green, not a local green. **If master carries branch protection, T10 also updates the required-status-check names** — O2 renames the reported checks from `Build, Test & Deploy`/`Publish` to `config`/`build-and-test`/`acceptance`/`publish`, and a required check that is never reported blocks the merge indefinitely (see N10). Evidence must include a `workflow_dispatch` from a non-`master` ref showing `publish` skipped (N8). | Pending | - |
+| T8 | S1 | **Drive CI to its first green run** on the pushed branch. Green means: build, quick, full, acceptance, zip, and both uploads all succeed with no soft-failure switch anywhere. | Done | CI run `32998966472` green: unit 102, integration 108, acceptance 18 matched, `publish` skipped, no soft-failure switch |
+| T9 | S1 | **Measure the gate portfolio on the pushed branch** and fill the table below — per-gate wall clock, trigger, what it uniquely catches, and the retained risk of every removed gate. Includes the measured cost of the repeated Release build invocation (N2). | Done | See "Gate portfolio (measured)" |
+| T10 | S1 | **Raise the PR and track the merge gate to pass.** Done-done for candidate 2 is the PR gate green, not a local green. **If master carries branch protection, T10 also updates the required-status-check names** — O2 renames the reported checks from `Build, Test & Deploy`/`Publish` to `config`/`build-and-test`/`acceptance`/`publish`, and a required check that is never reported blocks the merge indefinitely (see N10). Evidence must include a `workflow_dispatch` from a non-`master` ref showing `publish` skipped (N8). | **Blocked — Sir** | N8 evidence captured (run `33000124688`). Master IS protected and its required check is the stale `Build, Test & Deploy`, so PR #71 is BLOCKED; Sir owns the setting change (N10) |
 
 ### S2 — Candidate 3a: VS 2022 17.12+ and VS 2026 packaging + runtime proof
 
@@ -267,18 +267,35 @@ Evidence behind the decision:
 
 ## Gate portfolio (measured)
 
-Filled by T9 from the first green run. Every removed gate carries an explicit retained risk.
+Filled by T9 from the first green run on the six-job topology — CI run `32998966472`, commit `71e9d90`,
+`windows-2022`. Every removed gate carries an explicit retained risk.
 
 | Gate | Trigger | Runtime | What it uniquely catches | Retained risk |
 |------|---------|---------|--------------------------|---------------|
-| build (Release) | fast + full + CI | _T9_ | Compile errors; **all** StyleCop/IDE/FxCop diagnostics and SA1028 trailing whitespace, via `<IncludeAll Action="Error"/>` + `TreatWarningsAsErrors` in Release | - |
-| test:quick (unit) | fast + CI | _T9_ | In-process regressions; trait-taxonomy invariants via `TraitTaxonomyTests` | - |
-| test:full (unit + integration) | full + CI | _T9_ | Cargo/rustup/process-boundary regressions on the pinned nightly | - |
-| acceptance (VSTest, published zip) | full + CI | _T9_ | Customer-visible adapter behaviour **and** packaging omissions in the shipped zip | - |
-| external (`scope=External`) | manual/scheduled | _T9_ | Network/freshness drift | Excluded from the deterministic gate by design |
-| *removed:* separate lint pass | — | — | — | MSBuild-level warnings are no longer promoted to errors. Concretely, `MSB3277` assembly conflicts stay **non-fatal** (D2) — the `/warnNotAsError:MSB3277` grandfather disappears with the pass that carried it. Compiler/analyzer/style coverage is unchanged because Release already enforces it. |
-| *removed:* non-C# formatter | — | — | — | Trailing whitespace in `.ps1`/`.yml`/`.json`/`.md` is no longer normalized by a gate. `.editorconfig` (`trim_trailing_whitespace = true`) remains the IDE-level contract; C# is still enforced by SA1028 at build. |
-| *removed:* PowerShell classification preflight | — | — | — | Four `vstest.console /ListTests` discovery passes per gate are gone; the invariants now run as a unit test inside both gates (T2c), so drift still fails closed but numbers are no longer hardcoded. |
+| build (Release) | fast + full + CI `build-and-test` | **368s** (job 401s incl. checkout, stamp, zip, 3 uploads) | Compile errors; **all** StyleCop/IDE/FxCop diagnostics and SA1028 trailing whitespace, via `<IncludeAll Action="Error"/>` + `TreatWarningsAsErrors` in Release | **Unverified — see N16.** `src/KS.Common.targets:55` includes `..\.globalconfig`, which MSBuild resolves against the *project* directory, so it points at a non-existent `src/.globalconfig`. Whether the advertised `.globalconfig` severities actually load is untested |
+| test:quick (unit) | fast + CI `unit` | **23s** job (**7.7s** xUnit run) | **102** in-process tests; trait-taxonomy invariants via `TraitTaxonomyTests` (5 tests) | - |
+| test:full (unit + integration) | full + CI `unit` ∥ `integration` | **89s** critical path (integration job; its xUnit run 63.1s) | Cargo/rustup/process-boundary regressions on the pinned nightly — **108** tests | Locally `-Mode full` runs **unfiltered** in one pass, so an untagged case still executes; in CI the two jobs are trait-filtered, so an untagged case would run in **no** job. The gate holds only because the taxonomy test lives in `unit` — the jobs are therefore *not* independent |
+| acceptance (VSTest, published zip) | full + CI `acceptance` | **49s** job | Customer-visible adapter behaviour **and** packaging omissions in the shipped zip | Inner VSTest exits 1 by design (4 approved failures); only the harness's approved-file comparison distinguishes that from a real break |
+| *config* (not a gate) | CI only | **21s** | Resolves runner label, VS major and pinned nightly once, so no downstream job hardcodes them (T5) | - |
+| *removed:* external (`scope=External`) | — | — | — | **Gate retired, not merely unmeasured.** Ruling M's three-way taxonomy has no `External` value and the string appears nowhere in `src/` or `.github/`. Network/freshness drift is now caught only by `RlsReleaseTests`' 30-day ceiling. `docs/backlog.md` D10 still proposes a `scope=External` renewal test and is therefore unimplementable as written |
+| *removed:* separate lint pass | — | — | — | MSBuild-level warnings are no longer promoted to errors. Concretely, `MSB3277` assembly conflicts stay **non-fatal** (D2) — the `/warnNotAsError:MSB3277` grandfather disappears with the pass that carried it. Compiler/analyzer/style coverage was *believed* unchanged because Release already enforces it — **N16 puts that premise in doubt** |
+| *removed:* non-C# formatter | — | — | — | Trailing whitespace in `.ps1`/`.yml`/`.json`/`.md` is no longer normalized by a gate. `.editorconfig` (`trim_trailing_whitespace = true`) remains the IDE-level contract; C# is still enforced by SA1028 at build |
+| *removed:* PowerShell classification preflight | — | — | — | Four `vstest.console /ListTests` discovery passes per gate are gone; the invariants now run as a unit test inside both gates (T2c), so drift still fails closed but numbers are no longer hardcoded |
+
+**N2's repeated Release build no longer exists — measured, then eliminated by the topology rather than
+merely costed.** `Invoke-Tests.ps1` invokes no MSBuild at all (its only archive work is the
+`Compress-Archive`/`Expand-Archive` pair at `:114`/`:121` serving Ruling K), and in CI `build-and-test`
+builds exactly once at 368s while `unit`, `integration` and `acceptance` consume uploaded artifacts. The
+368s is paid once per run, not once per gate.
+
+**Partition evidence (T8).** CI `unit` reported 102 and `integration` reported 108; **102 + 108 = 210**,
+exactly Bhaskar's local unfiltered `-Mode full` total. The two trait-filtered jobs partition the suite
+with no test lost and none double-run — an independent confirmation that
+`EveryTestCaseCarriesExactlyOneTypeTrait` holds in practice, not just in assertion.
+
+**Wall-clock shape.** Serial sum 583s; actual run ~7m30s. The three test jobs are fully parallel behind
+`build-and-test`, so the critical path is 368s of build plus the slowest leg (89s). Build dominates at
+**63% of serial cost** and is the only worthwhile optimisation target.
 
 ## Risks (Rx)
 
@@ -441,7 +458,42 @@ silent customer-facing packaging bug and becomes a red gate. So T6b need not mak
 self-deriving (which would be wrong — see T6b); it need only give it a single home, because Ruling K
 supplies the check.
 
+**EVIDENCE CAPTURED (T10, 2026-08-26).** Run `33000124688`, dispatched deliberately from the feature
+branch to exercise exactly this hole: `event: workflow_dispatch`, `headBranch:
+vibe/002-hardening-and-vs2026`, jobs `config`/`build-and-test`/`unit`/`integration`/`acceptance` all
+**success**, `publish` **skipped**. The ref assertion holds under the one trigger that could bypass it,
+so the path from a `vibe/*` dispatch to a Marketplace publish is closed and proven, not merely
+reasoned about. `cdp.yml:10-11` also carries the comment explaining why no `branches:` key appears
+under `workflow_dispatch`, so the ignored-key trap cannot be reintroduced by someone "fixing" the
+omission.
+
 ### N10 — Branch protection and the check-rename deadlock
+
+**CORRECTED 2026-08-26 — master IS protected, and the predicted deadlock has actually happened.**
+
+The paragraph below recorded master as unprotected on 2026-08-25. That was **wrong**, and it was my
+error: I asserted it rather than re-reading it, and carried it forward across several turns. Read
+directly from `gh api repos/kitamstudios/rust-analyzer.vs/branches/master/protection` on 2026-08-26:
+
+- `required_status_checks.contexts` = **`["Build, Test & Deploy"]`** — the pre-T6 job name
+- `strict` = true, `enforce_admins` = **true**, `required_conversation_resolution` = true
+- `required_approving_review_count` = 0, `allow_force_pushes` = false, `allow_deletions` = false
+
+So golden rule #3 *is* mechanically enforced, and the hazard this note predicted is now live rather
+than hypothetical. After `71e9d90`, PR #71 reports `mergeStateStatus: BLOCKED` — the six new jobs all
+report (`config`, `build-and-test`, `unit`, `integration`, `acceptance` succeeded; `publish` skipped),
+but **not one of them is named `Build, Test & Deploy`**, so the required check sits permanently
+"Expected — waiting for status to be reported". `enforce_admins: true` means it cannot be clicked past.
+
+**Resolution: Sir owns the setting change** (2026-08-26, `checks=mine`, `strict` retained). The
+conductor does not modify branch protection — it changes the merge gate for every contributor, not just
+this PR. Recommendation on record was the **five** checks that actually execute on a pull request —
+`config`, `build-and-test`, `unit`, `integration`, `acceptance` — deliberately excluding `publish`,
+which never runs on a PR and would make the gate depend on GitHub treating a skipped check as
+satisfying a requirement. That is true today but is a subtlety carrying no benefit, since `publish`
+only executes *after* the merge it would be gating.
+
+**Superseded original assessment, retained for the record:**
 
 Master is currently **unprotected** — no protection rule, no rulesets (verified 2026-08-25 via
 `gh api`; both collaborators hold admin). Golden rule #3 ("never commit to the trunk branch") is
