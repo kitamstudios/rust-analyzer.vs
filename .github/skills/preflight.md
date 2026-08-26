@@ -1,16 +1,14 @@
 ---
 name: preflight
-description: The pack's loop assistant (`.github/agents/<Persona>.md`) runs this at session/loop start. Enforces assistant identity, required placeholders, and session Rust nightly before the loop. Halts and reports otherwise.
+description: The pack's loop assistant (`.github/agents/<Persona>.md`) runs this at session/loop start. Enforces assistant identity, required placeholders, and the pinned Rust nightly before the loop. Halts and reports otherwise.
 ---
 
 Run by the pack's loop assistant (`.github/agents/<Persona>.md`) at the start of every session
 and before entering the loop. If any gate fails, **do not start the loop** — report and stop.
 
 **Separation of duties:** Gate 3 is an assistant-owned startup operation. Only JARVIS/the
-assistant invokes `Initialize-AssistantSession.ps1`, exactly once at session startup, before
-delegating any work. That orchestrator creates a cryptographically random in-memory token, persists
-only its hash/provenance, and alone passes the token to the nightly initializer. Never delegate
-installing/updating nightly to Dave or Bhaskar. Their gate commands are validation/consumption only.
+assistant invokes `Initialize-RustNightly.ps1`. Never delegate installing/updating nightly to Dave
+or Bhaskar. Their gate commands are validation/consumption only.
 
 ## Gate 1 — Assistant-only loop (role-based, persona-agnostic)
 
@@ -76,22 +74,21 @@ If any match is found, list each file + placeholder and stop:
 > "Preflight: N placeholder(s) still need filling before the loop can start: <list>. Fill them
 > (see README → Getting Started, or the `agentify` skill), then re-run."
 
-## Gate 3 — Session Rust nightly
+## Gate 3 — Pinned Rust nightly
 
-Only after Gates 1 and 2 pass, JARVIS starts the single assistant-owned bootstrap orchestration:
+Only after Gates 1 and 2 pass, JARVIS runs the single assistant-owned bootstrap:
 
-    pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Initialize-AssistantSession.ps1 -AssistantStartup
-
-The orchestrator creates the authorization handshake and invokes `Initialize-RustNightly.ps1` with
-the in-memory token. The plaintext token is never written to the manifest or handed to a sub-agent.
-Direct invocation without the matching token/phase fails before rustup.
+    pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Initialize-RustNightly.ps1
 
 The script uses rustup's normal toolchain installation, without changing the default or adding a
 directory override. It installs/updates the dated nightly channel pinned in
 `.github/rust-nightly-channel` with the minimal profile, rustfmt, clippy, and the
-Windows amd64 MSVC target, then records rustc release/host/commit and cargo version in the current
-session state. A rustup, network, component, install, or version-probe failure blocks the loop and
-writes no nightly manifest.
+Windows amd64 MSVC target, then records rustc release/host/commit and cargo version in a manifest
+scoped to this checkout, stored outside the working tree. A rustup, network, component, install, or
+version-probe failure blocks the loop and writes no nightly manifest.
+
+Because the pin is a dated nightly, which rustup treats as immutable, one install serves the
+checkout; re-running the bootstrap is a no-op that simply rewrites the manifest.
 
 Bhaskar's full test command validates that manifest and sets process-only
 `RUSTUP_TOOLCHAIN` to that pinned channel before starting VSTest. Cargo, rustc, test discovery, test executables, and
@@ -100,9 +97,8 @@ stable fallback and silent integration-test skips are forbidden. Bhaskar never r
 update; he stops and hands back to JARVIS when validation fails. Existing invalid nightly state is
 never repaired or updated in-session.
 
-After successful nightly bootstrap, the orchestrator records phase `ready`. The nightly manifest
-records `BootstrapOwner=assistant` plus the authorization token hash. Consumer scripts require
-matching current-session, repository, owner, phase, and hash provenance before using nightly.
+Consumer scripts require a manifest whose pinned channel and repository checkout match, and whose
+recorded rustc and cargo still match the installed toolchain, before using nightly.
 
 ## Pass
 

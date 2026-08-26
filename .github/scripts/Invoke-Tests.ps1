@@ -23,14 +23,16 @@ $runsAcceptanceHarness = $Mode -eq "acceptance" -or $Mode -eq "full"
 # is validated and RUSTUP_TOOLCHAIN is exported in this process, so every child inherits it.
 if ($Mode -ne "unit") {
     Import-Module (Join-Path $PSScriptRoot "RustNightly.psm1") -Force
-    $nightlyManifest = Enable-SessionRustNightly
-    Write-Host "Using session Rust nightly: $($nightlyManifest.Release) ($($nightlyManifest.CommitHash))"
+    $nightlyManifest = Enable-PinnedRustNightly
+    Write-Host "Using pinned Rust nightly: $($nightlyManifest.Release) ($($nightlyManifest.CommitHash))"
 }
 
 $env:RUSTANALYZER_TELEMETRY_DISABLED = "1"
 
 $assemblyTestExitCode = 0
 $zeroTestFailure = $null
+$taxonomyFailure = $null
+$taxonomyTestClass = "KS.RustAnalyzer.UnitTests.TraitTaxonomyTests"
 if ($runsAssemblyTests) {
     $runner = Join-Path $outputDirectory "xunit.console.exe"
     if (-not (Test-Path -LiteralPath $runner -PathType Leaf)) {
@@ -76,15 +78,26 @@ if ($runsAssemblyTests) {
     # alone would report success having executed nothing. The count comes from the result XML rather
     # than the console text, and the assertion is only that it is greater than zero.
     $executedTestCount = 0
+    $taxonomyTestCount = 0
     if (Test-Path -LiteralPath $testResultPath -PathType Leaf) {
-        foreach ($assemblyResult in ([xml](Get-Content -LiteralPath $testResultPath -Raw)).SelectNodes("/assemblies/assembly")) {
+        $testResults = [xml](Get-Content -LiteralPath $testResultPath -Raw)
+        foreach ($assemblyResult in $testResults.SelectNodes("/assemblies/assembly")) {
             $executedTestCount += [int]$assemblyResult.GetAttribute("total")
         }
+
+        $taxonomyTestCount = @($testResults.SelectNodes("//test[@type='$taxonomyTestClass']")).Count
     }
 
     Write-Host "Executed test count: $executedTestCount"
     if ($executedTestCount -eq 0) {
         $zeroTestFailure = "The $Mode gate executed no test. Filter: $filterDescription. Assemblies scanned: $($assemblies -join ", "). A filter that selects nothing exits 0, so the gate fails closed here."
+    }
+
+    # A non-zero total is not enough: the taxonomy invariants are what make every other case's
+    # classification trustworthy, and losing the one assembly that carries them leaves a run that is
+    # green and ungoverned. Only unit and full select type=UnitTests, so only they can assert this.
+    if ($executedTestCount -gt 0 -and $Mode -in @("unit", "full") -and $taxonomyTestCount -eq 0) {
+        $taxonomyFailure = "The $Mode gate executed $executedTestCount test(s) but none from $taxonomyTestClass, so the trait taxonomy went unenforced."
     }
 }
 
@@ -93,9 +106,24 @@ $acceptanceFailure = $null
 if ($runsAcceptanceHarness) {
     $acceptanceScript = Join-Path $repoRoot "src\TestProjects\run-integrationtests.ps1"
     try {
+        # The harness only ever sees an expanded copy of the shipped zip, never _built. There is
+        # deliberately no fallback to the build output: an assembly omitted from the package list must
+        # fail here rather than resolve out of the build output and reach a customer instead.
+        $packageFiles = & (Join-Path $PSScriptRoot "Get-TestAdapterPackageFile.ps1") -OutputDirectory $outputDirectory
+        $packagePath = Join-Path $outputDirectory "KS.RustAnalyzer.TestAdapter.zip"
+        Compress-Archive -Path $packageFiles -DestinationPath $packagePath -Force
+
+        $adapterDirectory = Join-Path $outputDirectory "testadapter"
+        if (Test-Path -LiteralPath $adapterDirectory) {
+            Remove-Item -LiteralPath $adapterDirectory -Recurse -Force
+        }
+
+        Expand-Archive -LiteralPath $packagePath -DestinationPath $adapterDirectory
+        Write-Host "Acceptance test adapter: $adapterDirectory (expanded from $packagePath)"
+
         & $acceptanceScript `
             -SrcDir (Join-Path $repoRoot "src\TestProjects\workspace_with_tests") `
-            -TestAdapterLocation $outputDirectory `
+            -TestAdapterLocation $adapterDirectory `
             -VisualStudioMajorVersion $VisualStudioMajorVersion
     }
     catch {
@@ -111,10 +139,14 @@ if ($zeroTestFailure) {
     Write-Error $zeroTestFailure -ErrorAction Continue
 }
 
-if ($acceptanceFailure) {
-    Write-Error "The standalone test-adapter acceptance harness failed: $acceptanceFailure" -ErrorAction Continue
+if ($taxonomyFailure) {
+    Write-Error $taxonomyFailure -ErrorAction Continue
 }
 
-if ($assemblyTestExitCode -ne 0 -or $zeroTestFailure -or $acceptanceFailure) {
+if ($acceptanceFailure) {
+    Write-Error "The standalone test-adapter acceptance leg failed: $acceptanceFailure" -ErrorAction Continue
+}
+
+if ($assemblyTestExitCode -ne 0 -or $zeroTestFailure -or $taxonomyFailure -or $acceptanceFailure) {
     throw "One or more test groups failed."
 }

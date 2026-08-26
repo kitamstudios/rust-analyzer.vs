@@ -16,8 +16,8 @@ public sealed class RlsReleaseTests
     {
         var ret = await RlsInstallerService.GetLatestRlsReleaseRedirectUriAsync();
 
-        var latestRelDate = DateTime.ParseExact(ret?.Version, RlsInstallerService.VersionFormat, CultureInfo.InvariantCulture);
+        var latestRelDate = DateTime.ParseExact(ret.Version, RlsInstallerService.VersionFormat, CultureInfo.InvariantCulture);
         var lastUpdateDate = DateTime.ParseExact(Constants.RlsLatestInPackageVersion, RlsInstallerService.VersionFormat, CultureInfo.InvariantCulture);
-        lastUpdateDate.Should().NotBeBefore(latestRelDate.AddDays(-30), $"new rust-analyzer.exe is available {ret?.Uri}");
+        lastUpdateDate.Should().NotBeBefore(latestRelDate.AddDays(-30), $"new rust-analyzer.exe is available {ret.Uri}");
     }
 }

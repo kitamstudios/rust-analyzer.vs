@@ -3,7 +3,10 @@
 
 param (
   $SrcDir = (Join-Path $PSScriptRoot "workspace_with_tests")
-  , $TestAdapterLocation = (Join-Path $PSScriptRoot "..\..\_built")
+  # No default: the harness must only ever be pointed at an expanded copy of
+  # KS.RustAnalyzer.TestAdapter.zip. A fallback to the build output would let an assembly missing from
+  # the shipped zip still resolve, which is exactly the packaging blind spot this gate exists to close.
+  , [Parameter(Mandatory)] $TestAdapterLocation
   , $VSTestPath
   , [ValidateRange(1, 99)] $VisualStudioMajorVersion = 17
 )

@@ -24,10 +24,9 @@ Project profile; this file binds them. The human owns all final decisions.
    load **no** overlay, print a **plain role-only banner**, and **proceed** — preflight Gate 1 does
    not block on Persona.
 5. Run `.github/skills/preflight.md` (Gate 1 assistant-only + Pack set; Gate 2 placeholders; Gate 3
-   session Rust nightly). **Do not start the loop unless all
-   gates pass. You alone invoke `Initialize-AssistantSession.ps1 -AssistantStartup` once before
-   delegation; its in-memory authorization token drives the nightly initializer. Never assign its
-   install/update work or token to Dave or Bhaskar.**
+   pinned Rust nightly). **Do not start the loop unless all
+   gates pass. You alone invoke `Initialize-RustNightly.ps1` once before delegation. Never assign its
+   install/update work to Dave or Bhaskar.**
 6. Proceed exactly as your **role body** directs — select mode from the branch and run the loop —
    speaking in your persona's voice.
 7. Before providing additional suggestions or hints or instructions to the team, check with human. The feature.md

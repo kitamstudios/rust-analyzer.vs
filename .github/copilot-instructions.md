@@ -52,11 +52,12 @@ numbering **stable** and update references on any insert/reorder.
 - **Preflight before the loop.** The assistant runs `.github/skills/preflight.md` at session/loop start; if
   the caller isn't the assistant, Pack is unset, any required FILL_ME placeholder remains, or the
   Rust-nightly bootstrap fails, the loop **does not start**.
-- **Bootstrap ownership.** Only the assistant performs the one-time rustup nightly install/update,
-  through an in-memory random-token authorization handshake whose manifest stores only assistant
-  owner/phase/token-hash provenance. Dave and Bhaskar only validate and consume existing
-  current-session nightly state; invalid state fails and returns to the assistant without
-  self-healing, network access, update, or stale fallback.
+- **Bootstrap ownership.** Only the assistant performs the one-time rustup nightly install/update, by
+  running `Initialize-RustNightly.ps1`; CI runs the same script as its own authority. The nightly
+  manifest is scoped to the checkout and records the pinned channel, the repository root, and the
+  rustc/cargo versions installed. Dave and Bhaskar only validate and consume existing nightly state;
+  invalid state fails and returns to the assistant without self-healing, network access, update, or
+  stale fallback.
 - The feature file `docs/features/<nnn>-<feature_name>.md` is the source of truth for in-flight work.
 
 ---
@@ -76,13 +77,14 @@ numbering **stable** and update references on any insert/reorder.
 - **Pack:** `4-pack` _(role selector: `4-pack ⇒ conductor`, `1-pack ⇒ solo`; the `agentify` skill asks and stamps this — no default. Preflight Gate-1 **blocks** if unset, i.e. the value isn't `1-pack`/`4-pack`.)_
 - **Persona:** JARVIS _(assistant skin; the `agentify` skill asks and stamps this — no default, not a preflight blocker. Menu = the overlays in `.github/personas/`, today JARVIS | FRIDAY.)_
 - **Model profile:** anthropic _(vendor of every agent's MAX model — `anthropic` (Claude Opus 5) | `openai` (GPT-5.6 Sol) | `both` (Claude Opus 5 designs+codes, GPT-5.6 Sol verifies+drives, cross-vendor); the `agentify` skill asks and stamps this — default `both`, not a preflight blocker. All agents run `reasoning: max`.)_
-- **Generated artifacts (never edit):** `**/bin/`, `**/obj/`, `_built/` (build outputs); `*.vsix`; the version field of `src/RustAnalyzer/source.extension.cs` (auto-stamped by CI). Do not hand-edit `.g.cs`/build-generated files.
+- **Generated artifacts (never edit):** `**/bin/`, `**/obj/`, `_built/` (build outputs); `*.vsix`; the version values in `src/RustAnalyzer/source.extension.vsixmanifest` (`Identity/@Version`) and `src/RustAnalyzer/source.extension.cs` (the `Version` constant) — both auto-stamped by `.github/scripts/Set-VsixVersion.ps1`, the only caller allowed to write them; `src/RustAnalyzer/VSCommandTable.cs` (generated from `VSCommandTable.vsct`). Do not hand-edit `.g.cs`/build-generated files.
+- **Acquired artifacts (never hand-edit; replace only through the documented acquisition process):** the binaries under `src/external/` — the packaged `rust-analyzer.exe` and `rust_analyzer.pdb`, and the checked-in `src/external/vs.17.11` Visual Studio host assemblies. They are acquired, not generated: replace one only from its official published asset with the hash verified before extraction, never by editing it in place. The Rust nightly bootstrap manifest under `%LOCALAPPDATA%\ravsq\` is likewise written only by `Initialize-RustNightly.ps1` and never hand-edited or repaired.
 - **App run/restart & liveness mechanism:** Not a long-running service — this is a Visual Studio 2022 VSIX extension. To run/debug, build then start the `RustAnalyzer` project (F5), which launches the VS experimental instance (`devenv.exe /rootsuffix Exp`, `DeployExtension=True`). No liveness signal; validate via unit/integration tests and manual smoke in the Exp instance.
 - **Build/test skills:** `.github/skills/build-test.md` (fast, Dave) and
   `.github/skills/build-test-full.md` (full, Bhaskar) are this repository's own gate recipes that run
   the commands named in the **Commands** table below — fill that table in for your stack.
 - **Language-specific conventions:** C# on .NET Framework 4.8 (VSSDK Open-Folder extension). File-scoped namespaces (enforced); `_camelCase` private fields, `I`/`T` prefixes for interfaces/type params; unused usings are errors (IDE0005). Style/quality enforced at build via StyleCop.Analyzers, Microsoft.VisualStudio.SDK/Threading analyzers, `.globalconfig`, and `_codeanalysis/codeanalysis.ruleset`. Prefer least-privilege access modifiers; avoid `internal` unless required. Never block the UI thread — use `Microsoft.VisualStudio.Threading` (`JoinableTaskFactory`) patterns.
-- **CI/CD pipeline:** `.github/workflows/cdp.yml` (GitHub Actions, `windows-2022`) — MSBuild build, trait-filtered unit and integration tests via VSTest, the standalone `src/TestProjects/run-integrationtests.ps1` acceptance harness, then publish VSIX to the Open VSIX Gallery and VS Marketplace on `[release]`. Agents never deploy.
+- **CI/CD pipeline:** `.github/workflows/cdp.yml` (GitHub Actions) — six jobs. `config` resolves the runner label, VS major version and pinned nightly channel once, and every other job reads them from its outputs instead of hardcoding them; `build-and-test` stamps the VSIX version and runs the MSBuild build; `unit`, `integration` and `acceptance` then run in parallel; `publish` uploads the VSIX to the Open VSIX Gallery and VS Marketplace, tagging a release on `[release]`. Unit and integration run on the xUnit console runner through `Invoke-Tests.ps1`; only acceptance uses VSTest, inside the standalone `src/TestProjects/run-integrationtests.ps1` harness. Agents never deploy.
 
 ### Commands
 

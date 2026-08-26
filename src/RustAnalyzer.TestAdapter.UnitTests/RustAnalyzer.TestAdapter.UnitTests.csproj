@@ -75,12 +75,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <Target Name="CopyTestProjects" AfterTargets="Build">
-    <ItemGroup>
-      <TestProjectsFiles Include="..\TestProjects\**\*.*" />
-    </ItemGroup>
-    <Copy SourceFiles="@(TestProjectsFiles)" DestinationFolder="$(TargetDir)\Cargo\TestData\%(RecursiveDir)" SkipUnchangedFiles="true" />
-  </Target>
   <ItemGroup>
     <ProjectReference Include="..\RustAnalyzer.TestAdapter\RustAnalyzer.TestAdapter.csproj">
       <Project>{884a1604-99de-46dc-ae8d-f5893ce1abe1}</Project>

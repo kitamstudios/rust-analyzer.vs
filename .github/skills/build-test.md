@@ -13,11 +13,12 @@ after `build`).
 
 ## The fast gate (Dave)
 
-**Session bootstrap boundary.** JARVIS/the assistant owns Rust-nightly install/update at session
+**Bootstrap boundary.** JARVIS/the assistant owns Rust-nightly install/update at session
 startup. Dave never invokes `Initialize-RustNightly.ps1` or rustup install/update. If any
-current-session nightly check fails, stop and hand back to JARVIS; do not download, update, repair,
-or fall back to stale state. A caller-supplied role/switch is not authorization: consumers require
-the assistant startup's matching owner/ready-phase/token-hash provenance.
+nightly check fails, stop and hand back to JARVIS; do not download, update, repair,
+or fall back to stale state. This is a working agreement rather than something the scripts enforce —
+the consumer path only validates that the pinned nightly is installed and matches this checkout's
+manifest, so honouring the boundary is on you.
 
 Run these commands in order, resolving each name from the Commands table:
 
@@ -25,6 +26,11 @@ Run these commands in order, resolving each name from the Commands table:
 2. `test:quick` — unit tests only
 
 …then any additional commands the consumer added to the Commands table.
+
+**One implementation per step.** `build` is `.github/scripts/Invoke-Build.ps1`, the same script `cdp.yml`
+invokes (Ruling S) — a step that must behave identically in CI and locally has exactly one implementation,
+never one in YAML and another here. It is the Release MSBuild invocation and nothing else: no analyzer
+switch and no second `/t:Rebuild` pass, because the Release build *is* the analyzer enforcement.
 
 **Run rules.** Every core row above is **required** — a required command whose Value is `none` or empty
 is a **misconfiguration**: **stop and report it** (never silently skip). The skip-`none` rule applies
@@ -37,8 +43,11 @@ one `-Mode` of `unit`, `integration`, `acceptance`, or `full`; `test:quick` is `
 built `KS.*Tests.dll` assemblies — no registration step for a new one — and runs the `type=UnitTests`
 cases under the xUnit console runner. The taxonomy is enforced by `TraitTaxonomyTests`, a unit test that
 runs inside this gate: every discovered case must carry exactly one of `type=UnitTests`,
-`type=IntegrationTests`, or `type=AcceptanceTests`, and it names any offender by assembly and case. No
-count is hardcoded anywhere, and zero discovered cases fails. Cargo/process integration cases (including
+`type=IntegrationTests`, or `type=AcceptanceTests`, and it names any offender by assembly and case. It
+also asserts that what it governs is what the runner runs — every discovered assembly matches the
+runner's `KS.*Tests.dll` glob, and no excluded assembly does. The gate itself fails closed on zero
+executed tests, and on a run that did not execute `TraitTaxonomyTests`. No count is hardcoded anywhere.
+Cargo/process integration cases (including
 the network-dependent rust-analyzer freshness case), the standalone acceptance harness, and optional
 gates (DRY, mutation, CRAP) belong to Bhaskar's full gate
 (`.github/skills/build-test-full.md`).

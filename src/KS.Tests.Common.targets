@@ -28,12 +28,22 @@
     <PackageReference Include="ApprovalTests" Version="5.8.0" />
   </ItemGroup>
 
-  <Target Name="CopyXunitConsoleRunner" AfterTargets="Build">
+  <!-- Every test project builds into the same $(TargetDir), so all three used to copy the same shared
+       payload there concurrently and lose the MSB3026 race against each other. The payload is identical
+       whoever writes it, so exactly one project opts in and the rest consume what it wrote. -->
+  <Target Name="CopyXunitConsoleRunner" AfterTargets="Build" Condition="'$(OwnsSharedTestPayload)' == 'true'">
     <Error Condition="'$(Pkgxunit_runner_console)' == ''" Text="The xunit.runner.console package path property is missing. Restore the project before building." />
     <ItemGroup>
       <XunitConsoleRunnerFiles Include="$(Pkgxunit_runner_console)\tools\net472\*.*" />
     </ItemGroup>
     <Copy SourceFiles="@(XunitConsoleRunnerFiles)" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="CopyTestProjects" AfterTargets="Build" Condition="'$(OwnsSharedTestPayload)' == 'true'">
+    <ItemGroup>
+      <TestProjectsFiles Include="$(MSBuildThisFileDirectory)TestProjects\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(TestProjectsFiles)" DestinationFolder="$(TargetDir)\Cargo\TestData\%(RecursiveDir)" SkipUnchangedFiles="true" />
   </Target>
 
   <Import Project=".\KS.Common.targets" />

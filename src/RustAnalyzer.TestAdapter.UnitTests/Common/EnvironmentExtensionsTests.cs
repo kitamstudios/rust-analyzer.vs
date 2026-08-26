@@ -69,4 +69,19 @@ public class EnvironmentExtensionsTests
             newEnv.Should().Contain(envBlockDict);
         }
     }
+
+    [Fact]
+    public void OverrideWithEnvironmentBlockMatchesVariableNamesCaseInsensitively()
+    {
+        var overriddenWindir = @"C:\overridden-windir";
+
+        var newEnv = $"WINDIR={overriddenWindir}\0\0".OverrideProcessEnvironment();
+
+        newEnv.Keys
+            .Should()
+            .ContainSingle(
+                key => key.Equals("windir", StringComparison.OrdinalIgnoreCase),
+                "Windows environment names are case-insensitive, so a differently spelled override must replace the process variable rather than sit beside it");
+        newEnv["windir"].Should().Be(overriddenWindir);
+    }
 }

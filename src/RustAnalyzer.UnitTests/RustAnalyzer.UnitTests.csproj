@@ -12,6 +12,9 @@
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <!-- Exactly one test project writes the shared test payload into the common $(TargetDir); see
+         CopyTestProjects and CopyXunitConsoleRunner in KS.Tests.Common.targets. -->
+    <OwnsSharedTestPayload>true</OwnsSharedTestPayload>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -55,12 +58,6 @@
     <Compile Include="Editor\FileScannerTests.cs" />
     <Compile Include="Editor\TestData.cs" />
   </ItemGroup>
-  <Target Name="CopyTestProjects" AfterTargets="Build">
-    <ItemGroup>
-      <TestProjectsFiles Include="..\TestProjects\**\*.*" />
-    </ItemGroup>
-    <Copy SourceFiles="@(TestProjectsFiles)" DestinationFolder="$(TargetDir)\Cargo\TestData\%(RecursiveDir)" SkipUnchangedFiles="true" />
-  </Target>
   <ItemGroup>
     <Reference Include="Microsoft.VisualStudio.TestWindow.Interfaces">
       <HintPath>..\external\vs.17.11\Microsoft.VisualStudio.TestWindow.Interfaces.dll</HintPath>

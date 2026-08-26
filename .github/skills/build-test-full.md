@@ -14,15 +14,10 @@ after `build`).
 ## The full gate (Bhaskar)
 
 **Validate before running.** JARVIS/the assistant owns the one-time nightly install/update. Bhaskar
-first runs the local validation-only command below; it performs no download, install, or update:
-
-    pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Test-SessionBootstrap.ps1
-
-If validation reports absent, stale, wrong-session, modified, or otherwise invalid nightly
-state, stop immediately and hand back to JARVIS. Never invoke `Initialize-RustNightly.ps1`, run
-rustup install/update, self-heal, or use stale fallback. Validation requires matching assistant
-owner, `ready` phase, and token-hash provenance; a role string or direct initializer call cannot
-substitute for JARVIS's in-memory startup handshake.
+never invokes `Initialize-RustNightly.ps1`, runs rustup install/update, self-heals, or uses stale
+fallback. `test:full` validates the pinned nightly for him before it starts VSTest: if it reports
+absent, stale, wrong-checkout, modified, or otherwise invalid nightly state, stop immediately and
+hand back to JARVIS.
 
 Run these commands in order, resolving each name from the Commands table:
 
@@ -33,6 +28,11 @@ Run these commands in order, resolving each name from the Commands table:
 5. `crap-check` — CRAP metric, complexity × coverage _(if set)_
 
 …plus any additional commands the consumer added to the Commands table.
+
+**One implementation per step.** `build` is `.github/scripts/Invoke-Build.ps1`, the same script `cdp.yml`
+invokes (Ruling S) — a step that must behave identically in CI and locally has exactly one implementation,
+never one in YAML and another here. It is the Release MSBuild invocation and nothing else: no analyzer
+switch and no second `/t:Rebuild` pass, because the Release build *is* the analyzer enforcement.
 
 **Run rules.** The skip-`none` rule applies **only to the optional rows** (`dry-check`, `mutation-test`,
 `crap-check`): when their Value is `none` they don't run. A **required** command (`build`, `test:full`)
@@ -55,14 +55,23 @@ type trait still runs — then the standalone `src/TestProjects/run-integrationt
 harness, which validates 18 customer-visible VSTest results. The acceptance leg runs even when the
 assembly leg has already failed, and both failures are reported. The taxonomy itself is enforced by
 `TraitTaxonomyTests` inside the run: every discovered case must carry exactly one of `type=UnitTests`,
-`type=IntegrationTests`, or `type=AcceptanceTests`, with any offender named by assembly and case. No
-count is hardcoded anywhere, and zero discovered cases fails.
+`type=IntegrationTests`, or `type=AcceptanceTests`, with any offender named by assembly and case. It
+also asserts that what it governs is what the runner runs — every discovered assembly matches the
+runner's `KS.*Tests.dll` glob, and no excluded assembly does. The gate itself fails closed on zero
+executed tests, and on a run that did not execute `TraitTaxonomyTests`. No count is hardcoded anywhere.
+
+**The acceptance leg tests the shipped artefact, not the build output.** The gate packs
+`KS.RustAnalyzer.TestAdapter.zip` from the curated file list in
+`src/RustAnalyzer.TestAdapter/testadapter-package.txt`, expands it into a scratch directory, and points
+the harness's `-TestAdapterLocation` there. There is no fallback to `_built\`: a file missing from the
+package list fails the gate instead of resolving out of the build output and reaching a customer. The
+harness parameter is mandatory so no caller can reintroduce that fallback.
 
 **Network dependency.** Full runs every integration case, including the rust-analyzer release-freshness
 case, which reaches GitHub. A genuine network outage therefore **fails** this gate rather than skipping
 it; there is no opt-out mode. Re-run when connectivity is restored.
 
-**Rust nightly.** JARVIS's preflight Gate 3 installs/updates and records the current session's nightly
+**Rust nightly.** JARVIS's preflight Gate 3 installs/updates and records this checkout's nightly
 toolchain — the dated channel pinned in `.github/rust-nightly-channel`. `test:full` validates that
 exact manifest and exports process-only
 `RUSTUP_TOOLCHAIN` set to that pinned channel before starting VSTest, so all Cargo/rustc/test-adapter children and the

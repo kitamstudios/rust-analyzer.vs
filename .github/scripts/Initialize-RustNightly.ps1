@@ -2,36 +2,23 @@
 #Requires -Version 7.1
 
 [CmdletBinding()]
-param (
-    [string] $BootstrapToken
-)
+param ()
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-Import-Module (Join-Path $PSScriptRoot "AssistantBootstrap.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "RustNightly.psm1") -Force
-Import-Module (Join-Path $PSScriptRoot "SessionState.psm1") -Force
-
-if ([string]::IsNullOrWhiteSpace($BootstrapToken)) {
-    throw "Initialize-RustNightly.ps1 requires JARVIS's in-memory startup token. Dave and Bhaskar must hand back to JARVIS before any install or update."
-}
-
-try {
-    $provenance = Assert-AssistantBootstrapAuthorization `
-        -Token $BootstrapToken `
-        -AllowedPhases @("authorized")
-}
-catch {
-    throw "Initialize-RustNightly.ps1 requires JARVIS's in-memory startup authorization. Dave and Bhaskar must hand back to JARVIS. $($_.Exception.Message)"
-}
 
 $channel = Get-PinnedRustNightlyChannel
-$sessionId = Get-RepositorySessionId
-$sessionRoot = Get-RepositorySessionRoot
-$manifestPath = Join-Path $sessionRoot "rust-nightly.json"
+$manifestPath = Get-RustNightlyManifestPath
 if (Test-Path -LiteralPath $manifestPath) {
     Remove-Item -LiteralPath $manifestPath -Force
+}
+
+# The bootstrap owns this directory; nothing else creates it.
+$manifestDirectory = Split-Path -Parent $manifestPath
+if (-not (Test-Path -LiteralPath $manifestDirectory -PathType Container)) {
+    [void](New-Item -ItemType Directory -Path $manifestDirectory -Force)
 }
 
 $rustupCommand = Get-Command rustup.exe -ErrorAction SilentlyContinue
@@ -43,7 +30,7 @@ if (-not $rustupCommand) {
     throw "rustup was not found. Nightly bootstrap cannot continue."
 }
 
-Write-Host "Installing or updating Rust $channel for this assistant session..."
+Write-Host "Installing or updating Rust $channel for this checkout..."
 & $rustupCommand.Source toolchain install $channel `
     --profile minimal `
     --component rustfmt `
@@ -95,11 +82,7 @@ if ($LASTEXITCODE -ne 0) {
 
 $manifest = [ordered]@{
     SchemaVersion = 1
-    SessionId = $sessionId
-    RepositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
-    BootstrapOwner = $provenance.Owner
-    BootstrapPhase = "ready"
-    BootstrapTokenHash = $provenance.TokenHash
+    RepositoryRoot = Get-RepositoryRoot
     Toolchain = $channel
     RustcVersion = $nightly.Version
     CommitHash = $nightly.CommitHash
@@ -117,4 +100,4 @@ $json = $manifest | ConvertTo-Json -Depth 3
 
 Write-Host "Rust nightly: $($nightly.Version)"
 Write-Host "Rust nightly commit: $($nightly.CommitHash)"
-Write-Host "Rust nightly session manifest: $manifestPath"
+Write-Host "Rust nightly manifest for this checkout: $manifestPath"

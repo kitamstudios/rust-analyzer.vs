@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using FluentAssertions;
 using Xunit;
 
@@ -12,6 +13,7 @@ namespace KS.RustAnalyzer.UnitTests;
 public class TraitTaxonomyTests
 {
     private const string TestAssemblyPattern = "*Tests.dll";
+    private const string RunnerAssemblyPattern = "KS.*Tests.dll";
     private const string TraitAttributeName = "Xunit.TraitAttribute";
     private const string TypeTrait = "type";
     private const string UnitTests = "UnitTests";
@@ -19,6 +21,10 @@ public class TraitTaxonomyTests
     private const string AcceptanceTests = "AcceptanceTests";
 
     private static readonly IReadOnlyList<string> TypeTraitValues = new[] { UnitTests, IntegrationTests, AcceptanceTests };
+
+    // Invoke-Tests.ps1's own glob, restated as a matcher so the two facts below can compare the set
+    // these invariants govern against the set the gate actually runs.
+    private static readonly Regex RunnerAssemblyGlob = new Regex(@"^KS\..*Tests\.dll$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     // Test assemblies are discovered by pattern, so a new one is covered with no registration step.
     // Only the assemblies below are skipped, each for the stated reason.
@@ -78,16 +84,35 @@ public class TraitTaxonomyTests
             AcceptanceTests);
     }
 
+    // These invariants glob *Tests.dll; Invoke-Tests.ps1 globs KS.*Tests.dll. Narrowing this glob or
+    // widening the runner's would let an assembly slip past one of the two, so assert instead that the
+    // set governed here and the set the gate runs are the same set.
     [Fact]
-    public void TypeTraitsPartitionEveryTestCase()
+    public void EveryGovernedAssemblyIsRunByTheGate()
     {
-        var classifiedTestCases = TypeTraitValues.Sum(value => TestCases.Count(testCase => testCase.Types.Contains(value)));
+        var offenders = DiscoveredTestAssemblies
+            .Select(Path.GetFileName)
+            .Where(name => !RunnerAssemblyGlob.IsMatch(name))
+            .ToArray();
 
-        classifiedTestCases.Should().Be(
-            TestCases.Count,
-            "the type traits {0} must partition every case in {1}",
-            string.Join(", ", TypeTraitValues),
-            string.Join(", ", DiscoveredTestAssemblies.Select(Path.GetFileName)));
+        offenders.Should().BeEmpty(
+            "these invariants govern every {0} in {1}, but the gate runs only {2}, so an assembly matching just the first would look governed and never run",
+            TestAssemblyPattern,
+            TestAssemblyDirectory,
+            RunnerAssemblyPattern);
+    }
+
+    [Fact]
+    public void NoExcludedAssemblyIsRunByTheGate()
+    {
+        var offenders = ExcludedAssemblies.Keys
+            .Where(name => RunnerAssemblyGlob.IsMatch(name))
+            .ToArray();
+
+        offenders.Should().BeEmpty(
+            "an assembly excluded from these invariants that the gate's {0} glob still matches would run ungoverned. Excluded: {1}",
+            RunnerAssemblyPattern,
+            DescribeExclusions());
     }
 
     private static IReadOnlyList<string> DiscoverTestAssemblies()
