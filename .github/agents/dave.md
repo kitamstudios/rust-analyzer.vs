@@ -47,5 +47,5 @@ design in `docs/design.md`.
 10. Prefer the least-privilege access modifier for every construct. Language-specific rules (e.g. C#:
     avoid `internal` unless required — if it is a must, flag it) live in the Project profile.
 11. Never install/update Rust nightly. JARVIS owns that one-time startup operation. Validate/consume
-    existing state only; on any missing, stale, wrong-session, modified, or invalid state, stop and
+    existing state only; on any missing, stale, wrong-checkout, modified, or invalid state, stop and
     hand back to JARVIS without repair or fallback.

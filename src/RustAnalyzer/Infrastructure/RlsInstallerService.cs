@@ -22,6 +22,17 @@ public interface IRlsInstallerService
     Task InstallLatestAsync();
 }
 
+// The lookup runs in a static with no logger, so it classifies its own failure and lets the instance
+// caller decide what it means. Unreachable github, a redirect without a Location header and a release
+// tag that is not a date are all the same outcome: the latest release is not knowable right now.
+public class RlsReleaseLookupException : Exception
+{
+    public RlsReleaseLookupException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
+}
+
 [Export(typeof(IRlsInstallerService))]
 [PartCreationPolicy(CreationPolicy.Shared)]
 public class RlsInstallerService : IRlsInstallerService
@@ -49,20 +60,27 @@ public class RlsInstallerService : IRlsInstallerService
         {
             var latestRel = await GetLatestRlsReleaseRedirectUriAsync();
             string installedVer = await GetInstalledVersionAsync();
-            if (latestRel != null && installedVer.CompareTo(latestRel?.Version) >= 0)
+            if (installedVer.CompareTo(latestRel.Version) >= 0)
             {
-                _tl.L.WriteLine($"Not going to download RLS. Installed = {installedVer}, Latest = {latestRel?.Uri}.");
-                _tl.T.TrackEvent("RLSDS.RlsUpToDate", ("Installed", installedVer), ("Latest", latestRel?.Uri.ToString()));
+                _tl.L.WriteLine($"Not going to download RLS. Installed = {installedVer}, Latest = {latestRel.Uri}.");
+                _tl.T.TrackEvent("RLSDS.RlsUpToDate", ("Installed", installedVer), ("Latest", latestRel.Uri.ToString()));
                 return;
             }
 
             using var response = await DownloadAsync(latestRel);
 
             using var zipStream = await response.Content.ReadAsStreamAsync();
-            Install(zipStream, latestRel?.Version);
+            Install(zipStream, latestRel.Version);
 
             await CommitAsync(latestRel);
             _tl.T.TrackEvent("RLSDS.RlsInstalled", ("Installed", installedVer));
+        }
+        catch (RlsReleaseLookupException ex)
+        {
+            // Nothing was downloaded and nothing is broken: the packaged rust-analyzer still works, so
+            // this reports what actually happened instead of a download failure that never started.
+            _tl.L.WriteError($"Latest release could not be determined; keeping the packaged version. {ex}");
+            _tl.T.TrackException(ex);
         }
         catch (Exception ex)
         {
@@ -77,7 +95,7 @@ public class RlsInstallerService : IRlsInstallerService
         return GetVersionedExePath(await GetInstalledVersionAsync());
     }
 
-    public static async Task<(Uri Uri, string Version)?> GetLatestRlsReleaseRedirectUriAsync()
+    public static async Task<(Uri Uri, string Version)> GetLatestRlsReleaseRedirectUriAsync()
     {
         try
         {
@@ -89,9 +107,9 @@ public class RlsInstallerService : IRlsInstallerService
             return (Uri: new Uri($"https://github.com/rust-lang/rust-analyzer/releases/download/{latestRelVersion}/rust-analyzer-{ToolchainServiceExtensions.AlwaysAvailableTarget}.zip"),
                 Version: latestRelDate.ToString(VersionFormat, CultureInfo.InvariantCulture));
         }
-        catch
+        catch (Exception e) when (e is HttpRequestException || e is TaskCanceledException || e is InvalidOperationException || e is FormatException || e is UriFormatException)
         {
-            return null;
+            throw new RlsReleaseLookupException("Could not determine the latest rust-analyzer release.", e);
         }
     }
 
@@ -100,10 +118,10 @@ public class RlsInstallerService : IRlsInstallerService
         return GetInstallFolder(version) + (PathEx)$"rust-analyzer.exe";
     }
 
-    private async Task<HttpResponseMessage> DownloadAsync((Uri Uri, string Version)? latestRel)
+    private async Task<HttpResponseMessage> DownloadAsync((Uri Uri, string Version) latestRel)
     {
-        _tl.L.WriteLine($"Downloading RLS from {latestRel?.Uri}.");
-        var response = await new HttpClient().GetAsync(latestRel?.Uri);
+        _tl.L.WriteLine($"Downloading RLS from {latestRel.Uri}.");
+        var response = await new HttpClient().GetAsync(latestRel.Uri);
         if (!response.IsSuccessStatusCode)
         {
             _tl.L.WriteError($"Download failed. StatusCode {response.StatusCode}.");
@@ -114,7 +132,7 @@ public class RlsInstallerService : IRlsInstallerService
         return response;
     }
 
-    private async Task CommitAsync((Uri Uri, string Version)? latestRel)
+    private async Task CommitAsync((Uri Uri, string Version) latestRel)
     {
         await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
         if (!_regSettings.GetPackageRegistryRoot(out var regRoot))
@@ -123,7 +141,7 @@ public class RlsInstallerService : IRlsInstallerService
             throw new Exception($"GetPackageRegistryRoot failed.");
         }
 
-        Registry.SetValue(regRoot, InstalledRlsVersionKey, latestRel?.Version);
+        Registry.SetValue(regRoot, InstalledRlsVersionKey, latestRel.Version);
         RlsUpdatedNotification.Enabled = true;
         _tl.L.WriteLine($"Committed RLS installation.");
     }

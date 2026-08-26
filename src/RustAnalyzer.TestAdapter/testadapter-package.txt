@@ -1,0 +1,17 @@
+# Files packaged into KS.RustAnalyzer.TestAdapter.zip, one name per line, relative to the build
+# output directory. Blank lines and # comments are ignored.
+#
+# This list is curated, not derived. It is a statement of what the VSTest host does NOT supply: of the
+# adapter's four package references only System.Collections.Immutable ships here, because the host
+# provides System.ComponentModel.Composition, Microsoft.TestPlatform.ObjectModel and
+# System.Security.Principal.Windows. Deriving the list from project references would bloat the zip and
+# hide that judgement.
+#
+# A name listed here that was not built is a hard packaging error; the acceptance gate runs against an
+# expanded copy of this zip alone, so a name missing from here is a red gate rather than a customer bug.
+KS.RustAnalyzer.TestAdapter.dll
+KS.RustAnalyzer.TestAdapter.pdb
+Microsoft.ApplicationInsights.dll
+Microsoft.ApplicationInsights.pdb
+System.Collections.Immutable.dll
+Ensure.That.dll

@@ -7,116 +7,194 @@ on:
   pull_request:
     branches: [master]
     types: [opened, synchronize, reopened]
+  # No branches: key here — GitHub ignores it on workflow_dispatch. publish asserts the ref itself.
   workflow_dispatch:
-    branches: [master]
 
 env:
   VsixFileName: RustAnalyzer.vsix
-  SolutionPath: src\RustAnalyzer.sln
-  VsixManifestPath: src\RustAnalyzer\source.extension.vsixmanifest
-  VsixManifestSourcePath: src\RustAnalyzer\source.extension.cs
   TestAdapterNameNoExt: KS.RustAnalyzer.TestAdapter
+  BuildOutputArtifact: build-output
   RUSTANALYZER_TELEMETRY_DISABLED: 1
 
 jobs:
-  build-test-deploy:
+  # The single place the runner label, the Visual Studio major version and the pinned nightly channel
+  # are decided. runs-on accepts needs.*.outputs but not env, so every other job reads its label here.
+  config:
+    name: config
+    # Incidental: this job only checks out and reads one file. The gate's runner is the output below.
+    runs-on: windows-2022
+    outputs:
+      runner: ${{ steps.knobs.outputs.runner }}
+      vs-major: ${{ steps.knobs.outputs.vs-major }}
+      nightly-channel: ${{ steps.knobs.outputs.nightly-channel }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve gate configuration
+        id: knobs
+        shell: pwsh
+        # Verified against actions/runner-images on 2026-08-26: windows-2022 and windows-2025 both carry
+        # VS Enterprise 2022 17.14.37614.0, so windows-2025 is not a VS 2026 image and moving to it would
+        # change the host and nothing else. VS 2026 (major 18) exists only on windows-2025-vs2026, which
+        # is public-repo only and belongs to S2. Every current Windows image preinstalls rustup, which is
+        # what the nightly install steps below rely on.
+        run: |
+          . .\.github\scripts\Get-PinnedRustNightlyChannel.ps1
+          "runner=windows-2022" >> $env:GITHUB_OUTPUT
+          "vs-major=17" >> $env:GITHUB_OUTPUT
+          "nightly-channel=$(Get-PinnedRustNightlyChannel)" >> $env:GITHUB_OUTPUT
+
+  build-and-test:
+    name: build-and-test
+    needs: [config]
+    runs-on: ${{ needs.config.outputs.runner }}
     outputs:
       version: ${{ steps.vsix_version.outputs.version-number }}
-    name: Build, Test & Deploy
-    runs-on: windows-2022
-    env:
-      Configuration: Release
-      DeployExtension: False
-      OutDir: ${{ github.workspace }}\_built\
-      RUST_ANALYZER_VS_SESSION_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-build-test-deploy
 
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-    - name: Setup .NET build dependencies
-      uses: timheuer/bootstrap-dotnet@v1
-      with:
-        nuget: 'false'
-        sdk: 'false'
-        msbuild: 'true'
+      - name: Stamp VSIX version
+        id: vsix_version
+        shell: pwsh
+        run: |
+          $version = .\.github\scripts\Set-VsixVersion.ps1 -BuildNumber $env:GITHUB_RUN_NUMBER
+          "version-number=$version" >> $env:GITHUB_OUTPUT
 
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: nightly
-        target: x86_64-pc-windows-msvc
-        default: true
-        components: rustfmt, clippy
+      - name: Build
+        shell: pwsh
+        run: .\.github\scripts\Invoke-Build.ps1 -VisualStudioMajorVersion ${{ needs.config.outputs.vs-major }}
 
-    - name: Initialize CI test session
-      run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Initialize-CISession.ps1
+      - name: Zip TestAdapter
+        shell: pwsh
+        run: Compress-Archive -Path (& .\.github\scripts\Get-TestAdapterPackageFile.ps1 -OutputDirectory "${{ github.workspace }}\_built") -DestinationPath "${{ github.workspace }}\_built\${{ env.TestAdapterNameNoExt }}.zip" -Force
 
-    - name: Format check
-      run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Format.ps1 -Mode Check
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.BuildOutputArtifact }}
+          path: _built
+          if-no-files-found: error
 
-    - name: Increment VSIX version
-      id: vsix_version
-      uses: timheuer/vsix-version-stamp@v1
-      with:
-        manifest-file: ${{ env.VsixManifestPath }}
-        vsix-token-source-file: ${{ env.VsixManifestSourcePath }}
+      - name: Upload VSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}.zip
+          path: _built\${{ env.VsixFileName }}
+          if-no-files-found: error
 
-    - name: Build
-      run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Build.ps1
+      - name: Upload TestAdapter
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.TestAdapterNameNoExt }}.zip
+          path: _built\${{ env.TestAdapterNameNoExt }}.zip
+          if-no-files-found: error
 
-    - name: Lint
-      run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Build.ps1 -NoRestore -AnalyzerCheck
+  unit:
+    name: unit
+    needs: [config, build-and-test]
+    runs-on: ${{ needs.config.outputs.runner }}
 
-    - name: Quick tests
-      run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Tests.ps1
+    steps:
+      - uses: actions/checkout@v4
 
-    - name: Full tests
-      run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Tests.ps1 -Full
+      - name: Download build output
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.BuildOutputArtifact }}
+          path: _built
 
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results
-        path: |
-          TestResults/*.trx
-          src/TestProjects/**/TestResults/*.trx
-        if-no-files-found: ignore
+      - name: Unit tests
+        run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Tests.ps1 -Mode unit
 
-    - name: Zip TestAdapter
-      run: |
-        $files = @("${env:OutDir}${env:TestAdapterNameNoExt}.dll", "${env:OutDir}${env:TestAdapterNameNoExt}.pdb", "${env:OutDir}Microsoft.ApplicationInsights.dll", "${env:OutDir}System.Collections.Immutable.dll", "${env:OutDir}Microsoft.ApplicationInsights.pdb", "${env:OutDir}Ensure.That.dll")
-        $dst = "${env:OutDir}${env:TestAdapterNameNoExt}.zip"
-        Compress-Archive -Path $files -DestinationPath $dst
-        # List contents for debugging purposes
-        Add-Type -assembly "system.io.compression.filesystem"
-        echo "listing files in zip..."
-        [io.compression.zipfile]::OpenRead($dst).Entries.Name | % { "- $_"}
-      shell: pwsh
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-unit
+          path: TestResults\*.xml
+          if-no-files-found: ignore
 
-    - name: Upload VSIX
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ github.event.repository.name }}.zip
-        path: ${{ env.OutDir }}${{ env.VsixFileName }}
-        if-no-files-found: error
+  integration:
+    name: integration
+    needs: [config, build-and-test]
+    runs-on: ${{ needs.config.outputs.runner }}
+    env:
+      RUSTUP_TOOLCHAIN: ${{ needs.config.outputs.nightly-channel }}
 
-    - name: Upload TestAdapter
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.TestAdapterNameNoExt }}.zip
-        path: ${{ env.OutDir }}${{ env.TestAdapterNameNoExt }}.zip
-        if-no-files-found: warn
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pinned Rust nightly
+        shell: pwsh
+        run: .\.github\scripts\Initialize-RustNightly.ps1
+
+      - name: Download build output
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.BuildOutputArtifact }}
+          path: _built
+
+      - name: Integration tests
+        run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Tests.ps1 -Mode integration -VisualStudioMajorVersion ${{ needs.config.outputs.vs-major }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-integration
+          path: TestResults\*.xml
+          if-no-files-found: ignore
+
+  # The only test of the shipped artefact: the harness sees an expanded copy of the published zip and
+  # nothing else, so an assembly omitted from the package list fails here instead of reaching a customer.
+  acceptance:
+    name: acceptance
+    needs: [config, build-and-test]
+    runs-on: ${{ needs.config.outputs.runner }}
+    env:
+      RUSTUP_TOOLCHAIN: ${{ needs.config.outputs.nightly-channel }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pinned Rust nightly
+        shell: pwsh
+        run: .\.github\scripts\Initialize-RustNightly.ps1
+
+      - name: Download TestAdapter
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.TestAdapterNameNoExt }}.zip
+          path: .
+
+      - name: Expand TestAdapter
+        shell: pwsh
+        run: Expand-Archive -LiteralPath .\${{ env.TestAdapterNameNoExt }}.zip -DestinationPath .\testadapter
+
+      - name: Acceptance tests
+        shell: pwsh
+        run: .\src\TestProjects\run-integrationtests.ps1 -TestAdapterLocation .\testadapter -VisualStudioMajorVersion ${{ needs.config.outputs.vs-major }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-acceptance
+          path: src\TestProjects\**\TestResults\*.trx
+          if-no-files-found: ignore
 
   publish:
-    name: Publish
-    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
-    needs: [build-test-deploy]
-    runs-on: windows-2022
+    name: publish
+    # The ref, not just the event: workflow_dispatch can be started from any ref, and on.workflow_dispatch
+    # has no branches: filter, so without this a feature branch could reach the Marketplace step.
+    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/master' }}
+    needs: [config, build-and-test, unit, integration, acceptance]
+    runs-on: ${{ needs.config.outputs.runner }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Download VSIX
         id: downloadvx
@@ -141,8 +219,8 @@ jobs:
         uses: softprops/action-gh-release@v0.1.15
         with:
           generate_release_notes: true
-          tag_name: ${{ needs.build-test-deploy.outputs.version }}
-          name: Release ${{ needs.build-test-deploy.outputs.version }}
+          tag_name: ${{ needs.build-and-test.outputs.version }}
+          name: Release ${{ needs.build-and-test.outputs.version }}
           files: |
             '${{ steps.downloadvx.outputs.download-path }}\\${{ env.VsixFileName }}'
             '${{ steps.downloadta.outputs.download-path }}\\${{ env.TestAdapterNameNoExt }}.zip'

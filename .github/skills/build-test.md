@@ -1,11 +1,11 @@
 ---
 name: build-test
-description: Runs the fast build/test gate — auto-format, lint, unit tests, and build (excludes integration tests). Dave's fast done-done gate.
+description: Runs the fast build/test gate — Release build (which is the analyzer/style enforcement) and unit tests (excludes integration tests). Dave's fast done-done gate.
 ---
 
-Framework-owned **recipe** — no placeholders. It runs the commands named in the **Project profile →
-Commands** table (`.github/copilot-instructions.md`); that table is the single source of truth for the
-actual shell commands, so this file never hardcodes them.
+This repository's gate **recipe** — no placeholders. It runs the commands named in the **Project
+profile → Commands** table (`.github/copilot-instructions.md`); that table is the single source of
+truth for the actual shell commands, so this file never hardcodes them.
 
 This recipe is **authoritative for gate membership and order**; the Commands table's `Gate` column is a
 hint. Reorder for your stack if needed (e.g. type-aware linters that require compiled output should run
@@ -13,20 +13,24 @@ after `build`).
 
 ## The fast gate (Dave)
 
-**Session bootstrap boundary.** JARVIS/the assistant owns Rust-nightly install/update at session
+**Bootstrap boundary.** JARVIS/the assistant owns Rust-nightly install/update at session
 startup. Dave never invokes `Initialize-RustNightly.ps1` or rustup install/update. If any
-current-session nightly check fails, stop and hand back to JARVIS; do not download, update, repair,
-or fall back to stale state. A caller-supplied role/switch is not authorization: consumers require
-the assistant startup's matching owner/ready-phase/token-hash provenance.
+nightly check fails, stop and hand back to JARVIS; do not download, update, repair,
+or fall back to stale state. This is a working agreement rather than something the scripts enforce —
+the consumer path only validates that the pinned nightly is installed and matches this checkout's
+manifest, so honouring the boundary is on you.
 
 Run these commands in order, resolving each name from the Commands table:
 
-1. `format:fix` — auto-format; this variant **writes** changes
-2. `build` — Release restore/rebuild, which prepares assets for the no-restore analyzer pass
-3. `lint` — a second Release rebuild with analyzers enabled, no restore, and warnings promoted to errors
-4. `test:quick` — unit tests only
+1. `build` — Release restore/build; Release turns on the analyzers and treats their diagnostics as errors
+2. `test:quick` — unit tests only
 
 …then any additional commands the consumer added to the Commands table.
+
+**One implementation per step.** `build` is `.github/scripts/Invoke-Build.ps1`, the same script `cdp.yml`
+invokes (Ruling S) — a step that must behave identically in CI and locally has exactly one implementation,
+never one in YAML and another here. It is the Release MSBuild invocation and nothing else: no analyzer
+switch and no second `/t:Rebuild` pass, because the Release build *is* the analyzer enforcement.
 
 **Run rules.** Every core row above is **required** — a required command whose Value is `none` or empty
 is a **misconfiguration**: **stop and report it** (never silently skip). The skip-`none` rule applies
@@ -34,17 +38,27 @@ only to the **optional** rows (`dry-check`, `mutation-test`, `crap-check`), whic
 the fast gate has none.
 
 **Unit-only, trait-driven.** Test categories follow
-[`docs/meta-design.md#writing-tests`](../../docs/meta-design.md#writing-tests). Before execution,
-`test:quick` discovers all 204 assembly cases and fails unless `type=UnitTests` selects 96,
-`type=IntegrationTests` selects 108, and the single `scope=External` case is an integration test.
-Missing, dual-classified, added, or otherwise drifting cases fail actionably. Quick then runs exactly
-the 96 `type=UnitTests` cases; Cargo/process integration, the external freshness overlay, the
-standalone acceptance harness, and optional gates (DRY, mutation, CRAP) belong to Bhaskar's full gate
+[`docs/meta-design.md#writing-tests`](../../docs/meta-design.md#writing-tests). `Invoke-Tests.ps1` takes
+one `-Mode` of `unit`, `integration`, `acceptance`, or `full`; `test:quick` is `-Mode unit`. It globs the
+built `KS.*Tests.dll` assemblies — no registration step for a new one — and runs the `type=UnitTests`
+cases under the xUnit console runner. The taxonomy is enforced by `TraitTaxonomyTests`, a unit test that
+runs inside this gate: every discovered case must carry exactly one of `type=UnitTests`,
+`type=IntegrationTests`, or `type=AcceptanceTests`, and it names any offender by assembly and case. It
+also asserts that what it governs is what the runner runs — every discovered assembly matches the
+runner's `KS.*Tests.dll` glob, and no excluded assembly does. The gate itself fails closed on zero
+executed tests, and on a run that did not execute `TraitTaxonomyTests`. No count is hardcoded anywhere.
+Cargo/process integration cases (including
+the network-dependent rust-analyzer freshness case), the standalone acceptance harness, and optional
+gates (DRY, mutation, CRAP) belong to Bhaskar's full gate
 (`.github/skills/build-test-full.md`).
 
 DRY, mutation, and CRAP are disabled in feature 001 (`none`) and deferred to feature 002 P0.
 
-**Zero tolerance, with one temporary exception.** Any warning or error fails the gate except
-`MSB3277`, which feature 001 alone grandfathers in the lint command. Feature 002 must resolve the
-assembly conflicts and remove that exception; no other warning code may be added to it. Dave is not
-done-done until the gate passes under that exact policy.
+**Zero tolerance.** The Release build **is** the analyzer/style gate: `src/KS.Common.targets` enables
+the analyzers, `EnforceCodeStyleInBuild`, `TreatWarningsAsErrors`, and
+`CodeAnalysisTreatWarningsAsErrors` for Release, and `src/_codeanalysis/codeanalysis.ruleset` sets
+`IncludeAll Action="Error"` — so any compiler, analyzer, or StyleCop diagnostic fails `build`. There is
+no separate lint pass and no MSBuild-level warning promotion, so MSBuild warnings such as the `MSB3277`
+assembly conflicts are **not** fatal; that is the accepted consequence recorded as D2/R8 in
+`docs/features/002-hardening-and-vs2026.md`, and warning promotion must not be reintroduced anywhere to
+compensate. Dave is not done-done until the gate passes with no warning or error.
