@@ -12,7 +12,6 @@ namespace KS.RustAnalyzer.UnitTests;
 public sealed class RlsReleaseTests
 {
     [Fact]
-    [Trait("scope", "External")]
     public async Task LastUpdateShouldNotBeOlderThan30DaysAsync()
     {
         var ret = await RlsInstallerService.GetLatestRlsReleaseRedirectUriAsync();

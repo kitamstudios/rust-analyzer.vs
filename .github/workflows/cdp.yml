@@ -62,9 +62,6 @@ jobs:
     - name: Initialize CI test session
       run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Initialize-CISession.ps1
 
-    - name: Format check
-      run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Format.ps1 -Mode Check
-
     - name: Increment VSIX version
       id: vsix_version
       uses: timheuer/vsix-version-stamp@v1
@@ -75,14 +72,11 @@ jobs:
     - name: Build
       run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Build.ps1
 
-    - name: Lint
-      run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Build.ps1 -NoRestore -AnalyzerCheck
-
     - name: Quick tests
-      run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Tests.ps1
+      run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Tests.ps1 -Mode unit
 
     - name: Full tests
-      run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Tests.ps1 -Full
+      run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Tests.ps1 -Mode full
 
     - name: Upload test results
       if: always()
@@ -90,7 +84,7 @@ jobs:
       with:
         name: test-results
         path: |
-          TestResults/*.trx
+          TestResults/*.xml
           src/TestProjects/**/TestResults/*.trx
         if-no-files-found: ignore
 

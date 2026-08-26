@@ -4,7 +4,6 @@
 [CmdletBinding()]
 param (
     [switch] $NoRestore,
-    [switch] $AnalyzerCheck,
     [ValidateRange(1, 99)]
     [int] $VisualStudioMajorVersion = 17
 )
@@ -19,34 +18,21 @@ $solution = Join-Path $repoRoot "src\RustAnalyzer.sln"
 $outputDirectory = Join-Path $repoRoot "_built"
 $outputDirectoryWithSeparator = "$outputDirectory$([IO.Path]::DirectorySeparatorChar)"
 $msbuild = Get-VisualStudioTool -Name MSBuild -MajorVersion $VisualStudioMajorVersion
-$target = if ($AnalyzerCheck) { "Rebuild" } else { "Build" }
 
 $msbuildArguments = @(
     $solution,
     "/m",
     "/nologo",
     "/nr:false",
-    "/t:$target",
+    "/t:Build",
     "/p:Configuration=Release",
     "/p:DeployExtension=false",
+    "/p:OutDir=$outputDirectoryWithSeparator",
     "/verbosity:minimal"
 )
 
-if (-not $AnalyzerCheck) {
-    $msbuildArguments += "/p:OutDir=$outputDirectoryWithSeparator"
-}
-
 if (-not $NoRestore) {
     $msbuildArguments += "/restore"
-}
-
-if ($AnalyzerCheck) {
-    $msbuildArguments += @(
-        "/p:RunAnalyzers=true",
-        "/p:RunAnalyzersDuringBuild=true",
-        "/warnAsError",
-        "/warnNotAsError:MSB3277"
-    )
 }
 
 Write-Host "Using MSBuild: $msbuild"

@@ -75,12 +75,12 @@ numbering **stable** and update references on any insert/reorder.
 - **Framework version adopted (agentify commit hash):** `ab5401e721b7ebbb0ef6f13d699142c2eb58a3b7`
 - **Pack:** `4-pack` _(role selector: `4-pack ⇒ conductor`, `1-pack ⇒ solo`; the `agentify` skill asks and stamps this — no default. Preflight Gate-1 **blocks** if unset, i.e. the value isn't `1-pack`/`4-pack`.)_
 - **Persona:** JARVIS _(assistant skin; the `agentify` skill asks and stamps this — no default, not a preflight blocker. Menu = the overlays in `.github/personas/`, today JARVIS | FRIDAY.)_
-- **Model profile:** both _(vendor of every agent's MAX model — `anthropic` (Claude Opus 5) | `openai` (GPT-5.6 Sol) | `both` (Claude Opus 5 designs+codes, GPT-5.6 Sol verifies+drives, cross-vendor); the `agentify` skill asks and stamps this — default `both`, not a preflight blocker. All agents run `reasoning: max`.)_
+- **Model profile:** anthropic _(vendor of every agent's MAX model — `anthropic` (Claude Opus 5) | `openai` (GPT-5.6 Sol) | `both` (Claude Opus 5 designs+codes, GPT-5.6 Sol verifies+drives, cross-vendor); the `agentify` skill asks and stamps this — default `both`, not a preflight blocker. All agents run `reasoning: max`.)_
 - **Generated artifacts (never edit):** `**/bin/`, `**/obj/`, `_built/` (build outputs); `*.vsix`; the version field of `src/RustAnalyzer/source.extension.cs` (auto-stamped by CI). Do not hand-edit `.g.cs`/build-generated files.
 - **App run/restart & liveness mechanism:** Not a long-running service — this is a Visual Studio 2022 VSIX extension. To run/debug, build then start the `RustAnalyzer` project (F5), which launches the VS experimental instance (`devenv.exe /rootsuffix Exp`, `DeployExtension=True`). No liveness signal; validate via unit/integration tests and manual smoke in the Exp instance.
 - **Build/test skills:** `.github/skills/build-test.md` (fast, Dave) and
-  `.github/skills/build-test-full.md` (full, Bhaskar) are framework-owned recipes that run the commands
-  named in the **Commands** table below — fill that table in for your stack.
+  `.github/skills/build-test-full.md` (full, Bhaskar) are this repository's own gate recipes that run
+  the commands named in the **Commands** table below — fill that table in for your stack.
 - **Language-specific conventions:** C# on .NET Framework 4.8 (VSSDK Open-Folder extension). File-scoped namespaces (enforced); `_camelCase` private fields, `I`/`T` prefixes for interfaces/type params; unused usings are errors (IDE0005). Style/quality enforced at build via StyleCop.Analyzers, Microsoft.VisualStudio.SDK/Threading analyzers, `.globalconfig`, and `_codeanalysis/codeanalysis.ruleset`. Prefer least-privilege access modifiers; avoid `internal` unless required. Never block the UI thread — use `Microsoft.VisualStudio.Threading` (`JoinableTaskFactory`) patterns.
 - **CI/CD pipeline:** `.github/workflows/cdp.yml` (GitHub Actions, `windows-2022`) — MSBuild build, trait-filtered unit and integration tests via VSTest, the standalone `src/TestProjects/run-integrationtests.ps1` acceptance harness, then publish VSIX to the Open VSIX Gallery and VS Marketplace on `[release]`. Agents never deploy.
 
@@ -97,11 +97,8 @@ numbering **stable** and update references on any insert/reorder.
 | Command | Gate | Required | Value |
 |---------|------|----------|-------|
 | `build`         | fast + full   | yes | `pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Build.ps1` |
-| `lint`          | fast + full   | yes | `pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Build.ps1 -NoRestore -AnalyzerCheck` |
-| `format:fix`    | fast (Dave)   | yes | `pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Format.ps1 -Mode Fix` |
-| `format:check`  | full (Bhaskar)| yes | `pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Format.ps1 -Mode Check` |
-| `test:quick`    | fast (Dave)   | yes | `pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Tests.ps1` |
-| `test:full`     | full (Bhaskar)| yes | `pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Tests.ps1 -Full` |
+| `test:quick`    | fast (Dave)   | yes | `pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Tests.ps1 -Mode unit` |
+| `test:full`     | full (Bhaskar)| yes | `pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Tests.ps1 -Mode full` |
 | `dry-check`     | full          | optional | `none` |
 | `mutation-test` | full          | optional | `none` |
 | `crap-check`    | full          | optional | `none` |

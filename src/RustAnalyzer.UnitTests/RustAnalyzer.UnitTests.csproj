@@ -49,6 +49,7 @@
     <Compile Include="Infrastructure\StringBuildMessagePreprocessorTests.cs" />
     <Compile Include="Infrastructure\StringExtensionsTests.cs" />
     <Compile Include="RlsReleaseTests.cs" />
+    <Compile Include="TraitTaxonomyTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Editor\FileContextProviderTests.cs" />
     <Compile Include="Editor\FileScannerTests.cs" />
