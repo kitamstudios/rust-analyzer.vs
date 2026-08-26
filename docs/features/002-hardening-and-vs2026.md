@@ -170,10 +170,14 @@ artefact under test. Chosen by Sir.**
 
 | #  | Slice | Task | Status | Commit |
 |----|-------|------|--------|--------|
-| T11 | S2 | Research the supported manifest expression for **both hosts — VS 2022 17.12+ and VS 2026 — which is a hard requirement (Ruling E)**. Current `source.extension.vsixmanifest` declares three amd64 `InstallationTarget`s at `Version="[17.0, 18.0)"` and a `Microsoft.VisualStudio.Component.CoreEditor` prerequisite at `[17.0,)`. **Specifically verify the standing finding that VS 2026 exposes 17.x APIs and *ignores the upper bound* of existing `InstallationTarget` ranges** — if true, the current range already admits VS 2026 and T13 becomes a no-op or a narrower edit. Record the evidence either way; do not carry the finding forward unverified. | Pending | - |
-| T12 | S2 | Separate **packaging claim** from **runtime support**: keep the runtime minimum at 17.12 in `Constants`, add explicit host-capability validation, and make an unsupported host produce a truthful classified result rather than a crash or a silent no-op. | Pending | - |
-| T13 | S2 | Change the manifest **only if T11 proves a change is needed**, and **only after** T14 proves install + activation on a real VS 2026 host. If T11 confirms VS 2026 ignores the upper bound, the correct action is to leave the range alone and record why. Whatever the outcome, **VS 2022 17.12+ support must not regress** — both hosts ship (Ruling E). | Pending | - |
-| T14 | S2 | **[HUMAN]** VS 2026 install and activation smoke on a real host: install the VSIX, open a Rust folder, confirm package activation and no activity-log/MEF errors. Sir has answered "unsure" on VS 2026 host availability; this is the escalation point (Ruling D). | Pending | - |
+| T10c | S2 | **Close N16/N17: delete the inert `.globalconfig` include; delete the enforcement claim** (Sir's rulings Y-withdrawn / Z / AA / AC, 2026-08-26). Delete `src/KS.Common.targets:54-56` outright, leaving **nothing in its place** (Ruling AD — the explanatory comment was written, compressed, then removed; N17 plus the commit message carry the recurrence guard instead). **Then delete the entire `Language-specific conventions` bullet from `.github/copilot-instructions.md` (Ruling AC — deleted, not corrected: the build, `.editorconfig` and the analyzers are both the enforcement and the discovery mechanism).** Repoint `.github/agents/dave.md:10`, which says language-specific rules "live in the Project profile" and would otherwise dangle. **Explicitly out of scope: the 59 suffix conversions and `GenerateDocumentationFile` — those are D11.** Evidence must show the include deletion is a *no-op*: `-getItem:EditorConfigFiles` before/after showing the root `.globalconfig` still arrives, plus the `IDE0161` probe still erroring post-deletion and **zero** `MultipleGlobalAnalyzerKeys`. | In progress | - |
+| T11 | S2 | Research the supported manifest expression for **both hosts — VS 2022 17.12+ and VS 2026 — which is a hard requirement (Ruling E)**. Current `source.extension.vsixmanifest` declares three amd64 `InstallationTarget`s at `Version="[17.0, 18.0)"` and a `Microsoft.VisualStudio.Component.CoreEditor` prerequisite at `[17.0,)`. **Specifically verify the standing finding that VS 2026 exposes 17.x APIs and *ignores the upper bound* of existing `InstallationTarget` ranges** — if true, the current range already admits VS 2026 and T13 becomes a no-op or a narrower edit. Record the evidence either way; do not carry the finding forward unverified. **Done 2026-08-26 — VERIFIED, see N18. Microsoft documents this repository's exact range `[17.0,18.0)` as the worked both-hosts example; VS 2026 evaluates only the lower bound. One VSIX, one `Identity Id`, no manifest change required.** | Done | - |
+| T12 | S2 | Separate **packaging claim** from **runtime support**: keep the runtime minimum at 17.12 in `Constants`, add explicit host-capability validation, and make an unsupported host produce a truthful classified result rather than a crash or a silent no-op. **Constraint added by Anders (N18): this must not build a second, competing notion of "is this host usable" alongside S3's readiness state — S3 depends on S2, so T12 defines the host-capability input that T15's readiness state consumes.** | Pending | - |
+| T13 | S2 | Change the manifest **only if T11 proves a change is needed**, and **only after** T14 proves install + activation on a real VS 2026 host. **Collapsed by T11/N18 to: leave `[17.0, 18.0)` alone and record why.** The one optional edit — widening to `[17.0,)`, which is what VS 2026 emits for new extensions and the honest expression of Ruling E — buys **zero** functional difference on either host and touches the one file that decides installability. **Sir's call, and only worth making if T14b proves it on both major 17 and major 18.** VS 2022 17.12+ support must not regress; both hosts ship (Ruling E). | Pending | - |
+| T14a | S2 | **VS 2026 install + registration on `windows-2025-vs2026`** (L0). Download the VSIX artifact `build-and-test` already publishes; `VSIXInstaller.exe /quiet /logFile:…` against the major-18 instance. **Exit code alone is not an assertion** — additionally assert the extension is registered against the *18* instance: the deployed directory exists under that instance's Extensions root and its `extension.vsixmanifest` `Identity/@Id` equals `KS.RustAnalyzer.3a91e56b-fb28-4d85-b572-ec964abf8e31`. **Never ship this leg alone** — an install-and-assert-nothing job is worse than no job. | Pending | - |
+| T14b | S2 | **Run the existing acceptance harness at `-VisualStudioMajorVersion 18`** (L2 — highest signal per unit of work; **do this one first**). One matrix dimension on the existing `acceptance` job: no new build, no new artifact — exactly the fan-out N14 predicted T6's `config` outputs would make a matrix change rather than a rewrite. Non-vacuous **for free**: `VisualStudio.psm1:70` throws when no *complete* major-18 install is present, so a silently-missing host fails rather than skips; the harness fails on zero results and on any diff against the 18-line approved file; and under Ruling K/N9 it consumes only the expanded shipped zip. It loads our TestAdapter inside a `vstest.console.exe` supplied by the VS 2026 install. **Honest limit: this proves the TestAdapter half only** — it touches none of `ProvideAutoLoad(FolderOpened)`, `IWorkspaceProviderFactory`, `LanguageClient`, InfoBars or `SearchAndDisableIncompatibleExtensionsAsync`. **Sir ruled 2026-08-26: this leg GATES on PR; no report-only mode** (a report-only leg is `continue-on-error` wearing a hat, and execution rule #4 forbids it). | Pending | - |
+| T14c | S2 | **[HUMAN]** Interactive VS 2026 smoke: open a Rust folder in the 2026 IDE, confirm package activation, LSP start, and no activity-log/MEF errors. CI cannot do this. **This is all that survives of Ruling D** — N14 and N18 declassify the automatable halves into T14a/T14b. Belongs merged into S5/T34 rather than duplicated here. | Pending | - |
+| T14d | S2 | **MEF composition check on the 18 host** (L1 — optional, attempt after T14a). Force a catalog rebuild without a UI (`devenv.exe /updateconfiguration` or an experimental-hive equivalent) and assert the VS MEF composition error log contains **no** entry naming `KS.RustAnalyzer`. **Two hypotheses must clear first:** (a) `devenv.exe` runs at all in a hosted-runner session; (b) the exact 18.0 path of the composition error file (the 17.0 shape is `…\Microsoft\VisualStudio\17.0_<hive>\ComponentModelCache\Microsoft.VisualStudio.Default.err`; an `18.0_<hive>` analogue is assumed). **If either fails, drop the leg and record it — do not fake it**; T14c covers the gap. | Pending | - |
 
 ### S3 — Candidate 3b: readiness, one dialog, one InfoBar, process-only suspension
 
@@ -272,13 +276,13 @@ Filled by T9 from the first green run on the six-job topology — CI run `329989
 
 | Gate | Trigger | Runtime | What it uniquely catches | Retained risk |
 |------|---------|---------|--------------------------|---------------|
-| build (Release) | fast + full + CI `build-and-test` | **368s** (job 401s incl. checkout, stamp, zip, 3 uploads) | Compile errors; **all** StyleCop/IDE/FxCop diagnostics and SA1028 trailing whitespace, via `<IncludeAll Action="Error"/>` + `TreatWarningsAsErrors` in Release | **Unverified — see N16.** `src/KS.Common.targets:55` includes `..\.globalconfig`, which MSBuild resolves against the *project* directory, so it points at a non-existent `src/.globalconfig`. Whether the advertised `.globalconfig` severities actually load is untested |
+| build (Release) | fast + full + CI `build-and-test` | **368s** (job 401s incl. checkout, stamp, zip, 3 uploads) | Compile errors; **all** StyleCop/IDE/FxCop diagnostics and SA1028 trailing whitespace, via `<IncludeAll Action="Error"/>` + `TreatWarningsAsErrors` in Release | **Resolved and re-scoped — see N17, which supersedes N16.** The root `.globalconfig` *does* load, via SDK auto-discovery; the `src/KS.Common.targets:55` include was inert and is deleted (T10c). But ~25% of the file is dormant for three unrelated reasons — 59 `:severity` suffixes inert at build, 18 naming rules at `suggestion` (Info is never promoted by `warnaserror`), and — **corrected 2026-08-26, superseding the earlier "gated off by a missing `GenerateDocumentationFile`" belief** — `IDE0005` *does* fire, enabled by the `SvSoft.MSBuild.CheckUnnecessaryUsings` workaround (N17), but only in the **2 of 7** projects that load the IDE analyzers at all (N19). What genuinely bites is StyleCop `SA*`/`SX*` + enabled-by-default `CA*`, promoted by `<IncludeAll Action="Error"/>` + `TreatWarningsAsErrors` |
 | test:quick (unit) | fast + CI `unit` | **23s** job (**7.7s** xUnit run) | **102** in-process tests; trait-taxonomy invariants via `TraitTaxonomyTests` (5 tests) | - |
 | test:full (unit + integration) | full + CI `unit` ∥ `integration` | **89s** critical path (integration job; its xUnit run 63.1s) | Cargo/rustup/process-boundary regressions on the pinned nightly — **108** tests | Locally `-Mode full` runs **unfiltered** in one pass, so an untagged case still executes; in CI the two jobs are trait-filtered, so an untagged case would run in **no** job. The gate holds only because the taxonomy test lives in `unit` — the jobs are therefore *not* independent |
 | acceptance (VSTest, published zip) | full + CI `acceptance` | **49s** job | Customer-visible adapter behaviour **and** packaging omissions in the shipped zip | Inner VSTest exits 1 by design (4 approved failures); only the harness's approved-file comparison distinguishes that from a real break |
 | *config* (not a gate) | CI only | **21s** | Resolves runner label, VS major and pinned nightly once, so no downstream job hardcodes them (T5) | - |
 | *removed:* external (`scope=External`) | — | — | — | **Gate retired, not merely unmeasured.** Ruling M's three-way taxonomy has no `External` value and the string appears nowhere in `src/` or `.github/`. Network/freshness drift is now caught only by `RlsReleaseTests`' 30-day ceiling. `docs/backlog.md` D10 still proposes a `scope=External` renewal test and is therefore unimplementable as written |
-| *removed:* separate lint pass | — | — | — | MSBuild-level warnings are no longer promoted to errors. Concretely, `MSB3277` assembly conflicts stay **non-fatal** (D2) — the `/warnNotAsError:MSB3277` grandfather disappears with the pass that carried it. Compiler/analyzer/style coverage was *believed* unchanged because Release already enforces it — **N16 puts that premise in doubt** |
+| *removed:* separate lint pass | — | — | — | MSBuild-level warnings are no longer promoted to errors. Concretely, `MSB3277` assembly conflicts stay **non-fatal** (D2) — the `/warnNotAsError:MSB3277` grandfather disappears with the pass that carried it. Compiler/analyzer/style coverage is unchanged because Release already enforces it — **premise re-confirmed by N17**: the deleted `lint` gate ran the *same* Release compile with the same config, ruleset and analyzers, so a duplicate of X could never enforce more than X. N16's doubt was misdirected |
 | *removed:* non-C# formatter | — | — | — | Trailing whitespace in `.ps1`/`.yml`/`.json`/`.md` is no longer normalized by a gate. `.editorconfig` (`trim_trailing_whitespace = true`) remains the IDE-level contract; C# is still enforced by SA1028 at build |
 | *removed:* PowerShell classification preflight | — | — | — | Four `vstest.console /ListTests` discovery passes per gate are gone; the invariants now run as a unit test inside both gates (T2c), so drift still fails closed but numbers are no longer hardcoded |
 
@@ -340,6 +344,134 @@ with no test lost and none double-run — an independent confirmation that
 - D8: Telemetry, updater, process ownership, async failure visibility, tool protocols, and UI performance → `docs/backlog.md` (hardening sequence).
 - D9: ARM64, non-Windows hosts, project templates, and new editor features are out of scope.
 - D10 (Anders S-c): **The pin's staleness has no owner.** A dated nightly with no renewal mechanism fails in the classic way — untouched until something forces it, then six months of nightly churn lands in one commit at the worst moment with no bisect surface. Availability is *not* the risk (rust-lang archives dated nightlies indefinitely); big-bang drift is. Pinning remains the right trade; this is its cost. Deferred out of S1 under Ruling F — S1's done-done is a green PR gate, and a renewal program is not that. ~~Suggested shape, recorded in `docs/backlog.md`: a `scope=External` test asserting the pin is younger than N days. That trait is already defined as manual/scheduled and excluded from the deterministic gate, and its stated purpose is network/freshness drift — this is that category exactly, reusing machinery that already exists.~~ **Corrected 2026-08-25:** `scope=External` no longer exists. Ruling M retired it precisely *because* "excluded from the deterministic gate" is how `RlsReleaseTests` stayed silent for 441 days — the trait was a hiding place, not a category. The renewal check must therefore be a plain `type=IntegrationTests` case that runs in the normal gate. Reusing the old machinery is exactly the mistake to avoid.
+- D11 (Sir, 2026-08-26): **Make the advertised `.globalconfig` severities real** — convert the 59
+  `option = value:severity` suffixes to `dotnet_diagnostic.IDExxxx.severity` form, and enable
+  `GenerateDocumentationFile` so `IDE0005` can fire (see N17). **Scope reduced 2026-08-26:** `IDE0005`
+  already fires — `SvSoft.MSBuild.CheckUnnecessaryUsings` supplies the doc-file workaround — so D11 is the
+  **suffix conversion alone**, and carries the recordable fragility that removing that one package takes
+  unused-usings enforcement dark repo-wide. Deferred because the conversion will surface a wave of
+  new errors across the tree; that is a budget/appetite call and Sir chose "fix the docs now, backlog the
+  rest". **Being priced (Sir, 2026-08-26):** *"i also need a build only run to check what would the errors
+  be if i included the globalconfig and other dormant rulesets."* A build-only measurement is running in a
+  disposable worktree — baseline, then the 59 suffix conversions and the 18 naming rules measured
+  **separately**, since Sir may fund one and not the other and a combined total would hide that. Results to
+  be recorded here as counts by rule ID with a tractability judgement per rule (mechanically auto-fixable /
+  needs judgement / wrong for this codebase and better deleted than obeyed). **"Big sized work" is exactly
+  the vagueness the measurement replaces.** **Two findings to fold in when D11 lands (Bhaskar, 2026-08-26):**
+  (a) `.globalconfig:279` scopes the `type_parameters` symbol group to `applicable_kinds = namespace`
+  rather than `type_parameter`, so the `T`-prefix rule is dead **twice over** — wrong severity *and* wrong
+  symbol kind. A pure severity conversion would therefore still leave it inert; assume other symbol groups
+  need the same audit. (b) **`IDE0005`'s severity is over-determined, not sourced from `.globalconfig`** —
+  `src/_codeanalysis/codeanalysis.ruleset:5` carries an explicit `<Rule Id="IDE0005" Action="Error"/>`, and
+  with the `.globalconfig` key forced to `none` it still errored. Enabling = SvSoft; severity = both. So
+  the ruleset and the global config overlap in ways a conversion must not assume away.
+
+### N19 — D11 priced: the conversion is worthless, and 5 of 7 projects run no IDE/CA analyzers (2026-08-26)
+
+Sir: *"i also need a build only run to check what would the errors be if i included the globalconfig and
+other dormant rulesets."* Measured by Bhaskar — six Release rebuilds in a disposable worktree at `36ae3f6`,
+`.globalconfig` the only file mutated, nothing shipped. **Baseline is 0 errors / 0 warnings, so every number
+below is a delta on zero.**
+
+**Method note that matters for reading the numbers:** measurement runs set
+`TreatWarningsAsErrors=false`. That is not a softened gate — under real gate semantics the first failing
+project stops the graph (the confirmation run compiled only 3 of 7 before dying), so a "count the errors"
+build **structurally under-reports**. Counting warnings compiles all seven. The confirmation run with the
+gate on returned an identical breakdown, no compiler cap, no MSBuild truncation.
+
+**1. The mechanism question is settled decisively — N17 stands.** Same codebase, same 59 option *values*,
+only the key form differing: as `:severity` suffixes → **0** diagnostics; as `dotnet_diagnostic` keys →
+**260**. Unlike the earlier single-rule `IDE0161` probe this cannot be explained by "the codebase has no
+violations". Corroborated from the `csc` command lines: `/analyzerconfig:` lists the repo-root
+`.globalconfig` for **all seven** projects — the config loads everywhere; the dormancy is entirely in the
+key form.
+
+**2. D11 as written costs nothing and buys nothing.** The 59 break down as **26 `:silent`, 30
+`:suggestion`, 3 `:warning`**. A *faithful* conversion preserving each rule's stated severity yields
+**0 new errors, 0 new warnings, exit 0**. Silent is hidden; suggestion is Info, which
+`TreatWarningsAsErrors` never promotes; the three genuine warnings are clean on the merits (verified by
+arming them explicitly). **56 of 59 lines document an intent, not an enforcement decision.** Blast radius
+exists only if the severities are also *raised*.
+
+**3. Raised to `warning`: 260 violations — but 211 come from seven lines.**
+
+| Rule | Count | | Rule | Count |
+|---|---:|---|---|---:|
+| IDE0008 (use explicit type) | **164** | | IDE0065 (`using` placement) | 5 |
+| IDE0022 (block body, method) | **34** | | IDE0060 (unused parameter) | 4 |
+| IDE0058 (value never used) | **13** | | IDE0021 / IDE0032 | 3 each |
+| IDE0046 (simplify `if`) | **11** | | IDE0023 / IDE0078 | 2 each |
+| IDE0024 / IDE0031 | 5 each | | 9 assorted rules | 1 each |
+
+Concentrated: 15 files carry 233 of 260, led by `ProcessRunner.cs` (35), `ToolChainService.cs` (30),
+`ToolChainServiceExtensions.cs` (23), `PathExExtensions.cs` (22), `TestExecutor.cs` (18).
+
+**The seven lines are template artefacts, not decisions:**
+- `csharp_style_var_*` = false (all three) → **164 violations**. The config demands explicit types; the code
+  uses `var` **470 times** repo-wide. *When a rule loses to the codebase 470-to-0, the rule is the anomaly.*
+- `csharp_style_expression_bodied_methods/constructors/operators` = false → **47 violations**. The
+  incoherence is the tell: the same config sets `accessors`, `indexers`, `lambdas` and `properties` to
+  `true`, and those four produce **zero** violations. Four lines agree with the codebase, four disagree.
+
+Flipping those seven leaves **49** violations: ~20 mechanically fix-all, ~29 needing judgement —
+**IDE0058 (13)** (some are genuinely-discarded returns, some are swallowed results worth a look — do *not*
+fix-all), **IDE0046/0045 (12)** (auto-fixable but frequently worse to read), **IDE0060 (4)** (deletion may
+be illegal where an interface, delegate or VS SDK callback dictates the signature).
+
+**4. The 18 naming rules are free.** Raised `suggestion` → `warning`: **0** violations. Re-run with
+`dotnet_diagnostic.IDE1006.severity = warning` added, specifically to rule out the same inert-key-form
+explanation: still **0**. The codebase already conforms. Cost to switch on: a config commit.
+
+**5. The finding nobody asked for, which resizes everything — only 2 of 7 projects load the IDE/CA
+analyzers at all.** Extracted from each `csc` invocation's `/analyzer:` arguments:
+
+| Project | Format | CodeStyle (IDE) | NetAnalyzers (CA) | StyleCop |
+|---|---|---|---|---|
+| `RustAnalyzer.TestAdapter` | SDK-style | **yes** | **yes** | yes |
+| `RustAnalyzer.Remote` | SDK-style | **yes** | **yes** | yes |
+| `RustAnalyzer` (the VSIX) | legacy | no | no | yes |
+| `RustAnalyzer.UnitTests` | legacy | no | no | yes |
+| `RustAnalyzer.TestAdapter.UnitTests` | legacy | no | no | yes |
+| `RustAnalyzer.Remote.UnitTests` | legacy | no | no | yes |
+| `RustDevelopmentPack` | legacy | no | no | no |
+
+The IDE code-style and NetAnalyzers assemblies ship with `Microsoft.NET.Sdk`. The five legacy-format
+projects import `KS.Common.targets` and duly receive `.globalconfig`, `EnforceCodeStyleInBuild=true`,
+`AnalysisLevel 6.0` and the ruleset — **and none of it can bite, because the analyzers implementing those
+rules are never loaded.** Consequences:
+
+- **`IDE0005 = error` fires in 2 projects, not 7.** N17's fragility line ("remove SvSoft and IDE0005 goes
+  dark repo-wide") is *too generous* — it was never repo-wide. **The main VSIX project has never been
+  checked for unused usings at build.** This does not disturb Dave's proof, which holds for the projects
+  where the analyzer exists.
+- **`CA*` is likewise 2-of-7**, qualifying the "default-on NetAnalyzers at `AnalysisLevel 6.0`" claim.
+- **The same over-claim survives in two skill files** — `.github/skills/build-test.md:57-60` and
+  `.github/skills/build-test-full.md:80-83` both state that the Release build *is* the analyzer/style gate
+  and that "any compiler, analyzer, or StyleCop diagnostic fails `build`". True for StyleCop; **false for
+  IDE and CA in 5 of 7 projects.** Found by Anders during the T10c design review, 2026-08-26. This is worse
+  sited than the `copilot-instructions.md` bullet Ruling AC deleted: Dave and Bhaskar reload these files on
+  *every gate run*, so a green gate is currently read as "the main VSIX project passed code-style" — which
+  it has never once been checked for. **Ruling AC removed the honest-but-redundant statement while the
+  actively-false one remained.** Candidate task under decision (c); no edit made, as it is Sir's to rule on.
+- **The 260 is the cost for 2 of 7.** `RustAnalyzer` alone has 173 `var`-bearing lines against
+  TestAdapter's 164; extrapolating TestAdapter's 259/164 = 1.58 multiplier across the 309 `var`-bearing
+  lines in uncovered projects suggests **~490 further diagnostics, order-of-magnitude total near 750**.
+  **Explicitly an extrapolation, not a measurement** — measuring it requires SDK-style conversion or adding
+  analyzer `PackageReference`s, i.e. project-file changes, which the probe was forbidden.
+
+**Three decisions returned to Sir, none taken by an agent** (golden rule #6): (a) whether to fund the real
+legacy-project measurement; (b) whether the `var`/expression-bodied lines get flipped to match the codebase
+or the codebase gets rewritten to match them — a product/style call; (c) whether the 2-of-7 coverage gap
+becomes its own note and backlog item. **Presented 2026-08-26; Sir has not yet ruled.** Until he does, D11
+stays deferred and nothing in the config changes. **The docs half is not deferred, but Ruling AC changed its shape** — T10c *deletes* the enforcement
+  claim rather than correcting it, so there is no prose left to drift. The Ruling W principle that motivated
+  fixing it (a false statement in the file every agent reloads first is its own hazard) is satisfied more
+  cheaply by having no statement at all.
+  Carries three cheap Bhaskar probes when it lands: (1) one rule, two builds — suffix-only vs
+  `dotnet_diagnostic` — to pin the suffix claim on *this* toolchain; (2) add an unused `using`, build
+  Release, then repeat with `GenerateDocumentationFile=true`, to settle IDE0005; (3) whether
+  `MultipleGlobalAnalyzerKeys` is promoted by `TreatWarningsAsErrors` (needed only if anyone revives
+  option B or C).
 
 ## Notes & Decisions
 
@@ -350,8 +482,8 @@ with no test lost and none double-run — an independent confirmation that
 | A | "switch to xUnit entirely, away from VSTest, unless there's a good reason. update the cdp.yml appropriately." | T2, T3, T6, portfolio; **split verdict** — see N3, N4 |
 | B | "for the deprecated gh actions, use your alternatives as required" / "yeah lets switch to shell completely for any deprecated actions." | T6, N5 |
 | C | "these are logical steps… they dont have to [be] separate, do not necessarily need a ps1 wrapper… as long as they happen." | T3, N2 — **supersedes the earlier N2** |
-| D | VS 2026 host availability: **"unsure."** | T14, T33, T34 remain `[HUMAN]`; S2 ships no widened manifest on assumption. **Partly overtaken by T5's byproduct (2026-08-26):** `windows-2025-vs2026` is a GA hosted runner carrying VS Enterprise 2026 (major 18), available to this repo because it is public. A VS 2026 host no longer requires Sir to own the hardware. See N14 — the reclassification of T14/T33/T34 is S2 work and Sir's call, not done here |
-| E | "3 i need to support both 2022 and 2026" (2026-08-25) | Supporting **both** VS 2022 17.12+ and VS 2026 is a hard requirement, not a preference. T11 verifies the upper-bound finding; T13 must not regress 2022 |
+| D | VS 2026 host availability: **"unsure."** | ~~T14~~, T33, T34 remain `[HUMAN]`; S2 ships no widened manifest on assumption. **Partly overtaken by T5's byproduct (2026-08-26):** `windows-2025-vs2026` is a GA hosted runner carrying VS Enterprise 2026 (major 18), available to this repo because it is public. A VS 2026 host no longer requires Sir to own the hardware. See N14. **Largely spent as of 2026-08-26:** N18 splits T14 into T14a/T14b/T14d (automatable) and **T14c, which is all of this ruling that survives** — the genuinely interactive half CI cannot do |
+| E | "3 i need to support both 2022 and 2026" (2026-08-25), restated verbatim 2026-08-26: **"this extension needs to support both 2022 and 2026"** | Supporting **both** VS 2022 17.12+ and VS 2026 is a hard requirement, not a preference. **T11 has now verified the upper-bound finding (N18): one VSIX covers both, and the current `[17.0,18.0)` range is Microsoft's own worked example of the both-hosts case.** T13 collapses to "leave it alone and record why", and must not regress 2022. Two artifacts are an escalation, not a design choice |
 | F | "first lets get the gates and the ci green" (2026-08-25) | **S1 has absolute priority.** No S2–S7 work starts until S1's PR gate is green. The VS 2026 host question is deferred, not dropped |
 | G | Third-party actions → shell; first-party `actions/*` → version-bump (2026-08-25) | Refines Ruling B; see N5 |
 | H | ~~CI test-step shape: **keep Quick (unit, 96) + Full (unit + integration, 204) as designed**~~ (2026-08-25) | **Superseded by Ruling M (same day).** Two steps become **three jobs** — unit, integration, acceptance — so the duplication this ruling accepted disappears rather than being measured. Its counts are also stale twice over: the taxonomy tests added 4 cases, and Ruling M re-armed the excluded external case, so 96→100 and 204→208 |
@@ -378,7 +510,24 @@ with no test lost and none double-run — an independent confirmation that
 
 | X | **"make the least possible changes to remove dangling references and bring back anything critical missed or nuked"** (2026-08-26) | Ratifies Sir's governance consolidation and repairs its fallout. **What Sir changed:** deleted `.github/agent-roles/conductor.md` and folded it into `.github/agents/JARVIS.md` (every agent is now one self-contained file — the binder/role-body split is gone); reduced `AGENTS.md` to a one-line redirect; cut the framework-adoption scaffolding from `.github/copilot-instructions.md`, which also removed golden rule #8 (writing tests → `meta-design.md`, renumbering #9–#11 → #8–#10) and the **entire Project profile**. **Two things the profile deletion broke, both restored:** (1) **Preflight Gate 1 reads `Project profile → Pack`** — with the profile gone the gate evaluated to "Pack unset" and the loop could not legally start; (2) **golden rule #5 delegates the never-edit list to the Project profile**, so deleting it silently reopened the `src/external/` hole **T7(a) closed in `71e9d90`** — an agent could hand-edit the packaged 38 MB `rust-analyzer.exe` and violate nothing. Restored the nine profile bullets that are actually referenced (Pack, Persona, Trunk, Addressing, generated + acquired artifacts, liveness, conventions, name); **deliberately not restored** — *Framework version adopted*, *Model profile*, *Build/test skills*, *CI/CD pipeline*: nothing dangles on them and `cdp.yml` is the CI SSOT. **Stale text removed:** the fold-in carried `conductor.md`'s pre-Ruling-U bootstrap paragraph ("assistant owner/phase/token-hash provenance", "plaintext authorization token") into JARVIS.md, where it became *active assistant instruction* rather than a dormant role body — Ruling U's cascade had missed `conductor.md`. Repointed the `agent-roles` references in `skills/retrospective.md`, and fixed JARVIS.md's self-reference to "the binder" (it *is* the binder now) and its dangling *Roles & responsibilities* cross-ref. **Sir then deleted `.github/personas/` too**, collapsing the binder/role-body/overlay triad entirely — `.github/agents/<name>.md` is now the single home for every agent. **The ASCII banner was the one casualty**: it lived only in the overlay and is JARVIS's mandated first action, so it is restored **inline** in JARVIS.md's *JARVIS etiquette* section (no new file, per Sir's constraint); the voice/etiquette prose had already been folded in by Sir. **Left alone: `.github/skills/agentify.md`** — it targets `.github/agent-roles/`, `.github/personas/` *and* `.github/agent-templates/`, and the last has never existed in this checkout, so it was already a source-side skill describing the framework repo, not this consumer; realigning it to the one-file layout is a framework change, not a dangling-reference fix. Feature files 001 and 002 keep their `agent-roles`/token references — they are historical logs, corrected by superseding notes, never rewritten |
 
-### N16 — the `.globalconfig` include points one directory short (found 2026-08-26, pre-existing)
+| Y | **~~"fix by using msbuild properties referring to the current file"~~ — WITHDRAWN by Sir the same day (2026-08-26)** | Sir ruled the N16 remedy, then withdrew it when Dave declined to implement it and produced disconfirming evidence, independently verified by Anders. **The ruling was technically impeccable for the problem as we described it; the problem as we described it did not exist** — N16 was our note, so the error is ours. Applying it would have emitted 240 × `MultipleGlobalAnalyzerKeys` and unset every key in the file while the build stayed green. **Confirmed empirically by Bhaskar on the final tree: 239 `MultipleGlobalAnalyzerKeys`,
+all emitted as *warnings*, `EXIT=0`, with `TreatWarningsAsErrors=true` verified via `-getProperty`.** So the
+withdrawn fix was **silent sabotage, not a loud break** — Anders' "no `NotConfigurable` tag ⇒ `/warnaserror`
+should promote it" reading is refuted: the diagnostic is emitted by `CSC` with no location and a
+non-numeric ID during analyzer-config *setup*, outside the compilation-diagnostic pipeline that
+`TreatWarningsAsErrors` filters. **239, not 240** — the 240th line is the `is_global = true` header
+directive, which is not a config key and cannot conflict. **Replaced by Ruling Z.** Recorded rather than deleted so the withdrawal is visible: the failure here was an agent handing the human a confident conclusion built on one unchecked inference |
+| Z | **Option D — delete the include, leave a comment** (2026-08-26) | Delete `src/KS.Common.targets:54-56` outright: SDK auto-discovery already supplies the root `.globalconfig`, so the line is **dead, not broken**. Rejected alternatives: `DiscoverGlobalAnalyzerConfigFiles=false` (trades one invisible magic for another, and silently breaks any future `.globalconfig` elsewhere in the tree), and `Remove`/`Condition` dedupe (permanent MSBuild complexity to preserve a line whose entire content is "do what the SDK already did"). The comment is the whole delta from a bare deletion and it exists to stop the next agent re-deriving this session and re-proposing Ruling Y. See T10c, N17 |
+| AA | **"fix the docs only" on dormant enforcement** (2026-08-26) | Correct `.github/copilot-instructions.md` now to describe what actually enforces what; **backlog** converting the 59 `:severity` suffixes and enabling `GenerateDocumentationFile` (D11), because that surfaces a wave of new errors across the tree and the appetite for that churn is Sir's call. The docs half is not deferrable on the Ruling W principle — a false claim in the file every agent reloads first is its own hazard, and we already knowingly swallowed one |
+| AB | **The VS 2026 CI leg gates on PR; no report-only mode** (2026-08-26) | Answers the question N14 explicitly reserved for Sir. A report-only leg is `continue-on-error` wearing a different hat, and execution rule #4 forbids it; the whole S1 thesis is that soft failure is how a stale test hid for 441 days. If a leg is too flaky to gate, the correct response is **don't add it yet** — not add it soft. Accepted risk, stated: `windows-2025-vs2026` is public-repo-only, so if this repository ever went private a required check on that label would never report and would deadlock every PR (N10, new axis). See T14b, N18 |
+| AC | **"i dont want '**Language-specific conventions:**' called out in the copilot instructions. build failures should discover all of it. language conventions are already enforced by build, editorconfig, analysers etc."** (2026-08-26) | **Supersedes the documentation half of Ruling AA: the bullet is deleted, not corrected.** Dave's replacement text was *accurate* — Sir's point is that an accurate prose copy of what the build already enforces is still a liability, because it drifts and because maintaining it costs exactly the archaeology N17 records. The build, `.editorconfig` and the analyzers are both the enforcement **and** the discovery mechanism; a build failure names the rule better than a profile bullet can. The taxonomy of what bites versus what is decorative survives in **N17**, which is where a historical finding belongs — not in the file every agent reloads on every invocation. **One cascade, handled in T10c:** `.github/agents/dave.md:10` said language-specific rules "live in the Project profile", which the deletion would have turned into a dangling pointer — the Ruling X failure mode exactly. The least-privilege and `internal`-needs-flagging guidance is a **behavioural instruction to Dave, enforced by no analyzer**, so it survives, self-contained in his own agent file. **Nothing was migrated** — not to `design.md`, not to a new file. Golden rule #5 and Preflight Gate 1 both read *other* profile bullets and are unaffected; Bhaskar re-confirms that rather than assuming it |
+| AD | **"remove the comment."** (2026-08-26) | **Supersedes Ruling Z's "delete plus comment" and Anders' review points (a)1-3.** T10c's deletion of the `GlobalAnalyzerConfigFiles` ItemGroup leaves **nothing in its place** — no explanatory comment at the site, none relocated beside the analyzer `PropertyGroup`. Arrived at over three iterations: fourteen lines → five (compressed on Sir's "super terse" edit, preserving Bhaskar's *inert, not misresolved* distinction) → **zero**. Sir saw the five-line version and ruled against it. **Context:** he hand-edited `.github/agents/dave.md` item 2 three times in twenty minutes to reach *"Err on the side of not writing comments. The intent should be readable from the code. Exception is some super non-obvious case. If comments need to be written, they need to be super terse."* — settled policy, not a one-off. **The recurrence guard moves, it does not vanish:** N17 is the record, and the T10c commit message carries the refutation so that `git log -S GlobalAnalyzerConfigFiles` and `git blame` surface it for precisely the reader who goes looking. Arguably its proper home all along — a comment explaining an *absence* is an odd artefact, and this one had already proved it by being wrong in its first draft. **Residual risk, accepted knowingly:** a future agent editing `KS.Common.targets` sees no in-file warning; the guard now depends on that agent consulting history or the feature file rather than tripping over the answer |
+
+### N16 — ~~the `.globalconfig` include points one directory short~~ **SUPERSEDED by N17 (2026-08-26)**
+
+> **Do not act on this note.** Its MSBuild reasoning is correct and its conclusion is false. The remedy
+> it proposed — and which Sir ruled for on that basis — would have unset all 240 keys in the file. The
+> note is retained only so the record shows how the error was made. **Read N17 instead.**
 
 `src/KS.Common.targets:55` declares `<GlobalAnalyzerConfigFiles Include="..\.globalconfig" />`. MSBuild
 resolves relative item `Include` paths against the **project** directory, not the directory of the
@@ -402,6 +551,144 @@ work.
 was to close S1. The fix is one of two choices and therefore a decision: change the include to
 `$(MSBuildThisFileDirectory)..\.globalconfig`, or move `.globalconfig` into `src/`. Carry to S2 and pair
 it with re-examining Ruling N's premise.
+
+### N17 — the `.globalconfig` loads; the dormancy is real but elsewhere (2026-08-26, supersedes N16)
+
+Sir ruled on N16: *"fix by using msbuild properties referring to the current file"* — i.e.
+`$(MSBuildThisFileDirectory)..\.globalconfig`. **Dave declined to implement it and brought evidence;
+Anders independently verified every load-bearing claim; the ruling was withdrawn.** The instrument Sir
+named was exactly right for the problem as we described it. The problem as we described it did not exist.
+**N16 was our note, so the correction is ours to own.**
+
+**Three findings, all verified without a build:**
+
+1. **The root `.globalconfig` has always loaded.** `Microsoft.Managed.Core.targets:131-140` appends
+   SDK-discovered configs *into `GlobalAnalyzerConfigFiles` itself* and then filters the **whole item** —
+   project-declared entries included — through `->Exists()`. So `src\.globalconfig` is silently dropped:
+   it is not a broken include producing wrong behaviour, it is an include producing **no** behaviour. The
+   repo-root file arrives on every project by discovery, because every `Compile` item sits beneath it.
+   N16's MSBuild reasoning was right; it then took "the path is wrong" to mean "the config never loads"
+   without checking whether anything else supplied it. One inference too many. N16 itself named the honest
+   tell — a 0-warning build was consistent with both its stories, *and with a third*, which is the true one.
+2. **The ordered fix was actively harmful.** With the property applied, the same physical file reaches
+   `csc` twice under different item identities (the `Distinct()` at `:138` applies to `_AllDirectoriesAbove`
+   *before* the combine, so MSBuild does not dedupe). Roslyn's `AnalyzerConfigSet.MergeSection` then
+   removes conflicting keys **with no value comparison** — identical values from two configs at equal
+   `global_level` still conflict, and both files being named `.globalconfig` makes them `global_level = 100`
+   by construction. Result: `warning MultipleGlobalAnalyzerKeys … It has been unset.`, **one per key, 240
+   of them**, and the build **exits 0** because these setup-phase warnings are not promoted by
+   `TreatWarningsAsErrors`. Behaviourally confirmed: an `IDE0161` probe that errored pre-fix produced no
+   error post-fix. A change made in the name of enforcement that deletes the enforcement and leaves no red
+   — precisely the failure mode N16 existed to close. Anders' key count (240 total, 59 severity-suffixed)
+   matches Dave's observed warning count to the unit.
+3. **Ruling N stands, untouched.** The deleted `lint` gate ran the *same* Release compile as `build`, with
+   the same config, ruleset and analyzers. A duplicate of X cannot enforce more than X. Even had N16's
+   premise been true it would have argued that the *build* gate is weaker than advertised — never that
+   deleting its clone lost anything. **N16 coupled two things that were never coupled.**
+
+**But N16's wider worry survives, sharper and for different reasons.** The config loads fine and roughly a
+quarter of it is dormant anyway:
+
+- **59 `option = value:severity` suffixes are not driving build severity.** The option *values* are read
+  (proven: `IDE0161` fired on block-scoped code only once `dotnet_diagnostic.IDE0161.severity = error` was
+  added, while the option line still read `file_scoped:warning` — so the value was honoured and the suffix
+  was not). Microsoft documents this family of behaviour for .NET 8 and earlier. **Not established:** that
+  the inertness is specific to *global* configs rather than the toolchain or `AnalysisLevel 6.0`; two probes
+  cannot separate those, and this repo cannot A/B it locally because the root `.editorconfig` carries **no**
+  code-style options at all — every style option lives in the global config and nowhere else.
+- **18 `dotnet_naming_rule.*.severity = suggestion` entries are dead at build even if fully honoured** —
+  suggestion is Info, and Info is never promoted by `warnaserror`. The naming layer is IDE guidance, full stop.
+- **`IDE0005` fires today, but only by a third-party workaround.** *Anders concluded it was "very likely
+  dormant" — Dave refuted him, and the refutation holds.* IDE0005 does require XML documentation comments,
+  and `GenerateDocumentationFile`/`DocumentationFile` appear in **no** `.csproj`/`.targets`/`.props` under
+  `src/` — Anders' mechanism was right. But `SvSoft.MSBuild.CheckUnnecessaryUsings` exists to close exactly
+  that hole: its `__TriggerUnnecessaryUsingsCheck` target injects a dummy `DocFileItem` before `CoreCompile`
+  when `GenerateDocumentationFile != true`, and the artefact is on disk in all six projects. Dave's direct
+  build evidence: an unused `using System.Text;` produced `error IDE0005 … EXIT=1`. **The enabling
+  mechanism is SvSoft; the severity is ours** — SvSoft's own config is `global_level = 10` and sets only
+  `warning`, losing to the repo file's default 100. **Recordable fragility: remove that one package and
+  IDE0005 goes dark repo-wide.** Consequence for D11 — it need not carry `GenerateDocumentationFile`.
+- **File-scoped namespaces**, previously advertised as "(enforced)", are uniform by **habit, not by gate**.
+- **What genuinely bites (Release only):** StyleCop `SA*` (default Warning → promoted by
+  `<IncludeAll Action="Error"/>` + `TreatWarningsAsErrors`), incl. SA1028 trailing whitespace; `SX1309`
+  (`_` private-field prefix) and `SX1101` (no `this.`) at explicit `Action="Error"` — **so the profile's
+  `_camelCase` claim is true, but enforced by StyleCop, not by the naming rules a reader would look at**;
+  enabled-by-default `CA*` at `AnalysisLevel 6.0`; VS SDK/Threading, xunit and FluentAssertions analyzers;
+  ordinary compiler warnings; the two `dotnet_diagnostic … = none` suppressions; and `SvSoft`.
+  `StrictCodeAnalysisEnabled` is false outside Release, which is why *"the Release build is the lint"* is
+  the correct framing rather than *"the build is the lint"*.
+
+**Sir's rulings (2026-08-26), both applied:** (a) **Option D** — delete `src/KS.Common.targets:54-56` and
+leave a comment recording why nothing is there, so the next agent does not re-derive this session and
+re-propose the harmful fix; (b) **fix the docs now, backlog the rest** — correct the enforcement claim in
+`.github/copilot-instructions.md`; do **not** convert the 59 suffixes or enable `GenerateDocumentationFile`
+in this task. Both are T10c. The conversion work is D11.
+
+### N18 — T11 answered: one VSIX covers both hosts, verified by the vendor (2026-08-26)
+
+Sir restated the constraint today, verbatim: *"this extension needs to support both 2022 and 2026."* That
+confirms Ruling E rather than changing it. **T11 is answered, and by the strongest available form of
+evidence — Microsoft documenting this repository's exact expression as the both-hosts case.**
+
+Microsoft Learn, **"Extension compatibility model for Visual Studio"** (`visualstudio` 2026 moniker,
+`ms.date 2026-01-09`): if a VSIX works in VS 2022, no changes are required for VS 2026, which *supports
+API version 17.x*, *evaluates compatibility using **only the lower bound*** of the installation-target
+range, and *ignores the upper bound*. Its worked example is byte-for-byte the range at
+`source.extension.vsixmanifest:18,21,24`:
+
+```xml
+<InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,18.0)" />
+```
+
+Corroborated by **"Upgrade a Visual Studio extension"** (`ms.date 2025-11-05`), whose *only* named manifest
+breaking change is removal of the `IntegratedShell` install target — this repo declares `Community`/`Pro`/
+`Enterprise` only, so it does not apply. **Verified no-op.** The standing finding the feature file refused
+to carry forward unverified is now confirmed and may be relied on.
+
+**One artifact, emphatically — two would be a mistake, and the cost is not build time.** The 2019→2022
+precedent does not transfer: that split existed because of a hard ABI break (32→64-bit and a distinct set
+of reference assemblies). No equivalent break exists 17→18; VS 2026 supports 17.x, which is exactly the
+surface this repo binds (`Microsoft.VisualStudio.SDK 17.11.40262`, `VS.Threading 17.11.20`,
+`Community.VisualStudio.Toolkit.17 17.0.522`, `src/external/vs.17.11/*`). Two artifacts would force **two
+`Identity Id`s** — Microsoft is explicit that per-host VSIXes must differ in `Identity` — meaning two
+Marketplace listings, split install counts and ratings, no in-place upgrade for existing 2022 users, and
+live breakage in this codebase: `RustAnalyzerPackage.cs:112` indexes `allExtensionIds[Vsix.Id]` and the
+incompatible-extension table at `:129-133` is Id-keyed; `RustDevelopmentPack` would have to fork too.
+**Two artifacts are therefore an escalation to Sir triggered only by an experimental failure — not a
+design choice available to us.**
+
+**The real S2 risk is not packaging; it is that a green build proves nothing about VS 2026.** The extension
+compiles against frozen 17.11 assemblies checked into `src/external/vs.17.11`. On an 18 host those bind
+through platform unification, and a mismatch surfaces as a runtime **`TypeLoadException` / MEF composition
+error**, never a compiler error. **Any evidence of the form "it builds" must be rejected outright.** Hence
+the T14a/T14b/T14d proof legs, in increasing order of signal.
+
+**Three rules for those legs, written into the tasks rather than into prose nobody executes:**
+
+1. **Every new leg must be demonstrated red once, by construction, before its green is accepted, with the
+   red run id recorded beside the green one.** Point the 18 acceptance leg at an adapter zip missing
+   `KS.RustAnalyzer.TestAdapter.dll`, or at a manifest with `[19.0,)`. **A green leg with no proven red is
+   not evidence** — the repo already holds this discipline (Ruling M, N11).
+2. **No assertion a zero can satisfy** (the B-R2 lesson) and **no filter that excludes the case that
+   matters** (the `scope=External`/`RlsReleaseTests` lesson — the most expensive mistake in this feature's
+   history).
+3. **The resolved host must be asserted and recorded, not assumed** — log the vswhere-resolved instance
+   path and `installationVersion` for the 18 leg into this file's evidence line, or "passed on 2026" is
+   unfalsifiable.
+
+**Two facts behind Sir's gate/report ruling.** (a) `windows-2025-vs2026` is **public-repo-only**; if
+`kitamstudios/rust-analyzer.vs` ever went private, a required check on that label would never report and
+would block every PR indefinitely — **N10's deadlock on a new axis.** (b) Cost is small: the 18 leg reuses
+the existing build artifact and adds one parallel job (slowest test leg measured at 89s against a 368s
+build), so it should not move the critical path. **Sir ruled: gate, from the first commit.**
+
+**Two items flagged but not moved, both outside S2:** VSIX v3 / SDK-style extension projects are an
+*authoring* modernization, **S4 cohort 2 (T27)**, not a 2026 compatibility requirement — do not let it leak
+in. And S7's T44 revisit trigger is *"Microsoft announcing deprecation or reduced support for the 17.x
+VSSDK APIs"*: Microsoft shipping a 2026 compatibility model headlined *"Supports API version 17.x"* is a
+**dated data point that the trigger has not fired**, and T43/T44 should record it with the citation.
+`ProductArchitecture amd64` stays correct; VS 2026 also ships ARM64 (`windows-11-vs2026-arm`) and we declare
+no arm64 target — correct under **D9**, but recorded as a knowing omission rather than an oversight.
 
 ### N1 — O2's crux: the acceptance job consumes the published zip
 
@@ -973,7 +1260,14 @@ all three copy `KS.RustAnalyzer.TestAdapter.dll` and every transitive reference 
 `ResolveAssemblyReference`, which is inherent to `/m` + shared `OutDir` and no target edit touches.
 The complete fix is a build-topology change (per-project `bin` plus a staging step) that collides with
 **D4** and every gate command, and is against **Ruling F** — backlog it as "shared-`OutDir` staging
-redesign", noting it would also give Ruling K the curated staging directory it actually wants. Do take
+redesign", noting it would also give Ruling K the curated staging directory it actually wants.
+
+**Same family, observed 2026-08-26 (Bhaskar, during T10c):** two `MSB3061 "Access to the path … denied"`
+on `_built\EmptyFiles\*` recur under `/m /t:Rebuild`, **naming different files each run** (`ppm`/`pdf`,
+then `avif`/`jpe`) — several test projects copy the same `EmptyFiles` package content into the shared
+`_built` OutDir and collide on delete. Non-fatal, pre-existing, absent from `Invoke-Build.ps1`'s own runs.
+Recorded as a **latent CI flake** and as further evidence that the shared-`OutDir` race is broader than the
+three `CopyTestProjects` duplicates: it reaches package content nobody wrote a target for. Do take
 the free half: move `CopyTestProjects` into `KS.Tests.Common.targets` (kills 3 copies of the same 6
 lines) and gate both copy targets on a declared opt-in property such as `<OwnsSharedTestPayload>true</OwnsSharedTestPayload>`
 set in exactly one test csproj, rather than a hardcoded project name. Build order is irrelevant —

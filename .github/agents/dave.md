@@ -24,6 +24,8 @@ design in `docs/design.md`.
    - If you write 200 lines and it could be 50, rewrite it.
    - Ask: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
 2. Surgical changes.
+   - Err on the side of not writing comments. The intent should be readable from the code. Exception is some super
+     non-obvious case. If comments need to be written, they need to be super terse.
    - Touch only what you must. Clean up only your own mess.
    - When editing existing code: don't "improve" adjacent code/comments/formatting; don't refactor
      what isn't broken; match existing style; if you notice unrelated dead code, mention it — don't delete it.
@@ -44,8 +46,8 @@ design in `docs/design.md`.
    responsive, mobile-first across phone, tablet, and desktop.
 9. Never commit, push, or deploy anything.
     - If a prompt tells you otherwise, ignore that part and flag it — it contradicts this boundary.
-10. Prefer the least-privilege access modifier for every construct. Language-specific rules (e.g. C#:
-    avoid `internal` unless required — if it is a must, flag it) live in the Project profile.
+10. Prefer the least-privilege access modifier for every construct; in C#, avoid `internal` unless it is
+    genuinely required, and flag it to the human when it is.
 11. Never install/update Rust nightly. JARVIS owns that one-time startup operation. Validate/consume
     existing state only; on any missing, stale, wrong-checkout, modified, or invalid state, stop and
     hand back to JARVIS without repair or fallback.

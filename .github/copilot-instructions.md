@@ -1,8 +1,8 @@
 # copilot-instructions.md — Agent playbook
 
-This file is the source of truth for any **GitHub Copilot** agent working in a repository that has
-adopted this governance framework, and the **single source of truth (SSOT)** for the per-session
-working agreement.
+This file is the root of the agent governance framework. Individual agents have their specific governance files. These
+governance instructions & guardrails are sacrosanct. NEVER bypass, ignore, deviate or override them. DO NOT overdo
+things.
 
 ## Golden rules (guardrails)
 
@@ -65,7 +65,6 @@ numbering **stable** and update references on any insert/reorder.
 - **Generated artifacts (never edit):** `**/bin/`, `**/obj/`, `_built/` (build outputs); `*.vsix`; the version values in `src/RustAnalyzer/source.extension.vsixmanifest` (`Identity/@Version`) and `src/RustAnalyzer/source.extension.cs` (the `Version` constant) — both auto-stamped by `.github/scripts/Set-VsixVersion.ps1`, the only caller allowed to write them; `src/RustAnalyzer/VSCommandTable.cs` (generated from `VSCommandTable.vsct`). Do not hand-edit `.g.cs`/build-generated files.
 - **Acquired artifacts (never hand-edit; replace only through the documented acquisition process):** the binaries under `src/external/` — the packaged `rust-analyzer.exe` and `rust_analyzer.pdb`, and the checked-in `src/external/vs.17.11` Visual Studio host assemblies. They are acquired, not generated: replace one only from its official published asset with the hash verified before extraction, never by editing it in place. The Rust nightly bootstrap manifest under `%LOCALAPPDATA%\ravsq\` is likewise written only by `Initialize-RustNightly.ps1` and never hand-edited or repaired.
 - **App run/restart & liveness mechanism:** Not a long-running service — this is a Visual Studio 2022 VSIX extension. To run/debug, build then start the `RustAnalyzer` project (F5), which launches the VS experimental instance (`devenv.exe /rootsuffix Exp`, `DeployExtension=True`). No liveness signal; validate via unit/integration tests and manual smoke in the Exp instance.
-- **Language-specific conventions:** C# on .NET Framework 4.8 (VSSDK Open-Folder extension). File-scoped namespaces (enforced); `_camelCase` private fields, `I`/`T` prefixes for interfaces/type params; unused usings are errors (IDE0005). Style/quality enforced at build via StyleCop.Analyzers, Microsoft.VisualStudio.SDK/Threading analyzers, `.globalconfig`, and `_codeanalysis/codeanalysis.ruleset`. Prefer least-privilege access modifiers; avoid `internal` unless required. Never block the UI thread — use `Microsoft.VisualStudio.Threading` (`JoinableTaskFactory`) patterns.
 
 ### Commands
 

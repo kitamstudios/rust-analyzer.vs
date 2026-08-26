@@ -52,10 +52,6 @@
   </Target>
 
   <ItemGroup>
-    <GlobalAnalyzerConfigFiles Include="..\.globalconfig" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
     <PackageReference Include="Ensure.That" Version="9.2.0" />
     <PackageReference Include="AutoMapper" Version="10.1.1" />
