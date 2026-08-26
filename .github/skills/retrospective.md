@@ -24,8 +24,8 @@ Feature-doc count (excludes the template):
 ## Sources (read-only)
 
 `docs/features/*.md` (especially post-review / post-test-fix logs), `docs/design.md`,
-`docs/backlog.md`, `.github/copilot-instructions.md`, `.github/agents/*.md`, `.github/agent-roles/*`,
-`.github/personas/*`, `.github/skills/*`, and `git log` / commit diffs since the last Log entry.
+`docs/backlog.md`, `.github/copilot-instructions.md`, `.github/agents/*.md`,
+`.github/skills/*`, and `git log` / commit diffs since the last Log entry.
 
 ## Produce (Anders)
 
@@ -33,8 +33,8 @@ Distill cross-cutting, durable lessons (skip feature specifics; verify claims ag
 into two parts, prioritising high-signal, recurring issues:
 
 - **(A) All-agent guardrails** — candidate golden-rule additions/refinements for `copilot-instructions.md`.
-- **(B) Per-agent learnings** — short sections for Anders / Dave / Bhaskar and the **assistant's role body**
-  (`agent-roles/<role>.md`) — never a persona overlay.
+- **(B) Per-agent learnings** — short sections for Anders / Dave / Bhaskar and the **assistant's own agent
+  file** (`.github/agents/<Persona>.md`).
 
 Main thing: Don't overdo this.
 
