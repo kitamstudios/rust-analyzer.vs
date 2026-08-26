@@ -9,6 +9,7 @@ public class SettingsInfo
     public const string KindDebugger = "Debugger";
     public const string KindBuild = "Build";
     public const string KindTest = "Test";
+    public const string KindConfig = "Rust Analyzer Config";
     public const string TypeCommandLineArguments = nameof(NodeBrowseObject.CommandLineArguments);
     public const string TypeDebuggerEnvironment = nameof(NodeBrowseObject.DebuggerEnvironment);
     public const string TypeDebuggerWorkingDirectory = nameof(NodeBrowseObject.WorkingDirectory);

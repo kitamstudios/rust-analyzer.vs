@@ -58,6 +58,14 @@ public static class VsCommon
         await infoBar.TryShowInfoBarUIAsync();
     }
 
+    public static async Task ShowErrorMessageAsync(string title, string message)
+    {
+        await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
+        await CommunityVS.MessageBox.ShowErrorAsync(
+            title.AddPrefixToMessage(),
+            message);
+    }
+
     public static string GetFullName(this VSITEMSELECTION item)
     {
         ThreadHelper.ThrowIfNotOnUIThread();
