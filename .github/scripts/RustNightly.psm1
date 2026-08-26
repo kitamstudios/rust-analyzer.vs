@@ -1,8 +1,8 @@
 Set-StrictMode -Version Latest
 
-Import-Module (Join-Path $PSScriptRoot "AssistantBootstrap.psm1") -Force
-Import-Module (Join-Path $PSScriptRoot "CIProvenance.psm1") -Force
-Import-Module (Join-Path $PSScriptRoot "SessionState.psm1") -Force
+Import-Module (Join-Path $PSScriptRoot "AssistantBootstrap.psm1")
+Import-Module (Join-Path $PSScriptRoot "CIProvenance.psm1")
+Import-Module (Join-Path $PSScriptRoot "SessionState.psm1")
 
 function Get-RustNightlyHandoffMessage {
     param (
@@ -15,6 +15,20 @@ function Get-RustNightlyHandoffMessage {
     }
 
     return "$Message Hand back to JARVIS to run the assistant-only session startup bootstrap."
+}
+
+function Get-PinnedRustNightlyChannel {
+    $channelPath = Join-Path $PSScriptRoot "..\rust-nightly-channel"
+    if (-not (Test-Path -LiteralPath $channelPath -PathType Leaf)) {
+        throw "The pinned Rust nightly channel file is missing: $channelPath."
+    }
+
+    $channel = (Get-Content -LiteralPath $channelPath -Raw).Trim()
+    if ($channel -notmatch "^nightly-\d{4}-\d{2}-\d{2}$") {
+        throw "'$channel' in $channelPath is not a dated nightly channel."
+    }
+
+    return $channel
 }
 
 function Get-RustupPath {
@@ -32,7 +46,7 @@ function Get-RustupPath {
 
 function Get-RustcNightlyInfo {
     $rustup = Get-RustupPath
-    $output = @(& $rustup run nightly rustc -Vv 2>&1)
+    $output = @(& $rustup run (Get-PinnedRustNightlyChannel) rustc -Vv 2>&1)
     if ($LASTEXITCODE -ne 0) {
         $output | ForEach-Object { Write-Host $_ }
         throw (Get-RustNightlyHandoffMessage "The installed nightly rustc probe failed.")
@@ -85,7 +99,7 @@ function Get-RustNightlyManifest {
     $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
     if ($manifest.SchemaVersion -ne 1 -or
         $manifest.SessionId -ne $sessionId -or
-        $manifest.Toolchain -ne "nightly") {
+        $manifest.Toolchain -ne (Get-PinnedRustNightlyChannel)) {
         throw (Get-RustNightlyHandoffMessage "The Rust nightly manifest does not belong to the current session.")
     }
 
@@ -112,7 +126,7 @@ function Enable-SessionRustNightly {
         throw (Get-RustNightlyHandoffMessage "The installed nightly toolchain no longer matches the current-session manifest.")
     }
 
-    $env:RUSTUP_TOOLCHAIN = "nightly"
+    $env:RUSTUP_TOOLCHAIN = Get-PinnedRustNightlyChannel
     $cargoVersion = (& cargo --version 2>&1) -join [Environment]::NewLine
     if ($LASTEXITCODE -ne 0 -or $cargoVersion -ne $manifest.CargoVersion) {
         throw (Get-RustNightlyHandoffMessage "The nightly cargo proxy does not match the current-session manifest.")
@@ -121,4 +135,4 @@ function Enable-SessionRustNightly {
     return $manifest
 }
 
-Export-ModuleMember -Function Get-RustNightlyManifest, Enable-SessionRustNightly
+Export-ModuleMember -Function Get-PinnedRustNightlyChannel, Get-RustNightlyManifest, Enable-SessionRustNightly

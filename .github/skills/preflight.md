@@ -87,13 +87,14 @@ the in-memory token. The plaintext token is never written to the manifest or han
 Direct invocation without the matching token/phase fails before rustup.
 
 The script uses rustup's normal toolchain installation, without changing the default or adding a
-directory override. It installs/updates `nightly` with the minimal profile, rustfmt, clippy, and the
+directory override. It installs/updates the dated nightly channel pinned in
+`.github/rust-nightly-channel` with the minimal profile, rustfmt, clippy, and the
 Windows amd64 MSVC target, then records rustc release/host/commit and cargo version in the current
 session state. A rustup, network, component, install, or version-probe failure blocks the loop and
 writes no nightly manifest.
 
 Bhaskar's full test command validates that manifest and sets process-only
-`RUSTUP_TOOLCHAIN=nightly` before starting VSTest. Cargo, rustc, test discovery, test executables, and
+`RUSTUP_TOOLCHAIN` to that pinned channel before starting VSTest. Cargo, rustc, test discovery, test executables, and
 the standalone harness inherit that environment. Missing or changed nightly state fails explicitly;
 stable fallback and silent integration-test skips are forbidden. Bhaskar never runs rustup install or
 update; he stops and hands back to JARVIS when validation fails. Existing invalid nightly state is

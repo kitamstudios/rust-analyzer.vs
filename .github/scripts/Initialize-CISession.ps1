@@ -8,8 +8,10 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 Import-Module (Join-Path $PSScriptRoot "CIProvenance.psm1") -Force
+Import-Module (Join-Path $PSScriptRoot "RustNightly.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "SessionState.psm1") -Force
 
+$channel = Get-PinnedRustNightlyChannel
 $provenance = New-CIBootstrapProvenance
 $rustup = Get-Command rustup.exe -ErrorAction SilentlyContinue
 if (-not $rustup) {
@@ -20,7 +22,7 @@ if (-not $rustup) {
     throw "rustup was not found after the workflow's nightly setup step."
 }
 
-$rustcOutput = @(& $rustup.Source run nightly rustc -Vv 2>&1)
+$rustcOutput = @(& $rustup.Source run $channel rustc -Vv 2>&1)
 if ($LASTEXITCODE -ne 0) {
     $rustcOutput | ForEach-Object { Write-Host $_ }
     throw "The workflow-installed nightly rustc probe failed."
@@ -33,7 +35,7 @@ foreach ($line in $rustcOutput) {
     }
 }
 
-$cargoVersion = (& $rustup.Source run nightly cargo --version 2>&1) -join [Environment]::NewLine
+$cargoVersion = (& $rustup.Source run $channel cargo --version 2>&1) -join [Environment]::NewLine
 if ($LASTEXITCODE -ne 0 -or
     [string]::IsNullOrWhiteSpace($rustcValues["commit-hash"]) -or
     [string]::IsNullOrWhiteSpace($rustcValues["release"]) -or
@@ -48,7 +50,7 @@ $manifest = [ordered]@{
     BootstrapOwner = $provenance.Owner
     BootstrapPhase = $provenance.Phase
     BootstrapTokenHash = $provenance.TokenHash
-    Toolchain = "nightly"
+    Toolchain = $channel
     RustcVersion = [string]$rustcOutput[0]
     CommitHash = $rustcValues["commit-hash"]
     CommitDate = $rustcValues["commit-date"]

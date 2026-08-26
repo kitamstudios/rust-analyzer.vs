@@ -10,6 +10,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 Import-Module (Join-Path $PSScriptRoot "AssistantBootstrap.psm1") -Force
+Import-Module (Join-Path $PSScriptRoot "RustNightly.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "SessionState.psm1") -Force
 
 if ([string]::IsNullOrWhiteSpace($BootstrapToken)) {
@@ -25,6 +26,7 @@ catch {
     throw "Initialize-RustNightly.ps1 requires JARVIS's in-memory startup authorization. Dave and Bhaskar must hand back to JARVIS. $($_.Exception.Message)"
 }
 
+$channel = Get-PinnedRustNightlyChannel
 $sessionId = Get-RepositorySessionId
 $sessionRoot = Get-RepositorySessionRoot
 $manifestPath = Join-Path $sessionRoot "rust-nightly.json"
@@ -41,8 +43,8 @@ if (-not $rustupCommand) {
     throw "rustup was not found. Nightly bootstrap cannot continue."
 }
 
-Write-Host "Installing or updating Rust nightly for this assistant session..."
-& $rustupCommand.Source toolchain install nightly `
+Write-Host "Installing or updating Rust $channel for this assistant session..."
+& $rustupCommand.Source toolchain install $channel `
     --profile minimal `
     --component rustfmt `
     --component clippy `
@@ -58,7 +60,7 @@ $nightly = & {
         $rustup = Get-Command rustup
     }
 
-    $output = @(& $rustup.Source run nightly rustc -Vv 2>&1)
+    $output = @(& $rustup.Source run $channel rustc -Vv 2>&1)
     if ($LASTEXITCODE -ne 0) {
         $output | ForEach-Object { Write-Host $_ }
         throw "The newly installed nightly rustc probe failed."
@@ -86,7 +88,7 @@ if ([string]::IsNullOrWhiteSpace($nightly.CommitHash) -or
     throw "The newly installed nightly toolchain did not report complete version diagnostics."
 }
 
-$cargoVersion = (& $rustupCommand.Source run nightly cargo --version 2>&1) -join [Environment]::NewLine
+$cargoVersion = (& $rustupCommand.Source run $channel cargo --version 2>&1) -join [Environment]::NewLine
 if ($LASTEXITCODE -ne 0) {
     throw "The newly installed nightly cargo probe failed."
 }
@@ -98,7 +100,7 @@ $manifest = [ordered]@{
     BootstrapOwner = $provenance.Owner
     BootstrapPhase = "ready"
     BootstrapTokenHash = $provenance.TokenHash
-    Toolchain = "nightly"
+    Toolchain = $channel
     RustcVersion = $nightly.Version
     CommitHash = $nightly.CommitHash
     CommitDate = $nightly.CommitDate

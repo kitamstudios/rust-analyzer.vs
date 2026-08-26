@@ -1,6 +1,6 @@
 Set-StrictMode -Version Latest
 
-Import-Module (Join-Path $PSScriptRoot "SessionState.psm1") -Force
+Import-Module (Join-Path $PSScriptRoot "SessionState.psm1")
 
 function Get-AssistantBootstrapPath {
     return Join-Path (Get-RepositorySessionRoot) "assistant-bootstrap.json"

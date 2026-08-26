@@ -40,11 +40,21 @@ jobs:
         sdk: 'false'
         msbuild: 'true'
 
+    - name: Read pinned Rust nightly channel
+      id: nightly
+      run: |
+        $channel = (Get-Content -LiteralPath .\.github\rust-nightly-channel -Raw).Trim()
+        if ($channel -notmatch "^nightly-\d{4}-\d{2}-\d{2}$") {
+          throw "'$channel' in .github/rust-nightly-channel is not a dated nightly channel."
+        }
+        "channel=$channel" >> $env:GITHUB_OUTPUT
+      shell: pwsh
+
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: nightly
+        toolchain: ${{ steps.nightly.outputs.channel }}
         target: x86_64-pc-windows-msvc
         default: true
         components: rustfmt, clippy

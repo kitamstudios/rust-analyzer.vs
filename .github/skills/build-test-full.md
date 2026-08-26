@@ -60,8 +60,9 @@ VSTest results. `-Full -IncludeExternal` runs all 204 assembly cases before the 
 harness. The external network/freshness overlay is never part of the default gate.
 
 **Rust nightly.** JARVIS's preflight Gate 3 installs/updates and records the current session's nightly
-toolchain. `test:full` validates that exact manifest and exports process-only
-`RUSTUP_TOOLCHAIN=nightly` before starting VSTest, so all Cargo/rustc/test-adapter children and the
+toolchain — the dated channel pinned in `.github/rust-nightly-channel`. `test:full` validates that
+exact manifest and exports process-only
+`RUSTUP_TOOLCHAIN` set to that pinned channel before starting VSTest, so all Cargo/rustc/test-adapter children and the
 standalone harness use nightly. Missing/mismatched state is fatal; never fall back to stable.
 
 **Zero tolerance, with one temporary exception.** Any warning or error fails the gate except
