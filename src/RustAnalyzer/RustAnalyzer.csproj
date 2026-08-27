@@ -77,6 +77,7 @@
     <Compile Include="TestAdapter\BaseTestContainer.cs" />
     <Compile Include="TestAdapter\TestContainerDiscoverer.cs" />
     <Compile Include="TestAdapter\TestContainer.cs" />
+    <Compile Include="Infrastructure\PrerequisiteProcessState.cs" />
     <Compile Include="Infrastructure\PreReqsCheckService.cs" />
     <Compile Include="Infrastructure\MetadataServiceFactory.cs" />
     <Compile Include="NodeEnhancements\NodeBrowseObjectProvider.cs" />
