@@ -3,9 +3,8 @@ name: build-test
 description: Runs the fast build/test gate — Release build (which is the analyzer/style enforcement) and unit tests (excludes integration tests). Dave's fast done-done gate.
 ---
 
-This repository's gate **recipe** — no placeholders. It runs the commands named in the **Project
-profile → Commands** table (`.github/copilot-instructions.md`); that table is the single source of
-truth for the actual shell commands, so this file never hardcodes them.
+This repository's gate **recipe** — no placeholders. It runs the commands in the **Commands** table
+in `.github/copilot-instructions.md`; that table is the single source of truth for shell commands.
 
 This recipe is **authoritative for gate membership and order**; the Commands table's `Gate` column is a
 hint. Reorder for your stack if needed (e.g. type-aware linters that require compiled output should run
@@ -52,7 +51,7 @@ the network-dependent rust-analyzer freshness case), the standalone acceptance h
 gates (DRY, mutation, CRAP) belong to Bhaskar's full gate
 (`.github/skills/build-test-full.md`).
 
-DRY, mutation, and CRAP are disabled in feature 001 (`none`) and deferred to feature 002 P0.
+DRY, mutation, and CRAP are disabled (`none`) and tracked in `docs/backlog.md`.
 
 **Zero tolerance.** The Release build **is** the analyzer/style gate: `src/KS.Common.targets` enables
 the analyzers, `EnforceCodeStyleInBuild`, `TreatWarningsAsErrors`, and
