@@ -1,23 +1,32 @@
 # System design
 
-This document describes the current repository. Planned hardening and Visual Studio 2026 work is
-tracked separately in [feature 002](features/002-hardening-and-vs2026.md); none of that planned
-behavior should be inferred to exist today.
+This document describes current behavior and architecture. Planned work lives in
+[`backlog.md`](backlog.md) and must not be inferred as implemented.
+
+## Repository operations
+
+- Resolve trunk from `origin/HEAD`; use `master` only when it is unavailable.
+- **Generated — never hand-edit:** `**/bin/`, `**/obj/`, `_built/`, `*.vsix`, build-generated
+  `.g.cs`, and `src/RustAnalyzer/VSCommandTable.cs` (generated from `VSCommandTable.vsct`). Only
+  `.github/scripts/Set-VsixVersion.ps1` writes `Identity/@Version` in
+  `src/RustAnalyzer/source.extension.vsixmanifest` and `Version` in
+  `src/RustAnalyzer/source.extension.cs`.
+- **Acquired — never hand-edit:** packaged `rust-analyzer.exe` and `rust_analyzer.pdb`, plus
+  `src/external/vs.17.11` host assemblies. Replace only from official assets after hash verification.
+  Only `Initialize-RustNightly.ps1` writes manifests under `%LOCALAPPDATA%\ravsq\`.
 
 ## Product and platform
 
-`rust-analyzer.vs` is a Windows Visual Studio 2022/2026 Open Folder extension for Rust. The main VSIX currently:
-
-This extension introduces the concept of Super workspace. Super workspace is a folder with multiple cargo workspaces.
+`rust-analyzer.vs` is a Windows Visual Studio Open Folder extension for Rust. It introduces a super
+workspace: one folder containing multiple Cargo workspaces.
 
 - targets .NET Framework 4.8 and Visual Studio's in-process VSSDK/MEF APIs;
 - declares amd64 Visual Studio editions in the manifest with installation range `[17.0,18.0)`;
 - rejects Visual Studio versions older than 17.12 at runtime; and
-- therefore has a currently known supported baseline of Visual Studio 2022 17.12 or later, below
-  version 18.
+- is currently validated for Visual Studio 2022 17.12 or later.
 
 The test adapter targets .NET Standard 2.0. `RustDevelopmentPack` is a separate packaging project
-targeting .NET Framework 4.7.2. Visual Studio 2026 support is not current behavior.
+targeting .NET Framework 4.7.2. Visual Studio 2026 compatibility is not yet validated.
 
 Build and test tooling binds to a Visual Studio host explicitly rather than by ambient discovery:
 `.github/scripts/VisualStudio.psm1` resolves MSBuild and `vstest.console.exe` through `vswhere`,
@@ -57,8 +66,7 @@ After package load, the current startup path runs release-note handling, incompa
 detection, prerequisite checks, rust-analyzer installation/update, and update notification. The
 prerequisite implementation checks the Visual Studio version and the availability of `rustup.exe`
 and `cargo.exe`; some failure paths offer browser/restart behavior. The incompatible-extension path
-can disable old Rust extensions and restart Visual Studio. This startup behavior is a known
-constraint and is redesigned, but not yet changed, by feature 002.
+can disable old Rust extensions and restart Visual Studio.
 
 ## MEF, workspace, and language server
 
@@ -87,8 +95,7 @@ and output to Visual Studio's LSP broker.
   with nightly-only JSON test-listing options.
 - Build, clean, clippy, format, rustup target/toolchain, and toolchain install/override operations run
   as child processes with redirected output.
-- Some rustup and remaining Cargo paths still parse human-readable output. Those protocol boundaries are
-  planned for hardening in feature 002.
+- Some rustup and remaining Cargo paths still parse human-readable output.
 
 VSTest loads `TestDiscoverer` and `TestExecutor` from the packaged adapter. Discovery reads generated
 `.rusttests` containers and exposes Rust tests as VSTest cases; execution runs selected test
@@ -102,8 +109,7 @@ executables and translates their results back to VSTest.
   processes. Standard streams are redirected for protocol and build/test output.
 - Workspace and test discovery can fan out work across packages, containers, or executables.
 - Metadata and output events use fire-and-forget tasks in several paths. The current
-  `TaskExtensions.Forget` does not fully observe/report failures; ownership, cancellation, and async
-  failure visibility are feature-002 work.
+  `TaskExtensions.Forget` does not fully observe or report failures.
 
 No long-running repository service exists. F5 on the `RustAnalyzer` project launches a Visual Studio
 experimental instance with the VSIX deployed.
@@ -112,13 +118,12 @@ experimental instance with the VSIX deployed.
 
 `RlsInstallerService` queries GitHub releases, downloads a rust-analyzer archive, extracts the
 executable into the extension area, and records the installed version in the Visual Studio package
-registry. Release/update notifications use process or registry state. Offline, integrity,
-transaction, and rollback behavior are known constraints captured in feature 002.
+registry. Release/update notifications use process or registry state. Offline operation, integrity
+verification, transactional activation, and rollback are unsupported.
 
 `TelemetryService` uses Application Insights and is shared by the extension/test-adapter code.
 Telemetry is suppressed in configured/experimental contexts, but the current implementation embeds
-connection configuration and derives a machine/user-related identifier. Removing unsafe data and
-configuration behavior is planned in feature 002.
+connection configuration and derives a machine/user-related identifier.
 
 ## Sample Rust Projects
 

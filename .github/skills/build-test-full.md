@@ -3,9 +3,8 @@ name: build-test-full
 description: Runs the full build/test gate — Release build (which is the analyzer/style enforcement), the complete test suite (unit + integration + acceptance), plus every optional quality gate that is set. Bhaskar's full done-done gate.
 ---
 
-This repository's gate **recipe** — no placeholders. It runs the commands named in the **Project
-profile → Commands** table (`.github/copilot-instructions.md`); that table is the single source of
-truth for the actual shell commands, so this file never hardcodes them.
+This repository's gate **recipe** — no placeholders. It runs the commands in the **Commands** table
+in `.github/copilot-instructions.md`; that table is the single source of truth for shell commands.
 
 This recipe is **authoritative for gate membership and order**; the Commands table's `Gate` column is a
 hint. Reorder for your stack if needed (e.g. type-aware linters that require compiled output should run

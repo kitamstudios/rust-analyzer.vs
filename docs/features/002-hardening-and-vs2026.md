@@ -1,6 +1,6 @@
 # Feature: Hardening and Visual Studio 2026
 **Branch:** vibe/002-hardening-and-vs2026
-**Status:** In Progress
+**Status:** Archived
 
 ## Requirements
 
@@ -170,62 +170,8 @@ artefact under test. Chosen by Sir.**
 
 | #  | Slice | Task | Status | Commit |
 |----|-------|------|--------|--------|
-| T10c | S2 | **Close N16/N17: delete the inert `.globalconfig` include; delete the enforcement claim** (Sir's rulings Y-withdrawn / Z / AA / AC, 2026-08-26). Delete `src/KS.Common.targets:54-56` outright, leaving **nothing in its place** (Ruling AD — the explanatory comment was written, compressed, then removed; N17 plus the commit message carry the recurrence guard instead). **Then delete the entire `Language-specific conventions` bullet from `.github/copilot-instructions.md` (Ruling AC — deleted, not corrected: the build, `.editorconfig` and the analyzers are both the enforcement and the discovery mechanism).** Repoint `.github/agents/dave.md:10`, which says language-specific rules "live in the Project profile" and would otherwise dangle. **Explicitly out of scope: the 59 suffix conversions and `GenerateDocumentationFile` — those are D11.** Evidence must show the include deletion is a *no-op*: `-getItem:EditorConfigFiles` before/after showing the root `.globalconfig` still arrives, plus the `IDE0161` probe still erroring post-deletion and **zero** `MultipleGlobalAnalyzerKeys`. | In progress | - |
+| T10c | S2 | **Close N16/N17: delete the inert `.globalconfig` include; delete the enforcement claim** (Sir's rulings Y-withdrawn / Z / AA / AC, 2026-08-26). Delete `src/KS.Common.targets:54-56` outright, leaving **nothing in its place** (Ruling AD — the explanatory comment was written, compressed, then removed; N17 plus the commit message carry the recurrence guard instead). **Then delete the entire `Language-specific conventions` bullet from `.github/copilot-instructions.md` (Ruling AC — deleted, not corrected: the build, `.editorconfig` and the analyzers are both the enforcement and the discovery mechanism).** Repoint `.github/agents/dave.md:10`, which says language-specific rules "live in the Project profile" and would otherwise dangle. **Explicitly out of scope: the 59 suffix conversions and `GenerateDocumentationFile` — those are D11.** Evidence must show the include deletion is a *no-op*: `-getItem:EditorConfigFiles` before/after showing the root `.globalconfig` still arrives, plus the `IDE0161` probe still erroring post-deletion and **zero** `MultipleGlobalAnalyzerKeys`. | Done | `007a123` |
 | T11 | S2 | Research the supported manifest expression for **both hosts — VS 2022 17.12+ and VS 2026 — which is a hard requirement (Ruling E)**. Current `source.extension.vsixmanifest` declares three amd64 `InstallationTarget`s at `Version="[17.0, 18.0)"` and a `Microsoft.VisualStudio.Component.CoreEditor` prerequisite at `[17.0,)`. **Specifically verify the standing finding that VS 2026 exposes 17.x APIs and *ignores the upper bound* of existing `InstallationTarget` ranges** — if true, the current range already admits VS 2026 and T13 becomes a no-op or a narrower edit. Record the evidence either way; do not carry the finding forward unverified. **Done 2026-08-26 — VERIFIED, see N18. Microsoft documents this repository's exact range `[17.0,18.0)` as the worked both-hosts example; VS 2026 evaluates only the lower bound. One VSIX, one `Identity Id`, no manifest change required.** | Done | - |
-| T12 | S2 | Separate **packaging claim** from **runtime support**: keep the runtime minimum at 17.12 in `Constants`, add explicit host-capability validation, and make an unsupported host produce a truthful classified result rather than a crash or a silent no-op. **Constraint added by Anders (N18): this must not build a second, competing notion of "is this host usable" alongside S3's readiness state — S3 depends on S2, so T12 defines the host-capability input that T15's readiness state consumes.** | Pending | - |
-| T13 | S2 | Change the manifest **only if T11 proves a change is needed**, and **only after** T14 proves install + activation on a real VS 2026 host. **Collapsed by T11/N18 to: leave `[17.0, 18.0)` alone and record why.** The one optional edit — widening to `[17.0,)`, which is what VS 2026 emits for new extensions and the honest expression of Ruling E — buys **zero** functional difference on either host and touches the one file that decides installability. **Sir's call, and only worth making if T14b proves it on both major 17 and major 18.** VS 2022 17.12+ support must not regress; both hosts ship (Ruling E). | Pending | - |
-| T14a | S2 | **VS 2026 install + registration on `windows-2025-vs2026`** (L0). Download the VSIX artifact `build-and-test` already publishes; `VSIXInstaller.exe /quiet /logFile:…` against the major-18 instance. **Exit code alone is not an assertion** — additionally assert the extension is registered against the *18* instance: the deployed directory exists under that instance's Extensions root and its `extension.vsixmanifest` `Identity/@Id` equals `KS.RustAnalyzer.3a91e56b-fb28-4d85-b572-ec964abf8e31`. **Never ship this leg alone** — an install-and-assert-nothing job is worse than no job. | Pending | - |
-| T14b | S2 | **Run the existing acceptance harness at `-VisualStudioMajorVersion 18`** (L2 — highest signal per unit of work; **do this one first**). One matrix dimension on the existing `acceptance` job: no new build, no new artifact — exactly the fan-out N14 predicted T6's `config` outputs would make a matrix change rather than a rewrite. Non-vacuous **for free**: `VisualStudio.psm1:70` throws when no *complete* major-18 install is present, so a silently-missing host fails rather than skips; the harness fails on zero results and on any diff against the 18-line approved file; and under Ruling K/N9 it consumes only the expanded shipped zip. It loads our TestAdapter inside a `vstest.console.exe` supplied by the VS 2026 install. **Honest limit: this proves the TestAdapter half only** — it touches none of `ProvideAutoLoad(FolderOpened)`, `IWorkspaceProviderFactory`, `LanguageClient`, InfoBars or `SearchAndDisableIncompatibleExtensionsAsync`. **Sir ruled 2026-08-26: this leg GATES on PR; no report-only mode** (a report-only leg is `continue-on-error` wearing a hat, and execution rule #4 forbids it). | Pending | - |
-| T14c | S2 | **[HUMAN]** Interactive VS 2026 smoke: open a Rust folder in the 2026 IDE, confirm package activation, LSP start, and no activity-log/MEF errors. CI cannot do this. **This is all that survives of Ruling D** — N14 and N18 declassify the automatable halves into T14a/T14b. Belongs merged into S5/T34 rather than duplicated here. | Pending | - |
-| T14d | S2 | **MEF composition check on the 18 host** (L1 — optional, attempt after T14a). Force a catalog rebuild without a UI (`devenv.exe /updateconfiguration` or an experimental-hive equivalent) and assert the VS MEF composition error log contains **no** entry naming `KS.RustAnalyzer`. **Two hypotheses must clear first:** (a) `devenv.exe` runs at all in a hosted-runner session; (b) the exact 18.0 path of the composition error file (the 17.0 shape is `…\Microsoft\VisualStudio\17.0_<hive>\ComponentModelCache\Microsoft.VisualStudio.Default.err`; an `18.0_<hive>` analogue is assumed). **If either fails, drop the leg and record it — do not fake it**; T14c covers the gap. | Pending | - |
-
-### S3 — Candidate 3b: readiness, one dialog, one InfoBar, process-only suspension
-
-| #  | Slice | Task | Status | Commit |
-|----|-------|------|--------|--------|
-| T15 | S3 | Introduce the process-scoped readiness state (`Unknown` → evaluating → `Ready` \| `Suspended`) owned by one service; no registry or user-environment persistence (decisions 9, 12). | Pending | - |
-| T16 | S3 | Implement a pure resolver result distinguishing found tools, repairable process PATH, classified missing prerequisites, persisted-PATH change that may benefit from restart, and unexpected faults (decisions 2, 11). | Pending | - |
-| T17 | S3 | Probe process PATH, persisted user/machine PATH, `CARGO_HOME`, `RUSTUP_HOME`, `%USERPROFILE%\.cargo\bin`; validate executables; add only validated directories to the **process** PATH (decision 2). | Pending | - |
-| T18 | S3 | `AsyncLazy` compute-once evaluation and dialog coordination; reset to `Unknown` only on cancellation before prompting; fail open on unexpected exceptions (decisions 10, 11, 12). | Pending | - |
-| T19 | S3 | **[HUMAN]** Dialog and InfoBar copy, including the honest "restart is unlikely to help" wording and the InfoBar's recovery actions (decisions 3, 4, 8). Product copy is Sir's call. | Pending | - |
-| T20 | S3 | Implement the three-action dialog, explicit-only browser launch, never-automatic restart (decisions 3, 4, 5). | Pending | - |
-| T21 | S3 | Implement process-only `Suspended` and exactly one non-modal InfoBar per session; fresh `devenv` starts at `Unknown` (decisions 6, 8, 9). | Pending | - |
-| T22 | S3 | Route command visibility and every LSP/updater/Cargo/test/debug/workspace entry point through the readiness result; no persistent VSIX disable or unload (decisions 6, 7). | Pending | - |
-| T23 | S3 | Unit tests for resolver classification, state transitions, races, and cancellation; integration tests for one-evaluation/one-dialog/one-InfoBar and feature gating under suspension. | Pending | - |
-
-### S4 — Candidate 4: VSSDK and library modernization
-
-| #  | Slice | Task | Status | Commit |
-|----|-------|------|--------|--------|
-| T24 | S4 | Inventory every direct dependency with current and candidate versions: VSSDK, Community.VisualStudio.Toolkit, VS Threading/analyzers, Microsoft.NET.Test.Sdk 17.11.0, xunit 2.9.0 / xunit.runner.visualstudio 2.8.2 / xunit.analyzers 1.15.0 / **xunit.runner.console** (new in T2), FluentAssertions 6.12.0, Moq 4.20.70, ApprovalTests 5.8.0, StyleCop.Analyzers 1.2.0-beta.556, AutoMapper 10.1.1, Newtonsoft.Json 13.0.3, Microsoft.ApplicationInsights 2.22.0, Ensure.That, DalSoft.RestClient, System.Linq.Async, SourceLink. | Pending | - |
-| T25 | S4 | **[HUMAN]** Approve the cohort plan: which packages move together, which major-version jumps are in scope, and what happens to preview pins (StyleCop beta) and licence-changed packages (FluentAssertions 8). | Pending | - |
-| T26 | S4 | Execute cohort 1 (test/analyzer stack) — each cohort is its own commit, gated by the full CI portfolio. | Pending | - |
-| T27 | S4 | Execute cohort 2 (VSSDK/Toolkit/Threading), the cohort most likely to interact with S2. | Pending | - |
-| T28 | S4 | Execute cohort 3 (runtime libraries: AutoMapper, Newtonsoft, ApplicationInsights, REST client). | Pending | - |
-| T29 | S4 | Replace checked-in `src/external/vs.17.11` host assemblies with supported package references where one exists; document provenance and hashes for whatever must remain a binary. | Pending | - |
-| T30 | S4 | Record before/after versions and release-note risks per cohort in this file. | Pending | - |
-
-### S5 — Candidate 5: VS 2022/2026 compatibility matrix
-
-| #  | Slice | Task | Status | Commit |
-|----|-------|------|--------|--------|
-| T31 | S5 | Define the matrix: hosts × scenarios (install, activation, Open Folder/MEF, LSP, Cargo, test discovery/execution, run/debug, suspend/recovery, updater/offline, shutdown). | Pending | - |
-| T32 | S5 | Build the repeatable clean-experimental-instance procedure with captured VS/extension/rustup/cargo/rust-analyzer versions and logs. | Pending | - |
-| T33 | S5 | **[HUMAN]** Execute the matrix on VS 2022 17.12+. | Pending | - |
-| T34 | S5 | **[HUMAN]** Execute the matrix on VS 2026. | Pending | - |
-| T35 | S5 | Reconcile observed support with the manifest claim and `docs/design.md`; document any capability-specific degradation. | Pending | - |
-
-### S6 — Candidate 6: GitHub release notes in the extension
-
-| #  | Slice | Task | Status | Commit |
-|----|-------|------|--------|--------|
-| T36 | S6 | **[HUMAN]** Product design: what is shown, when, where, and what the user can do with it. | Pending | - |
-| T37 | S6 | Define the release-data contract and the trusted source; treat all fetched content as untrusted input. | Pending | - |
-| T38 | S6 | Sanitize/render safely — no arbitrary HTML or script, no navigation without explicit user action. | Pending | - |
-| T39 | S6 | Cache with explicit offline behaviour; never block activation on the network. | Pending | - |
-| T40 | S6 | Accessibility and theming for the surface chosen in T36. | Pending | - |
-| T41 | S6 | Privacy: no identity or path data leaves the machine; respect the suspension gate from S3. | Pending | - |
-| T42 | S6 | Tests: contract, sanitization, cache/offline, failure paths, and one-notification-per-session behaviour. | Pending | - |
 
 ### S7 — Candidate 1: extension-architecture decision (parallel, ships no behaviour)
 
@@ -252,8 +198,6 @@ Evidence behind the decision:
 
 | #  | Slice | Task | Status | Commit |
 |----|-------|------|--------|--------|
-| T43 | S7 | Record the decision in `docs/design.md` as a dated architecture decision: stay on in-process VSSDK, with the evidence summary above and the revisit triggers from T44. | Pending | - |
-| T44 | S7 | Capture the revisit trigger list alongside T43 — the conditions that would reopen this, chiefly **Microsoft announcing deprecation or reduced support for the 17.x VSSDK APIs this extension uses**, plus out-of-process parity arriving for the four blocking capabilities. | Pending | - |
 | T45 | S7 | Update `docs/backlog.md`: retire the analysis candidate as decided, and correct the two stale premises — that the analysis "must inform dependency modernization" (resolved: it does not gate S4) and that it addresses the editor gaps (it does not; reframe those toward LSP-broker probes). | Done | - |
 | T46 | S7 | ~~Cost the migration.~~ **Dropped** — decision taken; costing served a choice that is now made. | Dropped | - |
 | T47 | S7 | ~~**[HUMAN]** Reconcile the analysis with the S4 cohort outcomes and decide the next program.~~ **Dropped** — the decision is independent of the S4 outcome, and S4 was never gated on it. | Dropped | - |
