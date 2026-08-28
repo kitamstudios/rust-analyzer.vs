@@ -58,7 +58,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
 
     private async Task LaunchDebugTargetAsync(IWorkspace workspaceContext, IServiceProvider serviceProvider, LaunchConfigWrapper lcw, CancellationToken ct)
     {
-        if (!await AvailabilityPolicy.IsReadyAsync(AutomaticRustPath.DebugRunPreparation, ct))
+        if (!AvailabilityPolicy.IsReady(AutomaticRustPath.DebugRunPreparation))
         {
             return;
         }

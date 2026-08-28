@@ -17,6 +17,7 @@ using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.LanguageServer.Client;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
@@ -265,7 +266,8 @@ public sealed class AutomaticRustBoundaryTests
         var factory = new FileContextProviderFactory
         {
             AvailabilityPolicy = unavailable.Policy,
-            CargoService = Mock.Of<IToolchainService>(),
+            LazyCargoService = new Lazy<IToolchainService>(
+                () => Mock.Of<IToolchainService>()),
             L = unavailable.Logger,
             OutputPane = Mock.Of<IBuildOutputSink>(),
             T = unavailable.Telemetry,
@@ -302,7 +304,8 @@ public sealed class AutomaticRustBoundaryTests
         var readyFactory = new FileContextProviderFactory
         {
             AvailabilityPolicy = ready.Policy,
-            CargoService = Mock.Of<IToolchainService>(),
+            LazyCargoService = new Lazy<IToolchainService>(
+                () => Mock.Of<IToolchainService>()),
             L = ready.Logger,
             OutputPane = Mock.Of<IBuildOutputSink>(),
             T = ready.Telemetry,
@@ -650,11 +653,15 @@ public sealed class AutomaticRustBoundaryTests
         fixture.State.Status.Should().Be(status);
         var downstreamEffects = new List<string>();
 
-        RunSwitchToolchainBeforeQueryStatus(
+        var command = RunSwitchToolchainBeforeQueryStatus(
+            fixture.State,
             fixture.Policy,
             () => downstreamEffects.Add("enumerated rustup toolchains"));
 
         downstreamEffects.Should().HaveCount(expectedDownstreamEffects);
+        command.Visible.Should().Be(status == PrerequisiteStatus.Ready);
+        command.Enabled.Should().Be(status == PrerequisiteStatus.Ready);
+        command.Supported.Should().Be(status == PrerequisiteStatus.Ready);
         if (evaluation != null)
         {
             evaluationCompletion.SetResult(PrerequisiteResult.Success);
@@ -662,23 +669,39 @@ public sealed class AutomaticRustBoundaryTests
         }
     }
 
-    private static void RunSwitchToolchainBeforeQueryStatus(
+    private static OleMenuCommand RunSwitchToolchainBeforeQueryStatus(
+        PrerequisiteProcessState prerequisiteState,
         PrerequisiteAvailabilityPolicy availabilityPolicy,
         Action queryToolchains)
     {
         var constructor = typeof(SwitchToolchainCommand).GetConstructor(
             BindingFlags.Instance | BindingFlags.NonPublic,
             null,
-            new[] { typeof(PrerequisiteAvailabilityPolicy), typeof(Action), },
+            new[]
+            {
+                typeof(PrerequisiteProcessState),
+                typeof(PrerequisiteAvailabilityPolicy),
+                typeof(Action),
+            },
             null);
         constructor.Should().NotBeNull();
-        var command = constructor.Invoke(new object[] { availabilityPolicy, queryToolchains, });
-        var beforeQueryStatus = typeof(SwitchToolchainCommand).GetMethod(
+        OleMenuCommand menuCommand = null;
+        var queryWithStatus = new Action(
+            () =>
+            {
+                queryToolchains();
+                menuCommand.Visible = menuCommand.Enabled = menuCommand.Supported = true;
+            });
+        var command = constructor.Invoke(
+            new object[] { prerequisiteState, availabilityPolicy, queryWithStatus, });
+        menuCommand = ((SwitchToolchainCommand)command).Command;
+        var beforeQueryStatus = typeof(BaseRustAnalyzerCommand<SwitchToolchainCommand>).GetMethod(
             "BeforeQueryStatus",
             BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.NonPublic);
         beforeQueryStatus.Should().NotBeNull();
 
         beforeQueryStatus.Invoke(command, new object[] { EventArgs.Empty, });
+        return menuCommand;
     }
 
     private sealed class TestBuildFileContext : BuildFileContextBase

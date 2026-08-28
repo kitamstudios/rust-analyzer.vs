@@ -356,7 +356,14 @@ public sealed class PrerequisiteStartupCoordinatorTests
         var repositoryRoot = Path.GetFullPath(
             Path.Combine(
                 Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath),
+                "..",
+                "..",
                 ".."));
+        if (!Directory.Exists(Path.Combine(repositoryRoot, "src", "RustAnalyzer")))
+        {
+            repositoryRoot = Path.GetFullPath(Path.Combine(repositoryRoot, ".."));
+        }
+
         var prerequisiteSource = File.ReadAllText(
             Path.Combine(repositoryRoot, "src", "RustAnalyzer", "Infrastructure", "PreReqsCheckService.cs"));
         var productRoot = Path.Combine(repositoryRoot, "src", "RustAnalyzer");

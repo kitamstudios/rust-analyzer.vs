@@ -55,6 +55,19 @@ completed Visual Studio major is never selected silently.
 The Visual Studio layer depends on the test-adapter/core services. Core Cargo and test behavior does
 not depend on Visual Studio UI types except where VSTest contracts are intrinsic to the adapter.
 
+## Build and canonical project outputs
+
+`.github/scripts/Invoke-Build.ps1` is the sole local and CI build entry point. Its custom
+`RaVsProjectOutputRoot` property activates `src/Directory.Build.props`, which gives every project one
+writer-owned `_built\projects\<project>` closure.
+
+Each project output is canonical. Consumers use exact owning-project paths. In particular:
+
+- `_built\projects\RustAnalyzer\RustAnalyzer.vsix`
+- `_built\projects\RustDevelopmentPack\RustDevelopmentPack.vsix`
+- `_built\projects\RustAnalyzer.TestAdapter\` for curated TestAdapter package inputs
+- `_built\projects\<test-project>\` for each independently probeable test closure
+
 ## Activation and startup
 
 `RustAnalyzerPackage` is a background-loadable `AsyncPackage` registered for the Visual Studio

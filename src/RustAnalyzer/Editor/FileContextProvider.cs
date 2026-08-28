@@ -15,7 +15,7 @@ namespace KS.RustAnalyzer.Editor;
 public sealed class FileContextProvider : IFileContextProvider, IFileContextProvider<string>
 {
     private readonly PrerequisiteAvailabilityPolicy _availabilityPolicy;
-    private readonly IToolchainService _cargoService;
+    private readonly Func<IToolchainService> _getCargoService;
     private readonly Func<IMetadataService> _getMetadataService;
     private readonly Func<ISettingsService> _getSettingsService;
     private readonly IBuildOutputSink _outputPane;
@@ -26,13 +26,32 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
         IBuildOutputSink outputPane,
         Func<ISettingsService> getSettingsService,
         PrerequisiteAvailabilityPolicy availabilityPolicy)
+        : this(
+            getMetadataService,
+            () => cargoService,
+            outputPane,
+            getSettingsService,
+            availabilityPolicy)
+    {
+    }
+
+    public FileContextProvider(
+        Func<IMetadataService> getMetadataService,
+        Func<IToolchainService> getCargoService,
+        IBuildOutputSink outputPane,
+        Func<ISettingsService> getSettingsService,
+        PrerequisiteAvailabilityPolicy availabilityPolicy)
     {
         _getMetadataService = EnsureArg.IsNotNull(
             getMetadataService,
             nameof(getMetadataService),
             options => options.WithException(
                 new ArgumentNullException(nameof(getMetadataService))));
-        _cargoService = cargoService;
+        _getCargoService = EnsureArg.IsNotNull(
+            getCargoService,
+            nameof(getCargoService),
+            options => options.WithException(
+                new ArgumentNullException(nameof(getCargoService))));
         _outputPane = outputPane;
         _getSettingsService = EnsureArg.IsNotNull(
             getSettingsService,
@@ -53,9 +72,8 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
 
     public async Task<IReadOnlyCollection<FileContext>> GetContextsForFileAsync(string filePath, CancellationToken cancellationToken)
     {
-        if (!await _availabilityPolicy.IsReadyAsync(
-                AutomaticRustPath.OpenFolderContextDiscovery,
-                cancellationToken))
+        if (!_availabilityPolicy.IsReady(
+                AutomaticRustPath.OpenFolderContextDiscovery))
         {
             return FileContext.EmptyFileContexts;
         }
@@ -68,6 +86,11 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
         }
 
         var args = await GetBuildTargetInfoForBuildActionAsync(fp);
+        if (!_availabilityPolicy.IsReady(
+                AutomaticRustPath.OpenFolderContextDiscovery))
+        {
+            return FileContext.EmptyFileContexts;
+        }
 
         if (fp.IsManifest())
         {
@@ -79,7 +102,7 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
                             FileContextProviderFactory.ProviderTypeGuid,
                             BuildContextTypes.BuildContextTypeGuid,
                             new BuildFileContext(
-                                _cargoService,
+                                _getCargoService(),
                                 new BuildTargetInfo
                                 {
                                     Profile = profile,
@@ -98,7 +121,7 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
                             FileContextProviderFactory.ProviderTypeGuid,
                             BuildContextTypes.CleanContextTypeGuid,
                             new CleanFileContext(
-                                _cargoService,
+                                _getCargoService(),
                                 new BuildTargetInfo { Profile = profile, WorkspaceRoot = package.WorkspaceRoot, ManifestPath = fp },
                                 _outputPane,
                                 _availabilityPolicy),
@@ -138,7 +161,7 @@ public sealed class FileContextProvider : IFileContextProvider, IFileContextProv
                 contextType: BuildContextTypes.BuildContextTypeGuid,
                 context:
                     new BuildFileContext(
-                        _cargoService,
+                        _getCargoService(),
                         new BuildTargetInfo
                         {
                             Profile = profile,

@@ -238,6 +238,11 @@ public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOp
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
+            if (!PrerequisiteProcessState.Current.IsAvailable)
+            {
+                return;
+            }
+
             if (e.ActionItem.ActionContext is not string actionContext)
             {
                 return;

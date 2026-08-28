@@ -28,6 +28,8 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
     public ITelemetryService T { get; set; }
 
     [Import]
+    public Lazy<IToolchainService> LazyCargoService { get; set; }
+
     public IToolchainService CargoService { get; set; }
 
     [Import]
@@ -37,7 +39,7 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
     {
         var provider = new FileContextProvider(
             () => workspaceContext.GetService<IMetadataService>(),
-            CargoService,
+            () => LazyCargoService?.Value ?? CargoService,
             OutputPane,
             () => workspaceContext.GetService<ISettingsService>(),
             AvailabilityPolicy);

@@ -12,9 +12,9 @@
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
-    <!-- Exactly one test project writes the shared test payload into the common $(TargetDir); see
-         CopyTestProjects and CopyXunitConsoleRunner in KS.Tests.Common.targets. -->
-    <OwnsSharedTestPayload>true</OwnsSharedTestPayload>
+    <CopyTestProjectsFixtures>true</CopyTestProjectsFixtures>
+    <!-- Exactly one isolated test closure owns the gate's xUnit console runner. -->
+    <OwnsXunitConsoleRunner>true</OwnsXunitConsoleRunner>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -58,6 +58,7 @@
     <Compile Include="Infrastructure\PrerequisiteStartupCoordinatorTests.cs" />
     <Compile Include="Infrastructure\PrerequisiteSuspensionInfoBarIntegrationTests.cs" />
     <Compile Include="Infrastructure\PrerequisiteSuspensionNotificationTests.cs" />
+    <Compile Include="Infrastructure\UserSurfaceAvailabilityTests.cs" />
     <Compile Include="Infrastructure\VisualStudioPrerequisiteProbeIntegrationTests.cs" />
     <Compile Include="Infrastructure\StringBuildMessagePreprocessorTests.cs" />
     <Compile Include="Infrastructure\StringExtensionsTests.cs" />

@@ -17,7 +17,7 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
 {
     private readonly PrerequisiteAvailabilityPolicy _availabilityPolicy;
     private readonly TL _tl;
-    private readonly NodeBrowseObjectPropertyFilter<NodeBrowseObject> _browseObject = new(new());
+    private NodeBrowseObjectPropertyFilter<NodeBrowseObject> _browseObject;
 
     [ImportingConstructor]
     public NodeBrowseObjectProvider(
@@ -31,8 +31,6 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
             T = t,
             L = l,
         };
-
-        _browseObject.Object.PropertyChanged += BrowseObject_PropertyChanged;
     }
 
     public object ProvideBrowseObject(WorkspaceVisualNodeBase node)
@@ -42,6 +40,7 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
             return null;
         }
 
+        var browseObject = GetBrowseObject();
         _tl.L.WriteLine("Getting browse object for {0}.", node.NodeFullMoniker);
 
         if (node is not IFileSystemNode fsNode || !File.Exists(fsNode.FullPath))
@@ -55,14 +54,25 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
             return null;
         }
 
-        if (_browseObject.Object.FullPath != default && _browseObject.Object.FullPath == fullPath)
+        if (browseObject.Object.FullPath != default && browseObject.Object.FullPath == fullPath)
         {
-            return _browseObject;
+            return browseObject;
         }
 
         var mds = node.Workspace.GetService<IMetadataService>();
         var (hasTargets, isExe) = node.Workspace.JTF.Run(async () => await mds.GetTargetInfoAsync(fullPath, default));
-        _browseObject.Reset(fullPath, node.Workspace.GetService<ISettingsService>(), hasTargets, isExe, fullPath.IsManifest());
+        browseObject.Reset(fullPath, node.Workspace.GetService<ISettingsService>(), hasTargets, isExe, fullPath.IsManifest());
+        return browseObject;
+    }
+
+    private NodeBrowseObjectPropertyFilter<NodeBrowseObject> GetBrowseObject()
+    {
+        if (_browseObject == null)
+        {
+            _browseObject = new NodeBrowseObjectPropertyFilter<NodeBrowseObject>(new NodeBrowseObject());
+            _browseObject.Object.PropertyChanged += BrowseObject_PropertyChanged;
+        }
+
         return _browseObject;
     }
 

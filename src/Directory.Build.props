@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup Condition="'$(RaVsProjectOutputRoot)' != ''">
+    <OutDir>$([MSBuild]::EnsureTrailingSlash('$(RaVsProjectOutputRoot)'))$(MSBuildProjectName)\</OutDir>
+  </PropertyGroup>
+</Project>

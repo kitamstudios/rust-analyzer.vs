@@ -14,7 +14,10 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
-$outputDirectory = Join-Path $repoRoot "_built"
+$buildRoot = Join-Path $repoRoot "_built"
+$projectsDirectory = Join-Path $buildRoot "projects"
+$testAdapterDirectory = Join-Path $projectsDirectory "RustAnalyzer.TestAdapter"
+$testAdapterPackage = Join-Path $testAdapterDirectory "KS.RustAnalyzer.TestAdapter.zip"
 
 $runsAssemblyTests = $Mode -ne "acceptance"
 $runsAcceptanceHarness = $Mode -eq "acceptance" -or $Mode -eq "full"
@@ -34,17 +37,24 @@ $zeroTestFailure = $null
 $taxonomyFailure = $null
 $taxonomyTestClass = "KS.RustAnalyzer.UnitTests.TraitTaxonomyTests"
 if ($runsAssemblyTests) {
-    $runner = Join-Path $outputDirectory "xunit.console.exe"
+    $runner = Join-Path $projectsDirectory "RustAnalyzer.UnitTests\xunit.console.exe"
     if (-not (Test-Path -LiteralPath $runner -PathType Leaf)) {
         throw "The xUnit console runner was not found: $runner. Run the build command first."
     }
 
-    # Globbing, not enumeration, so a new test assembly is run by the gate with no registration step.
-    $assemblyPattern = "KS.*Tests.dll"
-    $assemblies = @(Get-ChildItem -LiteralPath $outputDirectory -Filter $assemblyPattern -File | ForEach-Object { $_.FullName })
-    if ($assemblies.Count -eq 0) {
-        throw "No test assembly matching $assemblyPattern was found in $outputDirectory. Run the build command first."
+    $testProjects = @(
+        "RustAnalyzer.Remote.UnitTests",
+        "RustAnalyzer.TestAdapter.UnitTests",
+        "RustAnalyzer.UnitTests")
+    $assemblies = @(
+        $testProjects |
+            ForEach-Object { Join-Path $projectsDirectory "$_\KS.$_.dll" } |
+            Sort-Object)
+    $missingAssemblies = @($assemblies | Where-Object { -not (Test-Path -LiteralPath $_ -PathType Leaf) })
+    if ($missingAssemblies.Count -ne 0) {
+        throw "Canonical test assemblies were not found: $($missingAssemblies -join ", "). Run the build command first."
     }
+    $env:RAVS_XUNIT_TEST_ASSEMBLIES = $assemblies -join [IO.Path]::PathSeparator
 
     # full runs unfiltered, so a case carrying no type trait still runs; TraitTaxonomyTests is what fails it.
     # The array subexpression is required: a switch branch yielding @() would collapse to $null.
@@ -106,24 +116,20 @@ $acceptanceFailure = $null
 if ($runsAcceptanceHarness) {
     $acceptanceScript = Join-Path $repoRoot "src\TestProjects\run-integrationtests.ps1"
     try {
-        # The harness only ever sees an expanded copy of the shipped zip, never _built. There is
-        # deliberately no fallback to the build output: an assembly omitted from the package list must
-        # fail here rather than resolve out of the build output and reach a customer instead.
-        $packageFiles = & (Join-Path $PSScriptRoot "Get-TestAdapterPackageFile.ps1") -OutputDirectory $outputDirectory
-        $packagePath = Join-Path $outputDirectory "KS.RustAnalyzer.TestAdapter.zip"
-        Compress-Archive -Path $packageFiles -DestinationPath $packagePath -Force
+        $packageFiles = & (Join-Path $PSScriptRoot "Get-TestAdapterPackageFile.ps1") -OutputDirectory $testAdapterDirectory
+        Compress-Archive -LiteralPath $packageFiles -DestinationPath $testAdapterPackage -Force
 
-        $adapterDirectory = Join-Path $outputDirectory "testadapter"
-        if (Test-Path -LiteralPath $adapterDirectory) {
-            Remove-Item -LiteralPath $adapterDirectory -Recurse -Force
+        $expandedAdapterDirectory = Join-Path $testAdapterDirectory "testadapter"
+        if (Test-Path -LiteralPath $expandedAdapterDirectory) {
+            Remove-Item -LiteralPath $expandedAdapterDirectory -Recurse -Force
         }
 
-        Expand-Archive -LiteralPath $packagePath -DestinationPath $adapterDirectory
-        Write-Host "Acceptance test adapter: $adapterDirectory (expanded from $packagePath)"
+        Expand-Archive -LiteralPath $testAdapterPackage -DestinationPath $expandedAdapterDirectory
+        Write-Host "Acceptance test adapter: $expandedAdapterDirectory (derived from $testAdapterDirectory)"
 
         & $acceptanceScript `
             -SrcDir (Join-Path $repoRoot "src\TestProjects\workspace_with_tests") `
-            -TestAdapterLocation $adapterDirectory `
+            -TestAdapterLocation $expandedAdapterDirectory `
             -VisualStudioMajorVersion $VisualStudioMajorVersion
     }
     catch {

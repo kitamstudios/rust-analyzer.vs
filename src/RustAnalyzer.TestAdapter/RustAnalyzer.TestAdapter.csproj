@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <CopyLocalLockFileAssemblies Condition="'$(RaVsProjectOutputRoot)' != ''">true</CopyLocalLockFileAssemblies>
+    <CopyDebugSymbolFilesFromPackages Condition="'$(RaVsProjectOutputRoot)' != ''">true</CopyDebugSymbolFilesFromPackages>
   </PropertyGroup>
 
   <ItemGroup>

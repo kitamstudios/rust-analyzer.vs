@@ -76,7 +76,7 @@ public abstract class BuildFileContextBase : IBuildFileContext
 
     public async Task<bool> ExecuteBuildAsync(IBuildActionProgress progress, CancellationToken cancellationToken)
     {
-        if (!await _availabilityPolicy.IsReadyAsync(_path, cancellationToken))
+        if (!_availabilityPolicy.IsReady(_path))
         {
             return false;
         }
@@ -88,6 +88,11 @@ public abstract class BuildFileContextBase : IBuildFileContext
         };
 
         await _showUpdateNotificationAsync();
+        if (!_availabilityPolicy.IsReady(_path))
+        {
+            return false;
+        }
+
         return await _commandFunc(BuildTargetInfo, bos, cancellationToken);
     }
 }

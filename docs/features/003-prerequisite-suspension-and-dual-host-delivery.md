@@ -28,8 +28,9 @@
    retry or automatic re-enable.
 9. Support exactly Windows amd64 with Visual Studio 2022 17.12 or later and every Visual Studio
    2026/18.x release. Exact 17.12 passes, older 17.x fails, and unsupported majors fail.
-10. Both `rust-analyzer.vs` and `RustDevelopmentPack` advertise the same host matrix. Remove
-    VSColorOutput64 from the pack and validate every remaining Marketplace constituent.
+10. Both `rust-analyzer.vs` and `RustDevelopmentPack` advertise the same host matrix. Reduce the pack
+    to `rust-analyzer.vs` and TOML Editor; remove VSColorOutput64, Rainbow Braces, and File Icons, and
+    validate the exact TOML Editor payload before publication.
 11. CI builds canonical artifacts once and provides blocking evidence through deterministic 17.12
     boundary/manifest tests, actual install/startup validation on hosted VS 17.14 and VS 18.x, and
     explicitly selected host-major TestAdapter acceptance.
@@ -44,6 +45,9 @@
 15. Do not modify `docs/features/002-hardening-and-vs2026.md`.
 16. Audit every C# argument-validation site and replace manual guards with `EnsureThat` without
     changing its observable exception contract.
+17. Preserve parallel MSBuild while isolating each project's output beneath `_built\projects`.
+    Treat each project output as canonical and update every local and CI consumer of the old flat
+    layout; do not clean `_built` or copy outputs through staging or promotion directories.
 
 ## Design Options (Ox)
 
@@ -73,14 +77,15 @@ still receive defensive guards at their owning integration boundary.
 
 | Slice | Outcome | Depends on |
 |---|---|---|
-| S1 | Ship process-safe prerequisite suspension, truthful dual-host packages, reconciled documentation, and blocking VS17/VS18 compatibility evidence. | - |
-| S2 | Ship one independently versioned RustDevelopmentPack artifact for both Visual Studio 2022 and Visual Studio 2026 across the same publication channels and gates as rust-analyzer.vs. | S1 |
-| S3 | Apply the `EnsureThat` argument-validation rule consistently across the C# codebase without behavioral changes. | S2 |
+| S1 | Ship process-safe prerequisite suspension across automatic, background, and user-triggered extension paths. | - |
+| S2 | Ship collision-free project-owned build outputs, a proven dual-host main package, reconciled documentation, and blocking VS17/VS18 evidence. | S1 |
+| S3 | Ship one minimal, independently versioned RustDevelopmentPack artifact for both Visual Studio 2022 and Visual Studio 2026. | S2 |
+| S4 | Apply the `EnsureThat` argument-validation rule consistently across the C# codebase without behavioral changes. | S3 |
 
-S1 can ship through the existing main-package delivery path. S2 adds distribution of one canonical
-pack artifact validated on both supported Visual Studio generations, without host-specific builds or
-changes to S1 runtime behavior. S3 keeps the repository-wide validation cleanup separate from both
-product changes.
+S1 completes the runtime behavior. S2 makes isolated project outputs canonical and proves the main
+package on both hosts. S3 distributes one canonical pack containing only
+`rust-analyzer.vs` and TOML Editor, without host-specific builds. S4 keeps repository-wide validation
+cleanup separate from product delivery.
 
 ## Tasks (Tx)
 
@@ -94,15 +99,17 @@ Execute one task at a time in order.
 | T4 | S1 | Add the one-shot warning InfoBar, explicit navigation, non-persisted close behavior, and tests. | Done | `d4125c7` |
 | T5 | S1 | Make prerequisite evaluation the first product operation after package activation and defer all normal startup work until readiness. | Done | `3301b78` |
 | T6 | S1 | Gate all automatic/background Rust paths and implement first-suppression-per-path Output logging with tests. | Done | `e84fa0a` |
-| T7 | S1 | Hide or disable every extension-owned user surface while unavailable and make execution callbacks defensive no-ops. | Pending | - |
-| T8 | S1 | Audit and apply the newest proven dual-compatible dependency closure and acquired-artifact provenance policy. | Pending | - |
-| T9 | S1 | Align both VSIX manifests and metadata, remove VSColorOutput64, and validate all remaining Development Pack constituents. | Pending | - |
-| T10 | S1 | Rewrite prerequisite/readme material, reconcile live support claims, update `docs/design.md`, and update all four agent roles. | Pending | - |
-| T11 | S1 | Add canonical-artifact VS17/VS18 validation and the complete blocking behavior/platform evidence matrix. | Pending | - |
-| T12 | S2 | Extend the approved stamper to produce independent main/pack versions with the same deterministic build suffix. | Pending | - |
-| T13 | S2 | Build, validate, and upload RustDevelopmentPack as one named canonical artifact and verify it on both Visual Studio 2022 and Visual Studio 2026. | Pending | - |
-| T14 | S2 | Add pack publication to Open VSIX, Marketplace, and GitHub Releases under the main package's existing fail-closed gates. | Pending | - |
-| T15 | S3 | Inventory every C# argument-validation site, replace manual guards with `EnsureThat`, and prove exception-contract and build/test parity. | Pending | - |
+| T7 | S1 | Hide or disable every extension-owned user surface while unavailable and make execution callbacks defensive no-ops. | In Progress | - |
+| T7b | S2 | Isolate every project's parallel build output under `_built\projects`, make those outputs canonical, and update all local and CI consumers without staging copies. | In Progress | - |
+| T8 | S2 | Audit and apply the newest proven dual-compatible dependency closure and acquired-artifact provenance policy. | Pending | - |
+| T9 | S2 | Align the main VSIX manifest and metadata and establish the shared `[17.12,19.0)` dual-host validation contract. | Pending | - |
+| T10 | S2 | Rewrite prerequisite/readme material, reconcile live support claims, update `docs/design.md`, and update all four agent roles. | Pending | - |
+| T11 | S2 | Add canonical-artifact VS17/VS18 validation and the complete blocking behavior/platform evidence matrix. | Pending | - |
+| T12 | S3 | Extend the approved stamper to produce independent main/pack versions with the same deterministic build suffix. | Pending | - |
+| T13 | S3 | Reduce RustDevelopmentPack to `rust-analyzer.vs` and TOML Editor, align its manifest, build one canonical artifact, and verify it on both hosts. | Pending | - |
+| T13b | S3 | Add a RustDevelopmentPack README covering its two constituents, dual-host support, installation, versioning, source, and licensing. | Pending | - |
+| T14 | S3 | Add pack publication to Open VSIX, Marketplace, and GitHub Releases under the main package's existing fail-closed gates. | Pending | - |
+| T15 | S4 | Inventory every C# argument-validation site, replace manual guards with `EnsureThat`, and prove exception-contract and build/test parity. | Pending | - |
 
 ## Risks (Rx)
 
@@ -116,8 +123,8 @@ Execute one task at a time in order.
   blocker.
 - **R4:** Newer SDK/runtime packages could introduce post-17.12 APIs, binding failures, or framework
   changes. Reject versions without package, analyzer, build, payload, and host evidence.
-- **R5:** Marketplace extension-pack constituents can change independently. Revalidate their
-  then-current payload manifests before publication and fail closed.
+- **R5:** TOML Editor can change independently. Revalidate its then-current payload manifest before
+  publication and fail closed.
 - **R6:** Hosted-image labels or installed versions can drift. Assert the resolved host major and
   minimum version with `vswhere`; never accept an ambient fallback.
 - **R7:** External registries are not transactional. Prevalidate both products before the first
@@ -128,6 +135,8 @@ Execute one task at a time in order.
   rust-analyzer.vs before RustDevelopmentPack and record constituent versions in publication evidence.
 - **R10:** `EnsureThat` substitutions can alter exception type, parameter name, validation order, or
   message. Preserve each public contract and add focused regression coverage where behavior differs.
+- **R11:** Parallel projects writing common dependencies into one flat output directory can race or
+  lock files. Isolate project outputs so every canonical path has exactly one project writer.
 
 ## Assumptions (Ax)
 
@@ -135,8 +144,8 @@ Execute one task at a time in order.
   and evaluates the installation target by its lower bound.
 - **A2:** `windows-2022` supplies current VS 17.14 and `windows-2025-vs2026` supplies VS 18.x; CI
   verifies rather than assumes those versions.
-- **A3:** Remaining pack entries - rust-analyzer.vs, TOML Editor, Rainbow Braces, and File Icons -
-  retain compatible Marketplace payloads at implementation time.
+- **A3:** TOML Editor retains one compatible Marketplace payload for both supported hosts at
+  implementation time.
 - **A4:** Logging, diagnostics, prerequisite UX, and explicit prerequisite navigation may operate
   while suspended.
 - **A5:** Existing release/tag semantics remain based on the main product's version; the independently
@@ -168,6 +177,30 @@ Execute one task at a time in order.
 ## Notes & Decisions
 
 **Pull request:** [#73](https://github.com/kitamstudios/rust-analyzer.vs/pull/73)
+
+### Development Pack composition ruling
+
+- The pack contains only `rust-analyzer.vs` and
+  [TOML Editor](https://marketplace.visualstudio.com/items?itemName=MadsKristensen.TomlEditor).
+- Rainbow Braces is excluded because its current provider does not target Rust and conflicts with
+  built-in brace colorization. File Icons is excluded because it duplicates this extension's Rust
+  icon registrations. VSColorOutput64 remains excluded because publisher-backed VS2026 support is
+  unproven.
+- General-purpose and terminal extensions remain optional user choices. T13 revalidates the exact
+  TOML Editor payload and the one canonical pack artifact on both supported hosts.
+
+### T7b build-output design ruling
+
+- A conditional `src/Directory.Build.props` gives every project one output directory beneath
+  `_built\projects`; ordinary IDE builds retain their existing layout.
+- `Invoke-Build.ps1` performs one parallel Release solution build. It neither cleans `_built` nor
+  copies project outputs through `_built\stage` or `_built\artifacts`.
+- Each `_built\projects\<project>` output is canonical. Tests, CI, packaging, and publication consume
+  exact owning-project paths directly and never fall back to the former flat layout. Files elsewhere
+  beneath `_built` cannot satisfy a gate.
+- Test closures remain separated by project for dependency probing. One project owns the xUnit
+  runner; TestAdapter packaging reads the TestAdapter project's output directly.
+- T7b changes no dependency, package composition, version, host matrix, or MSB3277 policy.
 
 ### T1 outcome
 
@@ -383,13 +416,13 @@ package-load, or payload check, select the newest lower passing version and reco
 
 | Entry | Decision |
 |---|---|
-| rust-analyzer.vs | Retain; S1 establishes its dual-host contract. |
+| rust-analyzer.vs | Retain; S2 establishes its dual-host contract. |
 | TOML Editor | Retain; current Marketplace payload supports both hosts. |
-| Rainbow Braces | Retain; current Marketplace payload supports both hosts. |
-| File Icons | Retain; current Marketplace payload supports both hosts. |
+| Rainbow Braces | Remove; its current provider does not target Rust and conflicts with built-in brace colorization. |
+| File Icons | Remove; it duplicates this extension's Rust icon registrations. |
 | VSColorOutput64 | Remove; its current VS2026 support is not truthful. |
 
-Before publication, resolve each remaining Marketplace ID, record the selected version, inspect its
+Before publication, resolve the TOML Editor Marketplace ID, record the selected version, inspect its
 payload manifest, and fail if the listing is unavailable or incompatible.
 
 ### Compatibility evidence and CI topology

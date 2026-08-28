@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Windows.Forms;
+using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 
 namespace KS.RustAnalyzer.Shell;
@@ -90,6 +91,11 @@ public partial class ToolchainInstallerWizard : Form
 
     private void LinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
     {
+        if (!PrerequisiteProcessState.Current.IsAvailable)
+        {
+            return;
+        }
+
         if (sender == labelChannel || sender == labelDate)
         {
             System.Diagnostics.Process.Start("https://rust-lang.github.io/rustup/concepts/toolchains.html");

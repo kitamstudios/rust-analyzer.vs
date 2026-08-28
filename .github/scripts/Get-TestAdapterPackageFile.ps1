@@ -3,14 +3,14 @@
 
 <#
 .SYNOPSIS
-    Resolves the curated KS.RustAnalyzer.TestAdapter.zip file list against a build output directory.
+    Resolves the curated KS.RustAnalyzer.TestAdapter.zip file list against its project output.
 
 .DESCRIPTION
-    The single reader of src/RustAnalyzer.TestAdapter/testadapter-package.txt. Both the local test gate
-    and the CI zip step call this so the packaged file list has exactly one home.
+    The single reader of src/RustAnalyzer.TestAdapter/testadapter-package.txt. Both the local test
+    gate and the CI zip step call it against the canonical RustAnalyzer.TestAdapter project output.
 
-    Paths are returned without an existence check: Compress-Archive must keep failing hard on a listed
-    name that was not built.
+    Paths are returned without an existence check: Compress-Archive fails hard on a listed name that
+    was not built.
 #>
 [CmdletBinding()]
 param (
