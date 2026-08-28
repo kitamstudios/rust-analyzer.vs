@@ -93,7 +93,7 @@ Execute one task at a time in order.
 | T3 | S1 | Replace prerequisite failure UX with the non-dismissible mapped Yes/No Visual Studio message box and focused UI tests. | Done | `ee6c813`, `d4125c7` |
 | T4 | S1 | Add the one-shot warning InfoBar, explicit navigation, non-persisted close behavior, and tests. | Done | `d4125c7` |
 | T5 | S1 | Make prerequisite evaluation the first product operation after package activation and defer all normal startup work until readiness. | Done | `3301b78` |
-| T6 | S1 | Gate all automatic/background Rust paths and implement first-suppression-per-path Output logging with tests. | In Progress | - |
+| T6 | S1 | Gate all automatic/background Rust paths and implement first-suppression-per-path Output logging with tests. | Done | `e84fa0a` |
 | T7 | S1 | Hide or disable every extension-owned user surface while unavailable and make execution callbacks defensive no-ops. | Pending | - |
 | T8 | S1 | Audit and apply the newest proven dual-compatible dependency closure and acquired-artifact provenance policy. | Pending | - |
 | T9 | S1 | Align both VSIX manifests and metadata, remove VSColorOutput64, and validate all remaining Development Pack constituents. | Pending | - |
@@ -250,6 +250,27 @@ Execute one task at a time in order.
   removed together. The separate ready-path incompatible-extension restart remains unchanged.
 - T6 only observes or awaits existing state and logs the first suppression per named background path.
   T7 treats every non-Ready state as unavailable and rechecks immediately before Rust work.
+
+### T6 outcome
+
+- A process-shared availability policy treats every non-`Ready` state as unavailable and records one
+  suspension transition, one first suppression per finite `AutomaticRustPath`, and one InfoBar
+  failure diagnostic.
+- Package activation remains the sole evaluator initiator. Attempt completion is immutable, while
+  long-lived observers follow later status generations so pre-evaluation construction and
+  canceled/faulted retries cannot permanently miss `Ready`.
+- Language, metadata, watcher, scanner, Open Folder, test-discovery, debug/run, installer/updater,
+  node/property, toolchain-enumeration, and package follow-on boundaries guard before Rust-related
+  effects. Reusable TestAdapter/Cargo code remains independent of Visual Studio prerequisite state.
+- Metadata and test-discovery services remain inert until `Ready`, initialize once, detach external
+  handlers on disposal, and drain admitted callbacks before disposing owned state. Language-client
+  stop likewise prevents late activation.
+- The human removed the T6 source-scanning inventory test. Direct compiled behavior proves
+  toolchain status enumeration has no downstream effect in every non-`Ready` state and preserves the
+  `Ready` path; `docs/design.md` records the maintenance invariant for future boundaries.
+- Full verification passed 338 assembly tests and all 18 acceptance expectations. The Release build
+  added no warning code or MSB3277 project/assembly signature; T8 still owns the existing baseline.
+- T7 owns user-surface visibility and defensive explicit command callbacks.
 
 ### Runtime flow
 
