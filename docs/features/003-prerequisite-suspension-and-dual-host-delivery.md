@@ -84,8 +84,8 @@ Execute one task at a time in order.
 | # | Slice | Task | Status | Commit |
 |---|---|---|---|---|
 | T1 | S1 | Add the shared process-scoped prerequisite state, immutable cached result, single-flight completion, and state-transition unit tests. | Done | `c87922d` |
-| T2 | S1 | Implement complete prerequisite probe classification and the exact VS17/VS18 predicate with unit and process-boundary integration tests. | Done | - |
-| T3 | S1 | Replace prerequisite failure UX with the non-dismissible `Disable`/`Help` dialog and focused UI integration tests. | Pending | - |
+| T2 | S1 | Implement complete prerequisite probe classification and the exact VS17/VS18 predicate with unit and process-boundary integration tests. | Done | `3350c13` |
+| T3 | S1 | Replace prerequisite failure UX with the non-dismissible `Disable`/`Help` dialog and focused UI integration tests. | Done | - |
 | T4 | S1 | Add the one-shot warning InfoBar, explicit navigation, non-persisted close behavior, and tests. | Pending | - |
 | T5 | S1 | Make prerequisite evaluation the first product operation after package activation and defer all normal startup work until readiness. | Pending | - |
 | T6 | S1 | Gate all automatic/background Rust paths and implement first-suppression-per-path Output logging with tests. | Pending | - |
@@ -193,6 +193,22 @@ Execute one task at a time in order.
   fragment.
 - T5 keeps package activation as the sole production evaluation initiator; all other boundaries only
   observe or await cached state.
+
+### T3 outcome
+
+- `DialogWindow` is the smallest supported net48/VSSDK view that permits exact action labels,
+  Help-without-close, blocked user dismissal, Visual Studio ownership/theming, and shutdown closure.
+  Fixed OLE message boxes and `MessageDialog` cannot satisfy those semantics; native TaskDialog
+  interop would add unmanaged lifecycle risk.
+- The immutable model owns ordered content, the controller owns state/navigation, and the view owns
+  WPF composition and close policy.
+- T4 shows the InfoBar only after the modal returns with state `Suspended`; shutdown closure leaves
+  state `Failed` and creates no InfoBar.
+- T5 performs no startup or Rust work after the dialog unless state is `Ready`. Shutdown-driven
+  closure terminates activation, converts unexpected non-cancellation probe faults to typed failures,
+  and removes the complete legacy check/restart path when the new flow becomes authoritative.
+- T11 still validates shell ownership, theming, modal behavior, and shutdown closure in real VS17 and
+  VS18 processes.
 
 ### Runtime flow
 

@@ -78,6 +78,7 @@
     <Compile Include="TestAdapter\TestContainerDiscoverer.cs" />
     <Compile Include="TestAdapter\TestContainer.cs" />
     <Compile Include="Infrastructure\PrerequisiteEvaluator.cs" />
+    <Compile Include="Infrastructure\PrerequisiteFailureDialog.cs" />
     <Compile Include="Infrastructure\PrerequisiteProcessState.cs" />
     <Compile Include="Infrastructure\PreReqsCheckService.cs" />
     <Compile Include="Infrastructure\MetadataServiceFactory.cs" />
@@ -156,6 +157,9 @@
     <Reference Include="System.Design" />
     <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.Collections.Immutable" Version="7.0.0" />
