@@ -9,10 +9,10 @@
 2. Check the supported Visual Studio version, `rustup` through the Visual Studio process PATH, a
    configured default Rust toolchain, and operational Cargo from that toolchain and PATH. Nightly is
    not a startup prerequisite.
-3. On failure, show all detected failures in one modal dialog with exactly `Disable` and `Help`.
-   `Help` explicitly opens `PREREQUISITES.md` and leaves the dialog open. Only `Disable` closes the
-   flow. X, Escape, and equivalent close paths cannot dismiss it. Never restart or open a browser
-   automatically.
+3. On failure, show all detected failures in a Visual Studio framework Yes/No message box. Its text
+   maps `Yes` to `Disable` and `No` to `Help`, with `Yes` focused by default. `No` explicitly opens
+   `PREREQUISITES.md` and re-shows the prompt; only `Yes` closes the flow. X, Escape, and equivalent
+   close paths cannot dismiss it. Never restart or open a browser automatically.
 4. `Disable` suspends rust-analyzer.vs for that process only. It does not unload the VSIX or change
    Extension Manager state.
 5. While suspended, no extension feature performs Rust, Cargo, rustup, rust-analyzer, update,
@@ -85,8 +85,8 @@ Execute one task at a time in order.
 |---|---|---|---|---|
 | T1 | S1 | Add the shared process-scoped prerequisite state, immutable cached result, single-flight completion, and state-transition unit tests. | Done | `c87922d` |
 | T2 | S1 | Implement complete prerequisite probe classification and the exact VS17/VS18 predicate with unit and process-boundary integration tests. | Done | `3350c13` |
-| T3 | S1 | Replace prerequisite failure UX with the non-dismissible `Disable`/`Help` dialog and focused UI integration tests. | Done | - |
-| T4 | S1 | Add the one-shot warning InfoBar, explicit navigation, non-persisted close behavior, and tests. | Pending | - |
+| T3 | S1 | Replace prerequisite failure UX with the non-dismissible mapped Yes/No Visual Studio message box and focused UI tests. | Done | `ee6c813` (superseded) |
+| T4 | S1 | Add the one-shot warning InfoBar, explicit navigation, non-persisted close behavior, and tests. | Done | - |
 | T5 | S1 | Make prerequisite evaluation the first product operation after package activation and defer all normal startup work until readiness. | Pending | - |
 | T6 | S1 | Gate all automatic/background Rust paths and implement first-suppression-per-path Output logging with tests. | Pending | - |
 | T7 | S1 | Hide or disable every extension-owned user surface while unavailable and make execution callbacks defensive no-ops. | Pending | - |
@@ -196,12 +196,12 @@ Execute one task at a time in order.
 
 ### T3 outcome
 
-- `DialogWindow` is the smallest supported net48/VSSDK view that permits exact action labels,
-  Help-without-close, blocked user dismissal, Visual Studio ownership/theming, and shutdown closure.
-  Fixed OLE message boxes and `MessageDialog` cannot satisfy those semantics; native TaskDialog
-  interop would add unmanaged lifecycle risk.
-- The immutable model owns ordered content, the controller owns state/navigation, and the view owns
-  WPF composition and close policy.
+- The human superseded the custom `DialogWindow` after T3's first commit. The Visual Studio framework
+  Yes/No message box owns DPI, theme, sizing, accessibility, modality, and shell integration.
+- Dialog text maps `Yes` to process-only Disable and `No` to Help. `Yes` is the default. `No`
+  explicitly opens prerequisites and then re-shows the prompt, so only `Yes` releases Visual Studio.
+- The immutable model owns ordered content and action explanations; the controller owns
+  state/navigation and the framework message-box loop.
 - T4 shows the InfoBar only after the modal returns with state `Suspended`; shutdown closure leaves
   state `Failed` and creates no InfoBar.
 - T5 performs no startup or Rust work after the dialog unless state is `Ready`. Shutdown-driven
@@ -209,6 +209,20 @@ Execute one task at a time in order.
   and removes the complete legacy check/restart path when the new flow becomes authoritative.
 - T11 still validates shell ownership, theming, modal behavior, and shutdown closure in real VS17 and
   VS18 processes.
+
+### T4 outcome
+
+- The process singleton creates at most one suspended-session InfoBar attempt. Ineligible early calls
+  do not consume it; success, close, or failure cannot recreate it.
+- The InfoBar contains only the exact warning text, warning icon, identity-bound
+  `View prerequisites` link, and framework X. Close or show failure detaches handlers, unadvises the
+  COM sink, and disposes the adapter.
+- T5 evaluates through process state, shows the prompt for typed failure, shows the InfoBar only after
+  `Suspended`, and stops startup for both `Suspended` and exceptional/shutdown `Failed`.
+- T5 catches and logs InfoBar failures without undoing suspension, retrying UI, showing another
+  modal, or withholding control from Visual Studio.
+- T6 folds InfoBar failure diagnostics into the same non-spamming Output policy. T11 validates real
+  VS17/VS18 prompt close behavior, InfoBar placement/action routing, and close cleanup.
 
 ### Runtime flow
 
@@ -243,8 +257,9 @@ prerequisite for nightly-only behavior, including Rust Test Explorer discovery/e
 
 ### Dialog and InfoBar
 
-The dialog lists all failures, explains both actions, has exactly `Disable` and `Help`, cannot be
-dismissed by close gestures, and invokes neither navigation nor restart before an explicit action.
+The Visual Studio Yes/No message box lists all failures and explains `Yes = Disable` and `No = Help`.
+`Yes` is the default; `No` opens prerequisites and re-shows the prompt. Close gestures cannot dismiss
+the flow, and neither navigation nor restart occurs before an explicit action.
 After `Disable`, the one warning InfoBar may navigate to prerequisite documentation but cannot retry.
 
 ### Boundary inventory

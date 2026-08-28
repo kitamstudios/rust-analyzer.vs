@@ -41,9 +41,6 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="PresentationCore" />
-    <Reference Include="PresentationFramework" />
-    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\TestsCommon\RaVsDiffReporter.cs">
@@ -53,9 +50,10 @@
       <Link>Common\TestHelpers.cs</Link>
     </Compile>
     <Compile Include="Infrastructure\PrerequisiteEvaluatorTests.cs" />
-    <Compile Include="Infrastructure\PrerequisiteFailureDialogIntegrationTests.cs" />
-    <Compile Include="Infrastructure\PrerequisiteFailureDialogTests.cs" />
+    <Compile Include="Infrastructure\PrerequisiteFailurePromptTests.cs" />
     <Compile Include="Infrastructure\PrerequisiteProcessStateTests.cs" />
+    <Compile Include="Infrastructure\PrerequisiteSuspensionInfoBarIntegrationTests.cs" />
+    <Compile Include="Infrastructure\PrerequisiteSuspensionNotificationTests.cs" />
     <Compile Include="Infrastructure\VisualStudioPrerequisiteProbeIntegrationTests.cs" />
     <Compile Include="Infrastructure\StringBuildMessagePreprocessorTests.cs" />
     <Compile Include="Infrastructure\StringExtensionsTests.cs" />
