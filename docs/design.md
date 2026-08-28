@@ -68,6 +68,10 @@ prerequisite implementation checks the Visual Studio version and the availabilit
 and `cargo.exe`; some failure paths offer browser/restart behavior. The incompatible-extension path
 can disable old Rust extensions and restart Visual Studio.
 
+Every new automatic/background Rust execution path must have a finite `AutomaticRustPath` member and
+pass `PrerequisiteAvailabilityPolicy` before side effects. Every prerequisite state except `Ready`
+disables the path.
+
 ## MEF, workspace, and language server
 
 The extension exports MEF providers for Open Folder metadata, file scanning, and file contexts.

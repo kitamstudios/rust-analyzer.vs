@@ -96,6 +96,42 @@ public sealed class PrerequisiteProcessStateTests
     }
 
     [Fact]
+    public async Task EvaluationCompletionOnlyObservesTheExistingEvaluationAsync()
+    {
+        using var context = new JoinableTaskContext();
+        var state = new PrerequisiteProcessState(context.Factory);
+        var evaluationCompletion = new TaskCompletionSource<PrerequisiteResult>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var evaluations = 0;
+
+        state.EvaluationCompletion.Should().BeNull();
+        state.GetEvaluationStatus(out var missingObservation).Should()
+            .Be(PrerequisiteStatus.NotEvaluated);
+        missingObservation.Should().BeNull();
+        var activation = state.GetOrEvaluateAsync(
+            _ =>
+            {
+                Interlocked.Increment(ref evaluations);
+                return evaluationCompletion.Task;
+            },
+            default);
+        var observation = state.EvaluationCompletion;
+        state.GetEvaluationStatus(out var atomicObservation).Should()
+            .Be(PrerequisiteStatus.Evaluating);
+
+        observation.Should().BeSameAs(activation);
+        atomicObservation.Should().BeSameAs(observation);
+        evaluations.Should().Be(1);
+        state.Status.Should().Be(PrerequisiteStatus.Evaluating);
+
+        evaluationCompletion.SetResult(PrerequisiteResult.Success);
+
+        (await observation).Should().BeSameAs(PrerequisiteResult.Success);
+        state.Status.Should().Be(PrerequisiteStatus.Ready);
+        evaluations.Should().Be(1);
+    }
+
+    [Fact]
     public async Task CompletedEvaluationIsReusedAsync()
     {
         using var context = new JoinableTaskContext();
@@ -226,6 +262,67 @@ public sealed class PrerequisiteProcessStateTests
         result.Should().BeSameAs(PrerequisiteResult.Success);
         evaluations.Should().Be(2);
         state.Status.Should().Be(PrerequisiteStatus.Ready);
+    }
+
+    [Fact]
+    public async Task CapturedCanceledCompletionDoesNotRetargetToRetryAsync()
+    {
+        using var context = new JoinableTaskContext();
+        var state = new PrerequisiteProcessState(context.Factory);
+        var firstCompletion = new TaskCompletionSource<PrerequisiteResult>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var firstEvaluation = state.GetOrEvaluateAsync(_ => firstCompletion.Task, default);
+        var capturedCompletion = state.EvaluationCompletion;
+
+        firstCompletion.SetCanceled();
+        Func<Task> awaitFirst = async () => await firstEvaluation;
+        Func<Task> awaitCaptured = async () => await capturedCompletion;
+        await awaitFirst.Should().ThrowAsync<OperationCanceledException>();
+        await awaitCaptured.Should().ThrowAsync<OperationCanceledException>();
+
+        var retryCompletion = new TaskCompletionSource<PrerequisiteResult>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var retry = state.GetOrEvaluateAsync(_ => retryCompletion.Task, default);
+
+        state.EvaluationCompletion.Should().BeSameAs(retry);
+        state.EvaluationCompletion.Should().NotBeSameAs(capturedCompletion);
+        capturedCompletion.IsCanceled.Should().BeTrue();
+
+        retryCompletion.SetResult(PrerequisiteResult.Success);
+        (await retry).Should().BeSameAs(PrerequisiteResult.Success);
+    }
+
+    [Fact]
+    public async Task CapturedFaultedCompletionDoesNotRetargetToRetryAsync()
+    {
+        using var context = new JoinableTaskContext();
+        var state = new PrerequisiteProcessState(context.Factory);
+        var expected = new InvalidOperationException("Evaluation fault.");
+        var firstCompletion = new TaskCompletionSource<PrerequisiteResult>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var firstEvaluation = state.GetOrEvaluateAsync(
+            _ => firstCompletion.Task,
+            default);
+        var capturedCompletion = state.EvaluationCompletion;
+
+        firstCompletion.SetException(expected);
+        Func<Task> awaitFirst = async () => await firstEvaluation;
+        Func<Task> awaitCaptured = async () => await capturedCompletion;
+        (await awaitFirst.Should().ThrowAsync<InvalidOperationException>())
+            .Which.Should().BeSameAs(expected);
+        (await awaitCaptured.Should().ThrowAsync<InvalidOperationException>())
+            .Which.Should().BeSameAs(expected);
+
+        var retryCompletion = new TaskCompletionSource<PrerequisiteResult>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var retry = state.GetOrEvaluateAsync(_ => retryCompletion.Task, default);
+
+        state.EvaluationCompletion.Should().BeSameAs(retry);
+        state.EvaluationCompletion.Should().NotBeSameAs(capturedCompletion);
+        capturedCompletion.IsFaulted.Should().BeTrue();
+
+        retryCompletion.SetResult(PrerequisiteResult.Success);
+        (await retry).Should().BeSameAs(PrerequisiteResult.Success);
     }
 
     [Fact]

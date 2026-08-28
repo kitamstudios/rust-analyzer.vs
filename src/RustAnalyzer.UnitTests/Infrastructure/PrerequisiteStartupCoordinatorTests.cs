@@ -67,12 +67,20 @@ public sealed class PrerequisiteStartupCoordinatorTests
         {
             PromptAction = state.Suspend,
         };
-        var coordinator = CreateCoordinator(context, state, operations);
+        var logger = new RecordingLogger();
+        var coordinator = CreateCoordinator(
+            context,
+            state,
+            operations,
+            new PrerequisiteAvailabilityPolicy(state, logger, new RecordingTelemetry()));
 
         await EvaluateAndRunAsync(coordinator, state, calls, CreateFailedResult(), default);
         await EvaluateAndRunAsync(coordinator, state, calls, CreateFailedResult(), default);
 
         calls.Should().Equal(Evaluation, Prompt, InfoBar);
+        logger.Lines.Select(line => string.Format(line.Format, line.Arguments)).Should()
+            .ContainSingle(message => message.Contains("entered prerequisite state Suspended"))
+            .And.ContainSingle(message => message.Contains("package follow-on startup"));
         state.Status.Should().Be(PrerequisiteStatus.Suspended);
         state.CachedResult.Should().NotBeNull();
     }
@@ -161,6 +169,7 @@ public sealed class PrerequisiteStartupCoordinatorTests
         };
         var coordinator = new PrerequisiteStartupCoordinator(
             state,
+            new PrerequisiteAvailabilityPolicy(state, logger, telemetry),
             context.Factory,
             RunInlineAsync,
             operations);
@@ -211,6 +220,7 @@ public sealed class PrerequisiteStartupCoordinatorTests
         var operations = new TestStartupOperations(state, calls);
         var coordinator = new PrerequisiteStartupCoordinator(
             state,
+            CreatePolicy(state),
             context.Factory,
             RunInlineAsync,
             operations);
@@ -274,13 +284,21 @@ public sealed class PrerequisiteStartupCoordinatorTests
             PromptAction = state.Suspend,
             InfoBarAction = () => Task.FromException<bool>(expected),
         };
-        var coordinator = CreateCoordinator(context, state, operations);
+        var logger = new RecordingLogger();
+        var telemetry = new RecordingTelemetry();
+        var coordinator = CreateCoordinator(
+            context,
+            state,
+            operations,
+            new PrerequisiteAvailabilityPolicy(state, logger, telemetry));
 
         await EvaluateAndRunAsync(coordinator, state, calls, CreateFailedResult(), default);
         await EvaluateAndRunAsync(coordinator, state, calls, CreateFailedResult(), default);
 
         calls.Should().Equal(Evaluation, Prompt, InfoBar);
-        operations.ReportedInfoBarFailures.Should().Equal(expected);
+        logger.Errors.Should().ContainSingle();
+        logger.Errors[0].Arguments.Should().ContainSingle().Which.Should().BeSameAs(expected);
+        telemetry.Exceptions.Should().Equal(expected);
         state.Status.Should().Be(PrerequisiteStatus.Suspended);
     }
 
@@ -298,6 +316,7 @@ public sealed class PrerequisiteStartupCoordinatorTests
                 var operations = new TestStartupOperations(state, calls);
                 var coordinator = new PrerequisiteStartupCoordinator(
                     state,
+                    CreatePolicy(state),
                     context.Factory,
                     RunInlineAsync,
                     operations);
@@ -345,6 +364,8 @@ public sealed class PrerequisiteStartupCoordinatorTests
             Path.Combine(productRoot, "Infrastructure", "PrerequisiteEvaluator.cs"));
         var coordinatorSource = File.ReadAllText(
             Path.Combine(productRoot, "Infrastructure", "PrerequisiteStartupCoordinator.cs"));
+        var availabilityPolicySource = File.ReadAllText(
+            Path.Combine(productRoot, "Infrastructure", "PrerequisiteAvailabilityPolicy.cs"));
         var packagePath = Path.Combine(productRoot, "RustAnalyzerPackage.cs");
         var packageSource = File.ReadAllText(packagePath);
 
@@ -366,9 +387,9 @@ public sealed class PrerequisiteStartupCoordinatorTests
         prerequisiteSource.Should().NotContain("OpenSystemBrowser").And.NotContain("RestartAsync");
         coordinatorSource.Should().NotContain("OpenSystemBrowser").And.NotContain("RestartAsync");
         packageSource.Should().NotContain("_preReqs.SatisfyAsync");
-        packageSource.Should().Contain(
-            "_tl.L.WriteError(\"Failed to show prerequisite suspension InfoBar. Ex: {0}\", exception);");
-        packageSource.Should().Contain("_tl.T.TrackException(exception);");
+        availabilityPolicySource.Should().Contain(
+            "_logger.WriteError(\"Failed to show prerequisite suspension InfoBar. Ex: {0}\", exception);");
+        availabilityPolicySource.Should().Contain("_telemetry.TrackException(exception);");
         packageSource.Should().NotContain("CommunityVS.Shell.GetVsVersionAsync()");
         evaluatorSource
             .Split(new[] { "CommunityVS.Shell.GetVsVersionAsync()" }, StringSplitOptions.None)
@@ -473,13 +494,23 @@ public sealed class PrerequisiteStartupCoordinatorTests
     private static PrerequisiteStartupCoordinator CreateCoordinator(
         JoinableTaskContext context,
         PrerequisiteProcessState state,
-        IPrerequisiteStartupOperations operations)
+        IPrerequisiteStartupOperations operations,
+        PrerequisiteAvailabilityPolicy availabilityPolicy = null)
     {
         return new PrerequisiteStartupCoordinator(
             state,
+            availabilityPolicy ?? CreatePolicy(state),
             context.Factory,
             RunInlineAsync,
             operations);
+    }
+
+    private static PrerequisiteAvailabilityPolicy CreatePolicy(PrerequisiteProcessState state)
+    {
+        return new PrerequisiteAvailabilityPolicy(
+            state,
+            new RecordingLogger(),
+            new RecordingTelemetry());
     }
 
     private static Task EvaluateAndRunAsync(
@@ -542,8 +573,6 @@ public sealed class PrerequisiteStartupCoordinatorTests
 
         public Func<Task<bool>> InfoBarAction { get; set; } = () => Task.FromResult(true);
 
-        public List<Exception> ReportedInfoBarFailures { get; } = new();
-
         public void ShowPrerequisiteFailurePrompt()
         {
             _calls.Add(Prompt);
@@ -580,11 +609,6 @@ public sealed class PrerequisiteStartupCoordinatorTests
         {
             _calls.Add(UpdateNotification);
             return Task.CompletedTask;
-        }
-
-        public void ReportInfoBarFailure(Exception exception)
-        {
-            ReportedInfoBarFailures.Add(exception);
         }
     }
 
@@ -633,8 +657,11 @@ public sealed class PrerequisiteStartupCoordinatorTests
     {
         public List<(string Format, object[] Arguments)> Errors { get; } = new();
 
+        public List<(string Format, object[] Arguments)> Lines { get; } = new();
+
         public void WriteLine(string format, params object[] args)
         {
+            Lines.Add((format, args));
         }
 
         public void WriteError(string format, params object[] args)

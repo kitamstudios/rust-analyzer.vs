@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Community.VisualStudio.Toolkit;
+using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.ComponentModelHost;
@@ -16,6 +17,7 @@ public abstract class BaseRustAnalyzerCommand<T> : BaseCommand<T>
     where T : class, new()
 {
     private ILogger _logger;
+    private PrerequisiteAvailabilityPolicy _availabilityPolicy;
     private ITelemetryService _telemetry;
     private ShellInterop.IVsSolution _solution;
     private ShellInterop.IVsDebugger _debugger;
@@ -30,6 +32,9 @@ public abstract class BaseRustAnalyzerCommand<T> : BaseCommand<T>
     protected ITelemetryService Telemetry => _telemetry ??= Package.GetService<SComponentModel, IComponentModel2>(false)?.GetService<ITelemetryService>();
 
     protected ILogger Logger => _logger ??= Package.GetService<SComponentModel, IComponentModel2>(false)?.GetService<ILogger>();
+
+    protected PrerequisiteAvailabilityPolicy AvailabilityPolicy =>
+        _availabilityPolicy ??= Package.GetService<SComponentModel, IComponentModel2>(false)?.GetService<PrerequisiteAvailabilityPolicy>();
 
     protected ShellInterop.IVsSolution Solution => _solution ??= Package.GetService<ShellInterop.SVsSolution, ShellInterop.IVsSolution>(false);
 

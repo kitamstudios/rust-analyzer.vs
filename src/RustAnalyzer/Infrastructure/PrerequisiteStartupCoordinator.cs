@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using EnsureThat;
 using Microsoft.VisualStudio.Threading;
 
 namespace KS.RustAnalyzer.Infrastructure;
@@ -18,12 +19,11 @@ public interface IPrerequisiteStartupOperations
     Task InstallLatestAsync();
 
     Task ShowUpdateNotificationAsync();
-
-    void ReportInfoBarFailure(Exception exception);
 }
 
 public sealed class PrerequisiteStartupCoordinator
 {
+    private readonly PrerequisiteAvailabilityPolicy _availabilityPolicy;
     private readonly JoinableTaskFactory _joinableTaskFactory;
     private readonly IPrerequisiteStartupOperations _operations;
     private readonly Func<Func<Task>, CancellationToken, Task> _runOnMainThreadAsync;
@@ -33,11 +33,17 @@ public sealed class PrerequisiteStartupCoordinator
 
     public PrerequisiteStartupCoordinator(
         PrerequisiteProcessState state,
+        PrerequisiteAvailabilityPolicy availabilityPolicy,
         JoinableTaskFactory joinableTaskFactory,
         Func<Func<Task>, CancellationToken, Task> runOnMainThreadAsync,
         IPrerequisiteStartupOperations operations)
     {
         _state = state ?? throw new ArgumentNullException(nameof(state));
+        _availabilityPolicy = EnsureArg.IsNotNull(
+            availabilityPolicy,
+            nameof(availabilityPolicy),
+            options => options.WithException(
+                new ArgumentNullException(nameof(availabilityPolicy))));
         _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
         _runOnMainThreadAsync = runOnMainThreadAsync ?? throw new ArgumentNullException(nameof(runOnMainThreadAsync));
         _operations = operations ?? throw new ArgumentNullException(nameof(operations));
@@ -79,20 +85,21 @@ public sealed class PrerequisiteStartupCoordinator
 
                     if (_state.Status == PrerequisiteStatus.Suspended)
                     {
+                        _availabilityPolicy.ReportSuspended();
                         try
                         {
                             await _operations.ShowPrerequisiteSuspensionNotificationAsync();
                         }
                         catch (Exception e)
                         {
-                            _operations.ReportInfoBarFailure(e);
+                            _availabilityPolicy.ReportInfoBarFailure(e);
                         }
                     }
                 },
                 cancellationToken);
         }
 
-        if (_state.Status != PrerequisiteStatus.Ready)
+        if (!_availabilityPolicy.IsReady(AutomaticRustPath.PackageFollowOnStartup))
         {
             return;
         }

@@ -42,6 +42,8 @@
     host-assembly dependencies. Select only versions proven compatible with VS 17.12, VS 18.x, main
     `net48`, and pack `net472`.
 15. Do not modify `docs/features/002-hardening-and-vs2026.md`.
+16. Audit every C# argument-validation site and replace manual guards with `EnsureThat` without
+    changing its observable exception contract.
 
 ## Design Options (Ox)
 
@@ -72,10 +74,13 @@ still receive defensive guards at their owning integration boundary.
 | Slice | Outcome | Depends on |
 |---|---|---|
 | S1 | Ship process-safe prerequisite suspension, truthful dual-host packages, reconciled documentation, and blocking VS17/VS18 compatibility evidence. | - |
-| S2 | Ship RustDevelopmentPack as an independently versioned, first-class artifact across the same publication channels and gates as rust-analyzer.vs. | S1 |
+| S2 | Ship one independently versioned RustDevelopmentPack artifact for both Visual Studio 2022 and Visual Studio 2026 across the same publication channels and gates as rust-analyzer.vs. | S1 |
+| S3 | Apply the `EnsureThat` argument-validation rule consistently across the C# codebase without behavioral changes. | S2 |
 
-S1 can ship through the existing main-package delivery path. S2 adds distribution of the
-already-compatible pack without changing S1 runtime behavior.
+S1 can ship through the existing main-package delivery path. S2 adds distribution of one canonical
+pack artifact validated on both supported Visual Studio generations, without host-specific builds or
+changes to S1 runtime behavior. S3 keeps the repository-wide validation cleanup separate from both
+product changes.
 
 ## Tasks (Tx)
 
@@ -87,16 +92,17 @@ Execute one task at a time in order.
 | T2 | S1 | Implement complete prerequisite probe classification and the exact VS17/VS18 predicate with unit and process-boundary integration tests. | Done | `3350c13` |
 | T3 | S1 | Replace prerequisite failure UX with the non-dismissible mapped Yes/No Visual Studio message box and focused UI tests. | Done | `ee6c813`, `d4125c7` |
 | T4 | S1 | Add the one-shot warning InfoBar, explicit navigation, non-persisted close behavior, and tests. | Done | `d4125c7` |
-| T5 | S1 | Make prerequisite evaluation the first product operation after package activation and defer all normal startup work until readiness. | Done | - |
-| T6 | S1 | Gate all automatic/background Rust paths and implement first-suppression-per-path Output logging with tests. | Pending | - |
+| T5 | S1 | Make prerequisite evaluation the first product operation after package activation and defer all normal startup work until readiness. | Done | `3301b78` |
+| T6 | S1 | Gate all automatic/background Rust paths and implement first-suppression-per-path Output logging with tests. | In Progress | - |
 | T7 | S1 | Hide or disable every extension-owned user surface while unavailable and make execution callbacks defensive no-ops. | Pending | - |
 | T8 | S1 | Audit and apply the newest proven dual-compatible dependency closure and acquired-artifact provenance policy. | Pending | - |
 | T9 | S1 | Align both VSIX manifests and metadata, remove VSColorOutput64, and validate all remaining Development Pack constituents. | Pending | - |
 | T10 | S1 | Rewrite prerequisite/readme material, reconcile live support claims, update `docs/design.md`, and update all four agent roles. | Pending | - |
 | T11 | S1 | Add canonical-artifact VS17/VS18 validation and the complete blocking behavior/platform evidence matrix. | Pending | - |
 | T12 | S2 | Extend the approved stamper to produce independent main/pack versions with the same deterministic build suffix. | Pending | - |
-| T13 | S2 | Build, validate, and upload RustDevelopmentPack as a named canonical artifact and verify that artifact on both hosts. | Pending | - |
+| T13 | S2 | Build, validate, and upload RustDevelopmentPack as one named canonical artifact and verify it on both Visual Studio 2022 and Visual Studio 2026. | Pending | - |
 | T14 | S2 | Add pack publication to Open VSIX, Marketplace, and GitHub Releases under the main package's existing fail-closed gates. | Pending | - |
+| T15 | S3 | Inventory every C# argument-validation site, replace manual guards with `EnsureThat`, and prove exception-contract and build/test parity. | Pending | - |
 
 ## Risks (Rx)
 
@@ -120,6 +126,8 @@ Execute one task at a time in order.
   predicate authoritative and test unsupported-major rejection.
 - **R9:** Extension-pack resolution is gallery-based and not version-pinned. Publish
   rust-analyzer.vs before RustDevelopmentPack and record constituent versions in publication evidence.
+- **R10:** `EnsureThat` substitutions can alter exception type, parameter name, validation order, or
+  message. Preserve each public contract and add focused regression coverage where behavior differs.
 
 ## Assumptions (Ax)
 

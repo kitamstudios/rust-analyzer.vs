@@ -79,6 +79,7 @@
     <Compile Include="TestAdapter\TestContainer.cs" />
     <Compile Include="Infrastructure\PrerequisiteEvaluator.cs" />
     <Compile Include="Infrastructure\PrerequisiteFailurePrompt.cs" />
+    <Compile Include="Infrastructure\PrerequisiteAvailabilityPolicy.cs" />
     <Compile Include="Infrastructure\PrerequisiteProcessState.cs" />
     <Compile Include="Infrastructure\PrerequisiteStartupCoordinator.cs" />
     <Compile Include="Infrastructure\PrerequisiteSuspensionNotification.cs" />

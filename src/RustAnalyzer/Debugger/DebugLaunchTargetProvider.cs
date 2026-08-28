@@ -29,14 +29,27 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
     [Import]
     public ITelemetryService T { get; set; }
 
+    [Import]
+    public PrerequisiteAvailabilityPolicy AvailabilityPolicy { get; set; }
+
     public void LaunchDebugTarget(IWorkspace workspaceContext, IServiceProvider serviceProvider, DebugLaunchActionContext debugLaunchActionContext)
     {
+        if (!AvailabilityPolicy.IsReady(AutomaticRustPath.DebugRunPreparation))
+        {
+            return;
+        }
+
         var lcw = new LaunchConfigWrapper(debugLaunchActionContext.LaunchConfiguration, new TL { T = T, L = L, });
         workspaceContext.JTF.Run(async () => await LaunchDebugTargetAsync(workspaceContext, serviceProvider, lcw, default));
     }
 
     public bool SupportsContext(IWorkspace workspaceContext, string targetFilePath)
     {
+        if (!AvailabilityPolicy.IsReady(AutomaticRustPath.DebugRunPreparation))
+        {
+            return false;
+        }
+
         var mds = workspaceContext.GetService<IMetadataService>();
         var package = workspaceContext.JTF.Run(async () => await workspaceContext.GetService<IMetadataService>()?.GetContainingPackageAsync((PathEx)targetFilePath, default));
 
@@ -45,6 +58,11 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
 
     private async Task LaunchDebugTargetAsync(IWorkspace workspaceContext, IServiceProvider serviceProvider, LaunchConfigWrapper lcw, CancellationToken ct)
     {
+        if (!await AvailabilityPolicy.IsReadyAsync(AutomaticRustPath.DebugRunPreparation, ct))
+        {
+            return;
+        }
+
         const string diagMessage = "Delete the .vs folder and try again. If that does not work please file a bug with the repro steps.";
         try
         {

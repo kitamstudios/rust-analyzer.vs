@@ -15,12 +15,17 @@ namespace KS.RustAnalyzer.NodeEnhancements;
 [Export(typeof(INodeBrowseObjectProvider))]
 public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
 {
+    private readonly PrerequisiteAvailabilityPolicy _availabilityPolicy;
     private readonly TL _tl;
     private readonly NodeBrowseObjectPropertyFilter<NodeBrowseObject> _browseObject = new(new());
 
     [ImportingConstructor]
-    public NodeBrowseObjectProvider([Import] ITelemetryService t, [Import] ILogger l)
+    public NodeBrowseObjectProvider(
+        [Import] ITelemetryService t,
+        [Import] ILogger l,
+        [Import] PrerequisiteAvailabilityPolicy availabilityPolicy)
     {
+        _availabilityPolicy = availabilityPolicy;
         _tl = new TL
         {
             T = t,
@@ -32,6 +37,11 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
 
     public object ProvideBrowseObject(WorkspaceVisualNodeBase node)
     {
+        if (!_availabilityPolicy.IsReady(AutomaticRustPath.NodeBrowseObject))
+        {
+            return null;
+        }
+
         _tl.L.WriteLine("Getting browse object for {0}.", node.NodeFullMoniker);
 
         if (node is not IFileSystemNode fsNode || !File.Exists(fsNode.FullPath))
@@ -58,6 +68,11 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
 
     private void BrowseObject_PropertyChanged(object sender, PropertyChangedEventArgs e)
     {
+        if (!_availabilityPolicy.IsReady(AutomaticRustPath.NodeBrowseObject))
+        {
+            return;
+        }
+
         if (sender is not NodeBrowseObject fsob)
         {
             return;

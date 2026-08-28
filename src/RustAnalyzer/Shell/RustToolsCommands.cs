@@ -138,21 +138,36 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
     private const string ToolchainNameProperty = "name";
 
     private static readonly List<OleMenuCommand> CommandCache = new();
+    private readonly Func<PrerequisiteAvailabilityPolicy> _getAvailabilityPolicy;
+    private readonly Action _queryToolchains;
+    private readonly Action _verifyOnUIThread;
+
+    public SwitchToolchainCommand()
+    {
+        _getAvailabilityPolicy = () => AvailabilityPolicy;
+        _queryToolchains = QueryToolchains;
+        _verifyOnUIThread = () => ThreadHelper.ThrowIfNotOnUIThread();
+    }
+
+    private SwitchToolchainCommand(
+        PrerequisiteAvailabilityPolicy availabilityPolicy,
+        Action queryToolchains)
+    {
+        _getAvailabilityPolicy = () => availabilityPolicy;
+        _queryToolchains = queryToolchains;
+        _verifyOnUIThread = () => { };
+    }
 
     protected override void BeforeQueryStatus(EventArgs e)
     {
-        ThreadHelper.ThrowIfNotOnUIThread();
+        _verifyOnUIThread();
 
-        var workspaceRoot = CmdServices.GetWorkspaceRoot();
-        var toolchains = RustAnalyzerPackage.JTF
-            .Run(async () => await ToolchainServiceExtensions.GetInstalledToolchainsAsync(new ToolchainServiceExtensions.RustupShowOutput.Real(), workspaceRoot, default));
-
-        var mcs = Package.GetService<IMenuCommandService, OleMenuCommandService>();
-        foreach (var (tc, pos) in toolchains.Select((x, i) => (x, i)))
+        if (!_getAvailabilityPolicy().IsReady(AutomaticRustPath.ToolchainStatusQuery))
         {
-            var command = GetOrCreateCommand(pos, mcs);
-            SetupCommand(command, tc);
+            return;
         }
+
+        _queryToolchains();
     }
 
     protected override void ExecuteCore(object sender, OleMenuCmdEventArgs e)
@@ -178,6 +193,22 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
 
         CommandCache.ForEach(c => c.Checked = false);
         command.Checked = true;
+    }
+
+    private void QueryToolchains()
+    {
+        ThreadHelper.ThrowIfNotOnUIThread();
+
+        var workspaceRoot = CmdServices.GetWorkspaceRoot();
+        var toolchains = RustAnalyzerPackage.JTF
+            .Run(async () => await ToolchainServiceExtensions.GetInstalledToolchainsAsync(new ToolchainServiceExtensions.RustupShowOutput.Real(), workspaceRoot, default));
+
+        var mcs = Package.GetService<IMenuCommandService, OleMenuCommandService>();
+        foreach (var (tc, pos) in toolchains.Select((x, i) => (x, i)))
+        {
+            var command = GetOrCreateCommand(pos, mcs);
+            SetupCommand(command, tc);
+        }
     }
 
     private OleMenuCommand GetOrCreateCommand(int pos, OleMenuCommandService mcs)

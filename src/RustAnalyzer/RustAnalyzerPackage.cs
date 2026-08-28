@@ -38,6 +38,7 @@ public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOp
     private IRegistrySettingsService _regSettings;
     private IPreReqsCheckService _preReqs;
     private IRlsInstallerService _raDownloader;
+    private PrerequisiteAvailabilityPolicy _availabilityPolicy;
     private PrerequisiteStartupCoordinator _startupCoordinator;
     private static JoinableTaskFactory _jtf;
 
@@ -78,12 +79,6 @@ public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOp
         return RlsUpdatedNotification.ShowAsync();
     }
 
-    void IPrerequisiteStartupOperations.ReportInfoBarFailure(Exception exception)
-    {
-        _tl.L.WriteError("Failed to show prerequisite suspension InfoBar. Ex: {0}", exception);
-        _tl.T.TrackException(exception);
-    }
-
     protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
     {
         JTF = JoinableTaskFactory;
@@ -101,8 +96,10 @@ public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOp
         _regSettings = cmServiceProvider?.GetService<IRegistrySettingsService>();
         _preReqs = cmServiceProvider?.GetService<IPreReqsCheckService>();
         _raDownloader = cmServiceProvider?.GetService<IRlsInstallerService>();
+        _availabilityPolicy = cmServiceProvider?.GetService<PrerequisiteAvailabilityPolicy>();
         _startupCoordinator = new PrerequisiteStartupCoordinator(
             PrerequisiteProcessState.Current,
+            _availabilityPolicy,
             JTF,
             RunOnMainThreadAsync,
             this);

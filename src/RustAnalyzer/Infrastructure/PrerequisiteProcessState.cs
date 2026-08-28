@@ -99,6 +99,8 @@ public sealed class PrerequisiteProcessState
     private Evaluation _evaluation;
     private PrerequisiteResult _result;
     private PrerequisiteStatus _status;
+    private TaskCompletionSource<PrerequisiteStatus> _statusChanged =
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     public PrerequisiteProcessState(JoinableTaskFactory joinableTaskFactory)
     {
@@ -140,6 +142,30 @@ public sealed class PrerequisiteProcessState
         }
     }
 
+    public Task<PrerequisiteResult> EvaluationCompletion
+    {
+        get
+        {
+            Evaluation evaluation;
+            lock (_sync)
+            {
+                evaluation = _evaluation;
+            }
+
+            return evaluation?.Completion;
+        }
+    }
+
+    public PrerequisiteStatus GetEvaluationStatus(
+        out Task<PrerequisiteResult> evaluationCompletion)
+    {
+        lock (_sync)
+        {
+            evaluationCompletion = _evaluation?.Completion;
+            return _status;
+        }
+    }
+
     public Task<PrerequisiteResult> GetOrEvaluateAsync(
         Func<CancellationToken, Task<PrerequisiteResult>> evaluator,
         CancellationToken cancellationToken)
@@ -154,14 +180,32 @@ public sealed class PrerequisiteProcessState
         {
             if (_evaluation == null)
             {
-                _status = PrerequisiteStatus.Evaluating;
+                SetStatusUnderLock(PrerequisiteStatus.Evaluating);
                 _evaluation = new Evaluation(this, evaluator, cancellationToken, _joinableTaskFactory);
             }
 
             evaluation = _evaluation;
         }
 
-        return evaluation.Task.GetValueAsync();
+        return evaluation.StartAsync();
+    }
+
+    public Task<PrerequisiteStatus> WaitForStatusChangeAsync(
+        PrerequisiteStatus observedStatus,
+        CancellationToken cancellationToken)
+    {
+        Task<PrerequisiteStatus> statusChanged;
+        lock (_sync)
+        {
+            if (_status != observedStatus)
+            {
+                return Task.FromResult(_status);
+            }
+
+            statusChanged = _statusChanged.Task;
+        }
+
+        return ThreadingTools.WithCancellation(statusChanged, cancellationToken);
     }
 
     public void Suspend()
@@ -173,7 +217,7 @@ public sealed class PrerequisiteProcessState
                 throw new InvalidOperationException("Prerequisites can be suspended only after a failed evaluation.");
             }
 
-            _status = PrerequisiteStatus.Suspended;
+            SetStatusUnderLock(PrerequisiteStatus.Suspended);
         }
     }
 
@@ -197,7 +241,8 @@ public sealed class PrerequisiteProcessState
             lock (_sync)
             {
                 _result = result;
-                _status = result.IsSuccess ? PrerequisiteStatus.Ready : PrerequisiteStatus.Failed;
+                SetStatusUnderLock(
+                    result.IsSuccess ? PrerequisiteStatus.Ready : PrerequisiteStatus.Failed);
                 completed = true;
             }
 
@@ -212,27 +257,72 @@ public sealed class PrerequisiteProcessState
                     if (ReferenceEquals(_evaluation, evaluation))
                     {
                         _evaluation = null;
-                        _status = PrerequisiteStatus.NotEvaluated;
+                        SetStatusUnderLock(PrerequisiteStatus.NotEvaluated);
                     }
                 }
             }
         }
     }
 
+    private void SetStatusUnderLock(PrerequisiteStatus status)
+    {
+        if (_status == status)
+        {
+            return;
+        }
+
+        _status = status;
+        var statusChanged = _statusChanged;
+        _statusChanged = new TaskCompletionSource<PrerequisiteStatus>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        statusChanged.TrySetResult(status);
+    }
+
     private sealed class Evaluation
     {
+        private readonly CancellationToken _cancellationToken;
+        private readonly AsyncLazy<PrerequisiteResult> _completion;
+        private readonly Func<CancellationToken, Task<PrerequisiteResult>> _evaluator;
+        private readonly JoinableTaskFactory _joinableTaskFactory;
+        private readonly PrerequisiteProcessState _owner;
+        private readonly SemaphoreSlim _started = new(0, 1);
+        private JoinableTask<PrerequisiteResult> _evaluation;
+        private int _startClaimed;
+
         public Evaluation(
             PrerequisiteProcessState owner,
             Func<CancellationToken, Task<PrerequisiteResult>> evaluator,
             CancellationToken cancellationToken,
             JoinableTaskFactory joinableTaskFactory)
         {
-            Task = new AsyncLazy<PrerequisiteResult>(
-                () => owner.EvaluateAndCacheAsync(this, evaluator, cancellationToken),
+            _owner = owner;
+            _evaluator = evaluator;
+            _cancellationToken = cancellationToken;
+            _joinableTaskFactory = joinableTaskFactory;
+            _completion = new AsyncLazy<PrerequisiteResult>(
+                GetCompletionAsync,
                 joinableTaskFactory);
         }
 
-        public AsyncLazy<PrerequisiteResult> Task { get; }
+        public Task<PrerequisiteResult> Completion => _completion.GetValueAsync();
+
+        public Task<PrerequisiteResult> StartAsync()
+        {
+            if (Interlocked.CompareExchange(ref _startClaimed, 1, 0) == 0)
+            {
+                _evaluation = _joinableTaskFactory.RunAsync(
+                    () => _owner.EvaluateAndCacheAsync(this, _evaluator, _cancellationToken));
+                _started.Release();
+            }
+
+            return _completion.GetValueAsync();
+        }
+
+        private async Task<PrerequisiteResult> GetCompletionAsync()
+        {
+            await _started.WaitAsync();
+            return await _evaluation;
+        }
     }
 
     private static class ProcessStateHolder
