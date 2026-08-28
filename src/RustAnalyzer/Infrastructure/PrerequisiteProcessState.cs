@@ -25,6 +25,7 @@ public enum PrerequisiteFailureKind
     DefaultToolchainNotConfigured,
     CargoNotFound,
     CargoNotOperational,
+    PrerequisiteEvaluationFailed,
 }
 
 public sealed class PrerequisiteFailure
@@ -190,6 +191,8 @@ public sealed class PrerequisiteProcessState
             {
                 throw new InvalidOperationException("The prerequisite evaluator returned no result.");
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             lock (_sync)
             {

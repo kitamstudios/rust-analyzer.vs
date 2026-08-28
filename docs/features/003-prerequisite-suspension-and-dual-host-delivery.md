@@ -85,9 +85,9 @@ Execute one task at a time in order.
 |---|---|---|---|---|
 | T1 | S1 | Add the shared process-scoped prerequisite state, immutable cached result, single-flight completion, and state-transition unit tests. | Done | `c87922d` |
 | T2 | S1 | Implement complete prerequisite probe classification and the exact VS17/VS18 predicate with unit and process-boundary integration tests. | Done | `3350c13` |
-| T3 | S1 | Replace prerequisite failure UX with the non-dismissible mapped Yes/No Visual Studio message box and focused UI tests. | Done | `ee6c813` (superseded) |
-| T4 | S1 | Add the one-shot warning InfoBar, explicit navigation, non-persisted close behavior, and tests. | Done | - |
-| T5 | S1 | Make prerequisite evaluation the first product operation after package activation and defer all normal startup work until readiness. | Pending | - |
+| T3 | S1 | Replace prerequisite failure UX with the non-dismissible mapped Yes/No Visual Studio message box and focused UI tests. | Done | `ee6c813`, `d4125c7` |
+| T4 | S1 | Add the one-shot warning InfoBar, explicit navigation, non-persisted close behavior, and tests. | Done | `d4125c7` |
+| T5 | S1 | Make prerequisite evaluation the first product operation after package activation and defer all normal startup work until readiness. | Done | - |
 | T6 | S1 | Gate all automatic/background Rust paths and implement first-suppression-per-path Output logging with tests. | Pending | - |
 | T7 | S1 | Hide or disable every extension-owned user surface while unavailable and make execution callbacks defensive no-ops. | Pending | - |
 | T8 | S1 | Audit and apply the newest proven dual-compatible dependency closure and acquired-artifact provenance policy. | Pending | - |
@@ -154,6 +154,8 @@ Execute one task at a time in order.
 - **D10:** Changes to the existing incompatible-extension restart path on a prerequisite-ready startup.
 - **D11:** Support claims for Visual Studio majors other than 17 and 18.
 - **D12:** Any edit to the archived prior feature document.
+- **D13:** The real-Visual-Studio E2E harness analyzed below. The human chose to record the analysis
+  but not adopt its companion VSIX, UI Automation, scenarios, or publication gate in this feature.
 
 ## Notes & Decisions
 
@@ -223,6 +225,23 @@ Execute one task at a time in order.
   modal, or withholding control from Visual Studio.
 - T6 folds InfoBar failure diagnostics into the same non-spamming Output policy. T11 validates real
   VS17/VS18 prompt close behavior, InfoBar placement/action routing, and close cleanup.
+
+### T5 outcome
+
+- Package activation is the sole production evaluation initiator. Prerequisites run before release,
+  incompatible-extension, installer, or update work; only `Ready` continues that ordered sequence.
+- Typed failure enters the framework prompt. `Suspended` attempts one InfoBar and stops; exceptional
+  or shutdown `Failed` stops without InfoBar. InfoBar failure is logged/reported once and cannot
+  retry, undo suspension, repeat the modal, or resume startup.
+- The Visual Studio host lookup occurs exactly once inside the authoritative probe. Its result
+  supplies process-only `RAVsVersion` telemetry metadata; readiness depends only on process state.
+- Unexpected faults, including `OperationCanceledException` with an uncanceled package token, become
+  logged and telemetered typed diagnostic failures. Genuine package-token cancellation performs no
+  UI/startup work, caches no terminal state, and remains retryable.
+- The complete legacy prerequisite dictionary/check/browser/restart path and obsolete MEF imports are
+  removed together. The separate ready-path incompatible-extension restart remains unchanged.
+- T6 only observes or awaits existing state and logs the first suppression per named background path.
+  T7 treats every non-Ready state as unavailable and rechecks immediately before Rust work.
 
 ### Runtime flow
 
@@ -361,6 +380,61 @@ CI:
 4. Download rather than rebuild the exact artifacts; install both VSIXes, exercise startup and
    installability, and run host-bound TestAdapter acceptance with its explicit major.
 5. Require both host jobs before publication.
+
+### Deferred real-Visual-Studio E2E analysis
+
+**Finding:** feasible with limitations on current GitHub-hosted Windows runners. VS 2022 and VS 2026
+images currently expose an interactive desktop and usable UI Automation, but GitHub does not
+guarantee those semantics. A two-label pilot would be required before making rendered-UI evidence a
+blocking publication gate.
+
+| Option | Shape | Assessment |
+|---|---|---|
+| O1 | Thin external net48 controller, test-only observer VSIX, nonce-bound current-user named pipe, and HWND-rooted semantic UI Automation. | Recommended; medium effort/risk and no production changes. |
+| O2 | Adopt the Microsoft/Roslyn Visual Studio integration-test harness. | Proven shape but large, custom, and currently Dev18-oriented; high integration cost. |
+| O3 | External DTE/ROT plus UI Automation or WinAppDriver only. | No companion VSIX, but modal-sensitive, weak for dynamic command status, and likely flaky. |
+
+The recommended O1 observer would never ship, replace product assemblies, intercept product
+MessageBox/InfoBar services, mutate prerequisite state, or expose a production endpoint. It would
+report shell readiness and the owned PID/HWND, open the fixture, query real OLE command status, read
+the Output pane, and request graceful shutdown. External UI Automation would inspect and invoke only
+the real framework MessageBox and InfoBar; it would use no coordinates, pixels, or menu traversal.
+
+If adopted later, retain exactly two logical scenarios on both VS17 and VS18:
+
+1. **Failed prerequisites -> suspension:** launch the canonical VSIX with Rust tools removed only from
+   the child PATH; verify the real mapped Yes/No prompt, blocked close gestures, same-process
+   suspension, real InfoBar, representative static/workspace/dynamic command unavailability, no
+   rust-analyzer child, and one non-repeating Output suppression message.
+2. **Fresh process -> ready:** reuse the same experimental profile with restored Rust PATH but a new
+   `devenv` PID; verify prerequisites rerun, no failure UI appears, representative commands return,
+   normal activation resumes, and no suspension state persisted.
+
+Both host jobs would consume the same hashed canonical VSIX, use a unique experimental root suffix,
+resolve an exact host major with `vswhere`, install through that host's `VSIXInstaller.exe`, and own
+only the PID/descendants reported by the observer. No rebuild, `/DeployExtension=true`,
+`/shutdownprocesses`, process-name termination, scenario retry, or browser inspection would be
+allowed. Diagnostics would include installer/configuration logs, `ActivityLog.xml`, controller/RPC
+transcript, UIA tree, Output/command/state/process reports, and a best-effort screenshot on failure.
+
+Open decisions if revisited:
+
+- approve the test-only observer VSIX and local named-pipe endpoint;
+- accept real shell/OLE `QueryStatus` as command-visibility evidence;
+- keep browser launch outside E2E while deterministic tests prove exact URL/action behavior;
+- pilot both hosted labels before making the two host legs blocking.
+
+Research basis:
+
+- [Visual Studio experimental instance](https://learn.microsoft.com/en-us/visualstudio/extensibility/the-experimental-instance?view=visualstudio)
+- [CreateExpInstance utility](https://learn.microsoft.com/en-us/visualstudio/extensibility/internals/createexpinstance-utility?view=visualstudio)
+- [`devenv /Log`](https://learn.microsoft.com/en-us/visualstudio/ide/reference/log-devenv-exe?view=visualstudio)
+- [Microsoft UI Automation](https://learn.microsoft.com/en-us/dotnet/framework/ui-automation/invoke-a-control-using-ui-automation)
+- [Roslyn Visual Studio integration-test harness](https://github.com/dotnet/roslyn/tree/main/src/VisualStudio/IntegrationTest)
+- [GitHub Windows 2022 image](https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md)
+- [GitHub Windows 2025 VS2026 image](https://github.com/actions/runner-images/blob/main/images/windows/Windows2025-VS2026-Readme.md)
+
+**Decision (2026-08-27):** record this analysis only. Do not implement it or change T11/current gates.
 
 ### Versioning and publication
 

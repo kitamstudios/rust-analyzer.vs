@@ -92,6 +92,10 @@ public sealed class VisualStudioPrerequisiteProbe : IPrerequisiteProbe
         cancellationToken.ThrowIfCancellationRequested();
         var version = await CommunityVS.Shell.GetVsVersionAsync();
         cancellationToken.ThrowIfCancellationRequested();
+        Environment.SetEnvironmentVariable(
+            Constants.RAVsVersion,
+            version?.ToString(),
+            EnvironmentVariableTarget.Process);
         return version;
     }
 

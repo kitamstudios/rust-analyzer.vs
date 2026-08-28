@@ -27,9 +27,6 @@ public class FileScannerFactory : IWorkspaceProviderFactory<IFileScanner>
     [Import]
     public ITelemetryService T { get; set; }
 
-    [Import]
-    public IPreReqsCheckService PreReqs { get; set; }
-
     public IFileScanner CreateProvider(IWorkspace workspaceContext)
     {
         T.TrackEvent(

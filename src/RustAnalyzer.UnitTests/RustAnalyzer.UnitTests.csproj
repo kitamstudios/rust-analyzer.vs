@@ -52,6 +52,7 @@
     <Compile Include="Infrastructure\PrerequisiteEvaluatorTests.cs" />
     <Compile Include="Infrastructure\PrerequisiteFailurePromptTests.cs" />
     <Compile Include="Infrastructure\PrerequisiteProcessStateTests.cs" />
+    <Compile Include="Infrastructure\PrerequisiteStartupCoordinatorTests.cs" />
     <Compile Include="Infrastructure\PrerequisiteSuspensionInfoBarIntegrationTests.cs" />
     <Compile Include="Infrastructure\PrerequisiteSuspensionNotificationTests.cs" />
     <Compile Include="Infrastructure\VisualStudioPrerequisiteProbeIntegrationTests.cs" />

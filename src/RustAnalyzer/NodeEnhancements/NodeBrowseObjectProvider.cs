@@ -17,10 +17,9 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
 {
     private readonly TL _tl;
     private readonly NodeBrowseObjectPropertyFilter<NodeBrowseObject> _browseObject = new(new());
-    private readonly IPreReqsCheckService _preReqs;
 
     [ImportingConstructor]
-    public NodeBrowseObjectProvider([Import] IPreReqsCheckService preReqs, [Import] ITelemetryService t, [Import] ILogger l)
+    public NodeBrowseObjectProvider([Import] ITelemetryService t, [Import] ILogger l)
     {
         _tl = new TL
         {
@@ -29,7 +28,6 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
         };
 
         _browseObject.Object.PropertyChanged += BrowseObject_PropertyChanged;
-        _preReqs = preReqs;
     }
 
     public object ProvideBrowseObject(WorkspaceVisualNodeBase node)

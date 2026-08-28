@@ -30,9 +30,6 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
     [Import]
     public IToolchainService CargoService { get; set; }
 
-    [Import]
-    public IPreReqsCheckService PreReqs { get; set; }
-
     public IFileContextProvider CreateProvider(IWorkspace workspaceContext)
     {
         T.TrackEvent(

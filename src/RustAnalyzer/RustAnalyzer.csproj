@@ -80,6 +80,7 @@
     <Compile Include="Infrastructure\PrerequisiteEvaluator.cs" />
     <Compile Include="Infrastructure\PrerequisiteFailurePrompt.cs" />
     <Compile Include="Infrastructure\PrerequisiteProcessState.cs" />
+    <Compile Include="Infrastructure\PrerequisiteStartupCoordinator.cs" />
     <Compile Include="Infrastructure\PrerequisiteSuspensionNotification.cs" />
     <Compile Include="Infrastructure\PreReqsCheckService.cs" />
     <Compile Include="Infrastructure\MetadataServiceFactory.cs" />

@@ -32,12 +32,13 @@ namespace KS.RustAnalyzer;
     SupportsProfiles = true,
     ProvidesLocalizedCategoryName = false)]
 [Guid(PackageGuids.guidRustAnalyzerPackageString)]
-public sealed class RustAnalyzerPackage : ToolkitPackage
+public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOperations
 {
     private TL _tl;
     private IRegistrySettingsService _regSettings;
     private IPreReqsCheckService _preReqs;
     private IRlsInstallerService _raDownloader;
+    private PrerequisiteStartupCoordinator _startupCoordinator;
     private static JoinableTaskFactory _jtf;
 
     public static JoinableTaskFactory JTF
@@ -46,9 +47,45 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
         private set => _jtf = value;
     }
 
+    void IPrerequisiteStartupOperations.ShowPrerequisiteFailurePrompt()
+    {
+        ThreadHelper.ThrowIfNotOnUIThread();
+        PrerequisiteFailurePromptController.ShowForFailedState(PrerequisiteProcessState.Current);
+    }
+
+    Task<bool> IPrerequisiteStartupOperations.ShowPrerequisiteSuspensionNotificationAsync()
+    {
+        return PrerequisiteSuspensionNotification.Current.ShowIfSuspendedAsync(PrerequisiteProcessState.Current);
+    }
+
+    Task IPrerequisiteStartupOperations.ShowReleaseSummaryAsync()
+    {
+        return ReleaseSummaryNotification.ShowAsync(_regSettings, _tl);
+    }
+
+    Task IPrerequisiteStartupOperations.HandleIncompatibleExtensionsAsync()
+    {
+        return SearchAndDisableIncompatibleExtensionsAsync();
+    }
+
+    Task IPrerequisiteStartupOperations.InstallLatestAsync()
+    {
+        return _raDownloader.InstallLatestAsync();
+    }
+
+    Task IPrerequisiteStartupOperations.ShowUpdateNotificationAsync()
+    {
+        return RlsUpdatedNotification.ShowAsync();
+    }
+
+    void IPrerequisiteStartupOperations.ReportInfoBarFailure(Exception exception)
+    {
+        _tl.L.WriteError("Failed to show prerequisite suspension InfoBar. Ex: {0}", exception);
+        _tl.T.TrackException(exception);
+    }
+
     protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
     {
-        Environment.SetEnvironmentVariable(Constants.RAVsVersion, (await CommunityVS.Shell.GetVsVersionAsync()).ToString(), EnvironmentVariableTarget.Process);
         JTF = JoinableTaskFactory;
 
         await this.RegisterCommandsAsync();
@@ -64,19 +101,29 @@ public sealed class RustAnalyzerPackage : ToolkitPackage
         _regSettings = cmServiceProvider?.GetService<IRegistrySettingsService>();
         _preReqs = cmServiceProvider?.GetService<IPreReqsCheckService>();
         _raDownloader = cmServiceProvider?.GetService<IRlsInstallerService>();
+        _startupCoordinator = new PrerequisiteStartupCoordinator(
+            PrerequisiteProcessState.Current,
+            JTF,
+            RunOnMainThreadAsync,
+            this);
     }
 
     protected override async Task OnAfterPackageLoadedAsync(CancellationToken cancellationToken)
     {
         await base.OnAfterPackageLoadedAsync(cancellationToken);
 
-        await JTF.SwitchToMainThreadAsync(cancellationToken);
+        var prerequisiteResult = await PrerequisiteProcessState.Current.GetOrEvaluateAsync(
+            _preReqs.EvaluateAsync,
+            cancellationToken);
+        await _startupCoordinator.RunAsync(prerequisiteResult, cancellationToken);
+    }
 
-        await ReleaseSummaryNotification.ShowAsync(_regSettings, _tl);
-        await SearchAndDisableIncompatibleExtensionsAsync();
-        await _preReqs.SatisfyAsync(cancellationToken);
-        await _raDownloader.InstallLatestAsync();
-        await RlsUpdatedNotification.ShowAsync();
+    private static async Task RunOnMainThreadAsync(
+        Func<Task> action,
+        CancellationToken cancellationToken)
+    {
+        await JTF.SwitchToMainThreadAsync(cancellationToken);
+        await action();
     }
 
     #region Handling incompatible extensions
