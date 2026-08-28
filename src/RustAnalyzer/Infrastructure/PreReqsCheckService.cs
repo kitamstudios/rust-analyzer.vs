@@ -15,6 +15,8 @@ namespace KS.RustAnalyzer.Infrastructure;
 
 public interface IPreReqsCheckService
 {
+    Task<PrerequisiteResult> EvaluateAsync(CancellationToken ct);
+
     Task SatisfyAsync(CancellationToken ct);
 }
 
@@ -23,6 +25,7 @@ public interface IPreReqsCheckService
 public sealed class PreReqsCheckService : IPreReqsCheckService
 {
     private readonly IToolchainService _cargoService;
+    private readonly PrerequisiteEvaluator _evaluator;
     private readonly TL _tl;
 
     private readonly IReadOnlyDictionary<string, Func<IToolchainService, CancellationToken, Task<(bool, string)>>> _preReqChecks =
@@ -40,11 +43,17 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
     public PreReqsCheckService([Import] IToolchainService cargoService, [Import] ITelemetryService t, [Import] ILogger l)
     {
         _cargoService = cargoService;
+        _evaluator = new PrerequisiteEvaluator(new VisualStudioPrerequisiteProbe());
         _tl = new TL
         {
             T = t,
             L = l,
         };
+    }
+
+    public Task<PrerequisiteResult> EvaluateAsync(CancellationToken ct)
+    {
+        return _evaluator.EvaluateAsync(ct);
     }
 
     public async Task SatisfyAsync(CancellationToken ct)
@@ -145,7 +154,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
                 return (false, "GetVsVersionAsync returned null. Indicates an issue with VS installation, restarting or latest updates may help.");
             }
 
-            if (version <= Constants.MinimumRequiredVsVersion)
+            if (!PrerequisiteEvaluator.IsSupportedVisualStudioVersion(version))
             {
                 return (false, $"VS Version check failed. Minimum {Constants.MinimumRequiredVsVersion}, found {version}.\n\nInstall the latest VS update.\n\nThis is a one time thing. Unfortunately it is required as VS {Constants.MinimumRequiredVsVersion} introduced breaking changes. Sorry about that!");
             }

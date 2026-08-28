@@ -83,8 +83,8 @@ Execute one task at a time in order.
 
 | # | Slice | Task | Status | Commit |
 |---|---|---|---|---|
-| T1 | S1 | Add the shared process-scoped prerequisite state, immutable cached result, single-flight completion, and state-transition unit tests. | Done | - |
-| T2 | S1 | Implement complete prerequisite probe classification and the exact VS17/VS18 predicate with unit and process-boundary integration tests. | Pending | - |
+| T1 | S1 | Add the shared process-scoped prerequisite state, immutable cached result, single-flight completion, and state-transition unit tests. | Done | `c87922d` |
+| T2 | S1 | Implement complete prerequisite probe classification and the exact VS17/VS18 predicate with unit and process-boundary integration tests. | Done | - |
 | T3 | S1 | Replace prerequisite failure UX with the non-dismissible `Disable`/`Help` dialog and focused UI integration tests. | Pending | - |
 | T4 | S1 | Add the one-shot warning InfoBar, explicit navigation, non-persisted close behavior, and tests. | Pending | - |
 | T5 | S1 | Make prerequisite evaluation the first product operation after package activation and defer all normal startup work until readiness. | Pending | - |
@@ -157,6 +157,8 @@ Execute one task at a time in order.
 
 ## Notes & Decisions
 
+**Pull request:** [#73](https://github.com/kitamstudios/rust-analyzer.vs/pull/73)
+
 ### T1 outcome
 
 - The state, failure, result, and status types are public because the human forbids C# `internal`;
@@ -174,6 +176,23 @@ Execute one task at a time in order.
 - T11 still proves process reset in real Visual Studio; T1 unit coverage is not a substitute.
 - The Release build added no warning code or MSB3277 conflict signature. The unchanged 18-signature
   baseline remains visible and T8 owns its resolution.
+
+### T2 outcome
+
+- The evaluator returns stable typed failures for host, rustup, default-toolchain, and Cargo outcomes,
+  suppresses only dependent failures, excludes nightly, and admits exactly VS 17.12+ and VS 18.x.
+- Prerequisite child processes resolve through the Visual Studio PATH and force child-only
+  `RUSTUP_AUTO_INSTALL=0`; probes never install, acquire from the network, or mutate the parent
+  environment.
+- A fail-closed isolated integration helper proves the enabled-parent override through the production
+  probe without mutating xUnit process state or adding a test seam to production.
+- T3/T5 preserve cancellation but convert unexpected non-cancellation probe faults into a cached typed
+  diagnostic failure before passing the result to process state.
+- When the new evaluator becomes live, remove the legacy prerequisite dictionary, checks, service
+  dependency, and commented toolchain check together. Do not revive or delete only the historical
+  fragment.
+- T5 keeps package activation as the sole production evaluation initiator; all other boundaries only
+  observe or await cached state.
 
 ### Runtime flow
 

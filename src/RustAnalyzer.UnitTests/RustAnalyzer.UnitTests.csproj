@@ -49,7 +49,9 @@
     <Compile Include="..\TestsCommon\TestHelpers.cs">
       <Link>Common\TestHelpers.cs</Link>
     </Compile>
+    <Compile Include="Infrastructure\PrerequisiteEvaluatorTests.cs" />
     <Compile Include="Infrastructure\PrerequisiteProcessStateTests.cs" />
+    <Compile Include="Infrastructure\VisualStudioPrerequisiteProbeIntegrationTests.cs" />
     <Compile Include="Infrastructure\StringBuildMessagePreprocessorTests.cs" />
     <Compile Include="Infrastructure\StringExtensionsTests.cs" />
     <Compile Include="RlsReleaseTests.cs" />

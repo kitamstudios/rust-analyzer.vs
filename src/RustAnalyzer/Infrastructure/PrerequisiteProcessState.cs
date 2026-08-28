@@ -16,13 +16,37 @@ public enum PrerequisiteStatus
     Suspended,
 }
 
+public enum PrerequisiteFailureKind
+{
+    Unclassified,
+    UnsupportedVisualStudioHost,
+    RustupNotFound,
+    RustupNotOperational,
+    DefaultToolchainNotConfigured,
+    CargoNotFound,
+    CargoNotOperational,
+}
+
 public sealed class PrerequisiteFailure
 {
     public PrerequisiteFailure(string check, string message)
+        : this(PrerequisiteFailureKind.Unclassified, check, message)
     {
+    }
+
+    public PrerequisiteFailure(PrerequisiteFailureKind kind, string message)
+        : this(kind, kind.ToString(), message)
+    {
+    }
+
+    private PrerequisiteFailure(PrerequisiteFailureKind kind, string check, string message)
+    {
+        Kind = kind;
         Check = check ?? throw new ArgumentNullException(nameof(check));
         Message = message ?? throw new ArgumentNullException(nameof(message));
     }
+
+    public PrerequisiteFailureKind Kind { get; }
 
     public string Check { get; }
 
