@@ -1,4 +1,8 @@
 <Project>
+  <PropertyGroup>
+    <AssemblySearchPath_UseAssemblyFoldersConfigFileSearchPath>false</AssemblySearchPath_UseAssemblyFoldersConfigFileSearchPath>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(RaVsProjectOutputRoot)' != ''">
     <OutDir>$([MSBuild]::EnsureTrailingSlash('$(RaVsProjectOutputRoot)'))$(MSBuildProjectName)\</OutDir>
   </PropertyGroup>

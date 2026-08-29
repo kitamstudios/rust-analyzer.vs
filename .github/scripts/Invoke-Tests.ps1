@@ -22,6 +22,9 @@ $testAdapterPackage = Join-Path $testAdapterDirectory "KS.RustAnalyzer.TestAdapt
 $runsAssemblyTests = $Mode -ne "acceptance"
 $runsAcceptanceHarness = $Mode -eq "acceptance" -or $Mode -eq "full"
 
+Write-Host "Test phase: TestAdapter packager regression"
+& (Join-Path $PSScriptRoot "Test-New-TestAdapterPackage.ps1")
+
 # Nightly is required wherever Cargo, rustup, or the test adapter run as child processes. The manifest
 # is validated and RUSTUP_TOOLCHAIN is exported in this process, so every child inherits it.
 if ($Mode -ne "unit") {
@@ -116,8 +119,9 @@ $acceptanceFailure = $null
 if ($runsAcceptanceHarness) {
     $acceptanceScript = Join-Path $repoRoot "src\TestProjects\run-integrationtests.ps1"
     try {
-        $packageFiles = & (Join-Path $PSScriptRoot "Get-TestAdapterPackageFile.ps1") -OutputDirectory $testAdapterDirectory
-        Compress-Archive -LiteralPath $packageFiles -DestinationPath $testAdapterPackage -Force
+        & (Join-Path $PSScriptRoot "New-TestAdapterPackage.ps1") `
+            -OutputDirectory $testAdapterDirectory `
+            -DestinationPath $testAdapterPackage
 
         $expandedAdapterDirectory = Join-Path $testAdapterDirectory "testadapter"
         if (Test-Path -LiteralPath $expandedAdapterDirectory) {

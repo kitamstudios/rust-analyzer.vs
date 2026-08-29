@@ -68,7 +68,7 @@ jobs:
 
       - name: Zip TestAdapter
         shell: pwsh
-        run: Compress-Archive -LiteralPath (& .\.github\scripts\Get-TestAdapterPackageFile.ps1 -OutputDirectory "${{ github.workspace }}\_built\projects\RustAnalyzer.TestAdapter") -DestinationPath "${{ github.workspace }}\_built\projects\RustAnalyzer.TestAdapter\${{ env.TestAdapterNameNoExt }}.zip" -Force
+        run: .\.github\scripts\New-TestAdapterPackage.ps1 -OutputDirectory "${{ github.workspace }}\_built\projects\RustAnalyzer.TestAdapter" -DestinationPath "${{ github.workspace }}\_built\projects\RustAnalyzer.TestAdapter\${{ env.TestAdapterNameNoExt }}.zip"
 
       - name: Upload build output
         uses: actions/upload-artifact@v4

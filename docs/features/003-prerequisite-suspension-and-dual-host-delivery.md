@@ -39,15 +39,18 @@
     and Open VSIX/Marketplace/GitHub Release parity under the main package's existing gates.
 13. Rewrite prerequisite and installation documentation using official sources and copyable commands.
     Reconcile every live platform claim and update all four agent roles.
-14. Audit VSSDK, Community.VisualStudio, threading, test platform, composition, and acquired
-    host-assembly dependencies. Select only versions proven compatible with VS 17.12, VS 18.x, main
-    `net48`, and pack `net472`.
+14. Audit the complete direct and transitive production, build, test, and packaging dependency
+    closure. This includes VSSDK, Community.VisualStudio, threading, test platform, composition,
+    acquired host assemblies, xUnit, FluentAssertions, EnsureThat, Moq, ApprovalTests, Application
+    Insights, JSON, and their transitive assemblies. Select only versions proven compatible with
+    VS 17.12, VS 18.x, main `net48`, pack `net472`, and TestAdapter `netstandard2.0`.
 15. Do not modify `docs/features/002-hardening-and-vs2026.md`.
 16. Audit every C# argument-validation site and replace manual guards with `EnsureThat` without
     changing its observable exception contract.
 17. Preserve parallel MSBuild while isolating each project's output beneath `_built\projects`.
-    Treat each project output as canonical and update every local and CI consumer of the old flat
-    layout; do not clean `_built` or copy outputs through staging or promotion directories.
+    Treat only exact named deliverables and curated file sets at owner paths as canonical; update
+    every local and CI consumer of the old flat layout without cleaning `_built` or copying outputs
+    through staging or promotion directories.
 
 ## Design Options (Ox)
 
@@ -100,8 +103,8 @@ Execute one task at a time in order.
 | T5 | S1 | Make prerequisite evaluation the first product operation after package activation and defer all normal startup work until readiness. | Done | `3301b78` |
 | T6 | S1 | Gate all automatic/background Rust paths and implement first-suppression-per-path Output logging with tests. | Done | `e84fa0a` |
 | T7 | S1 | Hide or disable every extension-owned user surface while unavailable and make execution callbacks defensive no-ops. | Done | `c0b60df` |
-| T7b | S2 | Isolate every project's parallel build output under `_built\projects`, make those outputs canonical, and update all local and CI consumers without staging copies. | Done | `c0b60df` |
-| T8 | S2 | Audit and apply the newest proven dual-compatible dependency closure and acquired-artifact provenance policy. | Pending | - |
+| T7b | S2 | Isolate parallel outputs; make exact owner-path deliverables and curated sets canonical; update consumers without staging copies. | Done | `c0b60df` |
+| T8 | S2 | Audit and apply the complete newest proven dual-compatible production/build/test/package dependency closure and acquired-artifact provenance policy. | In Progress | - |
 | T9 | S2 | Align the main VSIX manifest and metadata and establish the shared `[17.12,19.0)` dual-host validation contract. | Pending | - |
 | T10 | S2 | Rewrite prerequisite/readme material, reconcile live support claims, update `docs/design.md`, and update all four agent roles. | Pending | - |
 | T11 | S2 | Add canonical-artifact VS17/VS18 validation and the complete blocking behavior/platform evidence matrix. | Pending | - |
@@ -195,9 +198,9 @@ Execute one task at a time in order.
   `_built\projects`; ordinary IDE builds retain their existing layout.
 - `Invoke-Build.ps1` performs one parallel Release solution build. It neither cleans `_built` nor
   copies project outputs through `_built\stage` or `_built\artifacts`.
-- Each `_built\projects\<project>` output is canonical. Tests, CI, packaging, and publication consume
-  exact owning-project paths directly and never fall back to the former flat layout. Files elsewhere
-  beneath `_built` cannot satisfy a gate.
+- Canonical output means an exact named deliverable or explicitly curated file set at its owning
+  `_built\projects\<project>` path. The directory is an output namespace, not a consumer contract;
+  consumers never enumerate it or fall back to the former flat layout.
 - Test closures remain separated by project for dependency probing. One project owns the xUnit
   runner; TestAdapter packaging reads the TestAdapter project's output directly.
 - T7b changes no dependency, package composition, version, host matrix, or MSB3277 policy.
@@ -323,18 +326,49 @@ Execute one task at a time in order.
 
 ### T7b outcome
 
-- One parallel Release solution build writes each project directly to its canonical
-  `_built\projects\<project>` closure through conditional `Directory.Build.props`; normal IDE output
-  paths remain unchanged.
+- One parallel Release solution build writes each project directly to its
+  `_built\projects\<project>` output namespace through conditional `Directory.Build.props`; normal
+  IDE output paths remain unchanged.
 - `Invoke-Build.ps1` performs no cleanup, staging, promotion, archive creation, or second build.
-  Tests, CI, package, and publication paths consume exact project-owned outputs with no flat-layout
-  or staging fallback.
-- Three test assemblies remain independently probeable in one xUnit process. Cargo fixtures are
-  copied only by the two consuming test projects, and one project owns the console runner.
-- TestAdapter packaging resolves the unchanged curated six-file payload only from its owning output
-  and performs owner-local compression and acceptance expansion.
+  Tests, CI, package, and publication paths consume the two named VSIXes, three exact test
+  assemblies, sole xUnit runner, and six TestAdapter files named by `testadapter-package.txt` at
+  their owner paths, with no flat-layout or staging fallback.
+- Directory enumeration is not a consumer contract. Unreferenced stale siblings are noncanonical
+  and cannot satisfy a gate; project output directories need not be pristine.
+- Cargo fixtures are copied only by the two consuming test projects. TestAdapter packaging performs
+  owner-local compression and acceptance expansion from its curated file set.
 - The normal full gate's parallel build emitted no copy-retry warning. Hosted artifact transport
   remains T11 evidence rather than a T7b claim.
+
+### T8 outcome
+
+- The main extension now uses the exact Visual Studio 17.12 SDK/runtime closure: SDK 17.12.40392,
+  threading and Workspace 17.12.19, Language Server Client 17.12.48, and TestPlatform 17.12.0.
+  BuildTools 18.9.820 is retained only as build tooling; no Visual Studio 18 runtime/API package was
+  introduced. Main `net48`, pack `net472`, and TestAdapter `netstandard2.0` are unchanged.
+- Six undocumented loose assemblies were removed in favor of official NuGet contracts. The sole
+  retained TestWindow contract has an official fixed-installer source, exact identity and hash,
+  copy-local ownership, and compatibility rationale recorded in `docs/design.md`.
+- ResolveAssemblyReference no longer mixes the package closure with ambient installed
+  `PublicAssemblies`. This removed all 18 former `MSB3277` project-and-assembly signatures without
+  suppression, binding redirects, direct compatibility pins, serial builds, or output changes.
+- A parallel Release build on complete Visual Studio 2022 17.14.37531.7 produced zero warnings and
+  zero errors. The installed Visual Studio 2026 18.8.12105.206 instance is incomplete and therefore
+  intentionally unresolved; T11 retains real-host validation.
+- The main and pack VSIXes contain 37 and 7 entries respectively, with no Visual Studio or ServiceHub
+  assembly. The TestAdapter archive remains its exact six-file contract. Verification passed all
+  411 assembly tests (292 unit and 119 integration) and all 18 standalone acceptance expectations.
+- Compiled unit validation opens both exact owner-path VSIXes and rejects Visual Studio, ServiceHub,
+  or TestPlatform assemblies. Local and CI TestAdapter packaging use one script that reads only
+  `testadapter-package.txt` and compares the completed ZIP with that exact six-entry set.
+- All 246 distinct restored package/version entries are classified exactly once in
+  `docs/design.md`: 33 direct, 81 host-contract, 11 build/analyzer, 7 conflict-sensitive, 12
+  delivered-transitive, and 102 ordinary family entries. The classification has zero unclassified
+  entries; shared transitives
+  are counted once rather than once per project.
+- Final architecture review approved T8. Non-blocking follow-ups are to table-drive additional
+  invalid manifest spellings and broaden the synthetic VSIX denylist if those guards are next
+  changed; the current normalized owner-path guards and built payloads are proven clean.
 
 ### Runtime flow
 
