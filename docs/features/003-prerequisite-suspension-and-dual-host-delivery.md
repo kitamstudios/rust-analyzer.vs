@@ -99,8 +99,8 @@ Execute one task at a time in order.
 | T4 | S1 | Add the one-shot warning InfoBar, explicit navigation, non-persisted close behavior, and tests. | Done | `d4125c7` |
 | T5 | S1 | Make prerequisite evaluation the first product operation after package activation and defer all normal startup work until readiness. | Done | `3301b78` |
 | T6 | S1 | Gate all automatic/background Rust paths and implement first-suppression-per-path Output logging with tests. | Done | `e84fa0a` |
-| T7 | S1 | Hide or disable every extension-owned user surface while unavailable and make execution callbacks defensive no-ops. | In Progress | - |
-| T7b | S2 | Isolate every project's parallel build output under `_built\projects`, make those outputs canonical, and update all local and CI consumers without staging copies. | In Progress | - |
+| T7 | S1 | Hide or disable every extension-owned user surface while unavailable and make execution callbacks defensive no-ops. | Done | `c0b60df` |
+| T7b | S2 | Isolate every project's parallel build output under `_built\projects`, make those outputs canonical, and update all local and CI consumers without staging copies. | Done | `c0b60df` |
 | T8 | S2 | Audit and apply the newest proven dual-compatible dependency closure and acquired-artifact provenance policy. | Pending | - |
 | T9 | S2 | Align the main VSIX manifest and metadata and establish the shared `[17.12,19.0)` dual-host validation contract. | Pending | - |
 | T10 | S2 | Rewrite prerequisite/readme material, reconcile live support claims, update `docs/design.md`, and update all four agent roles. | Pending | - |
@@ -304,6 +304,37 @@ Execute one task at a time in order.
 - Full verification passed 338 assembly tests and all 18 acceptance expectations. The Release build
   added no warning code or MSB3277 project/assembly signature; T8 still owns the existing baseline.
 - T7 owns user-surface visibility and defensive explicit command callbacks.
+
+### T7 outcome
+
+- Only `Ready` advertises or executes extension-owned user surfaces. Status queries synchronously
+  hide or disable unavailable commands, dynamic children are empty, and callbacks independently
+  recheck readiness before telemetry, service resolution, mutation, or external effects.
+- Persistent command objects restore every status bit on `Ready`; Cargo Clippy and Fmt cannot remain
+  unsupported after an unavailable query.
+- The registered Options page remains a standard Visual Studio `DialogPage`. It is read-only and
+  effect-free while unavailable, promotes its cached property grid exactly once on `Ready`, and
+  prevents promotion after disposal.
+- Editor, Open Folder, test, run/debug, node/property, update, release, installer, and keybinding
+  routes fail closed without repeating prerequisite UI. Prerequisite Help and InfoBar navigation
+  remain available.
+- S1 is complete. Full verification passed 397 assembly tests and all 18 acceptance expectations
+  without adding a warning code or MSB3277 conflict signature.
+
+### T7b outcome
+
+- One parallel Release solution build writes each project directly to its canonical
+  `_built\projects\<project>` closure through conditional `Directory.Build.props`; normal IDE output
+  paths remain unchanged.
+- `Invoke-Build.ps1` performs no cleanup, staging, promotion, archive creation, or second build.
+  Tests, CI, package, and publication paths consume exact project-owned outputs with no flat-layout
+  or staging fallback.
+- Three test assemblies remain independently probeable in one xUnit process. Cargo fixtures are
+  copied only by the two consuming test projects, and one project owns the console runner.
+- TestAdapter packaging resolves the unchanged curated six-file payload only from its owning output
+  and performs owner-local compression and acceptance expansion.
+- The normal full gate's parallel build emitted no copy-retry warning. Hosted artifact transport
+  remains T11 evidence rather than a T7b claim.
 
 ### Runtime flow
 
