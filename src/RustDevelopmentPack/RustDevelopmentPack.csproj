@@ -64,12 +64,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.11.40262" />
-    <PackageReference Include="Microsoft.VisualStudio.SDK.Analyzers" Version="17.7.41">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.11.435">
+    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="18.9.820">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>

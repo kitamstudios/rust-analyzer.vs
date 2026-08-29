@@ -28,8 +28,10 @@ Run these commands in order, resolving each name from the Commands table:
 
 **One implementation per step.** `build` is `.github/scripts/Invoke-Build.ps1`, the same script `cdp.yml`
 invokes (Ruling S) — a step that must behave identically in CI and locally has exactly one implementation,
-never one in YAML and another here. It is the Release MSBuild invocation and nothing else: no analyzer
-switch and no second `/t:Rebuild` pass, because the Release build *is* the analyzer enforcement.
+never one in YAML and another here. It performs one Release solution MSBuild invocation with `/m`,
+does not clean or manipulate outputs, and writes each project directly to its canonical
+`_built\projects\<project>` closure. There is no analyzer switch or second `/t:Rebuild` pass because
+the Release build *is* the analyzer enforcement.
 
 **Run rules.** Every core row above is **required** — a required command whose Value is `none` or empty
 is a **misconfiguration**: **stop and report it** (never silently skip). The skip-`none` rule applies
@@ -38,10 +40,13 @@ the fast gate has none.
 
 **Unit-only, trait-driven.** Test categories follow
 [`docs/meta-design.md#writing-tests`](../../docs/meta-design.md#writing-tests). `Invoke-Tests.ps1` takes
-one `-Mode` of `unit`, `integration`, `acceptance`, or `full`; `test:quick` is `-Mode unit`. It globs the
-built `KS.*Tests.dll` assemblies — no registration step for a new one — and runs the `type=UnitTests`
-cases under the xUnit console runner. The taxonomy is enforced by `TraitTaxonomyTests`, a unit test that
-runs inside this gate: every discovered case must carry exactly one of `type=UnitTests`,
+one `-Mode` of `unit`, `integration`, `acceptance`, or `full`; every mode first runs the TestAdapter
+packager regression once, and `test:quick` is `-Mode unit`. It then reads
+the three exact isolated test-project outputs beneath `_built\projects`, takes the xUnit console
+runner from its owning `RustAnalyzer.UnitTests` closure, and runs the `type=UnitTests` cases in one
+process with assembly parallelism. The taxonomy is enforced by `TraitTaxonomyTests`, a unit test that
+receives that exact canonical assembly set from the gate:
+every discovered case must carry exactly one of `type=UnitTests`,
 `type=IntegrationTests`, or `type=AcceptanceTests`, and it names any offender by assembly and case. It
 also asserts that what it governs is what the runner runs — every discovered assembly matches the
 runner's `KS.*Tests.dll` glob, and no excluded assembly does. The gate itself fails closed on zero
@@ -60,4 +65,5 @@ the analyzers, `EnforceCodeStyleInBuild`, `TreatWarningsAsErrors`, and
 no separate lint pass and no MSBuild-level warning promotion, so MSBuild warnings such as the `MSB3277`
 assembly conflicts are **not** fatal; that is the accepted consequence recorded as D2/R8 in
 `docs/features/002-hardening-and-vs2026.md`, and warning promotion must not be reintroduced anywhere to
-compensate. Dave is not done-done until the gate passes with no warning or error.
+compensate. Dave is not done-done until the gate passes with no error or new warning code/signature;
+the established MSB3277 signature baseline remains T8 work.

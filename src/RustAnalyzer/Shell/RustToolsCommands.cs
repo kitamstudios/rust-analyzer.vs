@@ -14,13 +14,48 @@ using Microsoft.VisualStudio.Shell;
 
 namespace KS.RustAnalyzer.Shell;
 
+public abstract class BaseRustContainerCommand<T> : BaseRustAnalyzerCommand<T>
+    where T : class, new()
+{
+    protected override void BeforeQueryStatusReady(EventArgs e)
+    {
+        Command.Visible = Command.Enabled = Command.Supported = true;
+    }
+
+    protected override void ExecuteCore(
+        object sender,
+        OleMenuCmdEventArgs eventArgs)
+    {
+    }
+}
+
+[Command(PackageGuids.guidRustAnalyzerPackageString, PackageIds.IdTRustAnalyzerToolbar)]
+public sealed class RustToolbarCommand : BaseRustContainerCommand<RustToolbarCommand>
+{
+}
+
+[Command(PackageGuids.guidRustAnalyzerPackageString, PackageIds.IdMRustAnalyzerToolsMC)]
+public sealed class RustToolbarMenuCommand : BaseRustContainerCommand<RustToolbarMenuCommand>
+{
+}
+
+[Command(PackageGuids.guidRustAnalyzerPackageString, PackageIds.IdMRustAnalyzerToolsM)]
+public sealed class RustToolsMenuCommand : BaseRustContainerCommand<RustToolsMenuCommand>
+{
+}
+
+[Command(PackageGuids.guidRustAnalyzerToolchainSwitcherString, PackageIds.IdMSwitchToolchainMenu)]
+public sealed class SwitchToolchainMenuCommand : BaseRustContainerCommand<SwitchToolchainMenuCommand>
+{
+}
+
 /// <summary>
 /// This command will be shown even if a Rust project is not opened currently.
 /// </summary>
 [Command(PackageGuids.guidRustAnalyzerToolsCmdSetString, PackageIds.IdRustAnalyzerOptions)]
 public sealed class OptionsCommand : BaseRustAnalyzerCommand<OptionsCommand>
 {
-    protected override void BeforeQueryStatus(EventArgs e)
+    protected override void BeforeQueryStatusReady(EventArgs e)
     {
         Command.Visible = Command.Enabled = Command.Supported = true;
     }
@@ -34,7 +69,7 @@ public sealed class OptionsCommand : BaseRustAnalyzerCommand<OptionsCommand>
 [Command(PackageGuids.guidRustAnalyzerToolsCmdSetString, PackageIds.IdRestartLSP)]
 public sealed class RestartLspCommand : BaseRustAnalyzerCommand<RestartLspCommand>
 {
-    protected override void BeforeQueryStatus(EventArgs e)
+    protected override void BeforeQueryStatusReady(EventArgs e)
     {
         Command.Visible = Command.Enabled = Command.Supported = false;
     }
@@ -51,7 +86,7 @@ public sealed class RestartLspCommand : BaseRustAnalyzerCommand<RestartLspComman
 [Command(PackageGuids.guidRustAnalyzerToolsCmdSetString, PackageIds.IdKillOrphaned)]
 public sealed class KillOrphanedRaExesCommand : BaseRustAnalyzerCommand<KillOrphanedRaExesCommand>
 {
-    protected override void BeforeQueryStatus(EventArgs e)
+    protected override void BeforeQueryStatusReady(EventArgs e)
     {
         Command.Visible = Command.Enabled = Command.Supported = true;
     }
@@ -70,7 +105,7 @@ public sealed class KillOrphanedRaExesCommand : BaseRustAnalyzerCommand<KillOrph
 [Command(PackageGuids.guidRustAnalyzerToolsCmdSetString, PackageIds.IdInstallToolchain)]
 public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToolchainCommand>
 {
-    protected override void BeforeQueryStatus(EventArgs e)
+    protected override void BeforeQueryStatusReady(EventArgs e)
     {
         Command.Visible = Command.Enabled = Command.Supported = true;
     }
@@ -83,6 +118,11 @@ public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToo
     private async Task ExecuteCoreAsync()
     {
         await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
+
+        if (!PrerequisiteState.IsAvailable)
+        {
+            return;
+        }
 
         var targets = await ToolchainServiceExtensions.GetTargets(default);
         CmdServices.VsUIShell.GetDialogOwnerHwnd(out IntPtr hwndOwner);
@@ -104,13 +144,28 @@ public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToo
         }
 
         var (cmdLine, tcName) = wiz.GetCommandLineInfo();
+        if (!PrerequisiteState.IsAvailable)
+        {
+            return;
+        }
+
         await VsCommon.ShowInfoBarAsync(true, $"Starting installation of toolchain '{tcName}'. See Output > rust-analyzer.vs pane for detailed status. Once done, you'll be notified here.");
         RustAnalyzerPackage.JTF.RunAsync(
             async () =>
             {
+                if (!PrerequisiteState.IsAvailable)
+                {
+                    return;
+                }
+
                 var res = await ToolchainServiceExtensions.InstallToolchain(cmdLine, CmdServices.BuildOutputSink, default);
 
                 await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
+                if (!PrerequisiteState.IsAvailable)
+                {
+                    return;
+                }
+
                 var msg = $"Finished installing toolchain '{tcName}'. Use Tools > Rust Tools > Switch Active Toolchain to switch to it.";
                 if (!res)
                 {
@@ -138,21 +193,51 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
     private const string ToolchainNameProperty = "name";
 
     private static readonly List<OleMenuCommand> CommandCache = new();
+    private readonly Func<PrerequisiteAvailabilityPolicy> _getAvailabilityPolicy;
+    private readonly Action _queryToolchains;
+    private readonly Action _verifyOnUIThread;
 
-    protected override void BeforeQueryStatus(EventArgs e)
+    public SwitchToolchainCommand()
     {
-        ThreadHelper.ThrowIfNotOnUIThread();
+        _getAvailabilityPolicy = () => AvailabilityPolicy;
+        _queryToolchains = QueryToolchains;
+        _verifyOnUIThread = () => ThreadHelper.ThrowIfNotOnUIThread();
+    }
 
-        var workspaceRoot = CmdServices.GetWorkspaceRoot();
-        var toolchains = RustAnalyzerPackage.JTF
-            .Run(async () => await ToolchainServiceExtensions.GetInstalledToolchainsAsync(new ToolchainServiceExtensions.RustupShowOutput.Real(), workspaceRoot, default));
+    private SwitchToolchainCommand(
+        PrerequisiteProcessState prerequisiteState,
+        PrerequisiteAvailabilityPolicy availabilityPolicy,
+        Action queryToolchains)
+        : base(prerequisiteState)
+    {
+        _getAvailabilityPolicy = () => availabilityPolicy;
+        _queryToolchains = queryToolchains;
+        _verifyOnUIThread = () => { };
+        Command = new OleMenuCommand(
+            (_, _) => { },
+            new CommandID(
+                PackageGuids.guidRustAnalyzerToolchainSwitcher,
+                PackageIds.IdFirstToolchain));
+    }
 
-        var mcs = Package.GetService<IMenuCommandService, OleMenuCommandService>();
-        foreach (var (tc, pos) in toolchains.Select((x, i) => (x, i)))
+    protected override void BeforeQueryStatusReady(EventArgs e)
+    {
+        _verifyOnUIThread();
+
+        if (!_getAvailabilityPolicy().IsReady(AutomaticRustPath.ToolchainStatusQuery))
         {
-            var command = GetOrCreateCommand(pos, mcs);
-            SetupCommand(command, tc);
+            return;
         }
+
+        _queryToolchains();
+    }
+
+    protected override void BeforeQueryStatusUnavailable(EventArgs e)
+    {
+        _verifyOnUIThread();
+        _getAvailabilityPolicy().IsReady(AutomaticRustPath.ToolchainStatusQuery);
+        CommandCache.ForEach(
+            command => command.Visible = command.Enabled = command.Supported = false);
     }
 
     protected override void ExecuteCore(object sender, OleMenuCmdEventArgs e)
@@ -172,12 +257,40 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
         }
 
         var name = command.Properties[ToolchainNameProperty] as string;
+        if (!PrerequisiteState.IsAvailable)
+        {
+            return;
+        }
+
         RustAnalyzerPackage.JTF
-            .RunAsync(async () => await ((PathEx)workspaceRoot).SetToolchainOverrideAsync(name, Logger, default))
+            .RunAsync(
+                async () =>
+                {
+                    if (PrerequisiteState.IsAvailable)
+                    {
+                        await ((PathEx)workspaceRoot).SetToolchainOverrideAsync(name, Logger, default);
+                    }
+                })
             .FireAndForget();
 
         CommandCache.ForEach(c => c.Checked = false);
         command.Checked = true;
+    }
+
+    private void QueryToolchains()
+    {
+        ThreadHelper.ThrowIfNotOnUIThread();
+
+        var workspaceRoot = CmdServices.GetWorkspaceRoot();
+        var toolchains = RustAnalyzerPackage.JTF
+            .Run(async () => await ToolchainServiceExtensions.GetInstalledToolchainsAsync(new ToolchainServiceExtensions.RustupShowOutput.Real(), workspaceRoot, default));
+
+        var mcs = Package.GetService<IMenuCommandService, OleMenuCommandService>();
+        foreach (var (tc, pos) in toolchains.Select((x, i) => (x, i)))
+        {
+            var command = GetOrCreateCommand(pos, mcs);
+            SetupCommand(command, tc);
+        }
     }
 
     private OleMenuCommand GetOrCreateCommand(int pos, OleMenuCommandService mcs)

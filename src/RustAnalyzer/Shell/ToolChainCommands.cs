@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Community.VisualStudio.Toolkit;
+using EnsureThat;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Cargo;
@@ -15,8 +16,20 @@ using ToolchainOperation = System.Func<KS.RustAnalyzer.TestAdapter.Common.IToolc
 public abstract class BaseToolchainCommand<T> : BaseCommand<T>
     where T : class, new()
 {
+    private readonly PrerequisiteProcessState _prerequisiteState;
+
     protected BaseToolchainCommand()
+        : this(PrerequisiteProcessState.Current)
     {
+    }
+
+    protected BaseToolchainCommand(PrerequisiteProcessState prerequisiteState)
+    {
+        _prerequisiteState = EnsureArg.IsNotNull(
+            prerequisiteState,
+            nameof(prerequisiteState),
+            options => options.WithException(
+                new ArgumentNullException(nameof(prerequisiteState))));
         CmdServices = new CmdServices(() => Package);
     }
 
@@ -26,7 +39,21 @@ public abstract class BaseToolchainCommand<T> : BaseCommand<T>
 
     protected abstract string GetOptions(Options opts);
 
-    protected override void BeforeQueryStatus(EventArgs e)
+    protected sealed override void BeforeQueryStatus(EventArgs e)
+    {
+        if (!_prerequisiteState.IsAvailable)
+        {
+            Command.Visible = Command.Enabled = Command.Supported = false;
+            return;
+        }
+
+#pragma warning disable VSTHRD010
+        Command.Supported = true;
+        BeforeQueryStatusReady(e);
+#pragma warning restore VSTHRD010
+    }
+
+    protected virtual void BeforeQueryStatusReady(EventArgs e)
     {
         ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -41,9 +68,21 @@ public abstract class BaseToolchainCommand<T> : BaseCommand<T>
         Command.Visible = Command.Enabled = path.IsManifest() && path.FileExists();
     }
 
-    protected override async Task ExecuteAsync(OleMenuCmdEventArgs e)
+    protected sealed override Task ExecuteAsync(OleMenuCmdEventArgs e)
+    {
+        return !_prerequisiteState.IsAvailable
+            ? Task.CompletedTask
+            : ExecuteReadyAsync(e);
+    }
+
+    protected virtual async Task ExecuteReadyAsync(OleMenuCmdEventArgs e)
     {
         await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
+
+        if (!_prerequisiteState.IsAvailable)
+        {
+            return;
+        }
 
         var selectedPath = CmdServices.GetSelectedItems().FirstOrDefault();
         await CmdServices.ExecuteToolchainOperationAsync(Operation, selectedPath, GetOptions);
@@ -69,8 +108,20 @@ public class CargoFmtCommand : BaseToolchainCommand<CargoFmtCommand>
 public abstract class BaseBuildToolChainCommand<T> : BaseCommand<T>
     where T : class, new()
 {
+    private readonly PrerequisiteProcessState _prerequisiteState;
+
     protected BaseBuildToolChainCommand()
+        : this(PrerequisiteProcessState.Current)
     {
+    }
+
+    protected BaseBuildToolChainCommand(PrerequisiteProcessState prerequisiteState)
+    {
+        _prerequisiteState = EnsureArg.IsNotNull(
+            prerequisiteState,
+            nameof(prerequisiteState),
+            options => options.WithException(
+                new ArgumentNullException(nameof(prerequisiteState))));
         CmdServices = new CmdServices(() => Package);
     }
 
@@ -80,16 +131,41 @@ public abstract class BaseBuildToolChainCommand<T> : BaseCommand<T>
 
     protected abstract string GetOptions(Options opts);
 
-    protected override void BeforeQueryStatus(EventArgs e)
+    protected sealed override void BeforeQueryStatus(EventArgs e)
+    {
+        if (!_prerequisiteState.IsAvailable)
+        {
+            Command.Visible = Command.Enabled = Command.Supported = false;
+            return;
+        }
+
+#pragma warning disable VSTHRD010
+        BeforeQueryStatusReady(e);
+#pragma warning restore VSTHRD010
+    }
+
+    protected virtual void BeforeQueryStatusReady(EventArgs e)
     {
         ThreadHelper.ThrowIfNotOnUIThread();
 
         Command.Visible = Command.Enabled = Command.Supported = IsCommandActive();
     }
 
-    protected override async Task ExecuteAsync(OleMenuCmdEventArgs e)
+    protected sealed override Task ExecuteAsync(OleMenuCmdEventArgs e)
+    {
+        return !_prerequisiteState.IsAvailable
+            ? Task.CompletedTask
+            : ExecuteReadyAsync(e);
+    }
+
+    protected virtual async Task ExecuteReadyAsync(OleMenuCmdEventArgs e)
     {
         await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
+
+        if (!_prerequisiteState.IsAvailable)
+        {
+            return;
+        }
 
         var selectedPath = GetManifestPath();
         await CmdServices.ExecuteToolchainOperationAsync(Operation, selectedPath, GetOptions);

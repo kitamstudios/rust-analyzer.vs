@@ -28,18 +28,31 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
     public ITelemetryService T { get; set; }
 
     [Import]
+    public Lazy<IToolchainService> LazyCargoService { get; set; }
+
     public IToolchainService CargoService { get; set; }
 
     [Import]
-    public IPreReqsCheckService PreReqs { get; set; }
+    public PrerequisiteAvailabilityPolicy AvailabilityPolicy { get; set; }
 
     public IFileContextProvider CreateProvider(IWorkspace workspaceContext)
     {
+        var provider = new FileContextProvider(
+            () => workspaceContext.GetService<IMetadataService>(),
+            () => LazyCargoService?.Value ?? CargoService,
+            OutputPane,
+            () => workspaceContext.GetService<ISettingsService>(),
+            AvailabilityPolicy);
+        if (!AvailabilityPolicy.IsReady(AutomaticRustPath.OpenFolderContextDiscovery))
+        {
+            return provider;
+        }
+
         T.TrackEvent(
             "Create Context Provider",
             new[] { ("Location", workspaceContext.Location) });
         L.WriteLine("Creating {0}.", GetType().Name);
 
-        return new FileContextProvider(workspaceContext.GetService<IMetadataService>(), CargoService, OutputPane, workspaceContext.GetService<ISettingsService>());
+        return provider;
     }
 }

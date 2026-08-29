@@ -25,6 +25,7 @@
 - Add bounded waits for Cargo processes.
 - Standardize Cargo working directories and environments.
 - Align `FileScanner` manifest checks with `Cargo.toml` registration.
+- Enhance [TOML Editor](https://github.com/madskristensen/TomlEditor) with dependency versioning and related Cargo features.
 - Add inlay-hint configuration parity.
 - Add brace-completion configuration parity.
 - Add Navigation Bar support.

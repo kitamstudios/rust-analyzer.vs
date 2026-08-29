@@ -15,25 +15,32 @@ namespace KS.RustAnalyzer.NodeEnhancements;
 [Export(typeof(INodeBrowseObjectProvider))]
 public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
 {
+    private readonly PrerequisiteAvailabilityPolicy _availabilityPolicy;
     private readonly TL _tl;
-    private readonly NodeBrowseObjectPropertyFilter<NodeBrowseObject> _browseObject = new(new());
-    private readonly IPreReqsCheckService _preReqs;
+    private NodeBrowseObjectPropertyFilter<NodeBrowseObject> _browseObject;
 
     [ImportingConstructor]
-    public NodeBrowseObjectProvider([Import] IPreReqsCheckService preReqs, [Import] ITelemetryService t, [Import] ILogger l)
+    public NodeBrowseObjectProvider(
+        [Import] ITelemetryService t,
+        [Import] ILogger l,
+        [Import] PrerequisiteAvailabilityPolicy availabilityPolicy)
     {
+        _availabilityPolicy = availabilityPolicy;
         _tl = new TL
         {
             T = t,
             L = l,
         };
-
-        _browseObject.Object.PropertyChanged += BrowseObject_PropertyChanged;
-        _preReqs = preReqs;
     }
 
     public object ProvideBrowseObject(WorkspaceVisualNodeBase node)
     {
+        if (!_availabilityPolicy.IsReady(AutomaticRustPath.NodeBrowseObject))
+        {
+            return null;
+        }
+
+        var browseObject = GetBrowseObject();
         _tl.L.WriteLine("Getting browse object for {0}.", node.NodeFullMoniker);
 
         if (node is not IFileSystemNode fsNode || !File.Exists(fsNode.FullPath))
@@ -47,19 +54,35 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
             return null;
         }
 
-        if (_browseObject.Object.FullPath != default && _browseObject.Object.FullPath == fullPath)
+        if (browseObject.Object.FullPath != default && browseObject.Object.FullPath == fullPath)
         {
-            return _browseObject;
+            return browseObject;
         }
 
         var mds = node.Workspace.GetService<IMetadataService>();
         var (hasTargets, isExe) = node.Workspace.JTF.Run(async () => await mds.GetTargetInfoAsync(fullPath, default));
-        _browseObject.Reset(fullPath, node.Workspace.GetService<ISettingsService>(), hasTargets, isExe, fullPath.IsManifest());
+        browseObject.Reset(fullPath, node.Workspace.GetService<ISettingsService>(), hasTargets, isExe, fullPath.IsManifest());
+        return browseObject;
+    }
+
+    private NodeBrowseObjectPropertyFilter<NodeBrowseObject> GetBrowseObject()
+    {
+        if (_browseObject == null)
+        {
+            _browseObject = new NodeBrowseObjectPropertyFilter<NodeBrowseObject>(new NodeBrowseObject());
+            _browseObject.Object.PropertyChanged += BrowseObject_PropertyChanged;
+        }
+
         return _browseObject;
     }
 
     private void BrowseObject_PropertyChanged(object sender, PropertyChangedEventArgs e)
     {
+        if (!_availabilityPolicy.IsReady(AutomaticRustPath.NodeBrowseObject))
+        {
+            return;
+        }
+
         if (sender is not NodeBrowseObject fsob)
         {
             return;

@@ -19,6 +19,7 @@ public class TraitTaxonomyTests
     private const string UnitTests = "UnitTests";
     private const string IntegrationTests = "IntegrationTests";
     private const string AcceptanceTests = "AcceptanceTests";
+    private const string GateTestAssembliesVariable = "RAVS_XUNIT_TEST_ASSEMBLIES";
 
     private static readonly IReadOnlyList<string> TypeTraitValues = new[] { UnitTests, IntegrationTests, AcceptanceTests };
 
@@ -37,6 +38,9 @@ public class TraitTaxonomyTests
     private static readonly string TestAssemblyDirectory =
         Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath);
 
+    private static readonly string GateTestAssemblies =
+        Environment.GetEnvironmentVariable(GateTestAssembliesVariable);
+
     private static readonly IReadOnlyList<string> DiscoveredTestAssemblies = DiscoverTestAssemblies();
 
     private static readonly IReadOnlyList<(string Name, string[] Types)> TestCases = GetTestCases();
@@ -45,9 +49,9 @@ public class TraitTaxonomyTests
     public void DiscoveryFindsTestAssembliesAndTestCases()
     {
         DiscoveredTestAssemblies.Should().NotBeEmpty(
-            "no test assembly matched {0} in {1}, which would make these invariants vacuous. Excluded: {2}",
+            "no test assembly matched {0} from {1}, which would make these invariants vacuous. Excluded: {2}",
             TestAssemblyPattern,
-            TestAssemblyDirectory,
+            string.IsNullOrWhiteSpace(GateTestAssemblies) ? TestAssemblyDirectory : GateTestAssembliesVariable,
             DescribeExclusions());
 
         TestCases.Should().NotBeEmpty(
@@ -84,9 +88,7 @@ public class TraitTaxonomyTests
             AcceptanceTests);
     }
 
-    // These invariants glob *Tests.dll; Invoke-Tests.ps1 globs KS.*Tests.dll. Narrowing this glob or
-    // widening the runner's would let an assembly slip past one of the two, so assert instead that the
-    // set governed here and the set the gate runs are the same set.
+    // The gate supplies its exact canonical set. The local glob remains the IDE fallback.
     [Fact]
     public void EveryGovernedAssemblyIsRunByTheGate()
     {
@@ -117,6 +119,15 @@ public class TraitTaxonomyTests
 
     private static IReadOnlyList<string> DiscoverTestAssemblies()
     {
+        if (!string.IsNullOrWhiteSpace(GateTestAssemblies))
+        {
+            return GateTestAssemblies
+                .Split(new[] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(Path.GetFullPath)
+                .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
         return Directory
             .EnumerateFiles(TestAssemblyDirectory, TestAssemblyPattern)
             .Where(path => !ExcludedAssemblies.ContainsKey(Path.GetFileName(path)))

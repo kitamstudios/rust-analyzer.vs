@@ -46,7 +46,8 @@ Load understanding of the current WIP from `docs/features/<nnn>-<feature_name>.m
 Do these when called after implementation of the current task.
 
 0. Do not overdesign.
-1. Your job is to review at the codebase and product level.
+1. Your job is to review at the codebase and product level - your job is consistency, integrity & optimization
+   at global level.
 2. Review each step's changes against repo conventions and against YAGNI, DRY,
    SOLID principles and dependency-flow rules.
 3. Do not, in general, deviate from established patterns and conventions — but do suggest more elegant,

@@ -39,13 +39,19 @@ public class RlsInstallerService : IRlsInstallerService
 {
     public const string VersionFormat = "yyyy-MM-dd";
     private const string InstalledRlsVersionKey = "InstalledRlsVersion";
+    private readonly PrerequisiteAvailabilityPolicy _availabilityPolicy;
     private readonly IRegistrySettingsService _regSettings;
     private readonly TL _tl;
 
     [ImportingConstructor]
-    public RlsInstallerService(IRegistrySettingsService regSettings, [Import] ITelemetryService t, [Import] ILogger l)
+    public RlsInstallerService(
+        IRegistrySettingsService regSettings,
+        [Import] ITelemetryService t,
+        [Import] ILogger l,
+        [Import] PrerequisiteAvailabilityPolicy availabilityPolicy)
     {
         _regSettings = regSettings;
+        _availabilityPolicy = availabilityPolicy;
         _tl = new TL
         {
             T = t,
@@ -55,6 +61,13 @@ public class RlsInstallerService : IRlsInstallerService
 
     public async Task InstallLatestAsync()
     {
+        if (!await _availabilityPolicy.IsReadyAsync(
+                AutomaticRustPath.RustAnalyzerUpdaterDownload,
+                default))
+        {
+            return;
+        }
+
         _tl.L.WriteLine("Initiating download of RLS...");
         try
         {

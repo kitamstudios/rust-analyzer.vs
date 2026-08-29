@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Community.VisualStudio.Toolkit;
 using EnsureThat;
 using EnvDTE;
+using KS.RustAnalyzer.Infrastructure;
 using Microsoft.VisualStudio.Shell;
 
 namespace KS.RustAnalyzer.Shell;
@@ -43,6 +44,23 @@ public sealed class TargetSystemComboCommand : BaseRustAnalyzerCommand<TargetSys
 [Command(PackageGuids.guidRustAnalyzerTargetSystemCmdSetString, PackageIds.IdTargetSystemComboGetList)]
 public sealed class TargetSystemComboGetListCommand : BaseRustAnalyzerCommand<TargetSystemComboGetListCommand>
 {
+    public TargetSystemComboGetListCommand()
+    {
+    }
+
+    private TargetSystemComboGetListCommand(PrerequisiteProcessState prerequisiteState)
+        : base(prerequisiteState)
+    {
+    }
+
+    protected override void ExecuteUnavailable(object sender, OleMenuCmdEventArgs eventArgs)
+    {
+        if (eventArgs?.OutValue != IntPtr.Zero)
+        {
+            Marshal.GetNativeVariantForObject(Array.Empty<string>(), eventArgs.OutValue);
+        }
+    }
+
     protected override void ExecuteCore(object sender, OleMenuCmdEventArgs eventArgs)
     {
         EnsureArg.IsNotNull(eventArgs);

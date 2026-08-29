@@ -12,9 +12,9 @@
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
-    <!-- Exactly one test project writes the shared test payload into the common $(TargetDir); see
-         CopyTestProjects and CopyXunitConsoleRunner in KS.Tests.Common.targets. -->
-    <OwnsSharedTestPayload>true</OwnsSharedTestPayload>
+    <CopyTestProjectsFixtures>true</CopyTestProjectsFixtures>
+    <!-- Exactly one isolated test closure owns the gate's xUnit console runner. -->
+    <OwnsXunitConsoleRunner>true</OwnsXunitConsoleRunner>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -36,6 +36,8 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
@@ -49,6 +51,18 @@
     <Compile Include="..\TestsCommon\TestHelpers.cs">
       <Link>Common\TestHelpers.cs</Link>
     </Compile>
+    <Compile Include="Infrastructure\PrerequisiteEvaluatorTests.cs" />
+    <Compile Include="Infrastructure\AutomaticRustBoundaryTests.cs" />
+    <Compile Include="Infrastructure\MetadataServiceFactoryLifecycleTests.cs" />
+    <Compile Include="Infrastructure\PrerequisiteAvailabilityPolicyTests.cs" />
+    <Compile Include="Infrastructure\PrerequisiteFailurePromptTests.cs" />
+    <Compile Include="Infrastructure\PrerequisiteProcessStateTests.cs" />
+    <Compile Include="Infrastructure\PrerequisiteStartupCoordinatorTests.cs" />
+    <Compile Include="Infrastructure\PrerequisiteSuspensionInfoBarIntegrationTests.cs" />
+    <Compile Include="Infrastructure\PrerequisiteSuspensionNotificationTests.cs" />
+    <Compile Include="Infrastructure\UserSurfaceAvailabilityTests.cs" />
+    <Compile Include="Infrastructure\VisualStudioPrerequisiteProbeIntegrationTests.cs" />
+    <Compile Include="Infrastructure\VsixPayloadTests.cs" />
     <Compile Include="Infrastructure\StringBuildMessagePreprocessorTests.cs" />
     <Compile Include="Infrastructure\StringExtensionsTests.cs" />
     <Compile Include="RlsReleaseTests.cs" />
@@ -61,21 +75,6 @@
   <ItemGroup>
     <Reference Include="Microsoft.VisualStudio.TestWindow.Interfaces">
       <HintPath>..\external\vs.17.11\Microsoft.VisualStudio.TestWindow.Interfaces.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Workspace">
-      <HintPath>..\external\vs.17.11\Microsoft.VisualStudio.Workspace.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Workspace.Extensions">
-      <HintPath>..\external\vs.17.11\Microsoft.VisualStudio.Workspace.Extensions.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Workspace.Extensions.VS">
-      <HintPath>..\external\vs.17.11\Microsoft.VisualStudio.Workspace.Extensions.VS.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Workspace.VSIntegration">
-      <HintPath>..\external\vs.17.11\Microsoft.VisualStudio.Workspace.VSIntegration.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Workspace.VSIntegration.Contracts">
-      <HintPath>..\external\vs.17.11\Microsoft.VisualStudio.Workspace.VSIntegration.Contracts.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

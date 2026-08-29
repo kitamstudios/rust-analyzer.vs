@@ -4,14 +4,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="xunit" Version="2.9.0" />
     <!-- In-IDE Test Explorer discovery/execution. -->
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <!-- Gate runner: CopyXunitConsoleRunner copies tools\net472 next to the built test assemblies. -->
+    <!-- Gate runner: one test project copies tools\net472 into its isolated output closure. -->
     <PackageReference Include="xunit.runner.console" Version="2.9.0" GeneratePathProperty="true">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
@@ -28,10 +28,7 @@
     <PackageReference Include="ApprovalTests" Version="5.8.0" />
   </ItemGroup>
 
-  <!-- Every test project builds into the same $(TargetDir), so all three used to copy the same shared
-       payload there concurrently and lose the MSB3026 race against each other. The payload is identical
-       whoever writes it, so exactly one project opts in and the rest consume what it wrote. -->
-  <Target Name="CopyXunitConsoleRunner" AfterTargets="Build" Condition="'$(OwnsSharedTestPayload)' == 'true'">
+  <Target Name="CopyXunitConsoleRunner" AfterTargets="Build" Condition="'$(OwnsXunitConsoleRunner)' == 'true'">
     <Error Condition="'$(Pkgxunit_runner_console)' == ''" Text="The xunit.runner.console package path property is missing. Restore the project before building." />
     <ItemGroup>
       <XunitConsoleRunnerFiles Include="$(Pkgxunit_runner_console)\tools\net472\*.*" />
@@ -39,9 +36,11 @@
     <Copy SourceFiles="@(XunitConsoleRunnerFiles)" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
   </Target>
 
-  <Target Name="CopyTestProjects" AfterTargets="Build" Condition="'$(OwnsSharedTestPayload)' == 'true'">
+  <Target Name="CopyTestProjects" AfterTargets="Build" Condition="'$(CopyTestProjectsFixtures)' == 'true'">
     <ItemGroup>
-      <TestProjectsFiles Include="$(MSBuildThisFileDirectory)TestProjects\**\*.*" />
+      <TestProjectsFiles
+        Include="$(MSBuildThisFileDirectory)TestProjects\**\*"
+        Exclude="$(MSBuildThisFileDirectory)TestProjects\**\target\**\*;$(MSBuildThisFileDirectory)TestProjects\**\TestResults\**\*;$(MSBuildThisFileDirectory)TestProjects\**\Cargo.lock" />
     </ItemGroup>
     <Copy SourceFiles="@(TestProjectsFiles)" DestinationFolder="$(TargetDir)\Cargo\TestData\%(RecursiveDir)" SkipUnchangedFiles="true" />
   </Target>

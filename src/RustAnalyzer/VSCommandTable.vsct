@@ -21,6 +21,7 @@
     <Menus>
       <Menu guid="guidRustAnalyzerPackage" id="IdTRustAnalyzerToolbar" type="Toolbar">
         <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
         <CommandFlag>TextChanges</CommandFlag>
         <Strings>
           <ButtonText>rustanalyzer.vs Toolbar</ButtonText>
@@ -29,12 +30,16 @@
       <Menu guid="guidRustAnalyzerPackage" id="IdMRustAnalyzerToolsMC" type="MenuController">
         <CommandFlag>IconAndText</CommandFlag>
         <CommandFlag>NotInTBList</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
         <Strings>
           <ButtonText>Rust Tools</ButtonText>
           <ToolTipText>Various Rust Tools and Utilities</ToolTipText>
         </Strings>
       </Menu>
       <Menu guid="guidRustAnalyzerPackage" id="IdMRustAnalyzerToolsM" type="Menu">
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
         <Strings>
           <ButtonText>&amp;Rust Tools</ButtonText>
           <ToolTipText>Various Rust Tools and Utilities</ToolTipText>
@@ -42,6 +47,8 @@
       </Menu>
       <Menu guid="guidRustAnalyzerToolchainSwitcher" id="IdMSwitchToolchainMenu" priority="0x0250" type="Menu">
         <Parent guid="guidRustAnalyzerToolsCmdSet" id="IdGRustAnalyzerTools" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
         <Strings>
           <ButtonText>Switch Active &amp;Toolchain</ButtonText>
           <ToolTipText>Switch active Rust toolchain</ToolTipText>

@@ -15,18 +15,19 @@ end-to-end verifiable change. Rarely, a slice is split (e.g. frontend/backend) â
 
 Classify tests by boundary, not duration.
 
-| Type | Boundary and purpose | Directional scale | xUnit trait | Gate filter |
-|------|----------------------|-------------------|-------------|-------------|
-| Unit | Fine-grained, fast, and does not cross a process boundary. | Thousands | `[Trait("type", "UnitTests")]` | `type=UnitTests` |
-| Integration | Validates critical integration between cohesive components; may cross process or network boundaries. | Hundreds | `[Trait("type", "IntegrationTests")]` | `type=IntegrationTests` |
-| Acceptance | Exercises critical end-to-end customer scenarios by performing actions and verifying outcomes as a customer would. | Tens | `[Trait("type", "AcceptanceTests")]` | `type=AcceptanceTests` |
+| Type | Boundary and purpose | Runs in | xUnit trait | Gate filter |
+|------|----------------------|---------|-------------|-------------|
+| Preflight | Automates linters, analyzers, dependency validation, and similar policy checks. | Hundreds per minute | - | Stack-specific |
+| Unit | Fine-grained, fast, and does not cross a process boundary. | Thousands per minute | `[Trait("type", "UnitTests")]` | `type=UnitTests` |
+| Integration | Validates critical integration between cohesive components; may cross process or network boundaries. | Tens per minute | `[Trait("type", "IntegrationTests")]` | `type=IntegrationTests` |
+| Acceptance | Exercises critical end-to-end customer scenarios by performing actions and verifying outcomes as a customer would. | One or two minutes each | `[Trait("type", "AcceptanceTests")]` | `type=AcceptanceTests` |
 
-The scales are directional guidelines, not classification criteria or hard quotas. Preflight checks
-automate linters, analyzers, dependency validation, and similar policy so the correct path is easiest.
+The run rates are directional guidelines, not classification criteria, hard quotas, or time limits.
 Specialized suites supplement these categories, and automated tests do not replace team exploratory
-testing. Do not specify numeric time limits. Non-xUnit acceptance marking and execution are
-stack-specific; retain the stack's acceptance gate rather than adding an xUnit wrapper only for a
-trait.
+testing. Non-xUnit acceptance marking and execution are stack-specific; retain the stack's acceptance
+gate rather than adding an xUnit wrapper only for a trait.
+
+Do not add tests that scan source files. Attempt using reflection, if not possible leave it.
 
 ## Designing a feature
 

@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using EnsureThat;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Common;
@@ -20,8 +21,34 @@ namespace KS.RustAnalyzer.LanguageService;
 [ContentType(Constants.RustLanguageContentType)]
 [Export(typeof(ILanguageClient))]
 [RunOnContext(RunningContext.RunOnHost)]
-public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
+public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, IDisposable
 {
+    private readonly CancellationTokenSource _lifetimeCancellation = new();
+    private readonly CancellationToken _lifetimeToken;
+    private readonly AsyncLazy<object> _loading;
+    private readonly object _sync = new();
+    private bool _disposed;
+    private bool _stopped;
+    private Task _stopping;
+
+    public LanguageClient()
+        : this(RustAnalyzerPackage.JTF)
+    {
+    }
+
+    public LanguageClient(JoinableTaskFactory joinableTaskFactory)
+    {
+        EnsureArg.IsNotNull(joinableTaskFactory);
+        _lifetimeToken = _lifetimeCancellation.Token;
+        _loading = new AsyncLazy<object>(
+            async () =>
+            {
+                await OnLoadedCoreAsync();
+                return null;
+            },
+            joinableTaskFactory);
+    }
+
     public event AsyncEventHandler<EventArgs> StartAsync;
 
     public event AsyncEventHandler<EventArgs> StopAsync;
@@ -37,6 +64,9 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
 
     [Import]
     public IRlsInstallerService RADownloader { get; set; }
+
+    [Import]
+    public PrerequisiteAvailabilityPolicy AvailabilityPolicy { get; set; }
 
     public JsonRpc Rpc { get; set; }
 
@@ -58,55 +88,124 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
 
     public object CustomMessageTarget => null;
 
-    public bool ShowNotificationOnInitializeFailed => true;
+    public bool ShowNotificationOnInitializeFailed =>
+        !IsStopped &&
+        AvailabilityPolicy.IsReady(AutomaticRustPath.LanguageClientActivation);
 
     public async Task<Connection> ActivateAsync(CancellationToken token)
     {
-        var rlsPath = await RADownloader.GetExePathAsync();
-        L.WriteLine("Starting rust-analyzer from path: {0}.", rlsPath);
-        ProcessStartInfo info = new()
+        if (IsStopped)
         {
-            FileName = rlsPath,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            WindowStyle = ProcessWindowStyle.Minimized,
-            WorkingDirectory = WorkspaceService.CurrentWorkspace?.Location ?? Path.GetDirectoryName(rlsPath),
-        };
-
-        Process process = new()
-        {
-            StartInfo = info
-        };
-
-        if (process.Start())
-        {
-            L.WriteLine("Done starting rust-analyzer from path. PID: {0}", process.Id);
-            T.TrackEvent("rust-analyzer-start", ("Path", rlsPath));
-
-            return await Task.FromResult(new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream));
+            return null;
         }
 
-        L.WriteLine("Error starting rust-analyzer from path.");
-        T.TrackException(new InvalidOperationException(), new[] { ("Path", (string)rlsPath) });
-        return null;
+        using var activationCancellation =
+            CancellationTokenSource.CreateLinkedTokenSource(token, _lifetimeToken);
+        try
+        {
+            if (!await AvailabilityPolicy.IsReadyAsync(
+                    AutomaticRustPath.LanguageClientActivation,
+                    activationCancellation.Token))
+            {
+                return null;
+            }
+
+            var rlsPath = await RADownloader.GetExePathAsync();
+            activationCancellation.Token.ThrowIfCancellationRequested();
+            L.WriteLine("Starting rust-analyzer from path: {0}.", rlsPath);
+            ProcessStartInfo info = new()
+            {
+                FileName = rlsPath,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Minimized,
+                WorkingDirectory = WorkspaceService.CurrentWorkspace?.Location ?? Path.GetDirectoryName(rlsPath),
+            };
+
+            Process process = new()
+            {
+                StartInfo = info
+            };
+            bool started;
+            lock (_sync)
+            {
+                if (_stopped || _disposed)
+                {
+                    process.Dispose();
+                    return null;
+                }
+
+                started = process.Start();
+            }
+
+            if (started)
+            {
+                L.WriteLine("Done starting rust-analyzer from path. PID: {0}", process.Id);
+                T.TrackEvent("rust-analyzer-start", ("Path", rlsPath));
+
+                return await Task.FromResult(new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream));
+            }
+
+            L.WriteLine("Error starting rust-analyzer from path.");
+            T.TrackException(new InvalidOperationException(), new[] { ("Path", (string)rlsPath) });
+            return null;
+        }
+        catch (OperationCanceledException) when (_lifetimeToken.IsCancellationRequested && !token.IsCancellationRequested)
+        {
+            return null;
+        }
     }
 
-    public async Task OnLoadedAsync()
+    public Task OnLoadedAsync()
     {
-        if (StartAsync != null)
+        lock (_sync)
         {
-            await StartAsync.InvokeAsync(this, EventArgs.Empty);
+            return _stopped || _disposed
+                ? Task.CompletedTask
+                : _loading.GetValueAsync();
         }
     }
 
-    public async Task StopServerAsync()
+    public Task StopServerAsync()
     {
-        if (StopAsync != null)
+        lock (_sync)
         {
-            await StopAsync.InvokeAsync(this, EventArgs.Empty);
+            if (_stopping != null)
+            {
+                return _stopping;
+            }
+
+            if (_disposed)
+            {
+                return Task.CompletedTask;
+            }
+
+            _stopped = true;
+            _lifetimeCancellation.Cancel();
+            _stopping = StopAsync == null
+                ? Task.CompletedTask
+                : StopAsync.InvokeAsync(this, EventArgs.Empty);
+            return _stopping;
         }
+    }
+
+    public void Dispose()
+    {
+        lock (_sync)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            _stopped = true;
+            _lifetimeCancellation.Cancel();
+        }
+
+        _lifetimeCancellation.Dispose();
     }
 
     public Task OnServerInitializedAsync()
@@ -123,6 +222,12 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
 
     public Task<InitializationFailureContext> OnServerInitializeFailedAsync(ILanguageClientInitializationInfo initializationState)
     {
+        if (IsStopped ||
+            !AvailabilityPolicy.IsReady(AutomaticRustPath.LanguageClientActivation))
+        {
+            return Task.FromResult<InitializationFailureContext>(null);
+        }
+
         string message = "Oh no! rust-analyzer failed to activate, now we can't test LSP! :(";
         string exception = initializationState.InitializationException?.ToString() ?? string.Empty;
         message = $"{message}\n {exception}";
@@ -136,5 +241,49 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2
         };
 
         return Task.FromResult(failureContext);
+    }
+
+    private bool IsStopped
+    {
+        get
+        {
+            lock (_sync)
+            {
+                return _stopped || _disposed;
+            }
+        }
+    }
+
+    private async Task OnLoadedCoreAsync()
+    {
+        bool isReady;
+        try
+        {
+            isReady = await AvailabilityPolicy.WaitForReadyAsync(
+                AutomaticRustPath.LanguageClientActivation,
+                _lifetimeToken);
+        }
+        catch (OperationCanceledException) when (_lifetimeToken.IsCancellationRequested)
+        {
+            return;
+        }
+
+        if (!isReady)
+        {
+            return;
+        }
+
+        Task start;
+        lock (_sync)
+        {
+            if (_stopped || _disposed || StartAsync == null)
+            {
+                return;
+            }
+
+            start = StartAsync.InvokeAsync(this, EventArgs.Empty);
+        }
+
+        await start;
     }
 }

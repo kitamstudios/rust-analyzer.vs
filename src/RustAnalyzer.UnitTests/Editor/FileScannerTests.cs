@@ -6,8 +6,10 @@ using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
 using KS.RustAnalyzer.Editor;
+using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
+using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Workspace.Indexing;
 using Xunit;
 
@@ -25,7 +27,12 @@ public class FileScannerTests
     {
         NamerFactory.AdditionalInformation = $"{Path.Combine(workspaceRootRel, filePathRel).ReplaceInvalidChars()}";
         var workspaceRoot = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRootRel);
-        var fs = new FileScanner(TestHelpers.MS(workspaceRoot));
+        using var context = new JoinableTaskContext();
+        var state = new PrerequisiteProcessState(context.Factory);
+        await state.GetOrEvaluateAsync(_ => Task.FromResult(PrerequisiteResult.Success), default);
+        var fs = new FileScanner(
+            () => TestHelpers.MS(workspaceRoot),
+            new PrerequisiteAvailabilityPolicy(state, TestHelpers.TL.L, TestHelpers.TL.T));
         var filePath = workspaceRoot.Combine((PathEx)filePathRel);
 
         var refInfos = await fs.ScanContentAsync<IReadOnlyCollection<FileReferenceInfo>>(filePath, default);
@@ -49,7 +56,12 @@ public class FileScannerTests
     {
         NamerFactory.AdditionalInformation = $"{Path.Combine(workspaceRootRel, filePathRel).ReplaceInvalidChars()}";
         var workspaceRoot = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRootRel);
-        var fs = new FileScanner(TestHelpers.MS(workspaceRoot));
+        using var context = new JoinableTaskContext();
+        var state = new PrerequisiteProcessState(context.Factory);
+        await state.GetOrEvaluateAsync(_ => Task.FromResult(PrerequisiteResult.Success), default);
+        var fs = new FileScanner(
+            () => TestHelpers.MS(workspaceRoot),
+            new PrerequisiteAvailabilityPolicy(state, TestHelpers.TL.L, TestHelpers.TL.T));
         var filePath = workspaceRoot.Combine((PathEx)filePathRel);
 
         var dataValues = await fs.ScanContentAsync<IReadOnlyCollection<FileDataValue>>(filePath, default);

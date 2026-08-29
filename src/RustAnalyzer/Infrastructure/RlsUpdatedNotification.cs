@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using KS.RustAnalyzer;
+using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Shell;
@@ -58,6 +59,11 @@ public static class RlsUpdatedNotification
     private static void InfoBar_ActionItemClicked(object s, InfoBarActionItemEventArgs ea)
     {
         ThreadHelper.ThrowIfNotOnUIThread();
+
+        if (!PrerequisiteProcessState.Current.IsAvailable)
+        {
+            return;
+        }
 
         if (ea.ActionItem.ActionContext is not string actionContext)
         {

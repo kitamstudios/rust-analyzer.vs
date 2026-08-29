@@ -9,6 +9,7 @@ using KS.RustAnalyzer.Editor;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
+using Microsoft.VisualStudio.Threading;
 using Moq;
 using Newtonsoft.Json;
 using Xunit;
@@ -27,7 +28,15 @@ public class FileContextProviderTests
     {
         NamerFactory.AdditionalInformation = $"{Path.Combine(workspaceRootRel, filePathRel).ReplaceInvalidChars()}";
         var workspaceRoot = TestHelpers.ThisTestRoot.Combine((PathEx)workspaceRootRel);
-        var fcp = new FileContextProvider(TestHelpers.MS(workspaceRoot), Mock.Of<IToolchainService>(), Mock.Of<IBuildOutputSink>(), GetSettingsService());
+        using var context = new JoinableTaskContext();
+        var state = new PrerequisiteProcessState(context.Factory);
+        await state.GetOrEvaluateAsync(_ => Task.FromResult(PrerequisiteResult.Success), default);
+        var fcp = new FileContextProvider(
+            () => TestHelpers.MS(workspaceRoot),
+            Mock.Of<IToolchainService>(),
+            Mock.Of<IBuildOutputSink>(),
+            GetSettingsService,
+            new PrerequisiteAvailabilityPolicy(state, TestHelpers.TL.L, TestHelpers.TL.T));
         var filePath = workspaceRoot.Combine((PathEx)filePathRel);
 
         var refInfos = await fcp.GetContextsForFileAsync(filePath, default);

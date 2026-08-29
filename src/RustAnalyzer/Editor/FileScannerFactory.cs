@@ -28,15 +28,23 @@ public class FileScannerFactory : IWorkspaceProviderFactory<IFileScanner>
     public ITelemetryService T { get; set; }
 
     [Import]
-    public IPreReqsCheckService PreReqs { get; set; }
+    public PrerequisiteAvailabilityPolicy AvailabilityPolicy { get; set; }
 
     public IFileScanner CreateProvider(IWorkspace workspaceContext)
     {
+        var scanner = new FileScanner(
+            () => workspaceContext.GetService<IMetadataService>(),
+            AvailabilityPolicy);
+        if (!AvailabilityPolicy.IsReady(AutomaticRustPath.WorkspaceFileScanning))
+        {
+            return scanner;
+        }
+
         T.TrackEvent(
             "Create Scanner",
             new[] { ("Location", workspaceContext.Location) });
         L.WriteLine("Creating {0}.", GetType().Name);
 
-        return new FileScanner(workspaceContext.GetService<IMetadataService>());
+        return scanner;
     }
 }

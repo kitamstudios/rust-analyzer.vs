@@ -68,27 +68,27 @@ jobs:
 
       - name: Zip TestAdapter
         shell: pwsh
-        run: Compress-Archive -Path (& .\.github\scripts\Get-TestAdapterPackageFile.ps1 -OutputDirectory "${{ github.workspace }}\_built") -DestinationPath "${{ github.workspace }}\_built\${{ env.TestAdapterNameNoExt }}.zip" -Force
+        run: .\.github\scripts\New-TestAdapterPackage.ps1 -OutputDirectory "${{ github.workspace }}\_built\projects\RustAnalyzer.TestAdapter" -DestinationPath "${{ github.workspace }}\_built\projects\RustAnalyzer.TestAdapter\${{ env.TestAdapterNameNoExt }}.zip"
 
       - name: Upload build output
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.BuildOutputArtifact }}
-          path: _built
+          path: _built\projects
           if-no-files-found: error
 
       - name: Upload VSIX
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.repository.name }}.zip
-          path: _built\${{ env.VsixFileName }}
+          path: _built\projects\RustAnalyzer\${{ env.VsixFileName }}
           if-no-files-found: error
 
       - name: Upload TestAdapter
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.TestAdapterNameNoExt }}.zip
-          path: _built\${{ env.TestAdapterNameNoExt }}.zip
+          path: _built\projects\RustAnalyzer.TestAdapter\${{ env.TestAdapterNameNoExt }}.zip
           if-no-files-found: error
 
   unit:
@@ -103,7 +103,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.BuildOutputArtifact }}
-          path: _built
+          path: _built\projects
 
       - name: Unit tests
         run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Tests.ps1 -Mode unit
@@ -134,7 +134,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.BuildOutputArtifact }}
-          path: _built
+          path: _built\projects
 
       - name: Integration tests
         run: pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Invoke-Tests.ps1 -Mode integration -VisualStudioMajorVersion ${{ needs.config.outputs.vs-major }}
@@ -163,19 +163,15 @@ jobs:
         shell: pwsh
         run: .\.github\scripts\Initialize-RustNightly.ps1
 
-      - name: Download TestAdapter
+      - name: Download build output
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.TestAdapterNameNoExt }}.zip
-          path: .
-
-      - name: Expand TestAdapter
-        shell: pwsh
-        run: Expand-Archive -LiteralPath .\${{ env.TestAdapterNameNoExt }}.zip -DestinationPath .\testadapter
+          name: ${{ env.BuildOutputArtifact }}
+          path: _built\projects
 
       - name: Acceptance tests
         shell: pwsh
-        run: .\src\TestProjects\run-integrationtests.ps1 -TestAdapterLocation .\testadapter -VisualStudioMajorVersion ${{ needs.config.outputs.vs-major }}
+        run: .\.github\scripts\Invoke-Tests.ps1 -Mode acceptance -VisualStudioMajorVersion ${{ needs.config.outputs.vs-major }}
 
       - name: Upload test results
         if: always()
@@ -201,12 +197,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ github.event.repository.name }}.zip
+          path: _built\projects\RustAnalyzer
 
       - name: Download TestAdapter
         id: downloadta
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.TestAdapterNameNoExt }}.zip
+          path: _built\projects\RustAnalyzer.TestAdapter
 
       - name: Upload to Open VSIX
         uses: timheuer/openvsixpublish@v1

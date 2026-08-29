@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EnsureThat;
+using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
@@ -16,17 +18,36 @@ namespace KS.RustAnalyzer.Editor;
 
 public class FileScanner : IFileScanner, IFileScannerUpToDateCheck
 {
-    private readonly IMetadataService _mds;
+    private readonly PrerequisiteAvailabilityPolicy _availabilityPolicy;
+    private readonly Func<IMetadataService> _getMetadataService;
 
-    public FileScanner(IMetadataService mds)
+    public FileScanner(
+        Func<IMetadataService> getMetadataService,
+        PrerequisiteAvailabilityPolicy availabilityPolicy)
     {
-        _mds = mds;
+        _getMetadataService = EnsureArg.IsNotNull(
+            getMetadataService,
+            nameof(getMetadataService),
+            options => options.WithException(
+                new ArgumentNullException(nameof(getMetadataService))));
+        _availabilityPolicy = EnsureArg.IsNotNull(
+            availabilityPolicy,
+            nameof(availabilityPolicy),
+            options => options.WithException(
+                new ArgumentNullException(nameof(availabilityPolicy))));
     }
 
     public async Task<T> ScanContentAsync<T>(string filePath, CancellationToken cancellationToken)
         where T : class
     {
-        var package = await _mds.GetContainingPackageAsync((PathEx)filePath, cancellationToken);
+        if (!await _availabilityPolicy.IsReadyAsync(
+                AutomaticRustPath.WorkspaceFileScanning,
+                cancellationToken))
+        {
+            return null;
+        }
+
+        var package = await _getMetadataService().GetContainingPackageAsync((PathEx)filePath, cancellationToken);
         if (package == null)
         {
             return null;
@@ -50,6 +71,13 @@ public class FileScanner : IFileScanner, IFileScannerUpToDateCheck
 
     public virtual async Task<bool> IsUpToDateAsync(DateTimeOffset? lastScanTimestamp, string filePath, FileScannerType scannerType, CancellationToken cancellationToken)
     {
+        if (!await _availabilityPolicy.IsReadyAsync(
+                AutomaticRustPath.WorkspaceFileScanning,
+                cancellationToken))
+        {
+            return false;
+        }
+
         if (await IsValidFileAsync(filePath))
         {
             try
