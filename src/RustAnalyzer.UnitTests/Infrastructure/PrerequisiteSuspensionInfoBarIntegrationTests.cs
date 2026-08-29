@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using KS.RustAnalyzer.Infrastructure;
@@ -95,22 +96,34 @@ public sealed class PrerequisiteSuspensionInfoBarIntegrationTests
     }
 
     [Fact]
-    public async Task VisualStudioInfoBarRejectsEventsOffTheOwningUiThreadAsync()
+    public void VisualStudioInfoBarRejectsEventsOffTheOwningUiThread()
     {
-        using var context = new JoinableTaskContext();
+        var ownerThread = Thread.CurrentThread;
+        var ownerContext = new SingleThreadedSynchronizationContext();
+        using var context = new JoinableTaskContext(ownerThread, ownerContext);
         using var infoBar = new VisualStudioPrerequisiteSuspensionInfoBar(
             context.Factory,
             new TestInfoBarHost(),
             new TestInfoBarUiFactory(),
             new PrerequisiteSuspensionInfoBarModel().CreateInfoBarModel());
         var eventSink = (IVsInfoBarUIEvents)infoBar;
-        Func<Task> raiseOffThread = () =>
-            Task.Run(
-                () => eventSink.OnActionItemClicked(
-                    new TestInfoBarUiElement(),
-                    new InfoBarHyperlink("Unexpected", new object())));
+        Thread callbackThread = null;
+        Exception callbackException = null;
+        var thread = new Thread(
+            () =>
+            {
+                callbackThread = Thread.CurrentThread;
+                callbackException = Record.Exception(
+                    () => eventSink.OnActionItemClicked(
+                        new TestInfoBarUiElement(),
+                        new InfoBarHyperlink("Unexpected", new object())));
+            });
 
-        await raiseOffThread.Should().ThrowAsync<InvalidOperationException>();
+        thread.Start();
+        thread.Join();
+
+        callbackThread.Should().NotBeSameAs(ownerThread);
+        callbackException.Should().BeOfType<InvalidOperationException>();
     }
 
     [Fact]

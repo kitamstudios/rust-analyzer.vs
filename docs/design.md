@@ -51,6 +51,8 @@ completed Visual Studio major is never selected silently.
   currently a safe `dotnet test`/Coverlet target.
 - `src/TestProjects` contains Rust workspaces and the standalone
   `run-integrationtests.ps1` VSTest adapter harness.
+- Thread-affinity tests bind `JoinableTaskContext` to an explicit owner and invoke off-thread
+  callbacks on a distinct joined `Thread`; `Task.Run` does not prove thread identity.
 
 The Visual Studio layer depends on the test-adapter/core services. Core Cargo and test behavior does
 not depend on Visual Studio UI types except where VSTest contracts are intrinsic to the adapter.
