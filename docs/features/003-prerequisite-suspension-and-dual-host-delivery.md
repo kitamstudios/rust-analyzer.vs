@@ -104,7 +104,7 @@ Execute one task at a time in order.
 | T6 | S1 | Gate all automatic/background Rust paths and implement first-suppression-per-path Output logging with tests. | Done | `e84fa0a` |
 | T7 | S1 | Hide or disable every extension-owned user surface while unavailable and make execution callbacks defensive no-ops. | Done | `c0b60df` |
 | T7b | S2 | Isolate parallel outputs; make exact owner-path deliverables and curated sets canonical; update consumers without staging copies. | Done | `c0b60df` |
-| T8 | S2 | Audit and apply the complete newest proven dual-compatible production/build/test/package dependency closure and acquired-artifact provenance policy. | In Progress | - |
+| T8 | S2 | Audit and apply the complete newest proven dual-compatible production/build/test/package dependency closure and acquired-artifact provenance policy. | Done | 8b343ea |
 | T9 | S2 | Align the main VSIX manifest and metadata and establish the shared `[17.12,19.0)` dual-host validation contract. | Pending | - |
 | T10 | S2 | Rewrite prerequisite/readme material, reconcile live support claims, update `docs/design.md`, and update all four agent roles. | Pending | - |
 | T11 | S2 | Add canonical-artifact VS17/VS18 validation and the complete blocking behavior/platform evidence matrix. | Pending | - |
