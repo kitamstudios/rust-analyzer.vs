@@ -50,8 +50,7 @@ re-enablement.
 **Trait-driven test classification.** Test categories follow
 [`docs/meta-design.md#writing-tests`](../../docs/meta-design.md#writing-tests). `Invoke-Tests.ps1` takes
 one `-Mode` of `unit`, `integration`, `acceptance`, or `full`; `test:full` is `-Mode full`, which runs
-the deterministic T11 workflow/host-validation contract and the TestAdapter packager regression once
-before all three legs in **one** process
+the TestAdapter packager regression once before all three legs in **one** process
 (`RUSTUP_TOOLCHAIN` is exported into it and inherited by every child). Full then reads the three exact
 isolated test-project outputs beneath `_built\projects`, takes the xUnit
 console runner from its owning `RustAnalyzer.UnitTests` closure, and runs the assemblies

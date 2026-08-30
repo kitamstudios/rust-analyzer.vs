@@ -14,15 +14,14 @@ env:
   VsixFileName: RustAnalyzer.vsix
   TestAdapterNameNoExt: KS.RustAnalyzer.TestAdapter
   BuildOutputArtifact: build-output
-  T11HostArtifact: t11-main-host-inputs
   RUSTANALYZER_TELEMETRY_DISABLED: 1
 
 jobs:
-  # Host-independent test settings stay centralized here. The producer and two host jobs use literal
-  # runner/major pairs because those pairs are part of the artifact and real-host contracts.
+  # The single place the runner label, the Visual Studio major version and the pinned nightly channel
+  # are decided. runs-on accepts needs.*.outputs but not env, so every other job reads its label here.
   config:
     name: config
-    # Incidental: this job only checks out and reads one file.
+    # Incidental: this job only checks out and reads one file. The gate's runner is the output below.
     runs-on: windows-2022
     outputs:
       runner: ${{ steps.knobs.outputs.runner }}
@@ -35,8 +34,11 @@ jobs:
       - name: Resolve gate configuration
         id: knobs
         shell: pwsh
-        # The build and host-independent tests stay on VS 2022. The two host jobs below select and
-        # validate their own exact Visual Studio installations.
+        # Verified against actions/runner-images on 2026-08-26: windows-2022 and windows-2025 both carry
+        # VS Enterprise 2022 17.14.37614.0, so windows-2025 is not a VS 2026 image and moving to it would
+        # change the host and nothing else. VS 2026 (major 18) exists only on windows-2025-vs2026, which
+        # is public-repo only and belongs to S2. Every current Windows image preinstalls rustup, which is
+        # what the nightly install steps below rely on.
         run: |
           . .\.github\scripts\Get-PinnedRustNightlyChannel.ps1
           "runner=windows-2022" >> $env:GITHUB_OUTPUT
@@ -46,7 +48,7 @@ jobs:
   build-and-test:
     name: build-and-test
     needs: [config]
-    runs-on: windows-2022
+    runs-on: ${{ needs.config.outputs.runner }}
     outputs:
       version: ${{ steps.vsix_version.outputs.version-number }}
 
@@ -62,15 +64,11 @@ jobs:
 
       - name: Build
         shell: pwsh
-        run: .\.github\scripts\Invoke-Build.ps1 -VisualStudioMajorVersion 17
+        run: .\.github\scripts\Invoke-Build.ps1 -VisualStudioMajorVersion ${{ needs.config.outputs.vs-major }}
 
       - name: Zip TestAdapter
         shell: pwsh
         run: .\.github\scripts\New-TestAdapterPackage.ps1 -OutputDirectory "${{ github.workspace }}\_built\projects\RustAnalyzer.TestAdapter" -DestinationPath "${{ github.workspace }}\_built\projects\RustAnalyzer.TestAdapter\${{ env.TestAdapterNameNoExt }}.zip"
-
-      - name: Record canonical artifact hashes and lengths
-        shell: pwsh
-        run: .\.github\scripts\New-T11ArtifactManifest.ps1
 
       - name: Upload build output
         uses: actions/upload-artifact@v4
@@ -91,16 +89,6 @@ jobs:
         with:
           name: ${{ env.TestAdapterNameNoExt }}.zip
           path: _built\projects\RustAnalyzer.TestAdapter\${{ env.TestAdapterNameNoExt }}.zip
-          if-no-files-found: error
-
-      - name: Upload T11 host inputs
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.T11HostArtifact }}
-          path: |
-            _built\projects\RustAnalyzer\${{ env.VsixFileName }}
-            _built\projects\RustAnalyzer.TestAdapter\${{ env.TestAdapterNameNoExt }}.zip
-            _built\t11\canonical-artifacts.json
           if-no-files-found: error
 
   unit:
@@ -159,112 +147,46 @@ jobs:
           path: TestResults\*.xml
           if-no-files-found: ignore
 
-  host-vs17:
-    name: host-vs17
+  # The only test of the shipped artefact: the harness sees an expanded copy of the published zip and
+  # nothing else, so an assembly omitted from the package list fails here instead of reaching a customer.
+  acceptance:
+    name: acceptance
     needs: [config, build-and-test]
-    runs-on: windows-2022
-    timeout-minutes: 45
+    runs-on: ${{ needs.config.outputs.runner }}
     env:
       RUSTUP_TOOLCHAIN: ${{ needs.config.outputs.nightly-channel }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Initialize host diagnostics
-        if: always()
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Path _diagnostics\host-vs17 -Force
-          "Host validation has not started." | Set-Content -Path _diagnostics\host-vs17\bootstrap.txt
-
       - name: Install pinned Rust nightly
         shell: pwsh
         run: .\.github\scripts\Initialize-RustNightly.ps1
 
-      - name: Download canonical host inputs
+      - name: Download build output
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.T11HostArtifact }}
-          path: _built
+          name: ${{ env.BuildOutputArtifact }}
+          path: _built\projects
 
-      - name: Validate Visual Studio 2022 host
+      - name: Acceptance tests
         shell: pwsh
-        run: .\.github\scripts\Invoke-T11HostValidation.ps1 -VisualStudioMajorVersion 17 -ArtifactRoot "${{ github.workspace }}\_built" -DiagnosticsDirectory "${{ github.workspace }}\_diagnostics\host-vs17" -RootSuffix "T11VS17${{ github.run_id }}${{ github.run_attempt }}"
+        run: .\.github\scripts\Invoke-Tests.ps1 -Mode acceptance -VisualStudioMajorVersion ${{ needs.config.outputs.vs-major }}
 
-      - name: Report evidence matrix
-        if: always()
-        shell: pwsh
-        run: |
-          $path = "_diagnostics\host-vs17\evidence-matrix.md"
-          if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-            throw "The VS17 evidence matrix is missing."
-          }
-          Get-Content -LiteralPath $path | Add-Content -Path $env:GITHUB_STEP_SUMMARY
-
-      - name: Upload host diagnostics
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: t11-host-vs17-diagnostics
-          path: _diagnostics\host-vs17
-          if-no-files-found: error
-
-  host-vs18:
-    name: host-vs18
-    needs: [config, build-and-test]
-    runs-on: windows-2025-vs2026
-    timeout-minutes: 45
-    env:
-      RUSTUP_TOOLCHAIN: ${{ needs.config.outputs.nightly-channel }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Initialize host diagnostics
-        if: always()
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Path _diagnostics\host-vs18 -Force
-          "Host validation has not started." | Set-Content -Path _diagnostics\host-vs18\bootstrap.txt
-
-      - name: Install pinned Rust nightly
-        shell: pwsh
-        run: .\.github\scripts\Initialize-RustNightly.ps1
-
-      - name: Download canonical host inputs
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ env.T11HostArtifact }}
-          path: _built
-
-      - name: Validate Visual Studio 2026 host
-        shell: pwsh
-        run: .\.github\scripts\Invoke-T11HostValidation.ps1 -VisualStudioMajorVersion 18 -ArtifactRoot "${{ github.workspace }}\_built" -DiagnosticsDirectory "${{ github.workspace }}\_diagnostics\host-vs18" -RootSuffix "T11VS18${{ github.run_id }}${{ github.run_attempt }}"
-
-      - name: Report evidence matrix
-        if: always()
-        shell: pwsh
-        run: |
-          $path = "_diagnostics\host-vs18\evidence-matrix.md"
-          if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-            throw "The VS18 evidence matrix is missing."
-          }
-          Get-Content -LiteralPath $path | Add-Content -Path $env:GITHUB_STEP_SUMMARY
-
-      - name: Upload host diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: t11-host-vs18-diagnostics
-          path: _diagnostics\host-vs18
-          if-no-files-found: error
+          name: test-results-acceptance
+          path: src\TestProjects\**\TestResults\*.trx
+          if-no-files-found: ignore
 
   publish:
     name: publish
     # The ref, not just the event: workflow_dispatch can be started from any ref, and on.workflow_dispatch
     # has no branches: filter, so without this a feature branch could reach the Marketplace step.
     if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/master' }}
-    needs: [config, build-and-test, unit, integration, host-vs17, host-vs18]
+    needs: [config, build-and-test, unit, integration, acceptance]
     runs-on: ${{ needs.config.outputs.runner }}
 
     steps:

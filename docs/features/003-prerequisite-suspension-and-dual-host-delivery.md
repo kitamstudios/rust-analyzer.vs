@@ -397,30 +397,6 @@ Execute one task at a time in order.
 - The full gate passed 412 assembly tests and all 18 acceptance expectations; all 13 PowerShell
   blocks parsed without execution. Final architecture review approved T10.
 
-### T11 implementation ruling
-
-- Build the main VSIX and six-file TestAdapter archive once on VS17. Both host legs verify and
-  consume those exact bytes without rebuilding or repacking.
-- T11 does not promote, install, or claim the Development Pack. T13 owns its artifact and host
-  validation; T14 owns pack publication.
-- Real-host evidence is main-VSIX installation, installed identity/version, bounded shell-startup
-  smoke, scoped Activity Log, and host-major-specific TestAdapter acceptance. Deterministic tests
-  retain activation, prerequisite UX, suspension, command, logging, and process-reset claims.
-- Native installer logs are isolated, required raw diagnostics, not a semantic success interface.
-  Success requires the selected installer to exit zero and exactly one non-reparse extension
-  directory to contain the expected manifest identity/version.
-- Cleanup stops only owned processes, removes only the pre-reserved exact root-suffix profile after
-  rejecting reparse points, and proves complete absence. T11 does not validate uninstallation.
-- Each external launch enters an unnamed kill-on-close Windows Job Object before resuming. Kernel
-  active-process-zero under one deadline proves tree quiescence; PIDs are diagnostic only.
-- Installed manifest evidence requires the exact VSIX 2011 namespace.
-- One shell invocation initializes the isolated profile and proves startup:
-  `/ResetSettings General /Log <path> /NoSplash /Command File.Exit`. Timeout or termination fails.
-- VS17 and VS18 jobs fail closed and block main publication. Each uploads host selection, hashes,
-  installer/profile evidence, executable versions, startup result, Activity Log, adapter members,
-  acceptance output, and TRX diagnostics.
-- The deferred observer/UI Automation E2E design remains excluded.
-
 ### Runtime flow
 
 1. Necessary package wiring and logging may initialize, but status surfaces begin unavailable.
