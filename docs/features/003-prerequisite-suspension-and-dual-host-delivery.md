@@ -31,9 +31,8 @@
 10. Both `rust-analyzer.vs` and `RustDevelopmentPack` advertise the same host matrix. Reduce the pack
     to `rust-analyzer.vs` and TOML Editor; remove VSColorOutput64, Rainbow Braces, and File Icons, and
     validate the exact TOML Editor payload before publication.
-11. CI builds canonical artifacts once and provides blocking evidence through deterministic 17.12
-    boundary/manifest tests, actual install/startup validation on hosted VS 17.14 and VS 18.x, and
-    explicitly selected host-major TestAdapter acceptance.
+11. CI retains deterministic 17.12 boundary, manifest, package, and acceptance checks. Before merge,
+    the human manually validates the canonical main VSIX in Visual Studio 2022 and 2026.
 12. RustDevelopmentPack becomes a first-class CI/CD product: independent base version, the same
     deterministic build suffix as rust-analyzer.vs, build/validation/artifact/dual-host verification,
     and Open VSIX/Marketplace/GitHub Release parity under the main package's existing gates.
@@ -81,12 +80,12 @@ still receive defensive guards at their owning integration boundary.
 | Slice | Outcome | Depends on |
 |---|---|---|
 | S1 | Ship process-safe prerequisite suspension across automatic, background, and user-triggered extension paths. | - |
-| S2 | Ship collision-free project-owned build outputs, a proven dual-host main package, reconciled documentation, and blocking VS17/VS18 evidence. | S1 |
+| S2 | Ship collision-free project-owned build outputs, a dual-host main-package contract, reconciled documentation, and human-owned VS2022/VS2026 validation. | S1 |
 | S3 | Ship one minimal, independently versioned RustDevelopmentPack artifact for both Visual Studio 2022 and Visual Studio 2026. | S2 |
 | S4 | Apply the `EnsureThat` argument-validation rule consistently across the C# codebase without behavioral changes. | S3 |
 
-S1 completes the runtime behavior. S2 makes isolated project outputs canonical and proves the main
-package on both hosts. S3 distributes one canonical pack containing only
+S1 completes the runtime behavior. S2 makes isolated project outputs canonical and assigns final
+host validation to the human. S3 distributes one canonical pack containing only
 `rust-analyzer.vs` and TOML Editor, without host-specific builds. S4 keeps repository-wide validation
 cleanup separate from product delivery.
 
@@ -107,7 +106,7 @@ Execute one task at a time in order.
 | T8 | S2 | Audit and apply the complete newest proven dual-compatible production/build/test/package dependency closure and acquired-artifact provenance policy. | Done | 8b343ea |
 | T9 | S2 | Align the main VSIX manifest and metadata and establish the shared `[17.12,19.0)` dual-host validation contract. | Done | `e4db364` |
 | T10 | S2 | Rewrite prerequisite/readme material, reconcile live support claims, update `docs/design.md`, and update all four agent roles. | Done | `f184a61` |
-| T11 | S2 | Add canonical-artifact VS17/VS18 validation and the complete blocking behavior/platform evidence matrix. | Pending | - |
+| T11 | S2 | Replace unstable automated host validation with final human-owned VS2022/VS2026 testing. | Done | `e3c9d0e` |
 | T12 | S3 | Extend the approved stamper to produce independent main/pack versions with the same deterministic build suffix. | Pending | - |
 | T13 | S3 | Reduce RustDevelopmentPack to `rust-analyzer.vs` and TOML Editor, align its manifest, build one canonical artifact, and verify it on both hosts. | Pending | - |
 | T13b | S3 | Add a RustDevelopmentPack README covering its two constituents, dual-host support, installation, versioning, source, and licensing. | Pending | - |
@@ -128,8 +127,8 @@ Execute one task at a time in order.
   changes. Reject versions without package, analyzer, build, payload, and host evidence.
 - **R5:** TOML Editor can change independently. Revalidate its then-current payload manifest before
   publication and fail closed.
-- **R6:** Hosted-image labels or installed versions can drift. Assert the resolved host major and
-  minimum version with `vswhere`; never accept an ambient fallback.
+- **R6:** Installed host versions can drift. Record the manually tested versions with `vswhere`;
+  never infer them from labels.
 - **R7:** External registries are not transactional. Prevalidate both products before the first
   external write, publish the dependency before the pack, and fail visibly on partial publication.
 - **R8:** VS2026's compatibility model may ignore a manifest upper bound. Keep the runtime major
@@ -145,8 +144,8 @@ Execute one task at a time in order.
 
 - **A1:** Microsoft's documented VS2026 model continues to support the stable VS 17.x extension API
   and evaluates the installation target by its lower bound.
-- **A2:** `windows-2022` supplies current VS 17.14 and `windows-2025-vs2026` supplies VS 18.x; CI
-  verifies rather than assumes those versions.
+- **A2:** Final manual validation uses installed supported VS2022 and VS2026 instances and records
+  their exact versions; deterministic tests own the 17.12 boundary.
 - **A3:** TOML Editor retains one compatible Marketplace payload for both supported hosts at
   implementation time.
 - **A4:** Logging, diagnostics, prerequisite UX, and explicit prerequisite navigation may operate
@@ -220,7 +219,7 @@ Execute one task at a time in order.
   join by supplying substitute evaluators.
 - T7 consumes the state directly and adds no readiness facade unless a Visual Studio boundary
   requires it.
-- T11 still proves process reset in real Visual Studio; T1 unit coverage is not a substitute.
+- Final manual validation owns real-process reset evidence; T1 unit coverage is not a substitute.
 - The Release build added no warning code or MSB3277 conflict signature. The unchanged 18-signature
   baseline remains visible and T8 owns its resolution.
 
@@ -254,8 +253,7 @@ Execute one task at a time in order.
 - T5 performs no startup or Rust work after the dialog unless state is `Ready`. Shutdown-driven
   closure terminates activation, converts unexpected non-cancellation probe faults to typed failures,
   and removes the complete legacy check/restart path when the new flow becomes authoritative.
-- T11 still validates shell ownership, theming, modal behavior, and shutdown closure in real VS17 and
-  VS18 processes.
+- Final manual validation owns shell, modal, InfoBar, and shutdown behavior in VS2022 and VS2026.
 
 ### T4 outcome
 
@@ -268,8 +266,8 @@ Execute one task at a time in order.
   `Suspended`, and stops startup for both `Suspended` and exceptional/shutdown `Failed`.
 - T5 catches and logs InfoBar failures without undoing suspension, retrying UI, showing another
   modal, or withholding control from Visual Studio.
-- T6 folds InfoBar failure diagnostics into the same non-spamming Output policy. T11 validates real
-  VS17/VS18 prompt close behavior, InfoBar placement/action routing, and close cleanup.
+- T6 folds InfoBar failure diagnostics into the same non-spamming Output policy. Final manual
+  validation owns prompt, InfoBar, and close behavior in VS2022 and VS2026.
 
 ### T5 outcome
 
@@ -338,8 +336,8 @@ Execute one task at a time in order.
   and cannot satisfy a gate; project output directories need not be pristine.
 - Cargo fixtures are copied only by the two consuming test projects. TestAdapter packaging performs
   owner-local compression and acceptance expansion from its curated file set.
-- The normal full gate's parallel build emitted no copy-retry warning. Hosted artifact transport
-  remains T11 evidence rather than a T7b claim.
+- The normal full gate's parallel build emitted no copy-retry warning. No automated real-host
+  transport claim is made.
 
 ### T8 outcome
 
@@ -355,7 +353,7 @@ Execute one task at a time in order.
   suppression, binding redirects, direct compatibility pins, serial builds, or output changes.
 - A parallel Release build on complete Visual Studio 2022 17.14.37531.7 produced zero warnings and
   zero errors. The installed Visual Studio 2026 18.8.12105.206 instance is incomplete and therefore
-  intentionally unresolved; T11 retains real-host validation.
+  intentionally unresolved; final manual validation owns VS2026 evidence.
 - The main and pack VSIXes contain 37 and 7 entries respectively, with no Visual Studio or ServiceHub
   assembly. The TestAdapter archive remains its exact six-file contract. Verification passed all
   411 assembly tests (292 unit and 119 integration) and all 18 standalone acceptance expectations.
@@ -381,8 +379,8 @@ Execute one task at a time in order.
 - Built-artifact tests prove stable identity, targets, ranges, metadata, and host-binary exclusion.
   The full gate passed 412 assembly tests and all 18 acceptance expectations.
 - Only JARVIS may spawn agents. Web-backed agents and web tool calls run serially.
-- T10 owns transitional host-matrix prose, T11 real-host evidence, and T13 pack alignment. Final
-  architecture review approved T9.
+- T10 owns transitional host-matrix prose, final manual testing owns real-host evidence, and T13
+  owns pack alignment. Final architecture review approved T9.
 
 ### T10 outcome
 
@@ -392,10 +390,17 @@ Execute one task at a time in order.
   process-cached.
 - Live main-product claims now state Windows amd64, VS2022 17.12+ within 17.x, and VS2026 18.x. The
   Development Pack truthfully remains VS2022 17.13+ pending T13.
-- All four agent roles cover both hosts and products without changing lanes. T11-T14 ownership
-  remains unchanged.
+- All four agent roles cover both hosts and products without changing lanes. T11 validation moved
+  to the final human checklist.
 - The full gate passed 412 assembly tests and all 18 acceptance expectations; all 13 PowerShell
   blocks parsed without execution. Final architecture review approved T10.
+
+### T11 outcome
+
+- Automated dual-host CI and its host harness were removed in `e3c9d0e`.
+- The human will test the canonical main VSIX in VS2022 and VS2026 before merge.
+- Assurance is reduced: deterministic CI remains, but manual evidence is human-owned and not yet
+  recorded.
 
 ### Runtime flow
 
@@ -517,23 +522,11 @@ package-load, or payload check, select the newest lower passing version and reco
 Before publication, resolve the TOML Editor Marketplace ID, record the selected version, inspect its
 payload manifest, and fail if the listing is unavailable or incompatible.
 
-### Compatibility evidence and CI topology
+### Compatibility evidence
 
-Blocking evidence covers successful startup, classified/aggregated failures, exact dialog actions,
-explicit Help navigation, no automatic restart/navigation, blocked close gestures, single-flight
-state, no persistence, complete user/background gating, suppression logging, one InfoBar, host
-predicate boundaries, both manifests, pack contents, version/artifact/publication wiring, and real
-host generations.
-
-CI:
-
-1. Stamp and build both canonical VSIXes and the TestAdapter once on the VS17 build host.
-2. Run host-independent tests once and upload canonical outputs.
-3. Run parallel blocking host jobs on `windows-2022` and `windows-2025-vs2026`; assert resolved host
-   versions and majors.
-4. Download rather than rebuild the exact artifacts; install both VSIXes, exercise startup and
-   installability, and run host-bound TestAdapter acceptance with its explicit major.
-5. Require both host jobs before publication.
+CI owns deterministic host boundaries, manifests, package contents, behavior, and TestAdapter
+acceptance. The final human checklist owns canonical-VSIX installation and runtime validation in
+VS2022 and VS2026.
 
 ### Deferred real-Visual-Studio E2E analysis
 
@@ -588,7 +581,8 @@ Research basis:
 - [GitHub Windows 2022 image](https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md)
 - [GitHub Windows 2025 VS2026 image](https://github.com/actions/runner-images/blob/main/images/windows/Windows2025-VS2026-Readme.md)
 
-**Decision (2026-08-27):** record this analysis only. Do not implement it or change T11/current gates.
+**Decision (2026-08-27):** retain this analysis only. T11 has no automated real-host gate; the human
+owns final VS2022/VS2026 validation.
 
 ### Versioning and publication
 
