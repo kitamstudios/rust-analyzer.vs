@@ -48,6 +48,8 @@ design in `docs/design.md`.
      - C# specific
        - Dont use internals scope specifier. ever!
        - For argument validations use EnsureThat. Instead of manual checks throughout the code.
+       - Do not test EnsureThat's argument-guard behavior. Test only application-owned behavior or
+         integration.
 11. Never install/update Rust nightly. JARVIS owns that one-time startup operation. Validate/consume
     existing state only; on any missing, stale, wrong-checkout, modified, or invalid state, stop and
     hand back to JARVIS without repair or fallback.

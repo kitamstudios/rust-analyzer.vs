@@ -131,7 +131,7 @@ Execute one task at a time in order.
   predicate authoritative and test unsupported-major rejection.
 - **R9 (superseded):** T13 removes extension-pack resolution and constituent ordering.
 - **R10:** `EnsureThat` substitutions can alter exception type, parameter name, validation order, or
-  message. Preserve each public contract and add focused regression coverage where behavior differs.
+  message. Preserve each contract explicitly; test application-owned behavior, not library guards.
 - **R11:** Parallel projects writing common dependencies into one flat output directory can race or
   lock files. Isolate project outputs so every canonical path has exactly one project writer.
 
@@ -193,7 +193,7 @@ Execute one task at a time in order.
 - Add no package, helper, cast, validation, or production seam.
 - Keep `BuildOutputSink` validation inside its JTF delegate, validate `AttributeExtensions`' derived
   field name once, and materialize `PrerequisiteResult.Failed` exactly once before its checks.
-- Add focused compiled contract tests and run the full gate.
+- Add no tests that only verify `EnsureThat` guards. Run the existing full gate.
 
 ### T7b build-output design ruling
 
