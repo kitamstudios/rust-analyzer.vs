@@ -108,7 +108,7 @@ Execute one task at a time in order.
 | T13 | S3 | Delete RustDevelopmentPack and reconcile all live repository references. | Done | `60b8bb6` |
 | T13b | S3 | Pack README expansion superseded by T13 deletion. | Superseded | `f610f03` |
 | T14 | S3 | Pack publication parity superseded; remote listing retirement is human-owned. | Superseded | `f610f03` |
-| T15 | S4 | Inventory every C# argument-validation site, replace manual guards with `EnsureThat`, and prove exception-contract and build/test parity. | Pending | - |
+| T15 | S4 | Inventory every C# argument-validation site, replace manual guards with `EnsureThat`, and prove exception-contract and build/test parity. | In Progress | - |
 
 ## Risks (Rx)
 
@@ -183,6 +183,17 @@ Execute one task at a time in order.
   unchanged.
 - Ignored/generated outputs and unrelated `.vsext`, FileIcons, and TOML surfaces remain untouched.
 - Remote Marketplace/Open VSIX retirement is a final human action.
+
+### T15 `EnsureThat` ruling
+
+- Convert the 36 manual argument guards in eight production files. Exclude generated, test,
+  lifecycle, state, domain-result, framework, and event-routing checks.
+- Use existing `EnsureArg` APIs with `WithException` carrying the exact current exception. Preserve
+  type, parameter name, message, validation order, async timing, side effects, and enumeration count.
+- Add no package, helper, cast, validation, or production seam.
+- Keep `BuildOutputSink` validation inside its JTF delegate, validate `AttributeExtensions`' derived
+  field name once, and materialize `PrerequisiteResult.Failed` exactly once before its checks.
+- Add focused compiled contract tests and run the full gate.
 
 ### T7b build-output design ruling
 
