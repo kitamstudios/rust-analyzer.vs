@@ -33,6 +33,11 @@ public sealed class BuildOutputSink : IBuildOutputSink
                 Initialize();
                 _buildOutputPane.Activate();
 
+                EnsureArg.IsTrue(
+                    message is StringBuildMessage || message is DetailedBuildMessage,
+                    nameof(message),
+                    options => options.WithException(new ArgumentOutOfRangeException(nameof(message))));
+
                 if (message is StringBuildMessage sm)
                 {
                     if (string.IsNullOrEmpty(sm.Message))
@@ -49,10 +54,6 @@ public sealed class BuildOutputSink : IBuildOutputSink
                 else if (message is DetailedBuildMessage bm)
                 {
                     await buildOutputTaskReporter(bm);
-                }
-                else
-                {
-                    throw new ArgumentOutOfRangeException(nameof(message));
                 }
             }).FireAndForget();
         }

@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using EnsureThat;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Shell;
@@ -69,8 +70,14 @@ public sealed class PrerequisiteSuspensionNotification
         Func<InfoBarModel, Task<IPrerequisiteSuspensionInfoBar>> createInfoBarAsync,
         Action<string> openSystemBrowser)
     {
-        _createInfoBarAsync = createInfoBarAsync ?? throw new ArgumentNullException(nameof(createInfoBarAsync));
-        _openSystemBrowser = openSystemBrowser ?? throw new ArgumentNullException(nameof(openSystemBrowser));
+        _createInfoBarAsync = EnsureArg.IsNotNull(
+            createInfoBarAsync,
+            nameof(createInfoBarAsync),
+            options => options.WithException(new ArgumentNullException(nameof(createInfoBarAsync))));
+        _openSystemBrowser = EnsureArg.IsNotNull(
+            openSystemBrowser,
+            nameof(openSystemBrowser),
+            options => options.WithException(new ArgumentNullException(nameof(openSystemBrowser))));
     }
 
     public static PrerequisiteSuspensionNotification Current => ProcessNotificationHolder.Instance;
@@ -82,10 +89,10 @@ public sealed class PrerequisiteSuspensionNotification
 
     public Task<bool> ShowIfSuspendedAsync(PrerequisiteProcessState state)
     {
-        if (state == null)
-        {
-            throw new ArgumentNullException(nameof(state));
-        }
+        EnsureArg.IsNotNull(
+            state,
+            nameof(state),
+            options => options.WithException(new ArgumentNullException(nameof(state))));
 
         lock (_sync)
         {
@@ -182,10 +189,22 @@ public sealed class VisualStudioPrerequisiteSuspensionInfoBar :
         IVsInfoBarUIFactory uiFactory,
         InfoBarModel model)
     {
-        _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
-        _host = host ?? throw new ArgumentNullException(nameof(host));
-        _uiFactory = uiFactory ?? throw new ArgumentNullException(nameof(uiFactory));
-        _model = model ?? throw new ArgumentNullException(nameof(model));
+        _joinableTaskFactory = EnsureArg.IsNotNull(
+            joinableTaskFactory,
+            nameof(joinableTaskFactory),
+            options => options.WithException(new ArgumentNullException(nameof(joinableTaskFactory))));
+        _host = EnsureArg.IsNotNull(
+            host,
+            nameof(host),
+            options => options.WithException(new ArgumentNullException(nameof(host))));
+        _uiFactory = EnsureArg.IsNotNull(
+            uiFactory,
+            nameof(uiFactory),
+            options => options.WithException(new ArgumentNullException(nameof(uiFactory))));
+        _model = EnsureArg.IsNotNull(
+            model,
+            nameof(model),
+            options => options.WithException(new ArgumentNullException(nameof(model))));
     }
 
     public event EventHandler<PrerequisiteSuspensionInfoBarActionEventArgs> ActionItemClicked;
@@ -194,10 +213,10 @@ public sealed class VisualStudioPrerequisiteSuspensionInfoBar :
 
     public static async Task<IPrerequisiteSuspensionInfoBar> CreateForMainWindowAsync(InfoBarModel model)
     {
-        if (model == null)
-        {
-            throw new ArgumentNullException(nameof(model));
-        }
+        EnsureArg.IsNotNull(
+            model,
+            nameof(model),
+            options => options.WithException(new ArgumentNullException(nameof(model))));
 
         await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
 

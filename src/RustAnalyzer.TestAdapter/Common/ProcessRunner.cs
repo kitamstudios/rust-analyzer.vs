@@ -390,10 +390,11 @@ public sealed class ProcessRunner : IDisposable
         Encoding errorEncoding = null!,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrEmpty(filename))
-        {
-            throw new ArgumentException("Filename required", nameof(filename));
-        }
+        EnsureArg.IsNotNullOrEmpty(
+            filename,
+            nameof(filename),
+            options => options.WithException(
+                new ArgumentException("Filename required", nameof(filename))));
 
         var psi = new ProcessStartInfo(filename)
         {

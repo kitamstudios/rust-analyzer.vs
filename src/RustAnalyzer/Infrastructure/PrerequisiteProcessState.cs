@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
+using EnsureThat;
 using Microsoft.VisualStudio.Threading;
 
 namespace KS.RustAnalyzer.Infrastructure;
@@ -43,8 +44,14 @@ public sealed class PrerequisiteFailure
     private PrerequisiteFailure(PrerequisiteFailureKind kind, string check, string message)
     {
         Kind = kind;
-        Check = check ?? throw new ArgumentNullException(nameof(check));
-        Message = message ?? throw new ArgumentNullException(nameof(message));
+        Check = EnsureArg.IsNotNull(
+            check,
+            nameof(check),
+            options => options.WithException(new ArgumentNullException(nameof(check))));
+        Message = EnsureArg.IsNotNull(
+            message,
+            nameof(message),
+            options => options.WithException(new ArgumentNullException(nameof(message))));
     }
 
     public PrerequisiteFailureKind Kind { get; }
@@ -69,23 +76,27 @@ public sealed class PrerequisiteResult
 
     public static PrerequisiteResult Failed(IEnumerable<PrerequisiteFailure> failures)
     {
-        if (failures == null)
-        {
-            throw new ArgumentNullException(nameof(failures));
-        }
+        EnsureArg.IsNotNull(
+            failures,
+            nameof(failures),
+            options => options.WithException(new ArgumentNullException(nameof(failures))));
 
         var immutableFailures = ImmutableArray.CreateRange(failures);
-        if (immutableFailures.IsEmpty)
-        {
-            throw new ArgumentException("A failed result requires at least one failure.", nameof(failures));
-        }
+        EnsureArg.IsFalse(
+            immutableFailures.IsEmpty,
+            nameof(failures),
+            options => options.WithException(
+                new ArgumentException(
+                    "A failed result requires at least one failure.",
+                    nameof(failures))));
 
         foreach (var failure in immutableFailures)
         {
-            if (failure == null)
-            {
-                throw new ArgumentException("Failures cannot contain null.", nameof(failures));
-            }
+            EnsureArg.IsNotNull(
+                failure,
+                nameof(failures),
+                options => options.WithException(
+                    new ArgumentException("Failures cannot contain null.", nameof(failures))));
         }
 
         return new PrerequisiteResult(immutableFailures);
@@ -104,7 +115,10 @@ public sealed class PrerequisiteProcessState
 
     public PrerequisiteProcessState(JoinableTaskFactory joinableTaskFactory)
     {
-        _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
+        _joinableTaskFactory = EnsureArg.IsNotNull(
+            joinableTaskFactory,
+            nameof(joinableTaskFactory),
+            options => options.WithException(new ArgumentNullException(nameof(joinableTaskFactory))));
     }
 
     public static PrerequisiteProcessState Current => ProcessStateHolder.Instance;
@@ -170,10 +184,10 @@ public sealed class PrerequisiteProcessState
         Func<CancellationToken, Task<PrerequisiteResult>> evaluator,
         CancellationToken cancellationToken)
     {
-        if (evaluator == null)
-        {
-            throw new ArgumentNullException(nameof(evaluator));
-        }
+        EnsureArg.IsNotNull(
+            evaluator,
+            nameof(evaluator),
+            options => options.WithException(new ArgumentNullException(nameof(evaluator))));
 
         Evaluation evaluation;
         lock (_sync)

@@ -38,23 +38,35 @@ public sealed class PrerequisiteStartupCoordinator
         Func<Func<Task>, CancellationToken, Task> runOnMainThreadAsync,
         IPrerequisiteStartupOperations operations)
     {
-        _state = state ?? throw new ArgumentNullException(nameof(state));
+        _state = EnsureArg.IsNotNull(
+            state,
+            nameof(state),
+            options => options.WithException(new ArgumentNullException(nameof(state))));
         _availabilityPolicy = EnsureArg.IsNotNull(
             availabilityPolicy,
             nameof(availabilityPolicy),
             options => options.WithException(
                 new ArgumentNullException(nameof(availabilityPolicy))));
-        _joinableTaskFactory = joinableTaskFactory ?? throw new ArgumentNullException(nameof(joinableTaskFactory));
-        _runOnMainThreadAsync = runOnMainThreadAsync ?? throw new ArgumentNullException(nameof(runOnMainThreadAsync));
-        _operations = operations ?? throw new ArgumentNullException(nameof(operations));
+        _joinableTaskFactory = EnsureArg.IsNotNull(
+            joinableTaskFactory,
+            nameof(joinableTaskFactory),
+            options => options.WithException(new ArgumentNullException(nameof(joinableTaskFactory))));
+        _runOnMainThreadAsync = EnsureArg.IsNotNull(
+            runOnMainThreadAsync,
+            nameof(runOnMainThreadAsync),
+            options => options.WithException(new ArgumentNullException(nameof(runOnMainThreadAsync))));
+        _operations = EnsureArg.IsNotNull(
+            operations,
+            nameof(operations),
+            options => options.WithException(new ArgumentNullException(nameof(operations))));
     }
 
     public Task RunAsync(PrerequisiteResult result, CancellationToken cancellationToken)
     {
-        if (result == null)
-        {
-            throw new ArgumentNullException(nameof(result));
-        }
+        EnsureArg.IsNotNull(
+            result,
+            nameof(result),
+            options => options.WithException(new ArgumentNullException(nameof(result))));
 
         AsyncLazy<object> startup;
         lock (_sync)
