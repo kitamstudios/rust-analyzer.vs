@@ -414,6 +414,8 @@ Execute one task at a time in order.
 - Each external launch enters an unnamed kill-on-close Windows Job Object before resuming. Kernel
   active-process-zero under one deadline proves tree quiescence; PIDs are diagnostic only.
 - Installed manifest evidence requires the exact VSIX 2011 namespace.
+- One shell invocation initializes the isolated profile and proves startup:
+  `/ResetSettings General /Log <path> /NoSplash /Command File.Exit`. Timeout or termination fails.
 - VS17 and VS18 jobs fail closed and block main publication. Each uploads host selection, hashes,
   installer/profile evidence, executable versions, startup result, Activity Log, adapter members,
   acceptance output, and TRX diagnostics.

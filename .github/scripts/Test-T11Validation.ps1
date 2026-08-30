@@ -601,7 +601,117 @@ try {
             $badAdapterReport -match "(?m)^extra\.dll(?:`t|$)") `
         -Message "Failed TestAdapter membership evidence did not name extra.dll."
 
+    $shellActivityLogPath = Join-Path $testRoot "ShellActivityLog.xml"
+    $shellArguments = Get-T11ShellStartupArguments `
+        -RootSuffix "T11SHELL" `
+        -ActivityLogPath $shellActivityLogPath
+    $expectedShellArguments = @(
+        "/RootSuffix",
+        "T11SHELL",
+        "/ResetSettings",
+        "General",
+        "/Log",
+        $shellActivityLogPath,
+        "/NoSplash",
+        "/Command",
+        "File.Exit")
+    Assert-True `
+        -Condition (
+            $shellArguments.Count -eq $expectedShellArguments.Count -and
+            ($shellArguments -join "`0") -ceq
+                ($expectedShellArguments -join "`0")) `
+        -Message "The combined shell invocation arguments are not exact."
+
+    $validShellResult = [pscustomobject]@{
+        AssignedBeforeResume = $true
+        TimedOut = $false
+        TerminationRequested = $false
+        RootExitCode = 0
+        JobZeroConfirmed = $true
+        ProcessTreeQuiescent = $true
+        CleanupFailed = $false
+        StandardOutputByteLength = 0
+        StandardErrorByteLength = 0
+    }
+    Assert-True `
+        -Condition ([bool](Assert-T11ShellProcessSucceeded `
+                -Result $validShellResult)) `
+        -Message "The complete shell success tuple was rejected."
+
+    $invalidShellResults = @(
+        [pscustomobject]@{
+            Property = "AssignedBeforeResume"
+            Value = $false
+            Message = "assigned before resume"
+        },
+        [pscustomobject]@{
+            Property = "TimedOut"
+            Value = $true
+            Message = "timed out"
+        },
+        [pscustomobject]@{
+            Property = "TerminationRequested"
+            Value = $true
+            Message = "termination"
+        },
+        [pscustomobject]@{
+            Property = "RootExitCode"
+            Value = 1460
+            Message = "1460"
+        },
+        [pscustomobject]@{
+            Property = "JobZeroConfirmed"
+            Value = $false
+            Message = "job-zero"
+        },
+        [pscustomobject]@{
+            Property = "ProcessTreeQuiescent"
+            Value = $false
+            Message = "job-zero"
+        },
+        [pscustomobject]@{
+            Property = "CleanupFailed"
+            Value = $true
+            Message = "job-zero"
+        })
+    foreach ($case in $invalidShellResults) {
+        $invalidShellResult = $validShellResult | Select-Object *
+        $invalidShellResult.($case.Property) = $case.Value
+        Assert-Throws `
+            -Action {
+                [void](Assert-T11ShellProcessSucceeded `
+                        -Result $invalidShellResult)
+            } `
+            -MessagePattern $case.Message
+    }
+
     $activityLogPath = Join-Path $testRoot "ActivityLog.xml"
+    [IO.File]::WriteAllBytes($activityLogPath, [byte[]]::new(0))
+    Assert-Throws `
+        -Action {
+            [void](Get-T11ActivityLogAnalysis `
+                    -ActivityLogPath $activityLogPath `
+                    -ScopeTokens @("KS.RustAnalyzer") `
+                    -ReportPath (Join-Path `
+                        $reportRoot `
+                        "activity-empty.json"))
+        } `
+        -MessagePattern "non-empty"
+    [IO.File]::WriteAllText(
+        $activityLogPath,
+        "<activity><entry>",
+        [Text.UTF8Encoding]::new($false))
+    Assert-Throws `
+        -Action {
+            [void](Get-T11ActivityLogAnalysis `
+                    -ActivityLogPath $activityLogPath `
+                    -ScopeTokens @("KS.RustAnalyzer") `
+                    -ReportPath (Join-Path `
+                        $reportRoot `
+                        "activity-malformed.json"))
+        } `
+        -MessagePattern "unexpected end|not closed"
+
     $irrelevantActivityCases = @(
         "KS.RustAnalyzer optional update feed unavailable",
         "KS.RustAnalyzer package update failed to load release metadata",
@@ -1874,6 +1984,46 @@ Import-Module '$($PSScriptRoot.Replace("'", "''"))\T11Validation.psm1' -Force
     $module = Get-Content `
         -LiteralPath (Join-Path $PSScriptRoot "T11Validation.psm1") `
         -Raw
+    $startupPhase = [regex]::Match(
+        $hostScript,
+        '(?s)\$currentPhase = "Startup".*?(?=\$currentPhase = "ActivityLog")')
+    $activityPhase = [regex]::Match(
+        $hostScript,
+        '(?s)\$currentPhase = "ActivityLog".*?(?=\$currentPhase = "Acceptance")')
+    Assert-True `
+        -Condition (
+            $startupPhase.Success -and
+            ([regex]::Matches(
+                $startupPhase.Value,
+                "Invoke-T11BoundedProcess")).Count -eq 1 -and
+            $startupPhase.Value -match
+                '(?s)Invoke-T11BoundedProcess\s+`\r?\n\s+-FilePath \$selectedHost\.DevenvPath' -and
+            ([regex]::Matches(
+                $hostScript,
+                '(?s)Invoke-T11BoundedProcess\s+`\r?\n\s+-FilePath \$selectedHost\.DevenvPath')).Count -eq 1 -and
+            $startupPhase.Value -match
+                "Get-T11ShellStartupArguments" -and
+            $startupPhase.Value -match
+                "Assert-T11ShellProcessSucceeded" -and
+            $startupPhase.Value -match
+                'Write-Json -Path \$startupCommandPath -Value \$startupResult' -and
+            $startupPhase.Value -match
+                '-TimeoutSeconds \$ProcessTimeoutSeconds' -and
+            $startupPhase.Value -notmatch
+                "(?i)bootstrap|retry|fallback|settings collection|registry|reg\.exe|DTE|UIAutomation|Start-Process" -and
+            $activityPhase.Success -and
+            $activityPhase.Value -match
+                '-ActivityLogPath \$activityLogPath' -and
+            ([regex]::Matches(
+                $hostScript,
+                "Get-T11ActivityLogAnalysis")).Count -eq 1 -and
+            ([regex]::Matches(
+                $hostScript,
+                "Get-T11InstalledExtensionEvidence")).Count -eq 1 -and
+            $hostScript.IndexOf(
+                "Get-T11InstalledExtensionEvidence",
+                [StringComparison]::Ordinal) -lt $startupPhase.Index) `
+        -Message "Shell startup is not one combined bounded invocation with one Activity Log analysis."
     $installPhase = [regex]::Match(
         $hostScript,
         '(?s)\$currentPhase = "Install".*?(?=\$currentPhase = "InstalledIdentity")')
@@ -1967,7 +2117,7 @@ Import-Module '$($PSScriptRoot.Replace("'", "''"))\T11Validation.psm1' -Force
             $hostScript -match "Remove-T11OwnedProfile" -and
             $hostScript -match "/instanceIds:" -and
             $hostScript -match "/rootSuffix:" -and
-            $hostScript -match '"File\.Exit"' -and
+            ($hostScript + $module) -match '"File\.Exit"' -and
             $hostScript -match "Not in T11 - T13" -and
             $hostScript -match "Not in T11 - T14") `
         -Message "T11 host validation violates process, targeting, or evidence-matrix scope."

@@ -2225,6 +2225,68 @@ function Assert-T11CleanupProcessSafety {
     return $true
 }
 
+function Get-T11ShellStartupArguments {
+    param (
+        [Parameter(Mandatory)]
+        [ValidatePattern("^[A-Za-z][A-Za-z0-9]{5,63}$")]
+        [string] $RootSuffix,
+
+        [Parameter(Mandatory)]
+        [string] $ActivityLogPath
+    )
+
+    return [string[]]@(
+        "/RootSuffix",
+        $RootSuffix,
+        "/ResetSettings",
+        "General",
+        "/Log",
+        $ActivityLogPath,
+        "/NoSplash",
+        "/Command",
+        "File.Exit")
+}
+
+function Assert-T11ShellProcessSucceeded {
+    param (
+        [Parameter(Mandatory)]
+        [object] $Result
+    )
+
+    foreach ($property in @(
+            "AssignedBeforeResume",
+            "TimedOut",
+            "TerminationRequested",
+            "RootExitCode",
+            "JobZeroConfirmed",
+            "ProcessTreeQuiescent",
+            "CleanupFailed"
+        )) {
+        if ($Result.PSObject.Properties.Name -notcontains $property) {
+            throw "Visual Studio shell startup evidence is incomplete."
+        }
+    }
+    if (-not $Result.AssignedBeforeResume) {
+        throw "Visual Studio shell startup was not assigned before resume."
+    }
+    if ($Result.TimedOut) {
+        throw "Visual Studio shell startup timed out."
+    }
+    if ($Result.TerminationRequested) {
+        throw "Visual Studio shell startup required job termination."
+    }
+    if ($Result.RootExitCode -ne 0) {
+        throw "Visual Studio shell startup exited with code $($Result.RootExitCode)."
+    }
+    if (-not $Result.JobZeroConfirmed -or
+        -not $Result.ProcessTreeQuiescent -or
+        $Result.CleanupFailed) {
+        throw "Visual Studio shell startup did not complete with confirmed job-zero evidence."
+    }
+
+    return $true
+}
+
 function Resolve-T11VisualStudioHost {
     param (
         [Parameter(Mandatory)]
@@ -3020,6 +3082,8 @@ Export-ModuleMember -Function `
     Get-T11HostSelection, `
     Invoke-T11BoundedProcess, `
     Assert-T11CleanupProcessSafety, `
+    Get-T11ShellStartupArguments, `
+    Assert-T11ShellProcessSucceeded, `
     Resolve-T11VisualStudioHost, `
     Get-T11InstalledExtensionEvidence, `
     New-T11ProfileOwnership, `

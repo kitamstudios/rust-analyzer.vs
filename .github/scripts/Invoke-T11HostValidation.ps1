@@ -541,14 +541,9 @@ try {
     $currentPhase = "Startup"
     Set-PhaseStatus -Name Startup -Status Running
     $activityLogPath = Join-Path $diagnosticsDirectory "ActivityLog.xml"
-    $startupArguments = @(
-        "/RootSuffix",
-        $RootSuffix,
-        "/Log",
-        $activityLogPath,
-        "/NoSplash",
-        "/Command",
-        "File.Exit")
+    $startupArguments = Get-T11ShellStartupArguments `
+        -RootSuffix $RootSuffix `
+        -ActivityLogPath $activityLogPath
     Require-DiagnosticEvidence -Names @(
         "startup-command.json",
         "startup.stdout.log",
@@ -570,9 +565,7 @@ try {
         -WorkingDirectory $repositoryRoot
     $processResults.Add($startupResult)
     Write-Json -Path $startupCommandPath -Value $startupResult
-    Assert-ProcessSucceeded `
-        -Result $startupResult `
-        -Description "Visual Studio shell startup and built-in exit"
+    [void](Assert-T11ShellProcessSucceeded -Result $startupResult)
     Set-PhaseStatus -Name Startup -Status Passed
 
     $currentPhase = "ActivityLog"
