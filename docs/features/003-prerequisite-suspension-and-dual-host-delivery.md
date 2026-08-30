@@ -105,7 +105,7 @@ Execute one task at a time in order.
 | T7 | S1 | Hide or disable every extension-owned user surface while unavailable and make execution callbacks defensive no-ops. | Done | `c0b60df` |
 | T7b | S2 | Isolate parallel outputs; make exact owner-path deliverables and curated sets canonical; update consumers without staging copies. | Done | `c0b60df` |
 | T8 | S2 | Audit and apply the complete newest proven dual-compatible production/build/test/package dependency closure and acquired-artifact provenance policy. | Done | 8b343ea |
-| T9 | S2 | Align the main VSIX manifest and metadata and establish the shared `[17.12,19.0)` dual-host validation contract. | Pending | - |
+| T9 | S2 | Align the main VSIX manifest and metadata and establish the shared `[17.12,19.0)` dual-host validation contract. | Done | `e4db364` |
 | T10 | S2 | Rewrite prerequisite/readme material, reconcile live support claims, update `docs/design.md`, and update all four agent roles. | Pending | - |
 | T11 | S2 | Add canonical-artifact VS17/VS18 validation and the complete blocking behavior/platform evidence matrix. | Pending | - |
 | T12 | S3 | Extend the approved stamper to produce independent main/pack versions with the same deterministic build suffix. | Pending | - |
@@ -369,6 +369,19 @@ Execute one task at a time in order.
 - Final architecture review approved T8. Non-blocking follow-ups are to table-drive additional
   invalid manifest spellings and broaden the synthetic VSIX denylist if those guards are next
   changed; the current normalized owner-path guards and built payloads are proven clean.
+
+### T9 outcome
+
+- One identity and amd64 VSIX targets Community, Pro, and Enterprise at `[17.12,19.0)`; the Core
+  Editor prerequisite uses the same range.
+- Manifest, generated constants, and Marketplace metadata share the exact dual-host description.
+  The repository synchronizer validates and mirrors all seven manifest fields and supports
+  deterministic `-Check`; only `Set-VsixVersion.ps1` calculates or changes the manifest version.
+- Built-artifact tests prove stable identity, targets, ranges, metadata, and host-binary exclusion.
+  The full gate passed 412 assembly tests and all 18 acceptance expectations.
+- Only JARVIS may spawn agents. Web-backed agents and web tool calls run serially.
+- T10 owns transitional host-matrix prose, T11 real-host evidence, and T13 pack alignment. Final
+  architecture review approved T9.
 
 ### Runtime flow
 
