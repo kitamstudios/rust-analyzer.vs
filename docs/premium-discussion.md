@@ -215,3 +215,196 @@ Do not revive RustDevelopmentPack. Paid delivery needs a new feature design.
 5. Decide whether Cargo dependency work is a later premium candidate.
 6. Resolve the README's conflicting template claims.
 7. Choose pricing only after active-use, buyer, support-cost, and willingness-to-pay evidence.
+
+## Should the extension target emulators?
+
+Yes. First. Then probes.
+
+Emulators give:
+
+- zero hardware
+- reproducible CI
+- easy onboarding
+- safe default "Run"
+
+Probes give:
+
+- the paid commercial workflow
+- flash / RTT / real peripherals
+
+## What the Embedded Rust Book covers beyond hello world
+
+It is a patterns book, not a product book.
+
+After hello world it covers, mostly on STM32F3DISCOVERY:
+
+- LED / GPIO
+- memory-mapped registers
+- panics, exceptions, interrupts
+- singletons, typestate, HAL design
+- concurrency patterns
+- C/Rust FFI
+
+It does not build a complete product (logger, motor controller, USB device, radio node).
+
+For project-style learning, the community's Discovery book is the better analogue.
+
+## 7. Windows drivers
+
+### Should you target them?
+
+- Windows drivers: yes
+- Linux drivers: no as a first-class target
+
+### Debugging Rust Windows drivers from VS 2022/2026
+
+| Type | In Visual Studio? | Reality |
+|---|---|---|
+| UMDF | Reasonably yes | Attach to WUDFHost.exe; closest to normal debug |
+| KMDF / WDM | Limited | Still mostly WinDbg + test VM + test signing |
+
+Microsoft stack:
+
+- windows-drivers-rs
+- cargo-wdk
+- build story is ahead of the debug story
+
+Extension value:
+
+- templates
+- cargo-wdk integration
+- packaging / INF / signing helpers
+- UMDF launch configs
+- WinDbg helper commands for KMDF
+- do not promise a C++-quality F5 kernel debugger in VS
+
+## 8. Pricing
+
+Recommended Phase 2 price: $129–$179 / seat / year
+
+Best default: $149 / seat / year
+
+Suggested ladder:
+
+- Individual / indie: $129
+- Professional default: $149
+- Company / team: $149–$179, volume discount at 5–10 seats
+
+Phase pricing:
+
+| Phase | Suggested |
+|---|---|
+| Phase 1 | $79–$99 |
+| Phase 2 | $129–$179 |
+| Phase 3 | $199–$299+ or custom |
+
+Comparables used:
+
+- RustRover commercial often lands roughly $69–$229/year depending on SKU
+- Visual Assist personal ~$129/year
+- Specialized embedded/driver tools often $200–$600+/year
+
+## 9. Revenue projections
+
+Assumptions:
+
+- ~41.7k free installs
+- active users much lower, roughly 5k–12k
+- conversion 1.5–4% normally, higher if Embedded + Drivers ship early
+- $149/year
+
+### Base Phase 2 (no accelerated Embedded+Drivers promise)
+
+| Period | Pessimistic | Realistic | Optimistic |
+|---|---|---|---|
+| Month 1 | $1k–$3k | $3k–$7k | $8k–$15k |
+| 6 months | $6k–$15k | $15k–$35k | $40k–$70k |
+| Year 1 | $15k–$40k | $40k–$90k | $100k–$160k |
+
+Realistic seats:
+
+- Month 1: 20–50
+- 6 months: 100–230
+- Year 1: 270–600
+
+### Accelerated case: Embedded + Windows Drivers ship within 1 month
+
+| Period | Pessimistic | Realistic | Optimistic |
+|---|---|---|---|
+| Month 1 | $2.5k–$6k | $6k–$12k | $15k–$25k |
+| 6 months | $15k–$30k | $35k–$70k | $80k–$130k |
+| Year 1 | $35k–$70k | $80k–$150k | $170k–$250k+ |
+
+Realistic seats:
+
+- Month 1: 40–80
+- 6 months: 230–470
+- Year 1: 540–1,000
+
+These are planning ranges, not guarantees. Marketplace conversion is usually slow in month 1 and
+compounds in months 3–12.
+
+## 10. CAPEX / OPEX / Net if you work in agentic mode
+
+Assumptions:
+
+- machine already owned
+- only new purchase is Copilot or Claude Code
+- heavy agentic-loop style work
+- Embedded + Drivers ship in month 1
+- Marketplace + payment friction ~8%
+
+### CAPEX
+
+$0 new.
+
+### AI OPEX (2026 individual pricing, heavy agent use)
+
+| Tool | Typical heavy-use plan | Monthly | Yearly |
+|---|---|---|---|
+| GitHub Copilot Max | heavy agent | $100 | $1,200 |
+| Claude Code Max 5x | common heavy | $100 | $1,200 |
+| Claude Code Max 20x | very intensive | $200 | $2,400 |
+
+Budget $100–$200/month ($1,200–$2,400/year).
+
+Note: unbounded API-style agent use can cost much more than the subscription cap. Stay on Max-style
+plans rather than raw API if you want predictable OPEX.
+
+### Net revenue — realistic accelerated case
+
+| Period | Gross | AI | Fees ~8% | Net |
+|---|---|---|---|---|
+| Month 1 | $6k–$12k | $100–$200 | $0.5k–$1.0k | $5.3k–$10.7k |
+| 6 months | $35k–$70k | $0.6k–$1.2k | $2.8k–$5.6k | $31k–$63k |
+| Year 1 | $80k–$150k | $1.2k–$2.4k | $6.4k–$12k | $70k–$135k |
+
+Central year-1 planning number:
+
+- Gross ~$110k
+- AI ~$1.8k
+- Fees ~$8.8k
+- Net ~$99k
+
+AI cost is small relative to revenue if conversion works. The risk is not the license. The risk is
+conversion and feature quality.
+
+## 11. Recommended near-term build order
+
+1. Stabilize free extension on VS 2022 + 2026.
+2. Ship paid shell + license check.
+3. Cargo Intelligence MVP.
+4. QEMU MVP (lm3s6965evb + one MPS2 + RISC-V virt).
+5. probe-rs / RTT path.
+6. Windows driver templates + cargo-wdk + UMDF debug helpers.
+7. Security/testing extras (audit, nextest).
+8. Only then Phase 3 specialty work.
+
+## 12. Caveats
+
+- Visual Studio Rust is a niche inside a niche.
+- Install count ≠ active users ≠ paying users.
+- Kernel-mode Rust debug in VS will not match C++ WDK polish soon.
+- QEMU coverage is architectural, not a substitute for the exact customer MCU.
+- Revenue ranges assume competent marketing into embedded and Windows-driver communities, not
+  "publish and wait."
