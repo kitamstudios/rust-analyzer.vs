@@ -40,8 +40,9 @@ the fast gate has none.
 
 **Unit-only, trait-driven.** Test categories follow
 [`docs/meta-design.md#writing-tests`](../../docs/meta-design.md#writing-tests). `Invoke-Tests.ps1` takes
-one `-Mode` of `unit`, `integration`, `acceptance`, or `full`; every mode first runs the TestAdapter
-packager regression once, and `test:quick` is `-Mode unit`. It then reads
+one `-Mode` of `unit`, `integration`, `acceptance`, or `full`; every mode first runs the deterministic
+T11 workflow/host-validation contract and the TestAdapter packager regression once, and `test:quick`
+is `-Mode unit`. It then reads
 the three exact isolated test-project outputs beneath `_built\projects`, takes the xUnit console
 runner from its owning `RustAnalyzer.UnitTests` closure, and runs the `type=UnitTests` cases in one
 process with assembly parallelism. The taxonomy is enforced by `TraitTaxonomyTests`, a unit test that
