@@ -113,7 +113,7 @@ Execute one task at a time in order.
 | T13b | S3 | Pack README expansion superseded by T13 deletion. | Superseded | `f610f03` |
 | T14 | S3 | Pack publication parity superseded; remote listing retirement is human-owned. | Superseded | `f610f03` |
 | T15 | S4 | Inventory every C# argument-validation site, replace manual guards with `EnsureThat`, and prove exception-contract and build/test parity. | Done | `ccc60be` |
-| T16 | S3 | Close prerequisite-diagnostic, Output-routing, logging-wiring, and project-owned asynchronous fault-observation gaps with focused tests. | In Progress | - |
+| T16 | S3 | Close prerequisite-diagnostic, Output-routing, logging-wiring, and project-owned asynchronous fault-observation gaps with focused tests. | Done | `42ab1ce` |
 
 ## Risks (Rx)
 
@@ -458,6 +458,15 @@ Execute one task at a time in order.
   production `Ensure.That` dependency it executes.
 - The clean build, 412 assembly tests, and 18-result acceptance contract passed. Final architecture
   review approved T15.
+
+### T16 outcome
+
+- Failed prerequisite probes retain bounded, sanitized local detail without changing prompts,
+  telemetry, or public contracts. Toolchain installation now points to `Output > Build`.
+- Project-owned asynchronous faults are observed locally. Basic Output, Build, TestAdapter, and
+  telemetry-filter routing tests were added without durable logging or telemetry-policy changes.
+- The clean build, 427 assembly tests, and 18-result acceptance contract passed. Final architecture
+  review approved T16; real-host validation remains human-owned.
 
 ### Runtime flow
 
