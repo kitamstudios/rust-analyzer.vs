@@ -104,10 +104,10 @@ Execute one task at a time in order.
 | T9 | S2 | Align the main VSIX manifest and metadata and establish the shared `[17.12,19.0)` dual-host validation contract. | Done | `e4db364` |
 | T10 | S2 | Rewrite prerequisite/readme material, reconcile live support claims, update `docs/design.md`, and update all four agent roles. | Done | `f184a61` |
 | T11 | S2 | Replace unstable automated host validation with final human-owned VS2022/VS2026 testing. | Done | `e3c9d0e` |
-| T12 | S3 | Independent pack versioning superseded by retirement. | Superseded | - |
-| T13 | S3 | Delete RustDevelopmentPack and reconcile all live repository references. | In Progress | - |
-| T13b | S3 | Pack README expansion superseded by T13 deletion. | Superseded | - |
-| T14 | S3 | Pack publication parity superseded; remote listing retirement is human-owned. | Superseded | - |
+| T12 | S3 | Independent pack versioning superseded by retirement. | Superseded | `f610f03` |
+| T13 | S3 | Delete RustDevelopmentPack and reconcile all live repository references. | Done | `60b8bb6` |
+| T13b | S3 | Pack README expansion superseded by T13 deletion. | Superseded | `f610f03` |
+| T14 | S3 | Pack publication parity superseded; remote listing retirement is human-owned. | Superseded | `f610f03` |
 | T15 | S4 | Inventory every C# argument-validation site, replace manual guards with `EnsureThat`, and prove exception-contract and build/test parity. | Pending | - |
 
 ## Risks (Rx)
@@ -396,6 +396,16 @@ Execute one task at a time in order.
 - The human will test the canonical main VSIX in VS2022 and VS2026 before merge.
 - Assurance is reduced: deterministic CI remains, but manual evidence is human-owned and not yet
   recorded.
+
+### T13 outcome
+
+- `RustDevelopmentPack` and its solution, test, documentation, dependency-ledger, and role-duty
+  maintenance surfaces were removed in `60b8bb6`.
+- Six restored dependency graphs still contain 246 distinct package/version entries. Main-VSIX and
+  exact six-file TestAdapter delivery remain unchanged.
+- The clean build, 412 assembly tests, and 18-result acceptance contract passed. Final architecture
+  review approved T13.
+- T12, T13b, and T14 are superseded. The human owns retirement of any remote pack listing.
 
 ### Runtime flow
 
