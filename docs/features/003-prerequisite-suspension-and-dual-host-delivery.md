@@ -397,6 +397,20 @@ Execute one task at a time in order.
 - The full gate passed 412 assembly tests and all 18 acceptance expectations; all 13 PowerShell
   blocks parsed without execution. Final architecture review approved T10.
 
+### T11 implementation ruling
+
+- Build the main VSIX and six-file TestAdapter archive once on VS17. Both host legs verify and
+  consume those exact bytes without rebuilding or repacking.
+- T11 does not promote, install, or claim the Development Pack. T13 owns its artifact and host
+  validation; T14 owns pack publication.
+- Real-host evidence is main-VSIX installation, installed identity/version, bounded shell-startup
+  smoke, scoped Activity Log, and host-major-specific TestAdapter acceptance. Deterministic tests
+  retain activation, prerequisite UX, suspension, command, logging, and process-reset claims.
+- VS17 and VS18 jobs fail closed and block main publication. Each uploads host selection, hashes,
+  installer/profile evidence, executable versions, startup result, Activity Log, adapter members,
+  acceptance output, and TRX diagnostics.
+- The deferred observer/UI Automation E2E design remains excluded.
+
 ### Runtime flow
 
 1. Necessary package wiring and logging may initialize, but status surfaces begin unavailable.
