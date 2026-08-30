@@ -31,22 +31,13 @@ public class VsixPayloadTests
     };
 
     [Fact]
-    public void CanonicalVsixesExcludeHostAssemblies()
+    public void CanonicalRustAnalyzerVsixExcludesHostAssemblies()
     {
-        var vsixes = new[]
+        using (var archive = ZipFile.OpenRead(GetCanonicalVsixPath("RustAnalyzer")))
         {
-            GetCanonicalVsixPath("RustAnalyzer"),
-            GetCanonicalVsixPath("RustDevelopmentPack"),
-        };
+            var hostAssemblies = FindHostAssemblies(archive);
 
-        foreach (var vsix in vsixes)
-        {
-            using (var archive = ZipFile.OpenRead(vsix))
-            {
-                var hostAssemblies = FindHostAssemblies(archive);
-
-                hostAssemblies.Should().BeEmpty($"{Path.GetFileName(vsix)} must use host-provided assemblies");
-            }
+            hostAssemblies.Should().BeEmpty("RustAnalyzer.vsix must use host-provided assemblies");
         }
     }
 

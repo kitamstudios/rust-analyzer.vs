@@ -11,8 +11,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RustAnalyzer.TestAdapter", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RustAnalyzer.TestAdapter.UnitTests", "RustAnalyzer.TestAdapter.UnitTests\RustAnalyzer.TestAdapter.UnitTests.csproj", "{4B45D0AD-8813-4943-96B5-C319341E6554}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RustDevelopmentPack", "RustDevelopmentPack\RustDevelopmentPack.csproj", "{85EBEF2E-3BA7-44C2-8E06-AC75FB01D56D}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RustAnalyzer.Remote", "RustAnalyzer.Remote\RustAnalyzer.Remote.csproj", "{71147C7A-F27E-478B-A3A1-C006347C94DE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RustAnalyzer.Remote.UnitTests", "RustAnalyzer.Remote.UnitTests\RustAnalyzer.Remote.UnitTests.csproj", "{99B37CC5-2B5D-4CBA-923D-A8D7E3E63B6E}"
@@ -80,18 +78,6 @@ Global
 		{4B45D0AD-8813-4943-96B5-C319341E6554}.Release|arm64.Build.0 = Release|Any CPU
 		{4B45D0AD-8813-4943-96B5-C319341E6554}.Release|x86.ActiveCfg = Release|Any CPU
 		{4B45D0AD-8813-4943-96B5-C319341E6554}.Release|x86.Build.0 = Release|Any CPU
-		{85EBEF2E-3BA7-44C2-8E06-AC75FB01D56D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{85EBEF2E-3BA7-44C2-8E06-AC75FB01D56D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{85EBEF2E-3BA7-44C2-8E06-AC75FB01D56D}.Debug|arm64.ActiveCfg = Debug|arm64
-		{85EBEF2E-3BA7-44C2-8E06-AC75FB01D56D}.Debug|arm64.Build.0 = Debug|arm64
-		{85EBEF2E-3BA7-44C2-8E06-AC75FB01D56D}.Debug|x86.ActiveCfg = Debug|x86
-		{85EBEF2E-3BA7-44C2-8E06-AC75FB01D56D}.Debug|x86.Build.0 = Debug|x86
-		{85EBEF2E-3BA7-44C2-8E06-AC75FB01D56D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{85EBEF2E-3BA7-44C2-8E06-AC75FB01D56D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{85EBEF2E-3BA7-44C2-8E06-AC75FB01D56D}.Release|arm64.ActiveCfg = Release|arm64
-		{85EBEF2E-3BA7-44C2-8E06-AC75FB01D56D}.Release|arm64.Build.0 = Release|arm64
-		{85EBEF2E-3BA7-44C2-8E06-AC75FB01D56D}.Release|x86.ActiveCfg = Release|x86
-		{85EBEF2E-3BA7-44C2-8E06-AC75FB01D56D}.Release|x86.Build.0 = Release|x86
 		{71147C7A-F27E-478B-A3A1-C006347C94DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{71147C7A-F27E-478B-A3A1-C006347C94DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71147C7A-F27E-478B-A3A1-C006347C94DE}.Debug|arm64.ActiveCfg = Debug|Any CPU

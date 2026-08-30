@@ -52,4 +52,4 @@ design in `docs/design.md`.
     existing state only; on any missing, stale, wrong-checkout, modified, or invalid state, stop and
     hand back to JARVIS without repair or fallback.
 12. Implement product and platform changes without breaking Visual Studio 2022 17.12+, Visual Studio
-    2026 18.x, rust-analyzer.vs, or RustDevelopmentPack.
+    2026 18.x, the main VSIX, or standalone TestAdapter.

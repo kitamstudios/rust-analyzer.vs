@@ -21,9 +21,7 @@ operational Cargo are required. Nightly is optional and needed only for Test Exp
 [Prerequisites](PREREQUISITES.md) for official sources, install and upgrade commands, and
 verification.
 
-The current [Rust Development Pack](https://marketplace.visualstudio.com/items?itemName=kitamstudios.RustDevelopmentPack)
-still has its pre-alignment Visual Studio 2022 17.13+ manifest. Install rust-analyzer.vs directly for
-Visual Studio 2022 17.12 or Visual Studio 2026.
+RustDevelopmentPack is retired; install rust-analyzer.vs directly.
 
 > 💡 **Announcement**
 >

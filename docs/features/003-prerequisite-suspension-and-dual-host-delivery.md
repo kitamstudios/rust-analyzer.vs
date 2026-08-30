@@ -176,11 +176,12 @@ Execute one task at a time in order.
 
 ### Development Pack retirement ruling
 
-- Delete the project and all tracked files under `src/RustDevelopmentPack`.
-- Remove solution, build, test, documentation, dependency-ledger, and role-duty references that
-  treat it as maintained.
-- Preserve main-VSIX and TestAdapter identity, versioning, packaging, artifacts, and publication.
-- Do not clean ignored/generated outputs or alter unrelated `.vsext`, FileIcons, or TOML surfaces.
+- The project and all six tracked files under `src/RustDevelopmentPack` are removed.
+- The solution, build, test, documentation, dependency ledger, and role duties no longer treat it as
+  maintained.
+- Main-VSIX and TestAdapter identity, versioning, packaging, artifacts, and publication are
+  unchanged.
+- Ignored/generated outputs and unrelated `.vsext`, FileIcons, and TOML surfaces remain untouched.
 - Remote Marketplace/Open VSIX retirement is a final human action.
 
 ### T7b build-output design ruling
@@ -320,9 +321,9 @@ Execute one task at a time in order.
   `_built\projects\<project>` output namespace through conditional `Directory.Build.props`; normal
   IDE output paths remain unchanged.
 - `Invoke-Build.ps1` performs no cleanup, staging, promotion, archive creation, or second build.
-  Tests, CI, package, and publication paths consume the two named VSIXes, three exact test
-  assemblies, sole xUnit runner, and six TestAdapter files named by `testadapter-package.txt` at
-  their owner paths, with no flat-layout or staging fallback.
+  Tests, CI, package, and publication paths consume the named main VSIX, three exact test assemblies,
+  sole xUnit runner, and six TestAdapter files named by `testadapter-package.txt` at their owner
+  paths, with no flat-layout or staging fallback.
 - Directory enumeration is not a consumer contract. Unreferenced stale siblings are noncanonical
   and cannot satisfy a gate; project output directories need not be pristine.
 - Cargo fixtures are copied only by the two consuming test projects. TestAdapter packaging performs
@@ -373,7 +374,7 @@ Execute one task at a time in order.
   The full gate passed 412 assembly tests and all 18 acceptance expectations.
 - Only JARVIS may spawn agents. Web-backed agents and web tool calls run serially.
 - T10 owns transitional host-matrix prose, final manual testing owns real-host evidence, and T13
-  owns pack retirement. Final architecture review approved T9.
+  owns repository retirement. Final architecture review approved T9.
 
 ### T10 outcome
 
@@ -383,8 +384,9 @@ Execute one task at a time in order.
   process-cached.
 - Live main-product claims now state Windows amd64, VS2022 17.12+ within 17.x, and VS2026 18.x. Its
   former Development Pack statement is historical and superseded by T13.
-- All four agent roles covered both hosts and products without changing lanes. T13 removes retired
-  pack duties; T11 validation remains on the final human checklist.
+- At T10, all four agent roles covered both hosts and products without changing lanes. Their former
+  Development Pack duties are historical and superseded by T13; T11 validation remains on the final
+  human checklist.
 - The full gate passed 412 assembly tests and all 18 acceptance expectations; all 13 PowerShell
   blocks parsed without execution. Final architecture review approved T10.
 
@@ -566,8 +568,8 @@ owns final VS2022/VS2026 validation.
 ### Versioning and publication
 
 `Set-VsixVersion.ps1` remains the sole main-version writer. Existing main-VSIX and TestAdapter
-artifact and publication contracts remain unchanged. Add no pack metadata, artifact, or external
-write. The human owns retirement of any remote pack listing.
+artifact and publication contracts remain unchanged. No pack metadata, artifact, publication path,
+or external write was added. The human owns retirement of any remote pack listing.
 
 ### Documentation command baseline
 
@@ -592,13 +594,14 @@ installation.
 
 ### Documentation and governance
 
-Keep `PREREQUISITES.md`, the main manifest, and main Marketplace metadata unchanged. Remove the pack
-README and reconcile root `README.md`, `docs/design.md`, and live role duties. Exclude the archived
-previous feature document from all searches and replacements.
+`PREREQUISITES.md`, the main manifest, and main Marketplace metadata remain unchanged. The pack
+README is removed; root `README.md`, `docs/design.md`, and live role duties reflect retirement. The
+archived previous feature document remains unchanged.
 
 Role duties:
 
-- **JARVIS:** scope planning, gates, and delivery across both hosts, the main VSIX, and TestAdapter.
+- **JARVIS:** scope planning, gates, and delivery across both hosts, the main VSIX, and standalone
+  TestAdapter.
 - **Anders:** design main-product/platform changes for both hosts.
-- **Dave:** preserve both hosts, the main VSIX, and TestAdapter.
-- **Bhaskar:** verify both hosts, the main VSIX, TestAdapter, and publication evidence.
+- **Dave:** preserve both hosts, the main VSIX, and standalone TestAdapter.
+- **Bhaskar:** verify both hosts, the main VSIX, standalone TestAdapter, and publication evidence.
