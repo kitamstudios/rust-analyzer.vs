@@ -179,7 +179,8 @@ Execute one task at a time in order.
 
 ## Notes & Decisions
 
-**Pull request:** [#73](https://github.com/kitamstudios/rust-analyzer.vs/pull/73)
+**Pull requests:** [#73](https://github.com/kitamstudios/rust-analyzer.vs/pull/73),
+[#74](https://github.com/kitamstudios/rust-analyzer.vs/pull/74)
 
 ### Development Pack composition ruling
 
