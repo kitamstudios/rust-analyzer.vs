@@ -48,6 +48,10 @@
     Treat only exact named deliverables and curated file sets at owner paths as canonical; update
     every local and CI consumer of the old flat layout without cleaning `_built` or copying outputs
     through staging or promotion directories.
+18. Close bounded diagnostic-integrity gaps: preserve useful local prerequisite failure output,
+    correct Output-pane guidance, observe project-owned asynchronous faults, and add only basic
+    logger/sink wiring tests. Durable diagnostics, telemetry privacy, and nightly changes require
+    separate human direction.
 
 ## Design Options (Ox)
 
@@ -79,12 +83,12 @@ still receive defensive guards at their owning integration boundary.
 |---|---|---|
 | S1 | Ship process-safe prerequisite suspension across automatic, background, and user-triggered extension paths. | - |
 | S2 | Ship collision-free project-owned build outputs, a dual-host main-package contract, reconciled documentation, and human-owned VS2022/VS2026 validation. | S1 |
-| S3 | Retire the repository-owned RustDevelopmentPack while preserving rust-analyzer.vs and TestAdapter delivery. | S2 |
+| S3 | Retire RustDevelopmentPack, then close bounded diagnostic-integrity gaps while preserving rust-analyzer.vs and TestAdapter delivery. | S2 |
 | S4 | Apply the `EnsureThat` argument-validation rule consistently across the C# codebase without behavioral changes. | S3 |
 
 S1 completes the runtime behavior. S2 makes isolated project outputs canonical and assigns final
-host validation to the human. S3 removes the second extension and its maintenance surface. S4 keeps
-repository-wide validation cleanup separate from product delivery.
+host validation to the human. S3 removes the second extension, then owns late diagnostic-integrity
+task T16. S4 remains the completed repository-wide validation cleanup.
 
 ## Tasks (Tx)
 
@@ -109,6 +113,7 @@ Execute one task at a time in order.
 | T13b | S3 | Pack README expansion superseded by T13 deletion. | Superseded | `f610f03` |
 | T14 | S3 | Pack publication parity superseded; remote listing retirement is human-owned. | Superseded | `f610f03` |
 | T15 | S4 | Inventory every C# argument-validation site, replace manual guards with `EnsureThat`, and prove exception-contract and build/test parity. | Done | `ccc60be` |
+| T16 | S3 | Close prerequisite-diagnostic, Output-routing, logging-wiring, and project-owned asynchronous fault-observation gaps with focused tests. | In Progress | - |
 
 ## Risks (Rx)
 
@@ -194,6 +199,33 @@ Execute one task at a time in order.
 - Keep `BuildOutputSink` validation inside its JTF delegate, validate `AttributeExtensions`' derived
   field name once, and materialize `PrerequisiteResult.Failed` exactly once before its checks.
 - Add no tests that only verify `EnsureThat` guards. Run the existing full gate.
+
+### T16 diagnostic-integrity ruling
+
+- Failed rustup/Cargo prerequisite probes log one local diagnostic with operation, status/exit code,
+  and nonempty stdout/stderr. Keep 4 KiB head and tail per stream; normalize line endings, remove
+  control characters, and mark truncation.
+- Keep probe output out of the modal and telemetry. Log no successful output, resolved path,
+  environment, or cancellation; change no public prerequisite/TestAdapter contract.
+- Toolchain installation starts with:
+  `Starting installation of toolchain '{tcName}'. See Output > Build for detailed status. Once done, you'll be notified here.`
+- Observe unexpected project-owned faults in Output-window/build sinks, metadata/test-container
+  initialization and events, toolchain commands, property changes, base commands, and debug
+  preparation. Expected cancellation, disposal, suspension, and routine absence remain silent.
+- Add only basic owned-routing/stability tests for `OutputWindowLogger`, `BuildOutputSink`,
+  `TestAdapterLogger`, and current telemetry filtering. Add no framework, network, library, durable
+  logging, telemetry-privacy, or real-host tests.
+- Add no logging framework, persistence, public seam/schema, dependency, or raw telemetry.
+
+### Unselected diagnostic analyses
+
+- Durable logging/export remains a human design decision; T16 adds no file log, retention, queue,
+  retry, drain, flush, export, or support bundle.
+- Telemetry privacy remains a human design decision; T16 changes no identity, payload, opt-out, or
+  analytics schema.
+- Rust 1.98 stable still lacks the libtest JSON, report-time, and exclude-should-panic contracts.
+  Nightly remains optional generally but required for Test Explorer and acceptance. T16 changes no
+  nightly code, tooling, CI, or documentation.
 
 ### T7b build-output design ruling
 
