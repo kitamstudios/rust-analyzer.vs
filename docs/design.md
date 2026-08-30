@@ -8,9 +8,11 @@ This document describes current behavior and architecture. Planned work lives in
 - Resolve trunk from `origin/HEAD`; use `master` only when it is unavailable.
 - **Generated — never hand-edit:** `**/bin/`, `**/obj/`, `_built/`, `*.vsix`, build-generated
   `.g.cs`, and `src/RustAnalyzer/VSCommandTable.cs` (generated from `VSCommandTable.vsct`). Only
-  `.github/scripts/Set-VsixVersion.ps1` writes `Identity/@Version` in
+  `.github/scripts/Set-VsixVersion.ps1` calculates and stamps `Identity/@Version` in
   `src/RustAnalyzer/source.extension.vsixmanifest` and `Version` in
-  `src/RustAnalyzer/source.extension.cs`.
+  `src/RustAnalyzer/source.extension.cs`; `.github/scripts/Sync-VsixGeneratedMetadata.ps1` is the
+  repository-owned fallback writer that copies the manifest's seven metadata values, including its
+  already-stamped version, into the generated `Vsix` constants.
 - **Acquired — never hand-edit:** packaged `rust-analyzer.exe` and `rust_analyzer.pdb`, plus
   `src/external/vs.17.11` host assemblies. Replace only from official assets after hash verification.
   Only `Initialize-RustNightly.ps1` writes manifests under `%LOCALAPPDATA%\ravsq\`.

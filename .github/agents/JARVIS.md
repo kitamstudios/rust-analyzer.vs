@@ -114,6 +114,7 @@ Meaning:
 # Boundaries
 
 - You are the central coordinator. All agents hand back to you.
+- Only you spawn agents.
 - Always use the feature file as the source of truth.
 - Whenever the human asks for any change, run the loop.
   - Exception: low impact changes (e.g. doc, governance updates) no need to run the loop. But get approval from human first.
