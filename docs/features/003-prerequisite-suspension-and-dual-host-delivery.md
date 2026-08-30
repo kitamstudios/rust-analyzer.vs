@@ -406,6 +406,14 @@ Execute one task at a time in order.
 - Real-host evidence is main-VSIX installation, installed identity/version, bounded shell-startup
   smoke, scoped Activity Log, and host-major-specific TestAdapter acceptance. Deterministic tests
   retain activation, prerequisite UX, suspension, command, logging, and process-reset claims.
+- Native installer logs are isolated, required raw diagnostics, not a semantic success interface.
+  Success requires the selected installer to exit zero and exactly one non-reparse extension
+  directory to contain the expected manifest identity/version.
+- Cleanup stops only owned processes, removes only the pre-reserved exact root-suffix profile after
+  rejecting reparse points, and proves complete absence. T11 does not validate uninstallation.
+- Each external launch enters an unnamed kill-on-close Windows Job Object before resuming. Kernel
+  active-process-zero under one deadline proves tree quiescence; PIDs are diagnostic only.
+- Installed manifest evidence requires the exact VSIX 2011 namespace.
 - VS17 and VS18 jobs fail closed and block main publication. Each uploads host selection, hashes,
   installer/profile evidence, executable versions, startup result, Activity Log, adapter members,
   acceptance output, and TRX diagnostics.

@@ -98,7 +98,7 @@ function Write-EvidenceMatrix {
         "| Shell startup | Exact selected devenv.exe, `/Log`, and built-in `File.Exit` | $($phaseStatus.Startup.Status) |",
         "| Scoped Activity Log | Main-extension registration/composition/binding/package-load errors | $($phaseStatus.ActivityLog.Status) |",
         "| TestAdapter exact producer bytes and acceptance | Exact archive, selected-host VSTest, explicit major $VisualStudioMajorVersion | $($phaseStatus.Acceptance.Status) |",
-        "| Isolated-run cleanup | Exact owned PIDs, root-suffix profile, and generated acceptance paths | $($phaseStatus.Cleanup.Status) |",
+        "| Isolated-run cleanup | Confirmed Job Object zero, reserved profile, installer temp, and generated paths | $($phaseStatus.Cleanup.Status) |",
         "| Prerequisite, suspension, UI, logging, Rust-child suppression, accessibility, and process reset | Deterministic compiled tests; not claimed from real-host validation | Not a real-host claim |",
         "| Exact 17.12 execution | Predicate and manifest tests only | Not claimed |",
         "| Development Pack | Not in T11 - T13 | Not in T11 - T13 |",
@@ -122,6 +122,14 @@ function Assert-ProcessSucceeded {
 
     if ($Result.TimedOut) {
         throw "$Description timed out."
+    }
+    if (-not $Result.AssignedBeforeResume) {
+        throw "$Description was not assigned to its Windows Job Object before resume."
+    }
+    if (-not $Result.JobZeroConfirmed -or
+        -not $Result.ProcessTreeQuiescent -or
+        $Result.CleanupFailed) {
+        throw "$Description did not confirm Windows Job Object active-process zero."
     }
     if ($Result.ExitCode -ne 0) {
         throw "$Description exited with code $($Result.ExitCode)."
@@ -215,76 +223,6 @@ function Write-AcceptanceCounts {
         -Value $evidence
 }
 
-function Copy-InstallerConfigurationLogs {
-    $destination = Join-Path $diagnosticsDirectory "installer-configuration-logs"
-    [void](New-Item -ItemType Directory -Path $destination -Force)
-    $records = [Collections.Generic.List[object]]::new()
-
-    foreach ($path in @($installerLogPath, $uninstallerLogPath)) {
-        if (Test-Path -LiteralPath $path -PathType Leaf) {
-            $records.Add([ordered]@{
-                    Source = $path
-                    DiagnosticPath = $path
-                    ByteLength = (Get-Item -LiteralPath $path).Length
-                })
-        }
-    }
-
-    $temporaryRoots = @($env:TEMP, (Join-Path $env:LOCALAPPDATA "Temp")) |
-        Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
-        Select-Object -Unique
-    $index = 0
-    foreach ($temporaryRoot in $temporaryRoots) {
-        if (-not (Test-Path -LiteralPath $temporaryRoot -PathType Container)) {
-            continue
-        }
-
-        foreach ($log in Get-ChildItem -LiteralPath $temporaryRoot -File -Filter "*.log" |
-                Where-Object {
-                    $_.LastWriteTimeUtc -ge $validationStartedUtc.AddSeconds(-2) -and
-                    $_.Name -match "(?i)vsix|devenv|dd_setup|dd_install"
-                }) {
-            $index++
-            $destinationPath = Join-Path $destination (
-                "{0:D3}-{1}" -f $index, $log.Name)
-            Copy-Item -LiteralPath $log.FullName -Destination $destinationPath
-            $records.Add([ordered]@{
-                    Source = $log.FullName
-                    DiagnosticPath = $destinationPath
-                    ByteLength = (Get-Item -LiteralPath $destinationPath).Length
-                })
-        }
-    }
-
-    Write-Json `
-        -Path (Join-Path $diagnosticsDirectory "installer-configuration-logs.json") `
-        -Value ([ordered]@{ Logs = @($records) })
-}
-
-function Stop-RemainingOwnedProcesses {
-    foreach ($result in $processResults) {
-        $ownedProcessIds = @($result.ProcessId) +
-            @($result.ObservedDescendantProcessIds)
-        foreach ($processId in $ownedProcessIds | Select-Object -Unique) {
-            if (-not (Get-Process -Id $processId -ErrorAction SilentlyContinue)) {
-                continue
-            }
-
-            try {
-                foreach ($stoppedId in Stop-T11ProcessTree `
-                        -RootProcessId $processId) {
-                    if (-not $cleanupStoppedProcessIds.Contains($stoppedId)) {
-                        $cleanupStoppedProcessIds.Add($stoppedId)
-                    }
-                }
-            }
-            catch {
-                $cleanupFailures.Add($_.Exception.Message)
-            }
-        }
-    }
-}
-
 $repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
 $artifactRoot = [IO.Path]::GetFullPath($ArtifactRoot)
 $expectedArtifactRoot = [IO.Path]::GetFullPath((Join-Path $repositoryRoot "_built"))
@@ -303,16 +241,19 @@ if ($diagnosticsDirectory.StartsWith(
 if ([string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
     throw "LOCALAPPDATA is required for isolated Visual Studio profile evidence."
 }
-$profileParent = Join-Path $env:LOCALAPPDATA "Microsoft\VisualStudio"
 $manifestPath = Join-Path $artifactRoot "t11\canonical-artifacts.json"
-$workingDirectory = Join-Path $artifactRoot "t11-host\$RootSuffix"
+$workingDirectory = Join-Path $artifactRoot "t11-host-$RootSuffix"
 $acceptanceTargetDirectory = Join-Path $repositoryRoot `
     "src\TestProjects\workspace_with_tests\target"
 $acceptanceResultsDirectory = Join-Path $repositoryRoot `
     "src\TestProjects\workspace_with_tests\TestResults"
 $validationStartedUtc = [DateTime]::UtcNow
-$installerLogPath = Join-Path $diagnosticsDirectory "vsix-installer.log"
-$uninstallerLogPath = Join-Path $diagnosticsDirectory "vsix-uninstaller.log"
+$installerTempDirectory = Join-Path $diagnosticsDirectory `
+    "installer-temp-$RootSuffix"
+$installerRawLogDirectory = Join-Path $diagnosticsDirectory `
+    "installer-configuration-logs"
+$installerLogReportPath = Join-Path $diagnosticsDirectory `
+    "installer-configuration-logs.json"
 $phaseStatus = [ordered]@{
     ArtifactIntegrity = [ordered]@{ Status = "NotRun"; Error = $null }
     HostSelection = [ordered]@{ Status = "NotRun"; Error = $null }
@@ -365,10 +306,18 @@ $selectedHost = $null
 $vsixIdentity = $null
 $installedExtension = $null
 $profileOwnership = $null
-$ownedWorkingDirectory = $null
-$acceptanceCleanupEligible = $false
+$installerTempOwnership = $null
+$installerRawLogOwnership = $null
+$workingDirectoryOwnership = $null
+$acceptanceTargetOwnership = $null
+$acceptanceResultsOwnership = $null
 $installationAttempted = $false
+$installerLogCollectionAttempted = $false
+$installerLogCollectionError = $null
+$installerLogEvidence = $null
+$installerProcessResult = $null
 $processResults = [Collections.Generic.List[object]]::new()
+$requiredInvocationCount = 0
 $mainFailure = $null
 $currentPhase = $null
 
@@ -473,19 +422,42 @@ try {
     $currentPhase = "Isolation"
     Set-PhaseStatus -Name Isolation -Status Running
     $profileOwnership = New-T11ProfileOwnership `
-        -ProfileParent $profileParent `
+        -LocalAppData $env:LOCALAPPDATA `
+        -VisualStudioMajorVersion $VisualStudioMajorVersion `
+        -InstanceId $selectedHost.InstanceId `
         -RootSuffix $RootSuffix
-    foreach ($path in @(
-            $workingDirectory,
-            $acceptanceTargetDirectory,
-            $acceptanceResultsDirectory
-        )) {
-        if (Test-Path -LiteralPath $path) {
-            throw "The T11 isolation path already exists: '$path'."
-        }
-    }
-    $ownedWorkingDirectory = (
-        New-Item -ItemType Directory -Path $workingDirectory).FullName
+    $installerTempOwnership = New-T11OwnedDirectory `
+        -AnchorPath $diagnosticsDirectory `
+        -Path $installerTempDirectory
+    [void](Initialize-T11OwnedDirectory `
+            -Ownership $installerTempOwnership)
+    $installerRawLogOwnership = New-T11OwnedDirectory `
+        -AnchorPath $diagnosticsDirectory `
+        -Path $installerRawLogDirectory
+    [void](Initialize-T11OwnedDirectory `
+            -Ownership $installerRawLogOwnership)
+    $workingDirectoryOwnership = New-T11OwnedDirectory `
+        -AnchorPath $artifactRoot `
+        -Path $workingDirectory
+    [void](Initialize-T11OwnedDirectory `
+            -Ownership $workingDirectoryOwnership)
+    $acceptanceTargetOwnership = New-T11OwnedDirectory `
+        -AnchorPath $repositoryRoot `
+        -Path $acceptanceTargetDirectory
+    $acceptanceResultsOwnership = New-T11OwnedDirectory `
+        -AnchorPath $repositoryRoot `
+        -Path $acceptanceResultsDirectory
+    Require-DiagnosticEvidence -Names @("isolation.json")
+    Write-Json `
+        -Path (Join-Path $diagnosticsDirectory "isolation.json") `
+        -Value ([ordered]@{
+            ProfilePath = $profileOwnership.OwnedProfilePath
+            InstallerTempPath = $installerTempOwnership.Path
+            InstallerRawLogPath = $installerRawLogOwnership.Path
+            WorkingDirectory = $workingDirectoryOwnership.Path
+            AcceptanceTargetDirectory = $acceptanceTargetOwnership.Path
+            AcceptanceResultsDirectory = $acceptanceResultsOwnership.Path
+        })
     Set-PhaseStatus -Name Isolation -Status Passed
 
     $currentPhase = "Install"
@@ -496,32 +468,62 @@ try {
         "/norepair",
         "/instanceIds:$($selectedHost.InstanceId)",
         "/rootSuffix:$RootSuffix",
-        "/logFile:$installerLogPath",
         $artifacts.MainVsixPath)
+    $installerEnvironment = [ordered]@{
+        TEMP = $installerTempOwnership.Path
+        TMP = $installerTempOwnership.Path
+    }
     Require-DiagnosticEvidence -Names @(
         "installer-command.json",
         "installer.stdout.log",
         "installer.stderr.log",
-        "vsix-installer.log")
+        "installer-configuration-logs.json")
     $installerCommandPath = Join-Path $diagnosticsDirectory "installer-command.json"
     Write-PendingProcessEvidence `
         -Path $installerCommandPath `
         -FilePath $selectedHost.VsixInstallerPath `
         -Arguments $installArguments `
         -TimeoutSeconds $ProcessTimeoutSeconds
-    $installResult = Invoke-T11BoundedProcess `
+    $requiredInvocationCount++
+    $installerProcessResult = Invoke-T11BoundedProcess `
         -FilePath $selectedHost.VsixInstallerPath `
         -ArgumentList $installArguments `
         -StandardOutputPath (Join-Path $diagnosticsDirectory "installer.stdout.log") `
         -StandardErrorPath (Join-Path $diagnosticsDirectory "installer.stderr.log") `
         -TimeoutSeconds $ProcessTimeoutSeconds `
-        -WorkingDirectory $repositoryRoot
-    $processResults.Add($installResult)
-    Write-Json -Path $installerCommandPath -Value $installResult
-    Assert-ProcessSucceeded -Result $installResult -Description "VSIX installation"
-    if (-not (Test-Path -LiteralPath $installerLogPath -PathType Leaf) -or
-        (Get-Item -LiteralPath $installerLogPath).Length -le 0) {
-        throw "VSIXInstaller did not produce its required installation log."
+        -WorkingDirectory $repositoryRoot `
+        -EnvironmentVariables $installerEnvironment
+    $processResults.Add($installerProcessResult)
+    Write-Json -Path $installerCommandPath -Value $installerProcessResult
+    $installerLogCollectionAttempted = $true
+    if ($installerProcessResult.JobZeroConfirmed) {
+        try {
+            $installerLogEvidence = Save-T11InstallerLogs `
+                -SourceOwnership $installerTempOwnership `
+                -RawLogOwnership $installerRawLogOwnership `
+                -ReportPath $installerLogReportPath
+        }
+        catch {
+            $installerLogCollectionError = $_.Exception.Message
+        }
+    }
+    else {
+        $installerLogCollectionError =
+            "Installer logs cannot be collected before confirmed job active-process zero."
+        Write-Json `
+            -Path $installerLogReportPath `
+            -Value ([ordered]@{
+                Status = "Failed"
+                SourceDirectory = $installerTempOwnership.Path
+                Logs = @()
+                Error = $installerLogCollectionError
+            })
+    }
+    Assert-ProcessSucceeded `
+        -Result $installerProcessResult `
+        -Description "VSIX installation"
+    if ($installerLogCollectionError) {
+        throw $installerLogCollectionError
     }
     Set-PhaseStatus -Name Install -Status Passed
 
@@ -529,15 +531,11 @@ try {
     Set-PhaseStatus -Name InstalledIdentity -Status Running
     Require-DiagnosticEvidence -Names @("installed-extension.json")
     $installedExtension = Get-T11InstalledExtensionEvidence `
-        -ProfileParent $profileParent `
-        -RootSuffix $RootSuffix `
+        -Ownership $profileOwnership `
         -ExtensionId $vsixIdentity.Id `
         -ExtensionVersion $vsixIdentity.Version `
         -ReportPath (Join-Path $diagnosticsDirectory "installed-extension.json") `
         -TimeoutSeconds 30
-    [void](Set-T11OwnedProfile `
-            -Ownership $profileOwnership `
-            -ProfilePath $installedExtension.ProfilePath)
     Set-PhaseStatus -Name InstalledIdentity -Status Passed
 
     $currentPhase = "Startup"
@@ -562,6 +560,7 @@ try {
         -FilePath $selectedHost.DevenvPath `
         -Arguments $startupArguments `
         -TimeoutSeconds $ProcessTimeoutSeconds
+    $requiredInvocationCount++
     $startupResult = Invoke-T11BoundedProcess `
         -FilePath $selectedHost.DevenvPath `
         -ArgumentList $startupArguments `
@@ -593,7 +592,6 @@ try {
 
     $currentPhase = "Acceptance"
     Set-PhaseStatus -Name Acceptance -Status Running
-    $acceptanceCleanupEligible = $true
     $expandedAdapterPath = Join-Path $workingDirectory "TestAdapter"
     [IO.Compression.ZipFile]::ExtractToDirectory(
         $artifacts.TestAdapterPath,
@@ -601,7 +599,7 @@ try {
 
     $acceptanceScript = Join-Path $repositoryRoot `
         "src\TestProjects\run-integrationtests.ps1"
-    $pwshPath = (Get-Process -Id $PID).Path
+    $pwshPath = [Environment]::ProcessPath
     $acceptanceArguments = @(
         "-NoLogo",
         "-NoProfile",
@@ -629,6 +627,7 @@ try {
         -FilePath $pwshPath `
         -Arguments $acceptanceArguments `
         -TimeoutSeconds $AcceptanceTimeoutSeconds
+    $requiredInvocationCount++
     $acceptanceResult = Invoke-T11BoundedProcess `
         -FilePath $pwshPath `
         -ArgumentList $acceptanceArguments `
@@ -675,93 +674,79 @@ catch {
 }
 
 $cleanupFailures = [Collections.Generic.List[string]]::new()
-$cleanupStoppedProcessIds = [Collections.Generic.List[int]]::new()
+$cleanupDeletionAllowed = $false
 Set-PhaseStatus -Name Cleanup -Status Running
 try {
-    Stop-RemainingOwnedProcesses
-
-    $installationMayExist = $installationAttempted -and
-        $profileOwnership -and
-        $profileOwnership.CleanupEligible
-    if ($installationMayExist -and $selectedHost -and $vsixIdentity) {
-        $uninstallArguments = @(
-            "/quiet",
-            "/instanceIds:$($selectedHost.InstanceId)",
-            "/rootSuffix:$RootSuffix",
-            "/logFile:$uninstallerLogPath",
-            "/uninstall:$($vsixIdentity.Id)")
-        Require-DiagnosticEvidence -Names @(
-            "uninstaller-command.json",
-            "uninstaller.stdout.log",
-            "uninstaller.stderr.log",
-            "vsix-uninstaller.log")
-        $uninstallerCommandPath = Join-Path $diagnosticsDirectory `
-            "uninstaller-command.json"
-        Write-PendingProcessEvidence `
-            -Path $uninstallerCommandPath `
-            -FilePath $selectedHost.VsixInstallerPath `
-            -Arguments $uninstallArguments `
-            -TimeoutSeconds $ProcessTimeoutSeconds
-        $uninstallResult = Invoke-T11BoundedProcess `
-            -FilePath $selectedHost.VsixInstallerPath `
-            -ArgumentList $uninstallArguments `
-            -StandardOutputPath (Join-Path $diagnosticsDirectory "uninstaller.stdout.log") `
-            -StandardErrorPath (Join-Path $diagnosticsDirectory "uninstaller.stderr.log") `
-            -TimeoutSeconds $ProcessTimeoutSeconds `
-            -WorkingDirectory $repositoryRoot
-        $processResults.Add($uninstallResult)
-        Write-Json -Path $uninstallerCommandPath -Value $uninstallResult
-        try {
-            Assert-ProcessSucceeded `
-                -Result $uninstallResult `
-                -Description "VSIX uninstall cleanup"
-        }
-        catch {
-            $cleanupFailures.Add($_.Exception.Message)
-        }
-        if (-not (Test-Path -LiteralPath $uninstallerLogPath -PathType Leaf) -or
-            (Get-Item -LiteralPath $uninstallerLogPath).Length -le 0) {
-            $cleanupFailures.Add(
-                "VSIXInstaller did not produce its required uninstall log.")
-        }
-        Stop-RemainingOwnedProcesses
+    try {
+        [void](Assert-T11CleanupProcessSafety `
+                -RequiredInvocationCount $requiredInvocationCount `
+                -InvocationResults @($processResults))
+        $cleanupDeletionAllowed = $true
+    }
+    catch {
+        $cleanupFailures.Add($_.Exception.Message)
     }
 
-    if ($profileOwnership) {
-        try {
-            [void](Remove-T11OwnedProfile -Ownership $profileOwnership)
-        }
-        catch {
-            $cleanupFailures.Add($_.Exception.Message)
-        }
-    }
-
-    $ownedGeneratedPaths = [Collections.Generic.List[string]]::new()
-    if ($ownedWorkingDirectory) {
-        $ownedGeneratedPaths.Add($ownedWorkingDirectory)
-    }
-    if ($acceptanceCleanupEligible) {
-        $ownedGeneratedPaths.Add($acceptanceTargetDirectory)
-        $ownedGeneratedPaths.Add($acceptanceResultsDirectory)
-    }
-    foreach ($path in $ownedGeneratedPaths) {
-        if (Test-Path -LiteralPath $path) {
+    if ($installationAttempted -and
+        -not $installerLogCollectionAttempted -and
+        $installerTempOwnership) {
+        $installerLogCollectionAttempted = $true
+        if ($installerProcessResult -and
+            $installerProcessResult.JobZeroConfirmed) {
             try {
-                Remove-Item -LiteralPath $path -Recurse -Force
+                $installerLogEvidence = Save-T11InstallerLogs `
+                    -SourceOwnership $installerTempOwnership `
+                    -RawLogOwnership $installerRawLogOwnership `
+                    -ReportPath $installerLogReportPath
+            }
+            catch {
+                $installerLogCollectionError = $_.Exception.Message
+            }
+        }
+        else {
+            $installerLogCollectionError =
+                "Installer logs cannot be collected without confirmed job active-process zero."
+            Write-Json `
+                -Path $installerLogReportPath `
+                -Value ([ordered]@{
+                    Status = "Failed"
+                    SourceDirectory = $installerTempOwnership.Path
+                    Logs = @()
+                    Error = $installerLogCollectionError
+                })
+        }
+    }
+    if ($installerLogCollectionError) {
+        $cleanupFailures.Add(
+            "Required isolated native installer logs are unavailable: $installerLogCollectionError")
+    }
+
+    if ($cleanupDeletionAllowed) {
+        if ($profileOwnership) {
+            try {
+                [void](Remove-T11OwnedProfile -Ownership $profileOwnership)
             }
             catch {
                 $cleanupFailures.Add($_.Exception.Message)
             }
         }
-    }
 
-    try {
-        Require-DiagnosticEvidence -Names @(
-            "installer-configuration-logs.json")
-        Copy-InstallerConfigurationLogs
-    }
-    catch {
-        $cleanupFailures.Add($_.Exception.Message)
+        foreach ($ownership in @(
+                $installerTempOwnership,
+                $workingDirectoryOwnership,
+                $acceptanceTargetOwnership,
+                $acceptanceResultsOwnership
+            )) {
+            if (-not $ownership) {
+                continue
+            }
+            try {
+                [void](Remove-T11OwnedDirectory -Ownership $ownership)
+            }
+            catch {
+                $cleanupFailures.Add($_.Exception.Message)
+            }
+        }
     }
 
     $missingDiagnostics = @($requiredDiagnosticNames | Where-Object {
@@ -787,10 +772,49 @@ $cleanupEvidence = [ordered]@{
     else {
         $null
     }
-    ProfileCleanupEligible = $profileOwnership -and
-        $profileOwnership.CleanupEligible
+    ProfileReserved = $profileOwnership -and $profileOwnership.Reserved
     ProfileRemoved = $profileOwnership -and $profileOwnership.Removed
-    StoppedOwnedProcessIds = @($cleanupStoppedProcessIds)
+    InstallerTempPath = if ($installerTempOwnership) {
+        $installerTempOwnership.Path
+    }
+    else {
+        $null
+    }
+    InstallerTempRemoved = $installerTempOwnership -and
+        $installerTempOwnership.Removed
+    InstallerRawLogPath = if ($installerRawLogOwnership) {
+        $installerRawLogOwnership.Path
+    }
+    else {
+        $null
+    }
+    WorkingDirectoryRemoved = $workingDirectoryOwnership -and
+        $workingDirectoryOwnership.Removed
+    AcceptanceTargetRemoved = $acceptanceTargetOwnership -and
+        $acceptanceTargetOwnership.Removed
+    AcceptanceResultsRemoved = $acceptanceResultsOwnership -and
+        $acceptanceResultsOwnership.Removed
+    InstallerLogCount = if ($installerLogEvidence) {
+        @($installerLogEvidence.Logs).Count
+    }
+    else {
+        0
+    }
+    InstallerLogError = $installerLogCollectionError
+    RequiredInvocationCount = $requiredInvocationCount
+    ReportedInvocationCount = $processResults.Count
+    CleanupDeletionAllowed = $cleanupDeletionAllowed
+    InvocationJobEvidence = @($processResults | ForEach-Object {
+            [ordered]@{
+                RootProcessId = $_.RootProcessId
+                AssignedBeforeResume = $_.AssignedBeforeResume
+                JobZeroConfirmed = $_.JobZeroConfirmed
+                ProcessTreeQuiescent = $_.ProcessTreeQuiescent
+                TimedOut = $_.TimedOut
+                TerminationRequested = $_.TerminationRequested
+                CleanupFailed = $_.CleanupFailed
+            }
+        })
     FinishedUtc = [DateTime]::UtcNow.ToString("O")
 }
 Write-Json `
