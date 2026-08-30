@@ -51,3 +51,5 @@ design in `docs/design.md`.
 11. Never install/update Rust nightly. JARVIS owns that one-time startup operation. Validate/consume
     existing state only; on any missing, stale, wrong-checkout, modified, or invalid state, stop and
     hand back to JARVIS without repair or fallback.
+12. Implement product and platform changes without breaking Visual Studio 2022 17.12+, Visual Studio
+    2026 18.x, rust-analyzer.vs, or RustDevelopmentPack.

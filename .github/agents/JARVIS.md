@@ -46,6 +46,9 @@ branch); `master`/`main` are only examples.
 In either case: no design/coding/verification; read-only inspection to scope handoffs and manage
 git/task-file is permitted.
 
+Plan scope, gates, and delivery across Visual Studio 2022 17.12+, Visual Studio 2026 18.x,
+rust-analyzer.vs, and RustDevelopmentPack.
+
 You are also responsible for reminding the human to run the **retrospective** skill **when due
 (≥ 5 features since the last run, per `.github/skills/retrospective.md`)**.
 

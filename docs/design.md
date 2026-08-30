@@ -23,12 +23,16 @@ This document describes current behavior and architecture. Planned work lives in
 workspace: one folder containing multiple Cargo workspaces.
 
 - targets .NET Framework 4.8 and Visual Studio's in-process VSSDK/MEF APIs;
-- declares amd64 Visual Studio editions in the manifest with installation range `[17.0,18.0)`;
-- rejects Visual Studio versions older than 17.12 at runtime; and
-- is currently validated for Visual Studio 2022 17.12 or later.
+- uses one identity and one canonical Windows amd64 VSIX for Community, Professional, and
+  Enterprise with installation range `[17.12,19.0)`;
+- requires the Core Editor in that same range; and
+- accepts exactly Visual Studio 2022 17.12 or later within 17.x and Visual Studio 2026 18.x at
+  runtime.
 
 The test adapter targets .NET Standard 2.0. `RustDevelopmentPack` is a separate packaging project
-targeting .NET Framework 4.7.2. Visual Studio 2026 compatibility is not yet validated.
+targeting .NET Framework 4.7.2. Its current manifest and five-extension composition remain
+pre-alignment and do not yet advertise the main product's dual-host matrix. Real-host Visual Studio
+2026 evidence is not yet recorded; no such validation is claimed here.
 
 Build and test tooling binds to a Visual Studio host explicitly rather than by ambient discovery:
 `.github/scripts/VisualStudio.psm1` resolves MSBuild and `vstest.console.exe` through `vswhere`,
@@ -339,11 +343,17 @@ independent upgrade.
 `JoinableTaskFactory`, registers commands, and resolves MEF services such as logging, telemetry,
 prerequisite checking, and installation.
 
-After package load, the current startup path runs release-note handling, incompatible-extension
-detection, prerequisite checks, rust-analyzer installation/update, and update notification. The
-prerequisite implementation checks the Visual Studio version and the availability of `rustup.exe`
-and `cargo.exe`; some failure paths offer browser/restart behavior. The incompatible-extension path
-can disable old Rust extensions and restart Visual Studio.
+Package activation first runs one process-scoped, single-flight prerequisite evaluation. It checks
+the supported Visual Studio version, `rustup.exe` through the inherited process `PATH`, a configured
+default toolchain, and operational `cargo.exe`. Nightly is not a startup prerequisite.
+
+Success continues release-note handling, incompatible-extension detection, rust-analyzer
+installation/update, and update notification. Failure caches all typed failures and enters a
+non-dismissible Yes/No flow: Help explicitly opens `PREREQUISITES.md` and re-shows the prompt;
+Disable suspends extension Rust work for that process and shows one warning InfoBar. The
+prerequisite flow never restarts Visual Studio or opens a browser automatically. The separate
+incompatible-extension path can disable old Rust extensions and restart Visual Studio after a
+prerequisite-ready startup.
 
 Every new automatic/background Rust execution path must have a finite `AutomaticRustPath` member and
 pass `PrerequisiteAvailabilityPolicy` before side effects. Every prerequisite state except `Ready`
