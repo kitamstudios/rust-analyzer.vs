@@ -108,7 +108,7 @@ Execute one task at a time in order.
 | T13 | S3 | Delete RustDevelopmentPack and reconcile all live repository references. | Done | `60b8bb6` |
 | T13b | S3 | Pack README expansion superseded by T13 deletion. | Superseded | `f610f03` |
 | T14 | S3 | Pack publication parity superseded; remote listing retirement is human-owned. | Superseded | `f610f03` |
-| T15 | S4 | Inventory every C# argument-validation site, replace manual guards with `EnsureThat`, and prove exception-contract and build/test parity. | In Progress | - |
+| T15 | S4 | Inventory every C# argument-validation site, replace manual guards with `EnsureThat`, and prove exception-contract and build/test parity. | Done | `ccc60be` |
 
 ## Risks (Rx)
 
@@ -417,6 +417,15 @@ Execute one task at a time in order.
 - The clean build, 412 assembly tests, and 18-result acceptance contract passed. Final architecture
   review approved T13.
 - T12, T13b, and T14 are superseded. The human owns retirement of any remote pack listing.
+
+### T15 outcome
+
+- All 36 manual production argument guards use `EnsureThat` with their existing exceptions; the
+  remaining manual argument throw is the excluded event-routing invariant.
+- Existing guard-only tests were not expanded. The isolated probe integration helper now loads the
+  production `Ensure.That` dependency it executes.
+- The clean build, 412 assembly tests, and 18-result acceptance contract passed. Final architecture
+  review approved T15.
 
 ### Runtime flow
 
