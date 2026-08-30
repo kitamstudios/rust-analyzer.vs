@@ -1,6 +1,9 @@
+using System;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using EnsureThat;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Cargo;
@@ -88,7 +91,7 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
             return;
         }
 
-        RustAnalyzerPackage.JTF
+        var update = RustAnalyzerPackage.JTF
             .RunAsync(
                 async () =>
                 {
@@ -97,7 +100,32 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
                     // NOTE: Trying getting the value and ensure it is not null to frontload potential downstream failures.
                     Ensure.That(SettingsInfo.Store[e.PropertyName].Getter(val)).IsNotNull();
                     await fsob.SS.SetAsync(e.PropertyName, fsob.FullPath, val);
-                })
-            .FireAndForget();
+                });
+        ObserveUpdate(update.Task);
+    }
+
+    private void ObserveUpdate(Task operation)
+    {
+        operation.ContinueWith(
+                task => ReportUnexpectedFault(
+                    "NodeBrowseObjectProvider.BrowseObject_PropertyChanged",
+                    task.Exception.GetBaseException()),
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted,
+                TaskScheduler.Default)
+            .Forget();
+    }
+
+    private void ReportUnexpectedFault(string operation, Exception exception)
+    {
+        if (exception is OperationCanceledException)
+        {
+            return;
+        }
+
+        _tl.L.WriteError(
+            "Operation '{0}' failed unexpectedly. Ex: {1}",
+            operation,
+            exception);
     }
 }

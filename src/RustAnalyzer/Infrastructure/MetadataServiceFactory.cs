@@ -87,7 +87,7 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
             _tl = tl;
             _updateHandler = new MetadataWorkspaceUpdateHandler(availabilityPolicy);
             _initialization = joinableTaskFactory.RunAsync(InitializeAsync);
-            _initialization.FireAndForget();
+            ObserveInitialization();
         }
 
         public event EventHandler<Workspace.Package> PackageAdded;
@@ -298,6 +298,39 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
             var metadataService = _metadataService;
             _metadataService = null;
             return metadataService;
+        }
+
+        private void ObserveInitialization()
+        {
+            var observation = _initialization.Task.ContinueWith(
+                task => ReportUnexpectedFault(
+                    "MetadataServiceFactory.PrerequisiteGatedMetadataService.InitializeAsync",
+                    task.Exception.GetBaseException()),
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted,
+                TaskScheduler.Default);
+            KS.RustAnalyzer.TestAdapter.Common.TaskExtensions.Forget(observation);
+        }
+
+        private void ReportUnexpectedFault(string operation, Exception exception)
+        {
+            if (exception is OperationCanceledException)
+            {
+                return;
+            }
+
+            lock (_sync)
+            {
+                if (_stopping)
+                {
+                    return;
+                }
+            }
+
+            _tl.L.WriteError(
+                "Operation '{0}' failed unexpectedly. Ex: {1}",
+                operation,
+                exception);
         }
 
         private async Task OnBatchFileSystemChangedAsync(

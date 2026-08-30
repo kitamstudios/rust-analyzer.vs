@@ -113,8 +113,16 @@ public abstract class BaseRustAnalyzerCommand<T> : BaseCommand<T>
         {
             ExecuteCore(sender, eventArgs);
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception e)
         {
+            Logger?.WriteError(
+                "Operation '{0}' failed unexpectedly. Ex: {1}",
+                "BaseRustAnalyzerCommand.Execute",
+                e);
             Telemetry.TrackException(e, new[] { ("Command", typeof(T).Name) });
             throw;
         }

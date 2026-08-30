@@ -392,8 +392,8 @@ executables and translates their results back to VSTest.
 - The language server, Cargo, rustup, test binaries, and some test helpers are operating-system child
   processes. Standard streams are redirected for protocol and build/test output.
 - Workspace and test discovery can fan out work across packages, containers, or executables.
-- Metadata and output events use fire-and-forget tasks in several paths. The current
-  `TaskExtensions.Forget` does not fully observe or report failures.
+- Fire-and-forget tasks consume faults. Named owners report unexpected failures through their
+  existing diagnostic route.
 
 No long-running repository service exists. F5 on the `RustAnalyzer` project launches a Visual Studio
 experimental instance with the VSIX deployed.

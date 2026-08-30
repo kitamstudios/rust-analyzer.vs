@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using KS.RustAnalyzer.Infrastructure;
+using KS.RustAnalyzer.TestAdapter.Common;
 using Xunit;
 using Constants = KS.RustAnalyzer.TestAdapter.Constants;
 
@@ -151,6 +152,140 @@ public sealed class PrerequisiteEvaluatorTests
         failure.Message.Should().Contain("exit code 101").And.Contain("default toolchain").And.Contain("Repair").And.Contain("restart Visual Studio");
     }
 
+    [Theory]
+    [InlineData(
+        "rustup-version",
+        PrerequisiteFailureKind.RustupNotOperational,
+        "Prerequisite.RustupVersion",
+        42)]
+    [InlineData(
+        "rustup-default",
+        PrerequisiteFailureKind.DefaultToolchainNotConfigured,
+        "Prerequisite.RustupDefault",
+        0)]
+    [InlineData(
+        "cargo-version",
+        PrerequisiteFailureKind.CargoNotOperational,
+        "Prerequisite.CargoVersion",
+        42)]
+    public async Task FailedProbeWritesOneLocalDiagnosticWithoutModalOrTelemetryOutputAsync(
+        string operation,
+        PrerequisiteFailureKind expectedFailure,
+        string expectedOperation,
+        int expectedExitCode)
+    {
+        const string standardOutput = "captured stdout secret";
+        const string standardError = "captured stderr secret";
+        var probe = new FakePrerequisiteProbe();
+        SetFailedProbe(probe, operation, standardOutput, standardError);
+        var logger = new RecordingLogger();
+        var telemetry = new RecordingTelemetry();
+        var result = await new PreReqsCheckService(probe, telemetry, logger)
+            .EvaluateAsync(default);
+
+        result.Failures.Should().ContainSingle();
+        result.Failures[0].Kind.Should().Be(expectedFailure);
+        logger.Errors.Should().ContainSingle();
+        var diagnostic = string.Format(
+            logger.Errors[0].Format,
+            logger.Errors[0].Arguments);
+        diagnostic.Should().Contain(expectedOperation);
+        diagnostic.Should().Contain($"Exit code: {expectedExitCode}");
+        diagnostic.Should().Contain($"stdout:\n{standardOutput}");
+        diagnostic.Should().Contain($"stderr:\n{standardError}");
+
+        var prompt = new PrerequisiteFailurePromptModel(result);
+        prompt.Message.Should().NotContain(standardOutput);
+        prompt.Message.Should().NotContain(standardError);
+        telemetry.Events.Should().BeEmpty();
+        telemetry.Exceptions.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ProbeDiagnosticsSanitizeAndBoundCapturedTextAsync()
+    {
+        var standardOutput = new string('H', 4 * 1024) +
+            "\0\u0001\r\nremoved middle\u0007" +
+            new string('T', 4 * 1024);
+        var probe = new FakePrerequisiteProbe
+        {
+            RustupVersionResult = PrerequisiteCommandResult.Completed(
+                1,
+                standardOutput,
+                "first\rsecond\u0002\tthird\vfourth\ffifth"),
+        };
+        var logger = new RecordingLogger();
+
+        await new PreReqsCheckService(
+                probe,
+                new RecordingTelemetry(),
+                logger)
+            .EvaluateAsync(default);
+
+        var diagnostic = string.Format(
+            logger.Errors.Single().Format,
+            logger.Errors.Single().Arguments);
+        diagnostic.Should().Contain(new string('H', 4 * 1024));
+        diagnostic.Should().Contain("\n...[truncated]...\n");
+        diagnostic.Should().Contain(new string('T', 4 * 1024));
+        diagnostic.Should().Contain("first\nsecondthirdfourthfifth");
+        diagnostic.Should().NotContain("\r");
+        diagnostic.Should().NotContain("\0");
+        diagnostic.Should().NotContain("\t");
+        diagnostic.Should().NotContain("\v");
+        diagnostic.Should().NotContain("\f");
+        diagnostic.Should().NotContain("\u0001");
+        diagnostic.Should().NotContain("\u0002");
+        diagnostic.Should().NotContain("\u0007");
+
+        var startProbe = new FakePrerequisiteProbe
+        {
+            RustupVersionResult = PrerequisiteCommandResult.FailedToStart(
+                new string('S', 3 * 1024) + "\0\u0003"),
+        };
+        var startLogger = new RecordingLogger();
+
+        await new PreReqsCheckService(
+                startProbe,
+                new RecordingTelemetry(),
+                startLogger)
+            .EvaluateAsync(default);
+
+        var startDiagnostic = string.Format(
+            startLogger.Errors.Single().Format,
+            startLogger.Errors.Single().Arguments);
+        var startError = startDiagnostic
+            .Split(new[] { "Start error:\n", "\nstdout:" }, StringSplitOptions.None)[1];
+        startError.Should().HaveLength(2 * 1024);
+        startError.Should().EndWith("...[truncated]...");
+        startError.Should().NotContain("\0");
+        startError.Should().NotContain("\u0003");
+    }
+
+    [Fact]
+    public async Task SuccessfulAndCanceledEvaluationsWriteNoProbeDiagnosticsAsync()
+    {
+        var logger = new RecordingLogger();
+        var telemetry = new RecordingTelemetry();
+        var service = new PreReqsCheckService(
+            new FakePrerequisiteProbe(),
+            telemetry,
+            logger);
+
+        var result = await service.EvaluateAsync(default);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        Func<Task> evaluateCanceled = async () =>
+            await service.EvaluateAsync(cancellation.Token);
+
+        result.Should().BeSameAs(PrerequisiteResult.Success);
+        await evaluateCanceled.Should().ThrowAsync<OperationCanceledException>();
+        logger.Errors.Should().BeEmpty();
+        logger.Lines.Should().BeEmpty();
+        telemetry.Events.Should().BeEmpty();
+        telemetry.Exceptions.Should().BeEmpty();
+    }
+
     [Fact]
     public async Task ReturnsSuccessAndUsesConfiguredDefaultToolchainExplicitlyAsync()
     {
@@ -288,6 +423,32 @@ public sealed class PrerequisiteEvaluatorTests
         return result.Failures[0];
     }
 
+    private static void SetFailedProbe(
+        FakePrerequisiteProbe probe,
+        string operation,
+        string standardOutput,
+        string standardError)
+    {
+        var failure = PrerequisiteCommandResult.Completed(
+            operation == "rustup-default" ? 0 : 42,
+            standardOutput,
+            standardError);
+        switch (operation)
+        {
+            case "rustup-version":
+                probe.RustupVersionResult = failure;
+                break;
+            case "rustup-default":
+                probe.RustupDefaultResult = failure;
+                break;
+            case "cargo-version":
+                probe.CargoVersionResult = failure;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(operation));
+        }
+    }
+
     private sealed class FakePrerequisiteProbe : IPrerequisiteProbe
     {
         private const string DefaultRustupPath = @"C:\tools\rustup.exe";
@@ -373,6 +534,50 @@ public sealed class PrerequisiteEvaluatorTests
             }
 
             throw new InvalidOperationException($"Unexpected command: {Commands.Last()}");
+        }
+    }
+
+    private sealed class RecordingLogger : ILogger
+    {
+        public List<(string Format, object[] Arguments)> Errors { get; } = new();
+
+        public List<(string Format, object[] Arguments)> Lines { get; } = new();
+
+        public void WriteLine(string format, params object[] args)
+        {
+            Lines.Add((format, args));
+        }
+
+        public void WriteError(string format, params object[] args)
+        {
+            Errors.Add((format, args));
+        }
+    }
+
+    private sealed class RecordingTelemetry : ITelemetryService
+    {
+        public List<string> Events { get; } = new();
+
+        public List<Exception> Exceptions { get; } = new();
+
+        public void TrackEvent(
+            string eventName,
+            params (string Key, string Value)[] properties)
+        {
+            Events.Add(eventName);
+        }
+
+        public void TrackException(Exception e, string siteName = null)
+        {
+            Exceptions.Add(e);
+        }
+
+        public void TrackException(
+            Exception e,
+            (string Key, string Value)[] properties,
+            string siteName = null)
+        {
+            Exceptions.Add(e);
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.Composition;
+using System.Threading;
 using System.Threading.Tasks;
 using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
@@ -15,7 +16,27 @@ public sealed class BuildOutputSink : IBuildOutputSink
 {
     private static readonly Guid BuildOutputPaneGuid = VSConstants.OutputWindowPaneGuid.BuildOutputPane_guid;
     private static readonly StringBuildMessagePreprocessor SbmPreprocessor = new();
+    private readonly Func<Guid, string, IVsOutputWindowPane> _getOrCreatePane;
+    private readonly Action<Exception> _observeFault;
+    private readonly Func<Func<Task>, Task> _runOnMainThreadAsync;
     private IVsOutputWindowPane _buildOutputPane;
+
+    public BuildOutputSink()
+    {
+        _getOrCreatePane = InitializeOutputPane;
+        _observeFault = exception => T?.TrackException(exception);
+        _runOnMainThreadAsync = RunOnMainThreadAsync;
+    }
+
+    private BuildOutputSink(
+        Func<Func<Task>, Task> runOnMainThreadAsync,
+        Func<Guid, string, IVsOutputWindowPane> getOrCreatePane,
+        Action<Exception> observeFault)
+    {
+        _runOnMainThreadAsync = runOnMainThreadAsync;
+        _getOrCreatePane = getOrCreatePane;
+        _observeFault = observeFault;
+    }
 
     [Import]
     private ITelemetryService T { get; set; }
@@ -23,99 +44,158 @@ public sealed class BuildOutputSink : IBuildOutputSink
     [Import]
     private SVsServiceProvider ServiceProvider { get; set; }
 
+#pragma warning disable VSTHRD010
     public void WriteLine(PathEx rootPath, Func<BuildMessage, Task> buildOutputTaskReporter, BuildMessage message)
     {
         try
         {
-            RustAnalyzerPackage.JTF.RunAsync(async () =>
-            {
-                await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
-                Initialize();
-                _buildOutputPane.Activate();
-
-                EnsureArg.IsTrue(
-                    message is StringBuildMessage || message is DetailedBuildMessage,
-                    nameof(message),
-                    options => options.WithException(new ArgumentOutOfRangeException(nameof(message))));
-
-                if (message is StringBuildMessage sm)
-                {
-                    if (string.IsNullOrEmpty(sm.Message))
+            Observe(
+                _runOnMainThreadAsync(
+                    async () =>
                     {
-                        return;
-                    }
+                        Initialize();
+                        ThrowIfFailed(_buildOutputPane.Activate(), "BuildOutputSink.Activate");
 
-                    foreach (var msg in SbmPreprocessor.Preprocess(rootPath, sm.Message))
-                    {
-                        var hr = _buildOutputPane.OutputStringThreadSafe(msg + Environment.NewLine);
-                        Ensure.That(ErrorHandler.Succeeded(hr));
-                    }
-                }
-                else if (message is DetailedBuildMessage bm)
-                {
-                    await buildOutputTaskReporter(bm);
-                }
-            }).FireAndForget();
+                        EnsureArg.IsTrue(
+                            message is StringBuildMessage || message is DetailedBuildMessage,
+                            nameof(message),
+                            options => options.WithException(new ArgumentOutOfRangeException(nameof(message))));
+
+                        if (message is StringBuildMessage sm)
+                        {
+                            if (string.IsNullOrEmpty(sm.Message))
+                            {
+                                return;
+                            }
+
+                            foreach (var msg in SbmPreprocessor.Preprocess(rootPath, sm.Message))
+                            {
+                                var hresult = _buildOutputPane.OutputStringThreadSafe(
+                                    msg + Environment.NewLine);
+                                ThrowIfFailed(hresult, "BuildOutputSink.Write");
+                            }
+                        }
+                        else if (message is DetailedBuildMessage bm)
+                        {
+                            await buildOutputTaskReporter(bm);
+                        }
+                    }));
         }
         catch (Exception e)
         {
-            T.TrackException(e);
+            ObserveFault(e);
         }
     }
+#pragma warning restore VSTHRD010
 
+#pragma warning disable VSTHRD010
     public void Clear()
     {
         try
         {
-            RustAnalyzerPackage.JTF.RunAsync(async () =>
-            {
-                await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
-                Initialize();
-                _buildOutputPane.Clear();
-            }).FireAndForget();
+            Observe(
+                _runOnMainThreadAsync(
+                    () =>
+                    {
+                        Initialize();
+                        ThrowIfFailed(_buildOutputPane.Clear(), "BuildOutputSink.Clear");
+                        return Task.CompletedTask;
+                    }));
         }
         catch (Exception e)
         {
-            T.TrackException(e);
+            ObserveFault(e);
+        }
+    }
+#pragma warning restore VSTHRD010
+
+    private static void ThrowIfFailed(int hresult, string operation)
+    {
+        if (ErrorHandler.Failed(hresult))
+        {
+            throw new InvalidOperationException(
+                $"{operation} failed with HRESULT 0x{hresult:X8}.");
         }
     }
 
     private void Initialize()
     {
-        ThreadHelper.ThrowIfNotOnUIThread();
-
         if (IsInitialized())
         {
             return;
         }
 
-        _buildOutputPane = InitializeOutputPane(Vsix.Name, BuildOutputPaneGuid);
+        _buildOutputPane = _getOrCreatePane(BuildOutputPaneGuid, Vsix.Name);
+        if (_buildOutputPane == null)
+        {
+            throw new InvalidOperationException(
+                "BuildOutputSink.GetPane returned no pane.");
+        }
     }
 
-    private IVsOutputWindowPane InitializeOutputPane(string title, Guid paneId)
+    private IVsOutputWindowPane InitializeOutputPane(Guid paneId, string title)
     {
         ThreadHelper.ThrowIfNotOnUIThread();
 
         var outputWindow = ServiceProvider.GetService<SVsOutputWindow, IVsOutputWindow>();
-
-        // Try to get the workspace pane if it has already been registered
-        var hr = outputWindow.GetPane(paneId, out var lazyOutputPane);
-
-        // If the workspace pane has not been registered before, create it
-        if (lazyOutputPane == null || ErrorHandler.Failed(hr))
+        if (outputWindow == null)
         {
-            if (ErrorHandler.Failed(outputWindow.CreatePane(paneId, title, fInitVisible: 1, fClearWithSolution: 1)) ||
-                ErrorHandler.Failed(outputWindow.GetPane(paneId, out lazyOutputPane)))
-            {
-                return null;
-            }
+            throw new InvalidOperationException(
+                "BuildOutputSink.GetOutputWindow returned no service.");
         }
 
-        return lazyOutputPane;
+        var hresult = outputWindow.GetPane(paneId, out var pane);
+        if (ErrorHandler.Succeeded(hresult) && pane != null)
+        {
+            return pane;
+        }
+
+        hresult = outputWindow.CreatePane(
+            paneId,
+            title,
+            fInitVisible: 1,
+            fClearWithSolution: 1);
+        ThrowIfFailed(hresult, "BuildOutputSink.CreatePane");
+        hresult = outputWindow.GetPane(paneId, out pane);
+        ThrowIfFailed(hresult, "BuildOutputSink.GetPane");
+        return pane ?? throw new InvalidOperationException(
+            "BuildOutputSink.GetPane returned no pane.");
+    }
+
+    private void ObserveFault(Exception exception)
+    {
+        if (exception is OperationCanceledException)
+        {
+            return;
+        }
+
+        try
+        {
+            _observeFault(exception);
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    private void Observe(Task operation)
+    {
+        operation.ContinueWith(
+                task => ObserveFault(task.Exception.GetBaseException()),
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted,
+                TaskScheduler.Default)
+            .Forget();
     }
 
     private bool IsInitialized()
     {
         return _buildOutputPane != null;
+    }
+
+    private static async Task RunOnMainThreadAsync(Func<Task> action)
+    {
+        await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
+        await action();
     }
 }

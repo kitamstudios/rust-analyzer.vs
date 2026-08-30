@@ -103,8 +103,10 @@ public sealed class TelemetryService : ITelemetryService
 
         private static bool IsExperimentalInstance()
         {
-            var env = System.Diagnostics.Process.GetCurrentProcess().StartInfo.Environment;
-            return env.TryGetValue("VSROOTSUFFIX", out string rootSuffix) && rootSuffix.Equals("exp", StringComparison.OrdinalIgnoreCase);
+            return string.Equals(
+                Environment.GetEnvironmentVariable("VSROOTSUFFIX"),
+                "exp",
+                StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsTelemetryDisabled()

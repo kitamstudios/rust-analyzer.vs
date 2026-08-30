@@ -129,8 +129,16 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                 knfe.Message,
                 "Debugger will not be launched. Please report the repro steps + this message as this issue is hard to track down. 🙏");
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception e)
         {
+            L.WriteError(
+                "Operation '{0}' failed unexpectedly. Ex: {1}",
+                "DebugLaunchTargetProvider.LaunchDebugTargetAsync",
+                e);
             T.TrackException(e);
             throw;
         }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -10,7 +11,7 @@ public static class TaskExtensions
 
     public static void Forget(this Task @this)
     {
-        @this.ConfigureAwait(false);
+        _ = ObserveFaultAsync(@this);
     }
 
     public static async Task<IEnumerable<T>> ToTaskEnumerableAsync<T>(this IEnumerable<Task<T>> @this)
@@ -22,5 +23,16 @@ public static class TaskExtensions
         }
 
         return ret;
+    }
+
+    private static async Task ObserveFaultAsync(Task task)
+    {
+        try
+        {
+            await task.ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+        }
     }
 }
