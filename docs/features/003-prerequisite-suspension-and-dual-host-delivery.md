@@ -106,7 +106,7 @@ Execute one task at a time in order.
 | T7b | S2 | Isolate parallel outputs; make exact owner-path deliverables and curated sets canonical; update consumers without staging copies. | Done | `c0b60df` |
 | T8 | S2 | Audit and apply the complete newest proven dual-compatible production/build/test/package dependency closure and acquired-artifact provenance policy. | Done | 8b343ea |
 | T9 | S2 | Align the main VSIX manifest and metadata and establish the shared `[17.12,19.0)` dual-host validation contract. | Done | `e4db364` |
-| T10 | S2 | Rewrite prerequisite/readme material, reconcile live support claims, update `docs/design.md`, and update all four agent roles. | Pending | - |
+| T10 | S2 | Rewrite prerequisite/readme material, reconcile live support claims, update `docs/design.md`, and update all four agent roles. | Done | `f184a61` |
 | T11 | S2 | Add canonical-artifact VS17/VS18 validation and the complete blocking behavior/platform evidence matrix. | Pending | - |
 | T12 | S3 | Extend the approved stamper to produce independent main/pack versions with the same deterministic build suffix. | Pending | - |
 | T13 | S3 | Reduce RustDevelopmentPack to `rust-analyzer.vs` and TOML Editor, align its manifest, build one canonical artifact, and verify it on both hosts. | Pending | - |
@@ -383,6 +383,19 @@ Execute one task at a time in order.
 - Only JARVIS may spawn agents. Web-backed agents and web tool calls run serially.
 - T10 owns transitional host-matrix prose, T11 real-host evidence, and T13 pack alignment. Final
   architecture review approved T9.
+
+### T10 outcome
+
+- Official, copyable guidance covers each VS2022 and VS2026 edition, complete-host verification,
+  rustup and stable setup/update, Cargo and PATH checks, and optional nightly use.
+- Every prerequisite or PATH change requires a fresh Visual Studio process because failures are
+  process-cached.
+- Live main-product claims now state Windows amd64, VS2022 17.12+ within 17.x, and VS2026 18.x. The
+  Development Pack truthfully remains VS2022 17.13+ pending T13.
+- All four agent roles cover both hosts and products without changing lanes. T11-T14 ownership
+  remains unchanged.
+- The full gate passed 412 assembly tests and all 18 acceptance expectations; all 13 PowerShell
+  blocks parsed without execution. Final architecture review approved T10.
 
 ### Runtime flow
 
