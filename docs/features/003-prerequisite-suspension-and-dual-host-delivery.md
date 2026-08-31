@@ -28,22 +28,19 @@
    retry or automatic re-enable.
 9. Support exactly Windows amd64 with Visual Studio 2022 17.12 or later and every Visual Studio
    2026/18.x release. Exact 17.12 passes, older 17.x fails, and unsupported majors fail.
-10. Both `rust-analyzer.vs` and `RustDevelopmentPack` advertise the same host matrix. Reduce the pack
-    to `rust-analyzer.vs` and TOML Editor; remove VSColorOutput64, Rainbow Braces, and File Icons, and
-    validate the exact TOML Editor payload before publication.
-11. CI builds canonical artifacts once and provides blocking evidence through deterministic 17.12
-    boundary/manifest tests, actual install/startup validation on hosted VS 17.14 and VS 18.x, and
-    explicitly selected host-major TestAdapter acceptance.
-12. RustDevelopmentPack becomes a first-class CI/CD product: independent base version, the same
-    deterministic build suffix as rust-analyzer.vs, build/validation/artifact/dual-host verification,
-    and Open VSIX/Marketplace/GitHub Release parity under the main package's existing gates.
+10. Retire `RustDevelopmentPack` from the repository. Preserve direct `rust-analyzer.vs`
+    installation; remote listing retirement remains human-owned.
+11. CI retains deterministic 17.12 boundary, manifest, package, and acceptance checks. Before merge,
+    the human manually validates the canonical main VSIX in Visual Studio 2022 and 2026.
+12. Add no pack versioning, artifact, or publication path. Preserve existing main-VSIX and
+    TestAdapter delivery.
 13. Rewrite prerequisite and installation documentation using official sources and copyable commands.
     Reconcile every live platform claim and update all four agent roles.
 14. Audit the complete direct and transitive production, build, test, and packaging dependency
     closure. This includes VSSDK, Community.VisualStudio, threading, test platform, composition,
     acquired host assemblies, xUnit, FluentAssertions, EnsureThat, Moq, ApprovalTests, Application
     Insights, JSON, and their transitive assemblies. Select only versions proven compatible with
-    VS 17.12, VS 18.x, main `net48`, pack `net472`, and TestAdapter `netstandard2.0`.
+    VS 17.12, VS 18.x, main `net48`, and TestAdapter `netstandard2.0`.
 15. Do not modify `docs/features/002-hardening-and-vs2026.md`.
 16. Audit every C# argument-validation site and replace manual guards with `EnsureThat` without
     changing its observable exception contract.
@@ -51,6 +48,10 @@
     Treat only exact named deliverables and curated file sets at owner paths as canonical; update
     every local and CI consumer of the old flat layout without cleaning `_built` or copying outputs
     through staging or promotion directories.
+18. Close bounded diagnostic-integrity gaps: preserve useful local prerequisite failure output,
+    correct Output-pane guidance, observe project-owned asynchronous faults, and add only basic
+    logger/sink wiring tests. Durable diagnostics, telemetry privacy, and nightly changes require
+    separate human direction.
 
 ## Design Options (Ox)
 
@@ -81,14 +82,13 @@ still receive defensive guards at their owning integration boundary.
 | Slice | Outcome | Depends on |
 |---|---|---|
 | S1 | Ship process-safe prerequisite suspension across automatic, background, and user-triggered extension paths. | - |
-| S2 | Ship collision-free project-owned build outputs, a proven dual-host main package, reconciled documentation, and blocking VS17/VS18 evidence. | S1 |
-| S3 | Ship one minimal, independently versioned RustDevelopmentPack artifact for both Visual Studio 2022 and Visual Studio 2026. | S2 |
+| S2 | Ship collision-free project-owned build outputs, a dual-host main-package contract, reconciled documentation, and human-owned VS2022/VS2026 validation. | S1 |
+| S3 | Retire RustDevelopmentPack, then close bounded diagnostic-integrity gaps while preserving rust-analyzer.vs and TestAdapter delivery. | S2 |
 | S4 | Apply the `EnsureThat` argument-validation rule consistently across the C# codebase without behavioral changes. | S3 |
 
-S1 completes the runtime behavior. S2 makes isolated project outputs canonical and proves the main
-package on both hosts. S3 distributes one canonical pack containing only
-`rust-analyzer.vs` and TOML Editor, without host-specific builds. S4 keeps repository-wide validation
-cleanup separate from product delivery.
+S1 completes the runtime behavior. S2 makes isolated project outputs canonical and assigns final
+host validation to the human. S3 removes the second extension, then owns late diagnostic-integrity
+task T16. S4 remains the completed repository-wide validation cleanup.
 
 ## Tasks (Tx)
 
@@ -105,14 +105,15 @@ Execute one task at a time in order.
 | T7 | S1 | Hide or disable every extension-owned user surface while unavailable and make execution callbacks defensive no-ops. | Done | `c0b60df` |
 | T7b | S2 | Isolate parallel outputs; make exact owner-path deliverables and curated sets canonical; update consumers without staging copies. | Done | `c0b60df` |
 | T8 | S2 | Audit and apply the complete newest proven dual-compatible production/build/test/package dependency closure and acquired-artifact provenance policy. | Done | 8b343ea |
-| T9 | S2 | Align the main VSIX manifest and metadata and establish the shared `[17.12,19.0)` dual-host validation contract. | Pending | - |
-| T10 | S2 | Rewrite prerequisite/readme material, reconcile live support claims, update `docs/design.md`, and update all four agent roles. | Pending | - |
-| T11 | S2 | Add canonical-artifact VS17/VS18 validation and the complete blocking behavior/platform evidence matrix. | Pending | - |
-| T12 | S3 | Extend the approved stamper to produce independent main/pack versions with the same deterministic build suffix. | Pending | - |
-| T13 | S3 | Reduce RustDevelopmentPack to `rust-analyzer.vs` and TOML Editor, align its manifest, build one canonical artifact, and verify it on both hosts. | Pending | - |
-| T13b | S3 | Add a RustDevelopmentPack README covering its two constituents, dual-host support, installation, versioning, source, and licensing. | Pending | - |
-| T14 | S3 | Add pack publication to Open VSIX, Marketplace, and GitHub Releases under the main package's existing fail-closed gates. | Pending | - |
-| T15 | S4 | Inventory every C# argument-validation site, replace manual guards with `EnsureThat`, and prove exception-contract and build/test parity. | Pending | - |
+| T9 | S2 | Align the main VSIX manifest and metadata and establish the shared `[17.12,19.0)` dual-host validation contract. | Done | `e4db364` |
+| T10 | S2 | Rewrite prerequisite/readme material, reconcile live support claims, update `docs/design.md`, and update all four agent roles. | Done | `f184a61` |
+| T11 | S2 | Replace unstable automated host validation with final human-owned VS2022/VS2026 testing. | Done | `e3c9d0e` |
+| T12 | S3 | Independent pack versioning superseded by retirement. | Superseded | `f610f03` |
+| T13 | S3 | Delete RustDevelopmentPack and reconcile all live repository references. | Done | `60b8bb6` |
+| T13b | S3 | Pack README expansion superseded by T13 deletion. | Superseded | `f610f03` |
+| T14 | S3 | Pack publication parity superseded; remote listing retirement is human-owned. | Superseded | `f610f03` |
+| T15 | S4 | Inventory every C# argument-validation site, replace manual guards with `EnsureThat`, and prove exception-contract and build/test parity. | Done | `ccc60be` |
+| T16 | S3 | Close prerequisite-diagnostic, Output-routing, logging-wiring, and project-owned asynchronous fault-observation gaps with focused tests. | Done | `42ab1ce` |
 
 ## Risks (Rx)
 
@@ -126,18 +127,16 @@ Execute one task at a time in order.
   blocker.
 - **R4:** Newer SDK/runtime packages could introduce post-17.12 APIs, binding failures, or framework
   changes. Reject versions without package, analyzer, build, payload, and host evidence.
-- **R5:** TOML Editor can change independently. Revalidate its then-current payload manifest before
-  publication and fail closed.
-- **R6:** Hosted-image labels or installed versions can drift. Assert the resolved host major and
-  minimum version with `vswhere`; never accept an ambient fallback.
-- **R7:** External registries are not transactional. Prevalidate both products before the first
-  external write, publish the dependency before the pack, and fail visibly on partial publication.
+- **R5:** Remote pack listings can outlive repository deletion. The human retires them; agents do
+  not publish, unpublish, or deploy.
+- **R6:** Installed host versions can drift. Record the manually tested versions with `vswhere`;
+  never infer them from labels.
+- **R7 (superseded):** T13 removes the former two-product publication transaction.
 - **R8:** VS2026's compatibility model may ignore a manifest upper bound. Keep the runtime major
   predicate authoritative and test unsupported-major rejection.
-- **R9:** Extension-pack resolution is gallery-based and not version-pinned. Publish
-  rust-analyzer.vs before RustDevelopmentPack and record constituent versions in publication evidence.
+- **R9 (superseded):** T13 removes extension-pack resolution and constituent ordering.
 - **R10:** `EnsureThat` substitutions can alter exception type, parameter name, validation order, or
-  message. Preserve each public contract and add focused regression coverage where behavior differs.
+  message. Preserve each contract explicitly; test application-owned behavior, not library guards.
 - **R11:** Parallel projects writing common dependencies into one flat output directory can race or
   lock files. Isolate project outputs so every canonical path has exactly one project writer.
 
@@ -145,16 +144,14 @@ Execute one task at a time in order.
 
 - **A1:** Microsoft's documented VS2026 model continues to support the stable VS 17.x extension API
   and evaluates the installation target by its lower bound.
-- **A2:** `windows-2022` supplies current VS 17.14 and `windows-2025-vs2026` supplies VS 18.x; CI
-  verifies rather than assumes those versions.
-- **A3:** TOML Editor retains one compatible Marketplace payload for both supported hosts at
-  implementation time.
+- **A2:** Final manual validation uses installed supported VS2022 and VS2026 instances and records
+  their exact versions; deterministic tests own the 17.12 boundary.
+- **A3 (superseded):** T13 removes the TOML Editor pack dependency.
 - **A4:** Logging, diagnostics, prerequisite UX, and explicit prerequisite navigation may operate
   while suspended.
-- **A5:** Existing release/tag semantics remain based on the main product's version; the independently
-  versioned pack attaches to that release.
-- **A6:** Existing branch, ref, release, and manual-publication predicates are safe and extended, not
-  redefined.
+- **A5:** Existing release/tag semantics remain based on the main product; no pack artifact attaches.
+- **A6:** Existing main-product branch, ref, release, and manual-publication predicates remain
+  unchanged.
 - **A7:** This feature changes no public data schema or reusable TestAdapter contract.
 - **A8:** The approved test boundary is extension-owned Rust discovery/execution; generic Visual
   Studio test commands remain untouched.
@@ -179,18 +176,56 @@ Execute one task at a time in order.
 
 ## Notes & Decisions
 
-**Pull request:** [#73](https://github.com/kitamstudios/rust-analyzer.vs/pull/73)
+**Pull requests:** [#73](https://github.com/kitamstudios/rust-analyzer.vs/pull/73),
+[#74](https://github.com/kitamstudios/rust-analyzer.vs/pull/74)
 
-### Development Pack composition ruling
+### Development Pack retirement ruling
 
-- The pack contains only `rust-analyzer.vs` and
-  [TOML Editor](https://marketplace.visualstudio.com/items?itemName=MadsKristensen.TomlEditor).
-- Rainbow Braces is excluded because its current provider does not target Rust and conflicts with
-  built-in brace colorization. File Icons is excluded because it duplicates this extension's Rust
-  icon registrations. VSColorOutput64 remains excluded because publisher-backed VS2026 support is
-  unproven.
-- General-purpose and terminal extensions remain optional user choices. T13 revalidates the exact
-  TOML Editor payload and the one canonical pack artifact on both supported hosts.
+- The project and all six tracked files under `src/RustDevelopmentPack` are removed.
+- The solution, build, test, documentation, dependency ledger, and role duties no longer treat it as
+  maintained.
+- Main-VSIX and TestAdapter identity, versioning, packaging, artifacts, and publication are
+  unchanged.
+- Ignored/generated outputs and unrelated `.vsext`, FileIcons, and TOML surfaces remain untouched.
+- Remote Marketplace/Open VSIX retirement is a final human action.
+
+### T15 `EnsureThat` ruling
+
+- Convert the 36 manual argument guards in eight production files. Exclude generated, test,
+  lifecycle, state, domain-result, framework, and event-routing checks.
+- Use existing `EnsureArg` APIs with `WithException` carrying the exact current exception. Preserve
+  type, parameter name, message, validation order, async timing, side effects, and enumeration count.
+- Add no package, helper, cast, validation, or production seam.
+- Keep `BuildOutputSink` validation inside its JTF delegate, validate `AttributeExtensions`' derived
+  field name once, and materialize `PrerequisiteResult.Failed` exactly once before its checks.
+- Add no tests that only verify `EnsureThat` guards. Run the existing full gate.
+
+### T16 diagnostic-integrity ruling
+
+- Failed rustup/Cargo prerequisite probes log one local diagnostic with operation, status/exit code,
+  and nonempty stdout/stderr. Keep 4 KiB head and tail per stream; normalize line endings, remove
+  control characters, and mark truncation.
+- Keep probe output out of the modal and telemetry. Log no successful output, resolved path,
+  environment, or cancellation; change no public prerequisite/TestAdapter contract.
+- Toolchain installation starts with:
+  `Starting installation of toolchain '{tcName}'. See Output > Build for detailed status. Once done, you'll be notified here.`
+- Observe unexpected project-owned faults in Output-window/build sinks, metadata/test-container
+  initialization and events, toolchain commands, property changes, base commands, and debug
+  preparation. Expected cancellation, disposal, suspension, and routine absence remain silent.
+- Add only basic owned-routing/stability tests for `OutputWindowLogger`, `BuildOutputSink`,
+  `TestAdapterLogger`, and current telemetry filtering. Add no framework, network, library, durable
+  logging, telemetry-privacy, or real-host tests.
+- Add no logging framework, persistence, public seam/schema, dependency, or raw telemetry.
+
+### Unselected diagnostic analyses
+
+- Durable logging/export remains a human design decision; T16 adds no file log, retention, queue,
+  retry, drain, flush, export, or support bundle.
+- Telemetry privacy remains a human design decision; T16 changes no identity, payload, opt-out, or
+  analytics schema.
+- Rust 1.98 stable still lacks the libtest JSON, report-time, and exclude-should-panic contracts.
+  Nightly remains optional generally but required for Test Explorer and acceptance. T16 changes no
+  nightly code, tooling, CI, or documentation.
 
 ### T7b build-output design ruling
 
@@ -219,7 +254,7 @@ Execute one task at a time in order.
   join by supplying substitute evaluators.
 - T7 consumes the state directly and adds no readiness facade unless a Visual Studio boundary
   requires it.
-- T11 still proves process reset in real Visual Studio; T1 unit coverage is not a substitute.
+- Final manual validation owns real-process reset evidence; T1 unit coverage is not a substitute.
 - The Release build added no warning code or MSB3277 conflict signature. The unchanged 18-signature
   baseline remains visible and T8 owns its resolution.
 
@@ -253,8 +288,7 @@ Execute one task at a time in order.
 - T5 performs no startup or Rust work after the dialog unless state is `Ready`. Shutdown-driven
   closure terminates activation, converts unexpected non-cancellation probe faults to typed failures,
   and removes the complete legacy check/restart path when the new flow becomes authoritative.
-- T11 still validates shell ownership, theming, modal behavior, and shutdown closure in real VS17 and
-  VS18 processes.
+- Final manual validation owns shell, modal, InfoBar, and shutdown behavior in VS2022 and VS2026.
 
 ### T4 outcome
 
@@ -267,8 +301,8 @@ Execute one task at a time in order.
   `Suspended`, and stops startup for both `Suspended` and exceptional/shutdown `Failed`.
 - T5 catches and logs InfoBar failures without undoing suspension, retrying UI, showing another
   modal, or withholding control from Visual Studio.
-- T6 folds InfoBar failure diagnostics into the same non-spamming Output policy. T11 validates real
-  VS17/VS18 prompt close behavior, InfoBar placement/action routing, and close cleanup.
+- T6 folds InfoBar failure diagnostics into the same non-spamming Output policy. Final manual
+  validation owns prompt, InfoBar, and close behavior in VS2022 and VS2026.
 
 ### T5 outcome
 
@@ -330,22 +364,23 @@ Execute one task at a time in order.
   `_built\projects\<project>` output namespace through conditional `Directory.Build.props`; normal
   IDE output paths remain unchanged.
 - `Invoke-Build.ps1` performs no cleanup, staging, promotion, archive creation, or second build.
-  Tests, CI, package, and publication paths consume the two named VSIXes, three exact test
-  assemblies, sole xUnit runner, and six TestAdapter files named by `testadapter-package.txt` at
-  their owner paths, with no flat-layout or staging fallback.
+  Tests, CI, package, and publication paths consume the named main VSIX, three exact test assemblies,
+  sole xUnit runner, and six TestAdapter files named by `testadapter-package.txt` at their owner
+  paths, with no flat-layout or staging fallback.
 - Directory enumeration is not a consumer contract. Unreferenced stale siblings are noncanonical
   and cannot satisfy a gate; project output directories need not be pristine.
 - Cargo fixtures are copied only by the two consuming test projects. TestAdapter packaging performs
   owner-local compression and acceptance expansion from its curated file set.
-- The normal full gate's parallel build emitted no copy-retry warning. Hosted artifact transport
-  remains T11 evidence rather than a T7b claim.
+- The normal full gate's parallel build emitted no copy-retry warning. No automated real-host
+  transport claim is made.
 
 ### T8 outcome
 
 - The main extension now uses the exact Visual Studio 17.12 SDK/runtime closure: SDK 17.12.40392,
   threading and Workspace 17.12.19, Language Server Client 17.12.48, and TestPlatform 17.12.0.
   BuildTools 18.9.820 is retained only as build tooling; no Visual Studio 18 runtime/API package was
-  introduced. Main `net48`, pack `net472`, and TestAdapter `netstandard2.0` are unchanged.
+  introduced. Main `net48` and TestAdapter `netstandard2.0` are unchanged. T13 supersedes the
+  historical pack target.
 - Six undocumented loose assemblies were removed in favor of official NuGet contracts. The sole
   retained TestWindow contract has an official fixed-installer source, exact identity and hash,
   copy-local ownership, and compatibility rationale recorded in `docs/design.md`.
@@ -354,13 +389,14 @@ Execute one task at a time in order.
   suppression, binding redirects, direct compatibility pins, serial builds, or output changes.
 - A parallel Release build on complete Visual Studio 2022 17.14.37531.7 produced zero warnings and
   zero errors. The installed Visual Studio 2026 18.8.12105.206 instance is incomplete and therefore
-  intentionally unresolved; T11 retains real-host validation.
-- The main and pack VSIXes contain 37 and 7 entries respectively, with no Visual Studio or ServiceHub
-  assembly. The TestAdapter archive remains its exact six-file contract. Verification passed all
-  411 assembly tests (292 unit and 119 integration) and all 18 standalone acceptance expectations.
-- Compiled unit validation opens both exact owner-path VSIXes and rejects Visual Studio, ServiceHub,
-  or TestPlatform assemblies. Local and CI TestAdapter packaging use one script that reads only
-  `testadapter-package.txt` and compares the completed ZIP with that exact six-entry set.
+  intentionally unresolved; final manual validation owns VS2026 evidence.
+- At T8, the main and now-retired pack VSIXes contained 37 and 7 entries. T13 supersedes pack
+  evidence. The main VSIX remains free of Visual Studio and ServiceHub assemblies, and the
+  TestAdapter archive retains its exact six-file contract. Verification passed all 411 assembly
+  tests (292 unit and 119 integration) and all 18 standalone acceptance expectations.
+- Compiled unit validation opens the exact main owner-path VSIX and rejects Visual Studio,
+  ServiceHub, or TestPlatform assemblies. Local and CI TestAdapter packaging use one script that
+  reads only `testadapter-package.txt` and compares the completed ZIP with that exact six-entry set.
 - All 246 distinct restored package/version entries are classified exactly once in
   `docs/design.md`: 33 direct, 81 host-contract, 11 build/analyzer, 7 conflict-sensitive, 12
   delivered-transitive, and 102 ordinary family entries. The classification has zero unclassified
@@ -369,6 +405,68 @@ Execute one task at a time in order.
 - Final architecture review approved T8. Non-blocking follow-ups are to table-drive additional
   invalid manifest spellings and broaden the synthetic VSIX denylist if those guards are next
   changed; the current normalized owner-path guards and built payloads are proven clean.
+
+### T9 outcome
+
+- One identity and amd64 VSIX targets Community, Pro, and Enterprise at `[17.12,19.0)`; the Core
+  Editor prerequisite uses the same range.
+- Manifest, generated constants, and Marketplace metadata share the exact dual-host description.
+  The repository synchronizer validates and mirrors all seven manifest fields and supports
+  deterministic `-Check`; only `Set-VsixVersion.ps1` calculates or changes the manifest version.
+- Built-artifact tests prove stable identity, targets, ranges, metadata, and host-binary exclusion.
+  The full gate passed 412 assembly tests and all 18 acceptance expectations.
+- Only JARVIS may spawn agents. Web-backed agents and web tool calls run serially.
+- T10 owns transitional host-matrix prose, final manual testing owns real-host evidence, and T13
+  owns repository retirement. Final architecture review approved T9.
+
+### T10 outcome
+
+- Official, copyable guidance covers each VS2022 and VS2026 edition, complete-host verification,
+  rustup and stable setup/update, Cargo and PATH checks, and optional nightly use.
+- Every prerequisite or PATH change requires a fresh Visual Studio process because failures are
+  process-cached.
+- Live main-product claims now state Windows amd64, VS2022 17.12+ within 17.x, and VS2026 18.x. Its
+  former Development Pack statement is historical and superseded by T13.
+- At T10, all four agent roles covered both hosts and products without changing lanes. Their former
+  Development Pack duties are historical and superseded by T13; T11 validation remains on the final
+  human checklist.
+- The full gate passed 412 assembly tests and all 18 acceptance expectations; all 13 PowerShell
+  blocks parsed without execution. Final architecture review approved T10.
+
+### T11 outcome
+
+- Automated dual-host CI and its host harness were removed in `e3c9d0e`.
+- The human will test the canonical main VSIX in VS2022 and VS2026 before merge.
+- Assurance is reduced: deterministic CI remains, but manual evidence is human-owned and not yet
+  recorded.
+
+### T13 outcome
+
+- `RustDevelopmentPack` and its solution, test, documentation, dependency-ledger, and role-duty
+  maintenance surfaces were removed in `60b8bb6`.
+- Six restored dependency graphs still contain 246 distinct package/version entries. Main-VSIX and
+  exact six-file TestAdapter delivery remain unchanged.
+- The clean build, 412 assembly tests, and 18-result acceptance contract passed. Final architecture
+  review approved T13.
+- T12, T13b, and T14 are superseded. The human owns retirement of any remote pack listing.
+
+### T15 outcome
+
+- All 36 manual production argument guards use `EnsureThat` with their existing exceptions; the
+  remaining manual argument throw is the excluded event-routing invariant.
+- Existing guard-only tests were not expanded. The isolated probe integration helper now loads the
+  production `Ensure.That` dependency it executes.
+- The clean build, 412 assembly tests, and 18-result acceptance contract passed. Final architecture
+  review approved T15.
+
+### T16 outcome
+
+- Failed prerequisite probes retain bounded, sanitized local detail without changing prompts,
+  telemetry, or public contracts. Toolchain installation now points to `Output > Build`.
+- Project-owned asynchronous faults are observed locally. Basic Output, Build, TestAdapter, and
+  telemetry-filter routing tests were added without durable logging or telemetry-policy changes.
+- The clean build, 427 assembly tests, and 18-result acceptance contract passed. Final architecture
+  review approved T16; real-host validation remains human-owned.
 
 ### Runtime flow
 
@@ -440,15 +538,15 @@ preparation, and updater/download work.
 
 ### Host and manifest contract
 
-Both manifests use identical Community, Pro, and Enterprise amd64 targets:
+The main manifest uses Community, Pro, and Enterprise amd64 targets:
 
 ```xml
 Version="[17.12,19.0)"
 ```
 
 The Core Editor prerequisite uses the same range. Runtime validation remains authoritative for
-supported product majors. This produces one VSIX per product, admits VS 17.x only from 17.12,
-supports VS2026 through Microsoft's compatibility model, and introduces no host-specific binaries.
+supported product majors. The canonical main VSIX admits VS 17.x only from 17.12, supports VS2026
+through Microsoft's compatibility model, and introduces no host-specific binaries.
 
 Regenerate `src/RustAnalyzer/source.extension.cs` from the source manifest with the existing VSIX
 Synchronizer mechanism; never hand-edit its derived description. Extend only the approved stamper
@@ -472,41 +570,15 @@ dependency is required merely because the host is VS2026.
 | Acquired VS assemblies | `src/external/vs.17.11` | Prefer official 17.12 NuGet contracts; retain loose assemblies only with official source, version, SHA-256, and rationale. Never substitute VS18 host binaries. |
 
 The audit includes `Microsoft.VisualStudio.TestWindow.Interfaces` and every acquired DLL. Ensure
-host-provided assemblies are not copied into the VSIX. Main remains `net48`, RustDevelopmentPack
-remains `net472`, and TestAdapter remains `netstandard2.0`. If a candidate fails any target, host,
-package-load, or payload check, select the newest lower passing version and record why in
-`docs/design.md`.
+host-provided assemblies are not copied into the VSIX. Main remains `net48`, and TestAdapter remains
+`netstandard2.0`. If a candidate fails any target, host, package-load, or payload check, select the
+newest lower passing version and record why in `docs/design.md`.
 
-### RustDevelopmentPack contents
+### Compatibility evidence
 
-| Entry | Decision |
-|---|---|
-| rust-analyzer.vs | Retain; S2 establishes its dual-host contract. |
-| TOML Editor | Retain; current Marketplace payload supports both hosts. |
-| Rainbow Braces | Remove; its current provider does not target Rust and conflicts with built-in brace colorization. |
-| File Icons | Remove; it duplicates this extension's Rust icon registrations. |
-| VSColorOutput64 | Remove; its current VS2026 support is not truthful. |
-
-Before publication, resolve the TOML Editor Marketplace ID, record the selected version, inspect its
-payload manifest, and fail if the listing is unavailable or incompatible.
-
-### Compatibility evidence and CI topology
-
-Blocking evidence covers successful startup, classified/aggregated failures, exact dialog actions,
-explicit Help navigation, no automatic restart/navigation, blocked close gestures, single-flight
-state, no persistence, complete user/background gating, suppression logging, one InfoBar, host
-predicate boundaries, both manifests, pack contents, version/artifact/publication wiring, and real
-host generations.
-
-CI:
-
-1. Stamp and build both canonical VSIXes and the TestAdapter once on the VS17 build host.
-2. Run host-independent tests once and upload canonical outputs.
-3. Run parallel blocking host jobs on `windows-2022` and `windows-2025-vs2026`; assert resolved host
-   versions and majors.
-4. Download rather than rebuild the exact artifacts; install both VSIXes, exercise startup and
-   installability, and run host-bound TestAdapter acceptance with its explicit major.
-5. Require both host jobs before publication.
+CI owns deterministic host boundaries, manifests, package contents, behavior, and TestAdapter
+acceptance. The final human checklist owns canonical-VSIX installation and runtime validation in
+VS2022 and VS2026.
 
 ### Deferred real-Visual-Studio E2E analysis
 
@@ -561,24 +633,14 @@ Research basis:
 - [GitHub Windows 2022 image](https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md)
 - [GitHub Windows 2025 VS2026 image](https://github.com/actions/runner-images/blob/main/images/windows/Windows2025-VS2026-Readme.md)
 
-**Decision (2026-08-27):** record this analysis only. Do not implement it or change T11/current gates.
+**Decision (2026-08-27):** retain this analysis only. T11 has no automated real-host gate; the human
+owns final VS2022/VS2026 validation.
 
 ### Versioning and publication
 
-Extend `Set-VsixVersion.ps1` as the only version writer for the main manifest, generated main
-constant, pack manifest, and pack `Extensions.vsext`. Retain independent checked-in base versions
-and append the same normalized CI build suffix. Emit both named versions and validate consistency.
-
-Create separate Marketplace publish metadata for RustDevelopmentPack. Before external writes,
-validate both VSIXes, IDs, versions, metadata, third-party compatibility, and credentials.
-
-- Eligible `master` publish: main, then pack, to Open VSIX Gallery.
-- Release/manual publish: main, then pack, to Visual Studio Marketplace.
-- After successful Marketplace publication, attach `RustAnalyzer.vsix`,
-  `RustDevelopmentPack.vsix`, and the TestAdapter archive to the existing main-version GitHub
-  Release.
-
-Use no `continue-on-error`; partial external publication fails visibly.
+`Set-VsixVersion.ps1` remains the sole main-version writer. Existing main-VSIX and TestAdapter
+artifact and publication contracts remain unchanged. No pack metadata, artifact, publication path,
+or external write was added. The human owns retirement of any remote pack listing.
 
 ### Documentation command baseline
 
@@ -603,14 +665,14 @@ installation.
 
 ### Documentation and governance
 
-Update `PREREQUISITES.md`, root `README.md`, `src/RustDevelopmentPack/README.md`, both manifests,
-Marketplace publication metadata, every live VS2022-only claim, and `docs/design.md`. Regenerate the
-main derived description through the approved mechanism. Exclude the archived previous feature
-document from all searches and replacements.
+`PREREQUISITES.md`, the main manifest, and main Marketplace metadata remain unchanged. The pack
+README is removed; root `README.md`, `docs/design.md`, and live role duties reflect retirement. The
+archived previous feature document remains unchanged.
 
 Role duties:
 
-- **JARVIS:** scope planning, gates, and delivery across both hosts and products.
-- **Anders:** design every product/platform change for both hosts.
-- **Dave:** implement without breaking either host or product.
-- **Bhaskar:** verify both hosts, both VSIXes, and publication evidence.
+- **JARVIS:** scope planning, gates, and delivery across both hosts, the main VSIX, and standalone
+  TestAdapter.
+- **Anders:** design main-product/platform changes for both hosts.
+- **Dave:** preserve both hosts, the main VSIX, and standalone TestAdapter.
+- **Bhaskar:** verify both hosts, the main VSIX, standalone TestAdapter, and publication evidence.

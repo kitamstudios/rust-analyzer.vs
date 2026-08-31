@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Community.VisualStudio.Toolkit;
@@ -149,8 +150,9 @@ public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToo
             return;
         }
 
-        await VsCommon.ShowInfoBarAsync(true, $"Starting installation of toolchain '{tcName}'. See Output > rust-analyzer.vs pane for detailed status. Once done, you'll be notified here.");
-        RustAnalyzerPackage.JTF.RunAsync(
+        await VsCommon.ShowInfoBarAsync(true, FormatInstallationStartedMessage(tcName));
+        var logger = Logger;
+        var installation = RustAnalyzerPackage.JTF.RunAsync(
             async () =>
             {
                 if (!PrerequisiteState.IsAvailable)
@@ -173,7 +175,48 @@ public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToo
                 }
 
                 await VsCommon.ShowInfoBarAsync(res, msg);
-            }).FireAndForget();
+            });
+        ObserveBackgroundOperation(
+            installation.Task,
+            logger,
+            "InstallToolchainCommand.ExecuteCoreAsync");
+    }
+
+    private static string FormatInstallationStartedMessage(string tcName)
+    {
+        return $"Starting installation of toolchain '{tcName}'. See Output > Build for detailed status. Once done, you'll be notified here.";
+    }
+
+    private static void ObserveBackgroundOperation(
+        Task operation,
+        ILogger logger,
+        string operationName)
+    {
+        var observation = operation.ContinueWith(
+            task => ReportUnexpectedFault(
+                logger,
+                operationName,
+                task.Exception.GetBaseException()),
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted,
+            TaskScheduler.Default);
+        KS.RustAnalyzer.TestAdapter.Common.TaskExtensions.Forget(observation);
+    }
+
+    private static void ReportUnexpectedFault(
+        ILogger logger,
+        string operation,
+        Exception exception)
+    {
+        if (exception is OperationCanceledException)
+        {
+            return;
+        }
+
+        logger?.WriteError(
+            "Operation '{0}' failed unexpectedly. Ex: {1}",
+            operation,
+            exception);
     }
 }
 
@@ -262,16 +305,20 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
             return;
         }
 
-        RustAnalyzerPackage.JTF
+        var logger = Logger;
+        var toolchainSwitch = RustAnalyzerPackage.JTF
             .RunAsync(
                 async () =>
                 {
                     if (PrerequisiteState.IsAvailable)
                     {
-                        await ((PathEx)workspaceRoot).SetToolchainOverrideAsync(name, Logger, default);
+                        await ((PathEx)workspaceRoot).SetToolchainOverrideAsync(name, logger, default);
                     }
-                })
-            .FireAndForget();
+                });
+        ObserveBackgroundOperation(
+            toolchainSwitch.Task,
+            logger,
+            "SwitchToolchainCommand.ExecuteCore");
 
         CommandCache.ForEach(c => c.Checked = false);
         command.Checked = true;
@@ -325,5 +372,37 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
         command.Text = $"{tc.Name} [{tc.Version}]";
         command.Checked = tc.IsActive;
         command.Properties[ToolchainNameProperty] = tc.Name;
+    }
+
+    private static void ObserveBackgroundOperation(
+        Task operation,
+        ILogger logger,
+        string operationName)
+    {
+        var observation = operation.ContinueWith(
+            task => ReportUnexpectedFault(
+                logger,
+                operationName,
+                task.Exception.GetBaseException()),
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted,
+            TaskScheduler.Default);
+        KS.RustAnalyzer.TestAdapter.Common.TaskExtensions.Forget(observation);
+    }
+
+    private static void ReportUnexpectedFault(
+        ILogger logger,
+        string operation,
+        Exception exception)
+    {
+        if (exception is OperationCanceledException)
+        {
+            return;
+        }
+
+        logger?.WriteError(
+            "Operation '{0}' failed unexpectedly. Ex: {1}",
+            operation,
+            exception);
     }
 }

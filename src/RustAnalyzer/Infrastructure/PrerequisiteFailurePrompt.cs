@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using EnsureThat;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -13,20 +14,24 @@ public sealed class PrerequisiteFailurePromptModel
 {
     public PrerequisiteFailurePromptModel(PrerequisiteResult result)
     {
-        if (result == null)
-        {
-            throw new ArgumentNullException(nameof(result));
-        }
-
-        if (result.IsSuccess)
-        {
-            throw new ArgumentException("A prerequisite failure prompt requires a failed result.", nameof(result));
-        }
-
-        if (result.Failures.Any(failure => failure.Kind == PrerequisiteFailureKind.Unclassified))
-        {
-            throw new ArgumentException("A prerequisite failure prompt requires typed failures.", nameof(result));
-        }
+        EnsureArg.IsNotNull(
+            result,
+            nameof(result),
+            options => options.WithException(new ArgumentNullException(nameof(result))));
+        EnsureArg.IsFalse(
+            result.IsSuccess,
+            nameof(result),
+            options => options.WithException(
+                new ArgumentException(
+                    "A prerequisite failure prompt requires a failed result.",
+                    nameof(result))));
+        EnsureArg.IsFalse(
+            result.Failures.Any(failure => failure.Kind == PrerequisiteFailureKind.Unclassified),
+            nameof(result),
+            options => options.WithException(
+                new ArgumentException(
+                    "A prerequisite failure prompt requires typed failures.",
+                    nameof(result))));
 
         Title = $"{Vsix.Name} prerequisites failed";
         FailureMessages = result.Failures
@@ -77,9 +82,18 @@ public sealed class PrerequisiteFailurePromptController
             VSConstants.MessageBoxResult> showMessageBox,
         Action<string> openSystemBrowser)
     {
-        _state = state ?? throw new ArgumentNullException(nameof(state));
-        _showMessageBox = showMessageBox ?? throw new ArgumentNullException(nameof(showMessageBox));
-        _openSystemBrowser = openSystemBrowser ?? throw new ArgumentNullException(nameof(openSystemBrowser));
+        _state = EnsureArg.IsNotNull(
+            state,
+            nameof(state),
+            options => options.WithException(new ArgumentNullException(nameof(state))));
+        _showMessageBox = EnsureArg.IsNotNull(
+            showMessageBox,
+            nameof(showMessageBox),
+            options => options.WithException(new ArgumentNullException(nameof(showMessageBox))));
+        _openSystemBrowser = EnsureArg.IsNotNull(
+            openSystemBrowser,
+            nameof(openSystemBrowser),
+            options => options.WithException(new ArgumentNullException(nameof(openSystemBrowser))));
 
         if (_state.Status != PrerequisiteStatus.Failed ||
             _state.CachedResult == null ||

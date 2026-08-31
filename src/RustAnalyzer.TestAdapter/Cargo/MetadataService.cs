@@ -180,7 +180,9 @@ public class MetadataService : IMetadataService, IDisposable
         }
         else
         {
-            t.Forget();
+            ObserveEventDispatch(
+                t,
+                "MetadataService.PackageAddedDispatch");
         }
     }
 
@@ -201,7 +203,9 @@ public class MetadataService : IMetadataService, IDisposable
         }
         else
         {
-            t.Forget();
+            ObserveEventDispatch(
+                t,
+                "MetadataService.PackageRemovedDispatch");
         }
     }
 
@@ -222,7 +226,34 @@ public class MetadataService : IMetadataService, IDisposable
         }
         else
         {
-            t.Forget();
+            ObserveEventDispatch(
+                t,
+                "MetadataService.TestContainerUpdatedDispatch");
         }
+    }
+
+    private void ObserveEventDispatch(Task operation, string operationName)
+    {
+        operation.ContinueWith(
+                task => ReportUnexpectedFault(
+                    operationName,
+                    task.Exception.GetBaseException()),
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted,
+                TaskScheduler.Default)
+            .Forget();
+    }
+
+    private void ReportUnexpectedFault(string operation, Exception exception)
+    {
+        if (_disposedValue || exception is OperationCanceledException)
+        {
+            return;
+        }
+
+        _tl.L.WriteError(
+            "Operation '{0}' failed unexpectedly. Ex: {1}",
+            operation,
+            exception);
     }
 }

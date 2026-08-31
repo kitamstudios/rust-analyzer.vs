@@ -53,6 +53,7 @@
     </Compile>
     <Compile Include="Infrastructure\PrerequisiteEvaluatorTests.cs" />
     <Compile Include="Infrastructure\AutomaticRustBoundaryTests.cs" />
+    <Compile Include="Infrastructure\LoggingWiringTests.cs" />
     <Compile Include="Infrastructure\MetadataServiceFactoryLifecycleTests.cs" />
     <Compile Include="Infrastructure\PrerequisiteAvailabilityPolicyTests.cs" />
     <Compile Include="Infrastructure\PrerequisiteFailurePromptTests.cs" />

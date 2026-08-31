@@ -1,4 +1,5 @@
 ﻿using System;
+using EnsureThat;
 
 namespace KS.RustAnalyzer.TestAdapter.Common;
 
@@ -10,10 +11,10 @@ public static class AttributeExtensions
         where TAttribute : Attribute
     {
         var fieldName = source?.ToString();
-        if (fieldName == null)
-        {
-            throw new ArgumentOutOfRangeException(nameof(source));
-        }
+        EnsureArg.IsNotNull(
+            fieldName,
+            nameof(source),
+            options => options.WithException(new ArgumentOutOfRangeException(nameof(source))));
 
         var field = source?.GetType().GetField(fieldName);
 
@@ -24,7 +25,7 @@ public static class AttributeExtensions
         }
         else
         {
-            return source?.ToString();
+            return fieldName;
         }
     }
 }

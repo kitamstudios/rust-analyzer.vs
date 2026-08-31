@@ -85,7 +85,7 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
         _lifetimeToken = _lifetimeCancellation.Token;
         var initialization = joinableTaskFactory.RunAsync(InitializeAsync);
         Initialization = initialization.Task;
-        initialization.FireAndForget();
+        ObserveInitialization();
     }
 
     public event EventHandler TestContainersUpdated;
@@ -152,6 +152,11 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
                 }
 
                 _workspaceFactory = _getWorkspaceFactory();
+                if (_workspaceFactory == null)
+                {
+                    return;
+                }
+
                 _workspaceFactory.OnActiveWorkspaceChanged += ActiveWorkspaceChangedEventHandlerAsync;
             }
 
@@ -198,6 +203,12 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
         catch (OperationCanceledException) when (_lifetimeToken.IsCancellationRequested)
         {
         }
+        catch (Exception e)
+        {
+            ReportUnexpectedFault(
+                "TestContainerDiscoverer.ActiveWorkspaceChangedEventHandlerAsync",
+                e);
+        }
     }
 
     private async Task LoadNewWorkspaceAsync()
@@ -206,6 +217,11 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
         lock (_sync)
         {
             if (_disposed)
+            {
+                return;
+            }
+
+            if (_workspaceFactory == null)
             {
                 return;
             }
@@ -222,8 +238,17 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
         _tl.L.WriteLine("TestContainerDiscoverer loading new workspace at '{0}'.", workspace.Location);
         _tl.T.TrackEvent("TcdLoadWorkspace", ("Location", workspace.Location));
         var metadataService = workspace.GetService<IMetadataService>();
+        if (metadataService == null)
+        {
+            return;
+        }
+
         var packages = await metadataService.GetCachedPackagesAsync(_lifetimeToken);
         _lifetimeToken.ThrowIfCancellationRequested();
+        if (packages == null)
+        {
+            return;
+        }
 
         lock (_sync)
         {
@@ -325,5 +350,44 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
     }
 
     private IEnumerable<PathEx> GetTestContainers(Workspace.Package e)
-        => e.GetTestContainers(_currentWorkspace?.GetProfile(e.ManifestPath) ?? e.GetProfiles().First()).Select(x => x.Container);
+    {
+        var profile = _currentWorkspace?.GetProfile(e.ManifestPath) ??
+            e.GetProfiles().FirstOrDefault();
+        return profile == null
+            ? Enumerable.Empty<PathEx>()
+            : e.GetTestContainers(profile).Select(x => x.Container);
+    }
+
+    private void ObserveInitialization()
+    {
+        var observation = Initialization.ContinueWith(
+            task => ReportUnexpectedFault(
+                "TestContainerDiscoverer.InitializeAsync",
+                task.Exception.GetBaseException()),
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted,
+            TaskScheduler.Default);
+        KS.RustAnalyzer.TestAdapter.Common.TaskExtensions.Forget(observation);
+    }
+
+    private void ReportUnexpectedFault(string operation, Exception exception)
+    {
+        if (exception is OperationCanceledException)
+        {
+            return;
+        }
+
+        lock (_sync)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+        }
+
+        _tl.L.WriteError(
+            "Operation '{0}' failed unexpectedly. Ex: {1}",
+            operation,
+            exception);
+    }
 }

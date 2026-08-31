@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
 using CommunityVS = Community.VisualStudio.Toolkit.VS;
 using Constants = KS.RustAnalyzer.TestAdapter.Constants;
@@ -54,22 +55,36 @@ public sealed class PrerequisiteCommandResult
 
     public static PrerequisiteCommandResult Completed(int exitCode, string standardOutput, string standardError)
     {
+        EnsureArg.IsNotNull(
+            standardOutput,
+            nameof(standardOutput),
+            options => options.WithException(new ArgumentNullException(nameof(standardOutput))));
+        EnsureArg.IsNotNull(
+            standardError,
+            nameof(standardError),
+            options => options.WithException(new ArgumentNullException(nameof(standardError))));
+
         return new PrerequisiteCommandResult(
             true,
             exitCode,
-            standardOutput ?? throw new ArgumentNullException(nameof(standardOutput)),
-            standardError ?? throw new ArgumentNullException(nameof(standardError)),
+            standardOutput,
+            standardError,
             string.Empty);
     }
 
     public static PrerequisiteCommandResult FailedToStart(string error)
     {
+        EnsureArg.IsNotNull(
+            error,
+            nameof(error),
+            options => options.WithException(new ArgumentNullException(nameof(error))));
+
         return new PrerequisiteCommandResult(
             false,
             null,
             string.Empty,
             string.Empty,
-            error ?? throw new ArgumentNullException(nameof(error)));
+            error);
     }
 }
 
@@ -101,10 +116,10 @@ public sealed class VisualStudioPrerequisiteProbe : IPrerequisiteProbe
 
     public string FindExecutable(string fileName)
     {
-        if (fileName == null)
-        {
-            throw new ArgumentNullException(nameof(fileName));
-        }
+        EnsureArg.IsNotNull(
+            fileName,
+            nameof(fileName),
+            options => options.WithException(new ArgumentNullException(nameof(fileName))));
 
         foreach (var pathEntry in _processPath.Split(Path.PathSeparator))
         {
@@ -146,15 +161,14 @@ public sealed class VisualStudioPrerequisiteProbe : IPrerequisiteProbe
         IReadOnlyList<string> arguments,
         CancellationToken cancellationToken)
     {
-        if (executablePath == null)
-        {
-            throw new ArgumentNullException(nameof(executablePath));
-        }
-
-        if (arguments == null)
-        {
-            throw new ArgumentNullException(nameof(arguments));
-        }
+        EnsureArg.IsNotNull(
+            executablePath,
+            nameof(executablePath),
+            options => options.WithException(new ArgumentNullException(nameof(executablePath))));
+        EnsureArg.IsNotNull(
+            arguments,
+            nameof(arguments),
+            options => options.WithException(new ArgumentNullException(nameof(arguments))));
 
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -228,7 +242,10 @@ public sealed class PrerequisiteEvaluator
 
     public PrerequisiteEvaluator(IPrerequisiteProbe probe)
     {
-        _probe = probe ?? throw new ArgumentNullException(nameof(probe));
+        _probe = EnsureArg.IsNotNull(
+            probe,
+            nameof(probe),
+            options => options.WithException(new ArgumentNullException(nameof(probe))));
     }
 
     public static bool IsSupportedVisualStudioVersion(Version version)

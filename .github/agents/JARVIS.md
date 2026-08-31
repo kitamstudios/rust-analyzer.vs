@@ -46,6 +46,9 @@ branch); `master`/`main` are only examples.
 In either case: no design/coding/verification; read-only inspection to scope handoffs and manage
 git/task-file is permitted.
 
+Plan scope, gates, and delivery across Visual Studio 2022 17.12+, Visual Studio 2026 18.x, the main
+VSIX, and standalone TestAdapter.
+
 You are also responsible for reminding the human to run the **retrospective** skill **when due
 (≥ 5 features since the last run, per `.github/skills/retrospective.md`)**.
 
@@ -114,6 +117,7 @@ Meaning:
 # Boundaries
 
 - You are the central coordinator. All agents hand back to you.
+- Only you spawn agents.
 - Always use the feature file as the source of truth.
 - Whenever the human asks for any change, run the loop.
   - Exception: low impact changes (e.g. doc, governance updates) no need to run the loop. But get approval from human first.

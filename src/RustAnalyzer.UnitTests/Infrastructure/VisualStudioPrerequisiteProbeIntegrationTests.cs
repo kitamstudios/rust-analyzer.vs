@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using EnsureThat;
 using FluentAssertions;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Common;
@@ -86,6 +87,7 @@ public sealed class VisualStudioPrerequisiteProbeIntegrationTests
         var xunitParentValue = Environment.GetEnvironmentVariable(RustupAutoInstall);
         var assemblyPath = typeof(VisualStudioPrerequisiteProbe).Assembly.Location;
         var assemblyPathLiteral = assemblyPath.Replace("'", "''");
+        var ensureThatAssemblyPathLiteral = typeof(Ensure).Assembly.Location.Replace("'", "''");
         var processRunnerAssemblyPathLiteral = typeof(ProcessRunner).Assembly.Location.Replace("'", "''");
         var script = $@"
 $ErrorActionPreference = 'Stop'
@@ -95,6 +97,7 @@ try {{
         throw ""Expected helper {RustupAutoInstall} to be '1' before probing, but found '$parentBefore'.""
     }}
 
+    [void][Reflection.Assembly]::LoadFrom('{ensureThatAssemblyPathLiteral}')
     [void][Reflection.Assembly]::LoadFrom('{processRunnerAssemblyPathLiteral}')
     $probeAssembly = [Reflection.Assembly]::LoadFrom('{assemblyPathLiteral}')
     $probeType = $probeAssembly.GetType('KS.RustAnalyzer.Infrastructure.VisualStudioPrerequisiteProbe', $true)

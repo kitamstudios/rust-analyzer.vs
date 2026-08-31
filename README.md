@@ -8,7 +8,20 @@
 
 Download this extension from the [Visual Studio Marketplace][marketplace] or get the [CI build][vsixgallery].
 
-**For a superior Rust development experience install the [Rust Development Pack](https://marketplace.visualstudio.com/items?itemName=kitamstudios.RustDevelopmentPack) (includes this extension along with few other useful extensions).**
+## Supported hosts and prerequisites
+
+One canonical Windows amd64 VSIX supports Community, Professional, and Enterprise with installation
+range `[17.12,19.0)`:
+
+- Visual Studio 2022 17.12 or later within 17.x
+- Visual Studio 2026 18.x
+
+The Core Editor, `rustup` on the Visual Studio process `PATH`, a default Rust toolchain, and
+operational Cargo are required. Nightly is optional and needed only for Test Explorer. See
+[Prerequisites](PREREQUISITES.md) for official sources, install and upgrade commands, and
+verification.
+
+RustDevelopmentPack is retired; install rust-analyzer.vs directly.
 
 > 💡 **Announcement**
 >
@@ -35,7 +48,7 @@ Download this extension from the [Visual Studio Marketplace][marketplace] or get
 - [Comment (Ctrl+K Ctrl+C) & Uncomment (Ctrl+K Ctrl+U)](https://youtu.be/pE1Vr2zVCbg?t=762)
 - Infrastructure features
   - [Extension Logs for debugging in Output | rust-analyzer.vs pane.](https://youtu.be/pE1Vr2zVCbg?t=129)
-  - [Test integration requires changes currently in rust nightly toolchain. RFC is in progress to promote the changes to stable. Refer: https://](https://youtu.be/pE1Vr2zVCbg?t=379)
+  - [Test Explorer requires the optional nightly toolchain.](https://youtu.be/pE1Vr2zVCbg?t=379)
   - [Tools | Options | rust-analyzer.vs](https://youtu.be/pE1Vr2zVCbg?t=1225)
 
 > These features continue to get tested with top Rust OSS projects like [cargo](https://github.com/rust-lang/cargo), [ruffle](https://github.com/ruffle-rs/ruffle), [iced](https://github.com/iced-rs/iced), [geo](https://github.com/georust/geo), [ruff](https://github.com/charliermarsh/ruff), [reqwest](https://github.com/seanmonstar/reqwest), [wasmtime](https://github.com/bytecodealliance/wasmtime). There are bugs! 😉

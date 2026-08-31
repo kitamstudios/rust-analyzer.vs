@@ -8,9 +8,11 @@ This document describes current behavior and architecture. Planned work lives in
 - Resolve trunk from `origin/HEAD`; use `master` only when it is unavailable.
 - **Generated — never hand-edit:** `**/bin/`, `**/obj/`, `_built/`, `*.vsix`, build-generated
   `.g.cs`, and `src/RustAnalyzer/VSCommandTable.cs` (generated from `VSCommandTable.vsct`). Only
-  `.github/scripts/Set-VsixVersion.ps1` writes `Identity/@Version` in
+  `.github/scripts/Set-VsixVersion.ps1` calculates and stamps `Identity/@Version` in
   `src/RustAnalyzer/source.extension.vsixmanifest` and `Version` in
-  `src/RustAnalyzer/source.extension.cs`.
+  `src/RustAnalyzer/source.extension.cs`; `.github/scripts/Sync-VsixGeneratedMetadata.ps1` is the
+  repository-owned fallback writer that copies the manifest's seven metadata values, including its
+  already-stamped version, into the generated `Vsix` constants.
 - **Acquired — never hand-edit:** packaged `rust-analyzer.exe` and `rust_analyzer.pdb`, plus
   `src/external/vs.17.11` host assemblies. Replace only from official assets after hash verification.
   Only `Initialize-RustNightly.ps1` writes manifests under `%LOCALAPPDATA%\ravsq\`.
@@ -21,12 +23,14 @@ This document describes current behavior and architecture. Planned work lives in
 workspace: one folder containing multiple Cargo workspaces.
 
 - targets .NET Framework 4.8 and Visual Studio's in-process VSSDK/MEF APIs;
-- declares amd64 Visual Studio editions in the manifest with installation range `[17.0,18.0)`;
-- rejects Visual Studio versions older than 17.12 at runtime; and
-- is currently validated for Visual Studio 2022 17.12 or later.
+- uses one identity and one canonical Windows amd64 VSIX for Community, Professional, and
+  Enterprise with installation range `[17.12,19.0)`;
+- requires the Core Editor in that same range; and
+- accepts exactly Visual Studio 2022 17.12 or later within 17.x and Visual Studio 2026 18.x at
+  runtime.
 
-The test adapter targets .NET Standard 2.0. `RustDevelopmentPack` is a separate packaging project
-targeting .NET Framework 4.7.2. Visual Studio 2026 compatibility is not yet validated.
+The standalone test adapter targets .NET Standard 2.0. Real-host Visual Studio 2026 evidence is not
+yet recorded; no such validation is claimed here.
 
 Build and test tooling binds to a Visual Studio host explicitly rather than by ambient discovery:
 `.github/scripts/VisualStudio.psm1` resolves MSBuild and `vstest.console.exe` through `vswhere`,
@@ -43,7 +47,6 @@ completed Visual Studio major is never selected silently.
   test-container, discovery, and execution implementation. Both the VSIX and VSTest integration use
   it.
 - `src/RustAnalyzer.Remote` contains the remote-target support consumed by the extension/test stack.
-- `src/RustDevelopmentPack` produces the companion development-pack VSIX.
 - The three legacy-named `*.UnitTests` projects contain unit and integration assembly tests for the
   corresponding implementation projects; xUnit traits, not project names, classify their boundaries.
   They are legacy non-SDK projects (`ToolsVersion="15.0"`, `TargetFrameworkVersion v4.8`) that take
@@ -67,7 +70,6 @@ Canonical output means an exact named deliverable or explicitly curated file set
 project path, never every file in a project directory:
 
 - `_built\projects\RustAnalyzer\RustAnalyzer.vsix`
-- `_built\projects\RustDevelopmentPack\RustDevelopmentPack.vsix`
 - the six `_built\projects\RustAnalyzer.TestAdapter\` inputs named by
   `src/RustAnalyzer.TestAdapter/testadapter-package.txt`
 - `_built\projects\<test-project>\KS.<test-project>.dll` for the three test assemblies
@@ -85,9 +87,9 @@ No Visual Studio 18 runtime or API package is part of the product closure.
 
 | Dependency | Previous | Current ownership |
 |---|---:|---|
-| `Microsoft.VisualStudio.SDK` | 17.11.40262 in main and pack | [17.12.40392](https://www.nuget.org/packages/Microsoft.VisualStudio.SDK/17.12.40392) in main; removed from the code-free pack |
-| `Microsoft.VSSDK.BuildTools` | 17.11.435 | [18.9.820](https://www.nuget.org/packages/Microsoft.VSSDK.BuildTools/18.9.820), build-only, in main and pack |
-| `Microsoft.VisualStudio.SDK.Analyzers` | 17.7.41 in main and pack | [17.7.122](https://www.nuget.org/packages/Microsoft.VisualStudio.SDK.Analyzers/17.7.122), direct in main and BuildTools-owned in pack |
+| `Microsoft.VisualStudio.SDK` | 17.11.40262 | [17.12.40392](https://www.nuget.org/packages/Microsoft.VisualStudio.SDK/17.12.40392) in main |
+| `Microsoft.VSSDK.BuildTools` | 17.11.435 | [18.9.820](https://www.nuget.org/packages/Microsoft.VSSDK.BuildTools/18.9.820), build-only, in main |
+| `Microsoft.VisualStudio.SDK.Analyzers` | 17.7.41 | [17.7.122](https://www.nuget.org/packages/Microsoft.VisualStudio.SDK.Analyzers/17.7.122), direct in main |
 | Visual Studio Threading and analyzers | 17.11.20 | [17.12.19](https://www.nuget.org/packages/Microsoft.VisualStudio.Threading/17.12.19); host runtime, build-owned analyzers |
 | TestPlatform ObjectModel and Test SDK | 17.11.0 | [17.12.0](https://www.nuget.org/packages/Microsoft.TestPlatform.ObjectModel/17.12.0); host ObjectModel and test-only SDK |
 | `Community.VisualStudio.Toolkit.17` | 17.0.522 | [17.0.551](https://www.nuget.org/packages/Community.VisualStudio.Toolkit.17/17.0.551), extension-owned |
@@ -99,7 +101,7 @@ No Visual Studio 18 runtime or API package is part of the product closure.
 
 ### Restored dependency classification
 
-The seven current `project.assets.json` graphs contain 246 distinct package/version entries. The
+The six current `project.assets.json` graphs contain 246 distinct package/version entries. The
 ledger below applies its sections in order, so each entry maps once: 33 direct, 81 transitive host
 contracts, 11 transitive build/analyzer tools, 7 conflict-sensitive transitive versions, 12
 delivered transitives, and 102 ordinary grouped-family entries. The sum is 246 and the unclassified
@@ -108,10 +110,10 @@ transitives count once, not once per project.
 
 Consumer abbreviations are `M` = `RustAnalyzer/net48`, `A` =
 `RustAnalyzer.TestAdapter/netstandard2.0`, `R` = `RustAnalyzer.Remote/netstandard2.0`, `U` = all
-three `*.UnitTests/net48` projects, and `P` = `RustDevelopmentPack/net472`. Evidence abbreviations
-are `A` = restored assets and selected asset paths, `B` = zero-warning Release build and conflict
-log, `I` = compiled IL references, `V` = VSIX/TestAdapter archive entries, and `T` = assembly and
-acceptance tests. Linked package names are the official NuGet metadata.
+three `*.UnitTests/net48` projects. Evidence abbreviations are `A` = restored assets and selected
+asset paths, `B` = zero-warning Release build and conflict log, `I` = compiled IL references, `V` =
+VSIX/TestAdapter archive entries, and `T` = assembly and acceptance tests. Linked package names are
+the official NuGet metadata.
 
 #### Direct package entries (33)
 
@@ -122,21 +124,21 @@ acceptance tests. Linked package names are the official NuGet metadata.
 | [Community.VisualStudio.Toolkit.17 17.0.551](https://www.nuget.org/packages/Community.VisualStudio.Toolkit.17/17.0.551) | M and dependent U | compile/runtime; extension; main VSIX | Selected current VS17 toolkit compatible with the 17.12 floor. A/B/I/V/T |
 | [Community.VisualStudio.VSCT 16.0.29.14](https://www.nuget.org/packages/Community.VisualStudio.VSCT/16.0.29.14) | M | build; build; excluded | Selected stable VSCT generator; build-only assets execute under MSBuild. A/B |
 | [DalSoft.RestClient 4.4.1](https://www.nuget.org/packages/DalSoft.RestClient/4.4.1) | M/A/R/U | compile/runtime; extension and TestAdapter; main VSIX | Unchanged application contract; compatible assets pass. A/B/V/T |
-| [Ensure.That 9.2.0](https://www.nuget.org/packages/Ensure.That/9.2.0) | M/A/R/U | compile/runtime; extension and TestAdapter; both payloads | Unchanged validation contract; compatible assets pass. A/B/V/T |
+| [Ensure.That 9.2.0](https://www.nuget.org/packages/Ensure.That/9.2.0) | M/A/R/U | compile/runtime; extension and TestAdapter; main VSIX and TestAdapter archive | Unchanged validation contract; compatible assets pass. A/B/V/T |
 | [FluentAssertions 6.12.0](https://www.nuget.org/packages/FluentAssertions/6.12.0) | U | test; test; excluded | Unchanged assertion contract; net48 passes. A/T |
 | [FluentAssertions.Analyzers 0.33.0](https://www.nuget.org/packages/FluentAssertions.Analyzers/0.33.0) | U | analyzer; build/test; excluded | Unchanged analyzer; Release build passes. A/B |
-| [Microsoft.ApplicationInsights 2.22.0](https://www.nuget.org/packages/Microsoft.ApplicationInsights/2.22.0) | M/A/R/U | compile/runtime; extension and TestAdapter; both payloads | Unchanged telemetry contract; compatible assets pass. A/B/V/T |
+| [Microsoft.ApplicationInsights 2.22.0](https://www.nuget.org/packages/Microsoft.ApplicationInsights/2.22.0) | M/A/R/U | compile/runtime; extension and TestAdapter; main VSIX and TestAdapter archive | Unchanged telemetry contract; compatible assets pass. A/B/V/T |
 | [Microsoft.NET.Test.Sdk 17.12.0](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk/17.12.0) | U | test/build; test; excluded | Aligned with TestPlatform 17.12; discovery and execution pass. A/B/T |
 | [Microsoft.SourceLink.GitHub 8.0.0](https://www.nuget.org/packages/Microsoft.SourceLink.GitHub/8.0.0) | M/A/R/U | build; build; excluded | Unchanged deterministic-source tooling. A/B |
 | [Microsoft.TestPlatform.ObjectModel 17.12.0](https://www.nuget.org/packages/Microsoft.TestPlatform.ObjectModel/17.12.0) | M/A and dependent U | compile host contract; host; excluded | Selected 17.12 contract; runtime excluded and IL remains ObjectModel 15.0. A/B/I/V/T |
 | [Microsoft.VisualStudio.LanguageServer.Client 17.12.48](https://www.nuget.org/packages/Microsoft.VisualStudio.LanguageServer.Client/17.12.48) | M and dependent U | compile host contract; host; excluded | Replaces loose 17.11 binary at the API floor. A/B/I/V/T |
 | [Microsoft.VisualStudio.SDK 17.12.40392](https://www.nuget.org/packages/Microsoft.VisualStudio.SDK/17.12.40392) | M and dependent U | compile host contracts; host; excluded | Selected exact 17.12 SDK closure; runtime excluded. A/B/I/V/T |
-| [Microsoft.VisualStudio.SDK.Analyzers 17.7.122](https://www.nuget.org/packages/Microsoft.VisualStudio.SDK.Analyzers/17.7.122) | M; transitively P | analyzer; build; excluded | Selected stable analyzer owned directly by M and by BuildTools in P. A/B |
+| [Microsoft.VisualStudio.SDK.Analyzers 17.7.122](https://www.nuget.org/packages/Microsoft.VisualStudio.SDK.Analyzers/17.7.122) | M | analyzer; build; excluded | Selected stable analyzer owned directly by M. A/B |
 | [Microsoft.VisualStudio.Threading 17.12.19](https://www.nuget.org/packages/Microsoft.VisualStudio.Threading/17.12.19) | M and dependent U | compile host contract; host; excluded | Selected exact 17.12 contract; runtime excluded. A/B/I/V/T |
 | [Microsoft.VisualStudio.Threading.Analyzers 17.12.19](https://www.nuget.org/packages/Microsoft.VisualStudio.Threading.Analyzers/17.12.19) | M | analyzer; build; excluded | Aligned analyzer; Release build passes. A/B |
 | [Microsoft.VisualStudio.Workspace.Extensions.VS 17.12.19](https://www.nuget.org/packages/Microsoft.VisualStudio.Workspace.Extensions.VS/17.12.19) | M and dependent U | compile host contract; host; excluded | Replaces loose 17.11 contract at the API floor. A/B/I/V/T |
 | [Microsoft.VisualStudio.Workspace.VSIntegration 17.12.19](https://www.nuget.org/packages/Microsoft.VisualStudio.Workspace.VSIntegration/17.12.19) | M and dependent U | compile host contract; host; excluded | Supplies the Contracts assembly; private implementation is not exposed. A/B/I/V/T |
-| [Microsoft.VSSDK.BuildTools 18.9.820](https://www.nuget.org/packages/Microsoft.VSSDK.BuildTools/18.9.820) | M/P | build/packaging; build; excluded | Build-only CLR4 tasks run on VS17 MSBuild; no product lib/runtime asset. A/B/V |
+| [Microsoft.VSSDK.BuildTools 18.9.820](https://www.nuget.org/packages/Microsoft.VSSDK.BuildTools/18.9.820) | M | build/packaging; build; excluded | Build-only CLR4 tasks run on VS17 MSBuild; no product lib/runtime asset. A/B/V |
 | [Moq 4.20.70](https://www.nuget.org/packages/Moq/4.20.70) | U | test; test; excluded | Unchanged mocking contract; net48 passes. A/T |
 | [NETStandard.Library 2.0.3](https://www.nuget.org/packages/NETStandard.Library/2.0.3) | A/R | compile framework contract; framework; excluded | Unchanged netstandard2.0 reference closure. A/B |
 | [Newtonsoft.Json 13.0.3](https://www.nuget.org/packages/Newtonsoft.Json/13.0.3) | M/A/R/U | compile/runtime; extension and TestAdapter; excluded from curated payloads | Unchanged contract; no selected payload requires private delivery. A/B/V/T |
@@ -241,9 +243,8 @@ owns an ambient conflict, and no newer version was adopted solely for recency.
 server, Workspace, ServiceHub, and Visual Studio Composition `net472` assets, and the TestPlatform
 and Immutable `net462` assets. `RustAnalyzer.TestAdapter` remains `netstandard2.0` and selects only
 compatible `netstandard2.0` contract assets; ObjectModel, Composition, and Windows Principal are
-compile-only, while Immutable is its runtime-owned dependency. `RustDevelopmentPack` remains
-`net472` and consumes only BuildTools build assets. BuildTools 18.9.820 has no product `lib` or
-runtime asset; its MSBuild tasks target CLR 4 and the Microsoft.Build 15.1 contract.
+compile-only, while Immutable is its runtime-owned dependency. BuildTools 18.9.820 has no product
+`lib` or runtime asset; its MSBuild tasks target CLR 4 and the Microsoft.Build 15.1 contract.
 
 Compiled main IL references Visual Studio assemblies at stable 17.0 contracts except Threading and
 Language Server Client at 17.12; it references TestPlatform ObjectModel 15.0 and framework
@@ -254,11 +255,11 @@ The SDK owns `Microsoft.VisualStudio.Composition` 17.12.18, `Microsoft.ServiceHu
 `System.Buffers` 4.5.1, `System.Memory` 4.5.5, `System.Numerics.Vectors` 4.5.0, and
 `System.Runtime.CompilerServices.Unsafe` 6.0.0. Direct Immutable 8.0.0 agrees with the SDK,
 Workspace, and Language Server requirements and owns its Memory and Unsafe dependencies in the
-standalone TestAdapter closure. The pack has no runtime dependency closure.
+standalone TestAdapter closure.
 
 MSBuild's installed `AssemblyFolders.config` added the selected Visual Studio installation's
 `PublicAssemblies` directory to ResolveAssemblyReference. That mixed the 17.12 package graph with
-ambient 17.14 host binaries and produced 18 project-and-assembly `MSB3277` signatures. The repository
+ambient 17.14 host binaries and produced 12 project-and-assembly `MSB3277` signatures. The repository
 disables only that ambient search path through
 `AssemblySearchPath_UseAssemblyFoldersConfigFileSearchPath`; explicit references, NuGet assets,
 framework references, the GAC, and project outputs remain available. This is dependency-source
@@ -273,16 +274,14 @@ isolation, not warning suppression.
 | `System.Numerics.Vectors` | 4.1.4.0 / 4.1.6.0 | 4.5.0 / 4.1.4.0 |
 | `System.Runtime.CompilerServices.Unsafe` | 6.0.0.0 / 6.0.3.0 | 6.0.0 / 6.0.0.0 |
 
-Each former family appeared in `RustAnalyzer`, `RustAnalyzer.UnitTests`, and
-`RustDevelopmentPack`. Removing the pack's unnecessary SDK reference removed all six pack
-signatures; deterministic package resolution removed the remaining 12.
+Each former family appeared in `RustAnalyzer` and `RustAnalyzer.UnitTests`; deterministic package
+resolution removed all 12 signatures.
 
 Visual Studio, ServiceHub, TestPlatform, Workspace, and Language Server assemblies are host-owned
-and absent from both VSIXes. The main package explicitly suppresses the four Workspace contracts and
-the two SDK dependencies not covered by VSSDK's standard host-assembly list. The main VSIX owns the
-extension, TestAdapter, Community Toolkit, application dependencies, and rust-analyzer payload. The
-pack VSIX owns only its seven existing container/manifest/resource entries. The standalone
-TestAdapter archive remains exactly:
+and absent from the main VSIX. The main package explicitly suppresses the four Workspace contracts
+and the two SDK dependencies not covered by VSSDK's standard host-assembly list. The main VSIX owns
+the extension, TestAdapter, Community Toolkit, application dependencies, and rust-analyzer payload.
+The standalone TestAdapter archive remains exactly:
 
 - `KS.RustAnalyzer.TestAdapter.dll`
 - `KS.RustAnalyzer.TestAdapter.pdb`
@@ -337,11 +336,17 @@ independent upgrade.
 `JoinableTaskFactory`, registers commands, and resolves MEF services such as logging, telemetry,
 prerequisite checking, and installation.
 
-After package load, the current startup path runs release-note handling, incompatible-extension
-detection, prerequisite checks, rust-analyzer installation/update, and update notification. The
-prerequisite implementation checks the Visual Studio version and the availability of `rustup.exe`
-and `cargo.exe`; some failure paths offer browser/restart behavior. The incompatible-extension path
-can disable old Rust extensions and restart Visual Studio.
+Package activation first runs one process-scoped, single-flight prerequisite evaluation. It checks
+the supported Visual Studio version, `rustup.exe` through the inherited process `PATH`, a configured
+default toolchain, and operational `cargo.exe`. Nightly is not a startup prerequisite.
+
+Success continues release-note handling, incompatible-extension detection, rust-analyzer
+installation/update, and update notification. Failure caches all typed failures and enters a
+non-dismissible Yes/No flow: Help explicitly opens `PREREQUISITES.md` and re-shows the prompt;
+Disable suspends extension Rust work for that process and shows one warning InfoBar. The
+prerequisite flow never restarts Visual Studio or opens a browser automatically. The separate
+incompatible-extension path can disable old Rust extensions and restart Visual Studio after a
+prerequisite-ready startup.
 
 Every new automatic/background Rust execution path must have a finite `AutomaticRustPath` member and
 pass `PrerequisiteAvailabilityPolicy` before side effects. Every prerequisite state except `Ready`
@@ -387,8 +392,8 @@ executables and translates their results back to VSTest.
 - The language server, Cargo, rustup, test binaries, and some test helpers are operating-system child
   processes. Standard streams are redirected for protocol and build/test output.
 - Workspace and test discovery can fan out work across packages, containers, or executables.
-- Metadata and output events use fire-and-forget tasks in several paths. The current
-  `TaskExtensions.Forget` does not fully observe or report failures.
+- Fire-and-forget tasks consume faults. Named owners report unexpected failures through their
+  existing diagnostic route.
 
 No long-running repository service exists. F5 on the `RustAnalyzer` project launches a Visual Studio
 experimental instance with the VSIX deployed.

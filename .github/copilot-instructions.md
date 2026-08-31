@@ -32,6 +32,12 @@ things.
 When citing a guardrail elsewhere, refer to it **by number** (e.g. "golden rule #1"); keep the
 numbering **stable** and update references on any insert/reorder.
 
+## Execution safety
+
+- Delegated agents never spawn agents; they return unmet work to JARVIS.
+- Run web-backed agents serially.
+- Never batch `web_search` or `web_fetch`; issue one call at a time.
+
 ## Commands
 
 | Command | Gate | Required | Value |
