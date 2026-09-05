@@ -8,6 +8,9 @@
 
   <ItemGroup>
     <Compile Include="..\RustAnalyzer\source.extension.cs" Link="source.extension.cs" />
+    <EmbeddedResource Include="$(IntermediateOutputPath)TelemetryBuildConfiguration.txt">
+      <LogicalName>KS.RustAnalyzer.TelemetryConfiguration</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>
@@ -18,5 +21,19 @@
   </ItemGroup>
 
   <Import Project="..\KS.Common.targets" />
+
+  <PropertyGroup>
+    <TelemetryConnectionString
+      Condition="'$(Configuration)' == 'Release'">$(RUSTANALYZER_TELEMETRY_CONNECTION_STRING)</TelemetryConnectionString>
+  </PropertyGroup>
+
+  <Target Name="GenerateTelemetryBuildConfiguration" BeforeTargets="PrepareResources">
+    <MakeDir Directories="$(IntermediateOutputPath)" />
+    <WriteLinesToFile
+      File="$(IntermediateOutputPath)TelemetryBuildConfiguration.txt"
+      Lines="$([MSBuild]::Escape('ravs-v1:$(TelemetryConnectionString)'))"
+      Overwrite="true"
+      Encoding="UTF-8" />
+  </Target>
 
 </Project>

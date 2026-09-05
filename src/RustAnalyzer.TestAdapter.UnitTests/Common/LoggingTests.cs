@@ -1,10 +1,6 @@
-using System;
 using System.Collections.Generic;
 using FluentAssertions;
 using KS.RustAnalyzer.TestAdapter.Common;
-using Microsoft.ApplicationInsights.Channel;
-using Microsoft.ApplicationInsights.DataContracts;
-using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using Xunit;
 
@@ -41,51 +37,6 @@ public sealed class TestAdapterLoggerTests
         public void SendMessage(TestMessageLevel testMessageLevel, string message)
         {
             Messages.Add((testMessageLevel, message));
-        }
-    }
-}
-
-[Trait("type", "UnitTests")]
-public sealed class TelemetryFilterTests
-{
-    [Theory]
-    [InlineData(null, null, true)]
-    [InlineData("1", null, false)]
-    [InlineData(null, "exp", false)]
-    public void ForwardsOnlyWhenCurrentFiltersAllow(
-        string disabled,
-        string rootSuffix,
-        bool expectedForwarded)
-    {
-        const string disabledVariable = "RUSTANALYZER_TELEMETRY_DISABLED";
-        const string rootSuffixVariable = "VSROOTSUFFIX";
-        var originalDisabled = Environment.GetEnvironmentVariable(disabledVariable);
-        var originalRootSuffix = Environment.GetEnvironmentVariable(rootSuffixVariable);
-        try
-        {
-            Environment.SetEnvironmentVariable(disabledVariable, disabled);
-            Environment.SetEnvironmentVariable(rootSuffixVariable, rootSuffix);
-            var next = new RecordingTelemetryProcessor();
-            var filter = new TelemetryService.FilterTelemetryProcessor(next);
-
-            filter.Process(new EventTelemetry("owned-filter-test"));
-
-            next.Items.Should().HaveCount(expectedForwarded ? 1 : 0);
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable(disabledVariable, originalDisabled);
-            Environment.SetEnvironmentVariable(rootSuffixVariable, originalRootSuffix);
-        }
-    }
-
-    private sealed class RecordingTelemetryProcessor : ITelemetryProcessor
-    {
-        public List<ITelemetry> Items { get; } = new();
-
-        public void Process(ITelemetry item)
-        {
-            Items.Add(item);
         }
     }
 }

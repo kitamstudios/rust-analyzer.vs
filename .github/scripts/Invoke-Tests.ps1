@@ -12,6 +12,7 @@ param (
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+$env:RUSTANALYZER_TELEMETRY_DISABLED = "1"
 
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
 $buildRoot = Join-Path $repoRoot "_built"
@@ -32,8 +33,6 @@ if ($Mode -ne "unit") {
     $nightlyManifest = Enable-PinnedRustNightly
     Write-Host "Using pinned Rust nightly: $($nightlyManifest.Release) ($($nightlyManifest.CommitHash))"
 }
-
-$env:RUSTANALYZER_TELEMETRY_DISABLED = "1"
 
 $assemblyTestExitCode = 0
 $zeroTestFailure = $null

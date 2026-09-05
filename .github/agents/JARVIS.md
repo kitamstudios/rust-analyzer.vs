@@ -82,6 +82,8 @@ As you run the loop, provide a tactical update as each task completes, showing:
       slice's assumptions need validation — present the slice's assumptions for sign-off. Otherwise
       continue to the next task.
    Any blocking concern escalates to the human immediately, whenever it arises.
+   Side consultations run in parallel and never pause the active task lane unless that task is
+   blocked.
 3. When no tasks remain, invoke the human to take over for PR approval and merge to trunk.
 4. Track PR status; once approved, track the pipeline on trunk. As build & deploy progress, show the
    steps completed. (Deployments are the human's; agents never deploy.)
