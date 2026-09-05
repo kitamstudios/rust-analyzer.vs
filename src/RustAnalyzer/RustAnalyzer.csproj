@@ -49,6 +49,7 @@
     <Compile Include="Infrastructure\RlsUpdatedNotification.cs" />
     <Compile Include="Infrastructure\RegistrySettingsService.cs" />
     <Compile Include="Infrastructure\SettingsInfo.cs" />
+    <Compile Include="Infrastructure\VsixFeatureUsageTelemetry.cs" />
     <Compile Include="LanguageService\CommentHelper.cs" />
     <Compile Include="LanguageService\CommentSelectionCommandHandler.cs" />
     <Compile Include="Infrastructure\StringBuildMessagePreprocessor.cs" />

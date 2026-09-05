@@ -64,6 +64,8 @@ jobs:
 
       - name: Build
         shell: pwsh
+        env:
+          RUSTANALYZER_TELEMETRY_CONNECTION_STRING: ${{ secrets.RUSTANALYZER_TELEMETRY_CONNECTION_STRING }}
         run: .\.github\scripts\Invoke-Build.ps1 -VisualStudioMajorVersion ${{ needs.config.outputs.vs-major }}
 
       - name: Zip TestAdapter

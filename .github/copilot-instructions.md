@@ -24,7 +24,10 @@ things.
 5. Never hand-edit generated or acquired artifacts listed in `docs/design.md`.
 6. Stop and ask when a task needs a product/architecture decision. That call belongs to the human architect.
 7. The human can invoke any agent on demand.
-8. Never hardcode connection strings, secrets, or license keys; they are injected via env vars.
+8. Never hardcode credentials, secrets, or license keys; inject them through environment variables.
+   A human-approved client telemetry connection string may enter only through a build environment
+   variable and generated compiled output. Never commit its value; treat shipped client
+   configuration as public and telemetry ingestion as untrusted.
 9. Record project facts in `docs/design.md`, role facts in `.github/agents/<agent>.md`, and cross-cutting
    governance here — never in global Copilot Memory.
 10. The governance artifacts are the source of truth — reload them; never rely on memory or recall.
