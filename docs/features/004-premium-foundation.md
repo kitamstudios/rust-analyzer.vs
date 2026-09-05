@@ -171,7 +171,7 @@ Execute one task at a time.
 
 | # | Slice | Task | Status | Commit |
 |---|---|---|---|---|
-| T1 | S1 | Add the typed telemetry boundary, hashed identity, injected release configuration, strict allow-list, temporary no-egress migration bridge, and focused contract tests. | Done | pending |
+| T1 | S1 | Add the typed telemetry boundary, hashed identity, injected release configuration, strict allow-list, temporary no-egress migration bridge, and focused contract tests. | Done | `7221e7b` |
 | T2 | S1 | Replace current telemetry calls with one terminal event per approved operation; remove duplicates, diagnostics, unsafe payloads, and lifecycle noise. | Pending | - |
 | T3 | S2 | Add the rust-analyzer `Verify`/`Check`/`Update` script, shared provenance manifest, preflight freshness gate, build verification, and focused script tests. Preserve existing tests, then run `Update` once. | Pending | - |
 | T4 | S2 | Harden runtime acquisition, verification, safe extraction, validation, cross-process activation, packaged fallback, local provenance, and focused failure tests. | Pending | - |
@@ -353,6 +353,14 @@ Execute one task at a time.
 - **D12:** Performance investigations and ApprovalTests/tool-version hardening.
 
 ## Notes & Decisions
+
+### T1 outcome
+
+- Added the closed telemetry API, schema, identity hash, duration buckets, and host bindings.
+- Release builds embed environment-injected public client configuration; source contains no value.
+- Experimental, operationally disabled, and unconfigured runs create no active client.
+- Legacy generic telemetry is temporarily no-egress until T2 removes it.
+- Full verification passed with 454 assembly tests and 18 acceptance outcomes.
 
 ### Telemetry audit
 
