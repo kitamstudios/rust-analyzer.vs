@@ -62,7 +62,8 @@ public sealed class AutomaticRustBoundaryTests
         using var ready = await PrerequisiteFixture.CreateAsync(PrerequisiteStatus.Ready);
         var expected = new InvalidOperationException("Language server path requested.");
         var readyDownloader = new Mock<IRlsInstallerService>(MockBehavior.Strict);
-        readyDownloader.Setup(service => service.GetExePathAsync())
+        readyDownloader.Setup(service => service.GetExePathAsync(
+                It.IsAny<CancellationToken>()))
             .Returns(Task.FromException<PathEx>(expected));
         using var readyClient = new LanguageClient(ready.Context.Factory)
         {
@@ -84,7 +85,10 @@ public sealed class AutomaticRustBoundaryTests
         (await activate.Should().ThrowAsync<InvalidOperationException>())
             .Which.Should().BeSameAs(expected);
         readyStarts.Should().Be(1);
-        readyDownloader.Verify(service => service.GetExePathAsync(), Times.Once);
+        readyDownloader.Verify(
+            service => service.GetExePathAsync(
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]

@@ -29,7 +29,10 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
     private readonly object _sync = new();
     private Stopwatch _activationDuration;
     private bool _activationReported;
+    private bool _packagedRetryAttempted;
     private bool _disposed;
+    private bool _serverStarted;
+    private PathEx _serverPath;
     private bool _stopped;
     private Task _stopping;
 
@@ -113,46 +116,18 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
             }
 
             BeginActivation();
-            var rlsPath = await RADownloader.GetExePathAsync();
+            var selectedPath = await RADownloader.GetExePathAsync(
+                activationCancellation.Token);
             activationCancellation.Token.ThrowIfCancellationRequested();
-            L.WriteLine("Starting rust-analyzer from path: {0}.", rlsPath);
-            ProcessStartInfo info = new()
+            var connection = await StartSelectedOrPackagedAsync(
+                selectedPath,
+                activationCancellation.Token);
+            if (connection == null)
             {
-                FileName = rlsPath,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Minimized,
-                WorkingDirectory = WorkspaceService.CurrentWorkspace?.Location ?? Path.GetDirectoryName(rlsPath),
-            };
-
-            Process process = new()
-            {
-                StartInfo = info
-            };
-            bool started;
-            lock (_sync)
-            {
-                if (_stopped || _disposed)
-                {
-                    process.Dispose();
-                    ReportActivation(UsageOutcome.Cancelled);
-                    return null;
-                }
-
-                started = process.Start();
+                ReportActivation(UsageOutcome.Failed);
             }
 
-            if (started)
-            {
-                L.WriteLine("Done starting rust-analyzer from path. PID: {0}", process.Id);
-                return await Task.FromResult(new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream));
-            }
-
-            L.WriteLine("Error starting rust-analyzer from path.");
-            ReportActivation(UsageOutcome.Failed);
-            return null;
+            return connection;
         }
         catch (OperationCanceledException) when (_lifetimeToken.IsCancellationRequested && !token.IsCancellationRequested)
         {
@@ -236,13 +211,18 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
         return Task.CompletedTask;
     }
 
-    public Task<InitializationFailureContext> OnServerInitializeFailedAsync(ILanguageClientInitializationInfo initializationState)
+    public async Task<InitializationFailureContext> OnServerInitializeFailedAsync(ILanguageClientInitializationInfo initializationState)
     {
+        if (await TryRetryPackagedAsync())
+        {
+            return null;
+        }
+
         ReportActivation(UsageOutcome.Failed);
         if (IsStopped ||
             !AvailabilityPolicy.IsReady(AutomaticRustPath.LanguageClientActivation))
         {
-            return Task.FromResult<InitializationFailureContext>(null);
+            return null;
         }
 
         string message = "Oh no! rust-analyzer failed to activate, now we can't test LSP! :(";
@@ -256,7 +236,51 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
             FailureMessage = message,
         };
 
-        return Task.FromResult(failureContext);
+        return failureContext;
+    }
+
+    protected virtual Task<Connection> StartServerAsync(
+        PathEx serverPath,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        L.WriteLine("Starting rust-analyzer from path: {0}.", serverPath);
+        ProcessStartInfo info = new()
+        {
+            FileName = serverPath,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Minimized,
+            WorkingDirectory = WorkspaceService.CurrentWorkspace?.Location ??
+                Path.GetDirectoryName(serverPath),
+        };
+        Process process = new()
+        {
+            StartInfo = info,
+        };
+        lock (_sync)
+        {
+            if (_stopped || _disposed)
+            {
+                process.Dispose();
+                throw new OperationCanceledException(cancellationToken);
+            }
+
+            if (!process.Start())
+            {
+                process.Dispose();
+                L.WriteLine("Error starting rust-analyzer from path.");
+                return Task.FromResult<Connection>(null);
+            }
+        }
+
+        L.WriteLine("Done starting rust-analyzer from path. PID: {0}", process.Id);
+        return Task.FromResult(
+            new Connection(
+                process.StandardOutput.BaseStream,
+                process.StandardInput.BaseStream));
     }
 
     private bool IsStopped
@@ -274,8 +298,12 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
     {
         lock (_sync)
         {
-            _activationDuration = Stopwatch.StartNew();
-            _activationReported = false;
+            if (_activationDuration == null || _activationReported)
+            {
+                _activationDuration = Stopwatch.StartNew();
+                _activationReported = false;
+                _packagedRetryAttempted = false;
+            }
         }
     }
 
@@ -297,6 +325,82 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
             UsageOperation.LanguageServerActivate,
             outcome,
             duration.Elapsed);
+    }
+
+    private async Task<Connection> StartSelectedOrPackagedAsync(
+        PathEx selectedPath,
+        CancellationToken cancellationToken)
+    {
+        _serverPath = selectedPath;
+        _serverStarted = false;
+        try
+        {
+            var connection = await StartServerAsync(
+                selectedPath,
+                cancellationToken);
+            _serverStarted = connection != null;
+            if (connection != null ||
+                RADownloader.IsPackagedExePath(selectedPath))
+            {
+                return connection;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception e) when (
+            !RADownloader.IsPackagedExePath(selectedPath))
+        {
+            L.WriteError(
+                "Downloaded rust-analyzer failed to start; retrying the packaged version. Ex: {0}",
+                e);
+        }
+
+        _packagedRetryAttempted = true;
+        _serverPath = await RADownloader.ResetToPackagedAsync(
+            cancellationToken);
+        var packagedConnection = await StartServerAsync(
+            _serverPath,
+            cancellationToken);
+        _serverStarted = packagedConnection != null;
+        return packagedConnection;
+    }
+
+    private async Task<bool> TryRetryPackagedAsync()
+    {
+        lock (_sync)
+        {
+            if (_activationReported ||
+                _packagedRetryAttempted ||
+                string.IsNullOrEmpty(_serverPath) ||
+                RADownloader.IsPackagedExePath(_serverPath))
+            {
+                return false;
+            }
+
+            _packagedRetryAttempted = true;
+        }
+
+        try
+        {
+            _serverPath = await RADownloader.ResetToPackagedAsync(
+                _lifetimeToken);
+            if (StartAsync == null)
+            {
+                return false;
+            }
+
+            await StartAsync.InvokeAsync(this, EventArgs.Empty);
+            return _serverStarted;
+        }
+        catch (Exception e)
+        {
+            L.WriteError(
+                "Packaged rust-analyzer retry failed. Ex: {0}",
+                e);
+            return false;
+        }
     }
 
     private async Task OnLoadedCoreAsync()

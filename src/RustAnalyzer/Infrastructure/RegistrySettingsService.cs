@@ -12,6 +12,8 @@ public interface IRegistrySettingsService
 {
     public bool InfoBarDismissedByUser { get; set; }
 
+    string InstalledRustAnalyzerVersion { get; set; }
+
     bool GetPackageRegistryRoot(out string packageRegistryRoot);
 }
 
@@ -20,6 +22,7 @@ public interface IRegistrySettingsService
 public class RegistrySettingsService : IRegistrySettingsService
 {
     private const string DismissedRegKeyName = "release_notes_dismissed";
+    private const string InstalledRustAnalyzerVersionKey = "InstalledRlsVersion";
 
     private readonly IServiceProvider _serviceProvider;
 
@@ -51,6 +54,29 @@ public class RegistrySettingsService : IRegistrySettingsService
             {
                 Registry.SetValue(regRoot, DismissedRegKeyName, Vsix.Version);
             }
+        }
+    }
+
+    public string InstalledRustAnalyzerVersion
+    {
+        get
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return GetPackageRegistryRoot(out var regRoot)
+                ? Registry.GetValue(regRoot, InstalledRustAnalyzerVersionKey, null) as string
+                : null;
+        }
+
+        set
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (!GetPackageRegistryRoot(out var regRoot))
+            {
+                throw new InvalidOperationException(
+                    "The Visual Studio package registry root is unavailable.");
+            }
+
+            Registry.SetValue(regRoot, InstalledRustAnalyzerVersionKey, value);
         }
     }
 

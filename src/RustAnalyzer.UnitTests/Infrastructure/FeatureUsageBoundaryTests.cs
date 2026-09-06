@@ -258,7 +258,8 @@ public sealed class FeatureUsageBoundaryTests
             ? new OperationCanceledException()
             : (Exception)new InvalidOperationException();
         var downloader = new Mock<IRlsInstallerService>(MockBehavior.Strict);
-        downloader.Setup(service => service.GetExePathAsync())
+        downloader.Setup(service => service.GetExePathAsync(
+                It.IsAny<CancellationToken>()))
             .Returns(Task.FromException<PathEx>(exception));
         using var client = new LanguageClient(context.Factory)
         {
