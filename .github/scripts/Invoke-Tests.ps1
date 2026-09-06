@@ -51,7 +51,6 @@ if ($runsAssemblyTests) {
     }
 
     $testProjects = @(
-        "RustAnalyzer.Remote.UnitTests",
         "RustAnalyzer.TestAdapter.UnitTests",
         "RustAnalyzer.UnitTests")
     $assemblies = @(

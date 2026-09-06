@@ -212,7 +212,7 @@ Execute one task at a time.
 | T2 | S1 | Replace current telemetry calls with one terminal event per approved operation; remove duplicates, diagnostics, unsafe payloads, and lifecycle noise. | Done | `bf18959` |
 | T3 | S2 | Add the rust-analyzer `Verify`/`Check`/`Update` script, shared provenance manifest, preflight freshness gate, build verification, and focused script tests. Preserve existing tests, then run `Update` once. | Done | `2852d52` |
 | T4 | S2 | Harden runtime acquisition, verification, safe extraction, validation, cross-process activation, packaged fallback, local provenance, and focused failure tests. | Done | `4be82d7` |
-| T5 | S3 | Delete both Remote projects and reconcile the solution, build/test gates, dependency ledger, architecture, and premium boundary. | Pending | - |
+| T5 | S3 | Delete both Remote projects and reconcile the solution, build/test gates, dependency ledger, architecture, and premium boundary. | Done | pending |
 | T6 | S3 | Correct only a super-critical current-product fact made false by T1–T5. Defer unrelated README, historical-feature, build-skill, and backlog edits. | Pending | - |
 | T7 | S4 | Human-test the canonical VSIX and packaged standalone TestAdapter in one supported VS2022 17.x host and one VS2026 18.x host; record exact host/artifact versions plus install/load, LSP, Cargo, and test discovery/execution outcomes. | Pending | - |
 | T8 | S5 | Add explicit MEL 2.2 ownership, the VSIX Output-window and VSTest providers, factory composition, payload closure, and focused provider tests. | Pending | - |
