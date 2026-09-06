@@ -26,6 +26,8 @@ Preflight Gate 3 performs the one-time Rust-nightly install/update by running
 repair nightly state. Their gates only validate and consume the existing checkout-scoped manifest; a
 failure returns control to you for a fresh bootstrap.
 
+Preflight Gate 4 verifies the packaged rust-analyzer and checks official latest-release metadata.
+
 ## Agents on this project
 
 - **The human** — final decision-maker on all aspects. Does final end-to-end testing, merges to trunk

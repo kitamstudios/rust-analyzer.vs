@@ -26,6 +26,9 @@ $runsAcceptanceHarness = $Mode -eq "acceptance" -or $Mode -eq "full"
 Write-Host "Test phase: Telemetry connection string validation"
 & (Join-Path $PSScriptRoot "Test-TelemetryConnectionString.ps1")
 
+Write-Host "Test phase: rust-analyzer provenance"
+& (Join-Path $PSScriptRoot "Test-Manage-RustAnalyzer.ps1")
+
 Write-Host "Test phase: TestAdapter packager regression"
 & (Join-Path $PSScriptRoot "Test-New-TestAdapterPackage.ps1")
 

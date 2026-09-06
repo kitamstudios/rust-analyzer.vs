@@ -115,11 +115,15 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\external\rust-analyzer.exe">
-      <Link>2026-08-24\rust-analyzer.exe</Link>
+      <Link>2026-08-31\rust-analyzer.exe</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="..\external\rust_analyzer.pdb">
-      <Link>2026-08-24\rust_analyzer.pdb</Link>
+      <Link>2026-08-31\rust_analyzer.pdb</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="..\external\rust-analyzer.provenance.json">
+      <Link>2026-08-31\rust-analyzer.provenance.json</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="languages.pkgdef">

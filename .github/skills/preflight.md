@@ -1,6 +1,6 @@
 ---
 name: preflight
-description: The JARVIS runs this at session/loop start. Enforces assistant identity, required placeholders, and the pinned Rust nightly before the loop. Halts and reports otherwise.
+description: The JARVIS runs this at session/loop start. Enforces assistant identity, required placeholders, pinned Rust nightly, and packaged rust-analyzer currency. Halts and reports otherwise.
 ---
 
 Run by the JARVIS at the start of every session and before entering the loop. If any gate fails,
@@ -27,6 +27,12 @@ Only after Gates 1 and 2 pass, JARVIS runs the single assistant-owned bootstrap:
 
     pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Initialize-RustNightly.ps1
 
+## Gate 4 — Packaged rust-analyzer
+
+Verify the packaged files and fail when a newer official release is available:
+
+    pwsh -NoLogo -NoProfile -NonInteractive -File .\.github\scripts\Manage-RustAnalyzer.ps1 -Mode Check
+
 ## Pass
 
-All three gates clean ⇒ proceed to mode selection (trunk ⇒ new-feature, `vibe/<nnn>-*` ⇒ WIP).
+All four gates clean ⇒ proceed to mode selection (trunk ⇒ new-feature, `vibe/<nnn>-*` ⇒ WIP).

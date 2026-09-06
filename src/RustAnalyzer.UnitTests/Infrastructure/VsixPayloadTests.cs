@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Xml.Linq;
 using FluentAssertions;
+using KS.RustAnalyzer.TestAdapter;
 using Xunit;
 
 namespace KS.RustAnalyzer.UnitTests.Infrastructure;
@@ -100,6 +101,23 @@ public class VsixPayloadTests
                 coreEditorPrerequisites.Should().ContainSingle();
                 coreEditorPrerequisites[0].Attribute("Version").Value.Should().Be(SupportedVisualStudioRange);
             }
+        }
+    }
+
+    [Fact]
+    public void CanonicalRustAnalyzerVsixContainsPackagedProvenance()
+    {
+        using (var archive = ZipFile.OpenRead(GetCanonicalVsixPath("RustAnalyzer")))
+        {
+            archive.Entries
+                .Select(entry => entry.FullName)
+                .Where(name => name.StartsWith(
+                    Constants.RlsLatestInPackageVersion + "/",
+                    StringComparison.Ordinal))
+                .Should().BeEquivalentTo(
+                    $"{Constants.RlsLatestInPackageVersion}/rust-analyzer.exe",
+                    $"{Constants.RlsLatestInPackageVersion}/rust_analyzer.pdb",
+                    $"{Constants.RlsLatestInPackageVersion}/rust-analyzer.provenance.json");
         }
     }
 
