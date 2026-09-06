@@ -94,7 +94,8 @@
     <Compile Include="Editor\FileContextProvider.cs" />
     <Compile Include="Editor\FileScanner.cs" />
     <Compile Include="LanguageService\LanguageClient.cs" />
-    <Compile Include="Infrastructure\OutputWindowLogger.cs" />
+    <Compile Include="Infrastructure\OutputWindowLoggerProvider.cs" />
+    <Compile Include="Infrastructure\VsixLoggerFactory.cs" />
     <Compile Include="Editor\FileScannerFactory.cs" />
     <Compile Include="Infrastructure\BuildOutputSink.cs" />
     <Compile Include="Editor\FileContextProviderFactory.cs" />
@@ -168,6 +169,8 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0" />
     <PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
     <Reference Include="Microsoft.VisualBasic" />
     <PackageReference Include="System.ComponentModel.Composition" Version="8.0.0" ExcludeAssets="runtime" />

@@ -7,16 +7,12 @@ using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 
 namespace KS.RustAnalyzer.TestAdapter;
 
 public static class TestDiscovererCommon
 {
     private static readonly Regex TestExecutableFingerPrintCracker = new(@"^(.*)\-[\da-f]{16}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
-    public static TL CreateTL(this IMessageLogger @this, IFeatureUsageTelemetry telemetry)
-        => new() { T = telemetry, L = new TestAdapterLogger(@this) };
 
     /// <summary>
     /// Each TestContainer contains multiple Exes, each Exes has multiple tests. Each Exe is represented by a TestSuiteInfo.

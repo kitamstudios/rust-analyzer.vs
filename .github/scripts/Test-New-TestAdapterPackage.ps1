@@ -16,6 +16,14 @@ $expectedNames = @(
     "KS.RustAnalyzer.TestAdapter.pdb",
     "Microsoft.ApplicationInsights.dll",
     "Microsoft.ApplicationInsights.pdb",
+    "Microsoft.Extensions.Configuration.Abstractions.dll",
+    "Microsoft.Extensions.Configuration.Binder.dll",
+    "Microsoft.Extensions.Configuration.dll",
+    "Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+    "Microsoft.Extensions.Logging.Abstractions.dll",
+    "Microsoft.Extensions.Logging.dll",
+    "Microsoft.Extensions.Options.dll",
+    "Microsoft.Extensions.Primitives.dll",
     "System.Collections.Immutable.dll",
     "Ensure.That.dll")
 
@@ -83,7 +91,7 @@ try {
         ForEach-Object { $_.Trim() } |
         Where-Object { $_ -ne "" -and -not $_.StartsWith("#") })
     if (Compare-Object -CaseSensitive -ReferenceObject $expectedNames -DifferenceObject $authoritativeNames) {
-        throw "The authoritative TestAdapter package list is not the established six direct filenames."
+        throw "The authoritative TestAdapter package list is not the established direct filenames."
     }
 
     $repository = New-TestRepository

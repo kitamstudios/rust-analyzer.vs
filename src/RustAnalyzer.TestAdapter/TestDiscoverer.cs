@@ -37,7 +37,8 @@ public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
     public override void DiscoverTests(IEnumerable<PathEx> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
     {
         var duration = Stopwatch.StartNew();
-        var tl = logger.CreateTL(_telemetry);
+        using var invocationLogger = new TestAdapterLogger(logger);
+        var tl = new TL { T = _telemetry, L = invocationLogger, };
         try
         {
             var tasks = sources

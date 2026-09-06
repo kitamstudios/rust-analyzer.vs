@@ -41,7 +41,8 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
     public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
     {
         var ct = new CancellationToken(_cancelled);
-        var tl = frameworkHandle.CreateTL(_telemetry);
+        using var invocationLogger = new TestAdapterLogger(frameworkHandle);
+        var tl = new TL { T = _telemetry, L = invocationLogger, };
         RunWithTelemetry(
             () =>
             {
@@ -64,7 +65,8 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
     public override void RunTests(IEnumerable<PathEx> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
     {
         var ct = new CancellationToken(_cancelled);
-        var tl = frameworkHandle.CreateTL(_telemetry);
+        using var invocationLogger = new TestAdapterLogger(frameworkHandle);
+        var tl = new TL { T = _telemetry, L = invocationLogger, };
         RunWithTelemetry(
             () =>
             {

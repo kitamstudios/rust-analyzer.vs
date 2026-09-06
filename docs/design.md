@@ -71,7 +71,7 @@ Canonical output means an exact named deliverable or explicitly curated file set
 project path, never every file in a project directory:
 
 - `_built\projects\RustAnalyzer\RustAnalyzer.vsix`
-- the six `_built\projects\RustAnalyzer.TestAdapter\` inputs named by
+- the fourteen `_built\projects\RustAnalyzer.TestAdapter\` inputs named by
   `src/RustAnalyzer.TestAdapter/testadapter-package.txt`
 - `_built\projects\<test-project>\KS.<test-project>.dll` for the two test assemblies
 - `_built\projects\RustAnalyzer.UnitTests\xunit.console.exe` as the sole test runner
@@ -103,8 +103,8 @@ No Visual Studio 18 runtime or API package is part of the product closure.
 ### Restored dependency classification
 
 The four current `project.assets.json` graphs contain 244 distinct package/version entries. The
-ledger below applies its sections in order, so each entry maps once: 33 direct, 81 transitive host
-contracts, 11 transitive build/analyzer tools, 5 conflict-sensitive transitive versions, 12
+ledger below applies its sections in order, so each entry maps once: 35 direct, 81 transitive host
+contracts, 11 transitive build/analyzer tools, 5 conflict-sensitive transitive versions, 10
 delivered transitives, and 102 ordinary grouped-family entries. The sum is 244 and the unclassified
 count is zero. Shared
 transitives count once, not once per project.
@@ -116,7 +116,7 @@ asset paths, `B` = zero-warning Release build and conflict log, `I` = compiled I
 VSIX/TestAdapter archive entries, and `T` = assembly and acceptance tests. Linked package names are
 the official NuGet metadata.
 
-#### Direct package entries (33)
+#### Direct package entries (35)
 
 | Package/version | Consumers | Role; owner; delivery | Disposition and evidence |
 |---|---|---|---|
@@ -129,6 +129,8 @@ the official NuGet metadata.
 | [FluentAssertions 6.12.0](https://www.nuget.org/packages/FluentAssertions/6.12.0) | U | test; test; excluded | Unchanged assertion contract; net48 passes. A/T |
 | [FluentAssertions.Analyzers 0.33.0](https://www.nuget.org/packages/FluentAssertions.Analyzers/0.33.0) | U | analyzer; build/test; excluded | Unchanged analyzer; Release build passes. A/B |
 | [Microsoft.ApplicationInsights 2.22.0](https://www.nuget.org/packages/Microsoft.ApplicationInsights/2.22.0) | M/A/U | compile/runtime; extension and TestAdapter; main VSIX and TestAdapter archive | Unchanged telemetry contract; compatible assets pass. A/B/V/T |
+| [Microsoft.Extensions.Logging.Abstractions 2.2.0](https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/2.2.0) | M/A/U | compile/runtime; extension and TestAdapter; main VSIX and TestAdapter archive | Explicit local-logging API ownership at the existing 2.2 family. A/B/I/V/T |
+| [Microsoft.Extensions.Logging 2.2.0](https://www.nuget.org/packages/Microsoft.Extensions.Logging/2.2.0) | M/A/U | compile/runtime; extension and TestAdapter; main VSIX and TestAdapter archive | Explicit standard `LoggerFactory` ownership at the existing 2.2 family. A/B/I/V/T |
 | [Microsoft.NET.Test.Sdk 17.12.0](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk/17.12.0) | U | test/build; test; excluded | Aligned with TestPlatform 17.12; discovery and execution pass. A/B/T |
 | [Microsoft.SourceLink.GitHub 8.0.0](https://www.nuget.org/packages/Microsoft.SourceLink.GitHub/8.0.0) | M/A/U | build; build; excluded | Unchanged deterministic-source tooling. A/B |
 | [Microsoft.TestPlatform.ObjectModel 17.12.0](https://www.nuget.org/packages/Microsoft.TestPlatform.ObjectModel/17.12.0) | M/A and dependent U | compile host contract; host; excluded | Selected 17.12 contract; runtime excluded and IL remains ObjectModel 15.0. A/B/I/V/T |
@@ -154,7 +156,7 @@ the official NuGet metadata.
 | [xunit.runner.console 2.9.0](https://www.nuget.org/packages/xunit.runner.console/2.9.0) | U | test runner; test; sole curated runner | Unchanged runner; only `RustAnalyzer.UnitTests` copies `tools/net472`. A/T |
 | [xunit.runner.visualstudio 2.8.2](https://www.nuget.org/packages/xunit.runner.visualstudio/2.8.2) | U | test adapter/build; test; excluded from product payloads | Unchanged in-IDE runner; discovery passes. A/B/T |
 
-#### Other material entries (109)
+#### Other material entries (107)
 
 Every package/version entry in the next table is named exactly once. Compact SDK-family rows share
 identical consumers, role, ownership, delivery, disposition, and evidence. Consumers are M and its
@@ -162,16 +164,14 @@ dependent `RustAnalyzer.UnitTests/net48` unless shown otherwise.
 
 | Package/version entries | Role; owner; delivery | Disposition and evidence |
 |---|---|---|
-| `Microsoft.Extensions.Configuration.Abstractions` 2.2.0 | compile/runtime; extension; main VSIX | Toolkit/RestClient-owned compatible asset. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/Microsoft.Extensions.Configuration.Abstractions/2.2.0) |
-| `Microsoft.Extensions.Configuration.Binder` 2.2.0 | compile/runtime; extension; main VSIX | Toolkit/RestClient-owned compatible asset. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/Microsoft.Extensions.Configuration.Binder/2.2.0) |
-| `Microsoft.Extensions.Configuration` 2.2.0 | compile/runtime; extension; main VSIX | Toolkit/RestClient-owned compatible asset. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/Microsoft.Extensions.Configuration/2.2.0) |
-| `Microsoft.Extensions.DependencyInjection.Abstractions` 2.2.0 | compile/runtime; extension; main VSIX | Toolkit/RestClient-owned compatible asset. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection.Abstractions/2.2.0) |
+| `Microsoft.Extensions.Configuration.Abstractions` 2.2.0 | compile/runtime; extension and TestAdapter; main VSIX and TestAdapter archive | Logging/Toolkit/RestClient-owned compatible asset. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/Microsoft.Extensions.Configuration.Abstractions/2.2.0) |
+| `Microsoft.Extensions.Configuration.Binder` 2.2.0 | compile/runtime; extension and TestAdapter; main VSIX and TestAdapter archive | Logging/Toolkit/RestClient-owned compatible asset. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/Microsoft.Extensions.Configuration.Binder/2.2.0) |
+| `Microsoft.Extensions.Configuration` 2.2.0 | compile/runtime; extension and TestAdapter; main VSIX and TestAdapter archive | Logging/Toolkit/RestClient-owned compatible asset. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/Microsoft.Extensions.Configuration/2.2.0) |
+| `Microsoft.Extensions.DependencyInjection.Abstractions` 2.2.0 | compile/runtime; extension and TestAdapter; main VSIX and TestAdapter archive | Logging/Toolkit/RestClient-owned compatible asset. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection.Abstractions/2.2.0) |
 | `Microsoft.Extensions.DependencyInjection` 2.2.0 | compile/runtime; extension; main VSIX | Toolkit/RestClient-owned compatible asset. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection/2.2.0) |
 | `Microsoft.Extensions.Http` 2.2.0 | compile/runtime; extension; main VSIX | Toolkit/RestClient-owned compatible asset. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/Microsoft.Extensions.Http/2.2.0) |
-| `Microsoft.Extensions.Logging.Abstractions` 2.2.0 | compile/runtime; extension; main VSIX | Toolkit/RestClient-owned compatible asset. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/2.2.0) |
-| `Microsoft.Extensions.Logging` 2.2.0 | compile/runtime; extension; main VSIX | Toolkit/RestClient-owned compatible asset. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/Microsoft.Extensions.Logging/2.2.0) |
-| `Microsoft.Extensions.Options` 2.2.0 | compile/runtime; extension; main VSIX | Toolkit/RestClient-owned compatible asset. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/Microsoft.Extensions.Options/2.2.0) |
-| `Microsoft.Extensions.Primitives` 2.2.0 | compile/runtime; extension; main VSIX | Toolkit/RestClient-owned compatible asset. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/Microsoft.Extensions.Primitives/2.2.0) |
+| `Microsoft.Extensions.Options` 2.2.0 | compile/runtime; extension and TestAdapter; main VSIX and TestAdapter archive | Logging/Toolkit/RestClient-owned compatible asset. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/Microsoft.Extensions.Options/2.2.0) |
+| `Microsoft.Extensions.Primitives` 2.2.0 | compile/runtime; extension and TestAdapter; main VSIX and TestAdapter archive | Logging/Toolkit/RestClient-owned compatible asset. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/Microsoft.Extensions.Primitives/2.2.0) |
 | `System.ComponentModel.Annotations` 4.5.0 | compile/runtime; extension; main VSIX | RestClient-owned compatible asset. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/System.ComponentModel.Annotations/4.5.0) |
 | `System.Text.Encodings.Web` 8.0.0 | compile/runtime; extension; main VSIX | Toolkit-owned compatible asset. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/System.Text.Encodings.Web/8.0.0) |
 | `envdte`, `envdte100`, `envdte80`, `envdte90`, `envdte90a` 17.12.40391 | compile/runtime; host; excluded | SDK contracts retained at 17.12. A/B/I/V/T; official [SDK metadata](https://www.nuget.org/packages/Microsoft.VisualStudio.SDK/17.12.40392) |
@@ -204,7 +204,7 @@ dependent `RustAnalyzer.UnitTests/net48` unless shown otherwise.
 | `System.Numerics.Vectors` 4.4.0 and 4.5.0 | runtime; owning family/TestAdapter; excluded | Asset graphs retain both family versions; selected product closure is 4.5.0/assembly 4.1.4.0. A/B/I/V/T; official [4.5.0 metadata](https://www.nuget.org/packages/System.Numerics.Vectors/4.5.0) |
 | `System.Runtime.CompilerServices.Unsafe` 6.0.0 | runtime; SDK/TestAdapter; excluded | Selected product closure is assembly 6.0.0.0. A/B/I/V/T; official [metadata](https://www.nuget.org/packages/System.Runtime.CompilerServices.Unsafe/6.0.0) |
 
-The delivered rows above comprise 12 package/version entries, the host rows 81, the build/analyzer
+The delivered rows above comprise 10 package/version entries, the host rows 81, the build/analyzer
 rows 11, and the four conflict-family rows 5 versions. Each name/version is stated explicitly;
 family text only avoids repeating identical ownership and evidence.
 
@@ -240,7 +240,7 @@ runner 2.8.2 and analyzers 1.15.0, FluentAssertions 6.12.0 with analyzers 0.33.0
 ApprovalTests 5.8.0. Their resolved target assets build and pass the existing behavior gates, none
 owns an ambient conflict, and no newer version was adopted solely for recency.
 
-`RustAnalyzer` remains `net48`. It selects the Toolkit's `net48` asset, the SDK, threading, language
+`RustAnalyzer` remains `net48`. It selects the MEL 2.2 `netstandard2.0` assets, the Toolkit's `net48` asset, the SDK, threading, language
 server, Workspace, ServiceHub, and Visual Studio Composition `net472` assets, and the TestPlatform
 and Immutable `net462` assets. `RustAnalyzer.TestAdapter` remains `netstandard2.0` and selects only
 compatible `netstandard2.0` contract assets; ObjectModel, Composition, and Windows Principal are
@@ -249,7 +249,7 @@ compile-only, while Immutable is its runtime-owned dependency. BuildTools 18.9.8
 
 Compiled main IL references Visual Studio assemblies at stable 17.0 contracts except Threading and
 Language Server Client at 17.12; it references TestPlatform ObjectModel 15.0 and framework
-Composition 4.0. TestAdapter IL references ObjectModel 15.0, Composition 4.0, and Immutable 8.0.
+Composition 4.0. TestAdapter IL references MEL 2.2, ObjectModel 15.0, Composition 4.0, and Immutable 8.0.
 There is no post-17.12 host assembly reference.
 
 The SDK owns `Microsoft.VisualStudio.Composition` 17.12.18, `Microsoft.ServiceHub.Framework` 4.7.36,
@@ -281,13 +281,21 @@ resolution removed all 12 signatures.
 Visual Studio, ServiceHub, TestPlatform, Workspace, and Language Server assemblies are host-owned
 and absent from the main VSIX. The main package explicitly suppresses the four Workspace contracts
 and the two SDK dependencies not covered by VSSDK's standard host-assembly list. The main VSIX owns
-the extension, TestAdapter, Community Toolkit, application dependencies, and rust-analyzer payload.
-The standalone TestAdapter archive remains exactly:
+the extension, TestAdapter, MEL 2.2 closure, Community Toolkit, application dependencies, and
+rust-analyzer payload. The standalone TestAdapter archive is exactly:
 
 - `KS.RustAnalyzer.TestAdapter.dll`
 - `KS.RustAnalyzer.TestAdapter.pdb`
 - `Microsoft.ApplicationInsights.dll`
 - `Microsoft.ApplicationInsights.pdb`
+- `Microsoft.Extensions.Configuration.Abstractions.dll`
+- `Microsoft.Extensions.Configuration.Binder.dll`
+- `Microsoft.Extensions.Configuration.dll`
+- `Microsoft.Extensions.DependencyInjection.Abstractions.dll`
+- `Microsoft.Extensions.Logging.Abstractions.dll`
+- `Microsoft.Extensions.Logging.dll`
+- `Microsoft.Extensions.Options.dll`
+- `Microsoft.Extensions.Primitives.dll`
 - `System.Collections.Immutable.dll`
 - `Ensure.That.dll`
 
@@ -358,6 +366,15 @@ disables the path.
 The extension exports MEF providers for Open Folder metadata, file scanning, and file contexts.
 `MetadataServiceFactory` listens to batched workspace file-system changes and forwards relevant Rust
 source, manifest, and test-container changes to `MetadataService`.
+
+MEF exports one shared MEL 2.2 `ILoggerFactory` backed by the standard `LoggerFactory`. Its VSIX
+provider preserves categories and structured log data, defaults to `Information`, and uses one
+coalesced FIFO JTF drain for private Output-window pane creation and writes without activating the
+pane. The legacy custom logger bridges one way into this factory until its callers migrate.
+Standalone VSTest discovery and execution instead create one callback-scoped provider over
+`IMessageLogger`; sends are serialized and stop at provider disposal. Both providers are
+best-effort and in-process only. Build-pane output remains separate. Local logging has no provider,
+decorator, or automatic bridge to `IFeatureUsageTelemetry` or Application Insights.
 
 `MetadataService` caches Cargo workspaces/packages and raises package and test-container change
 events. File scanners and context providers translate that model into Visual Studio Open Folder
