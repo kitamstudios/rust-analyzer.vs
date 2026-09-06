@@ -58,6 +58,8 @@ completed Visual Studio major is never selected silently.
 
 The Visual Studio layer depends on the test-adapter/core services. Core Cargo and test behavior does
 not depend on Visual Studio UI types except where VSTest contracts are intrinsic to the adapter.
+No `RustAnalyzer.Remote` project exists; current Cargo, path, process, and debug flows are local and
+Windows-only.
 
 ## Build and canonical project outputs
 
@@ -397,16 +399,23 @@ executables and translates their results back to VSTest.
 No long-running repository service exists. F5 on the `RustAnalyzer` project launches a Visual Studio
 experimental instance with the VSIX deployed.
 
-## Updater and telemetry
+## Updater and feature telemetry
 
-`RlsInstallerService` queries GitHub releases, downloads a rust-analyzer archive, extracts the
-executable into the extension area, and records the installed version in the Visual Studio package
-registry. Release/update notifications use process or registry state. Offline operation, integrity
-verification, transactional activation, and rollback are unsupported.
+Feature usage crosses one typed `IFeatureUsageTelemetry` boundary. Its final processor allows only
+the fixed `rustanalyzer.feature_usage` event and fields documented in
+[`PRIVACY.md`](../PRIVACY.md). Visual Studio experimental instances, unconfigured builds, and a
+nonempty `RUSTANALYZER_TELEMETRY_DISABLED` remain silent. Release builds receive the public
+Application Insights client configuration from the build-injected
+`RUSTANALYZER_TELEMETRY_CONNECTION_STRING`; source stores no value.
 
-`TelemetryService` uses Application Insights and is shared by the extension/test-adapter code.
-Telemetry is suppressed in configured/experimental contexts, but the current implementation embeds
-connection configuration and derives a machine/user-related identifier.
+Packaged and downloaded rust-analyzer binaries carry adjacent provenance manifests recording their
+upstream release and verified digests. Normal builds run the script's offline `Verify`; preflight
+Gate 4 runs `Check` against official latest-release metadata.
+
+Runtime updates require the official Windows amd64 asset digest before safe extraction, validate
+provenance, file digests, and `rust-analyzer --version` under a cross-process lock, and update the
+registry pointer last. Invalid selections and failed updates reset to the packaged baseline; an
+initial downloaded language-server startup failure retries the packaged binary once.
 
 ## Sample Rust Projects
 

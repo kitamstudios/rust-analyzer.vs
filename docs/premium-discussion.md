@@ -22,7 +22,10 @@ are not active users or buyers.
 - The standalone TestAdapter is a separate free contract.
 - Feature 003 retired RustDevelopmentPack; no paid artifact or publication path exists.
 - No Remote project exists. Cargo, path, process, and debug flows are local and Windows-only.
-- Telemetry privacy and updater integrity remain unresolved.
+- Feature telemetry has a typed, allow-listed privacy boundary, operational suppression, and
+  build-injected public client configuration.
+- Packaged and runtime rust-analyzer acquisition now require provenance and official digests, with
+  build/preflight verification, hardened activation, and packaged fallback.
 
 ## Boundary
 
