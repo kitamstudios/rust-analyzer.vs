@@ -213,7 +213,7 @@ Execute one task at a time.
 | T3 | S2 | Add the rust-analyzer `Verify`/`Check`/`Update` script, shared provenance manifest, preflight freshness gate, build verification, and focused script tests. Preserve existing tests, then run `Update` once. | Done | `2852d52` |
 | T4 | S2 | Harden runtime acquisition, verification, safe extraction, validation, cross-process activation, packaged fallback, local provenance, and focused failure tests. | Done | `4be82d7` |
 | T5 | S3 | Delete both Remote projects and reconcile the solution, build/test gates, dependency ledger, architecture, and premium boundary. | Done | `e41a348` |
-| T6 | S3 | Correct only a super-critical current-product fact made false by T1–T5. Defer unrelated README, historical-feature, build-skill, and backlog edits. | Pending | - |
+| T6 | S3 | Correct only a super-critical current-product fact made false by T1–T5. Defer unrelated README, historical-feature, build-skill, and backlog edits. | Done | `ea87618` |
 | T7 | S4 | Human-test the canonical VSIX and packaged standalone TestAdapter in one supported VS2022 17.x host and one VS2026 18.x host; record exact host/artifact versions plus install/load, LSP, Cargo, and test discovery/execution outcomes. | Pending | - |
 | T8 | S5 | Add explicit MEL 2.2 ownership, the VSIX Output-window and VSTest providers, factory composition, payload closure, and focused provider tests. | Pending | - |
 | T9 | S5 | Migrate semantic local logging, remove the custom logger and logging/telemetry bundle, and preserve independent telemetry calls. | Pending | - |
@@ -494,6 +494,12 @@ Execute one task at a time.
 - Reconciled four asset graphs, two test assemblies, and 244 external package/version entries.
 - Main VSIX and standalone TestAdapter identity, behavior, and payload remain unchanged.
 - Full verification passed with 523 assembly tests and 18 acceptance outcomes.
+
+### T6 outcome
+
+- Reconciled supported hosts, privacy, non-affiliation, telemetry, provenance, updater, and Remote facts.
+- Marked Feature 003 complete; retained the README paid-extension announcement by human decision.
+- Documentation verification and design review passed; no executable behavior changed.
 
 ### Telemetry audit
 
