@@ -24,7 +24,7 @@ public sealed class BuildOutputSink : IBuildOutputSink
     public BuildOutputSink()
     {
         _getOrCreatePane = InitializeOutputPane;
-        _observeFault = exception => T?.TrackException(exception);
+        _observeFault = _ => { };
         _runOnMainThreadAsync = RunOnMainThreadAsync;
     }
 
@@ -37,9 +37,6 @@ public sealed class BuildOutputSink : IBuildOutputSink
         _getOrCreatePane = getOrCreatePane;
         _observeFault = observeFault;
     }
-
-    [Import]
-    private ITelemetryService T { get; set; }
 
     [Import]
     private SVsServiceProvider ServiceProvider { get; set; }

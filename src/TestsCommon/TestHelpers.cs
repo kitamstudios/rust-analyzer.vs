@@ -23,7 +23,7 @@ public static class TestHelpers
         new()
         {
             L = Mock.Of<ILogger>(),
-            T = Mock.Of<ITelemetryService>(),
+            T = Mock.Of<IFeatureUsageTelemetry>(),
         };
 
     private static readonly ConcurrentDictionary<PathEx, IMetadataService> MetadataServices = new ConcurrentDictionary<PathEx, IMetadataService>();
@@ -101,5 +101,15 @@ public static class TestHelpers
         var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath(profile);
 
         return (WorkspacePath: workspacePath, ManifestPath: manifestPath, TargetPath: targetPath);
+    }
+}
+
+public sealed class RecordingFeatureUsageTelemetry : IFeatureUsageTelemetry
+{
+    public ConcurrentQueue<(UsageOperation Operation, UsageOutcome Outcome, TimeSpan Duration)> Events { get; } = new();
+
+    public void Track(UsageOperation operation, UsageOutcome outcome, TimeSpan duration)
+    {
+        Events.Enqueue((operation, outcome, duration));
     }
 }

@@ -20,25 +20,21 @@ public interface IPreReqsCheckService
 public sealed class PreReqsCheckService : IPreReqsCheckService
 {
     private readonly IPrerequisiteProbe _probe;
-    private readonly TL _tl;
+    private readonly ILogger _logger;
 
     [ImportingConstructor]
-    public PreReqsCheckService([Import] ITelemetryService t, [Import] ILogger l)
-        : this(new VisualStudioPrerequisiteProbe(), t, l)
+    public PreReqsCheckService([Import] ILogger logger)
+        : this(new VisualStudioPrerequisiteProbe(), logger)
     {
     }
 
-    public PreReqsCheckService(IPrerequisiteProbe probe, ITelemetryService t, ILogger l)
+    public PreReqsCheckService(IPrerequisiteProbe probe, ILogger logger)
     {
         _probe = EnsureArg.IsNotNull(
             probe,
             nameof(probe),
             options => options.WithException(new ArgumentNullException(nameof(probe))));
-        _tl = new TL
-        {
-            T = t,
-            L = l,
-        };
+        _logger = logger;
     }
 
     public async Task<PrerequisiteResult> EvaluateAsync(CancellationToken ct)
@@ -47,7 +43,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         {
             var diagnosticProbe = new DiagnosticPrerequisiteProbe(_probe);
             var result = await new PrerequisiteEvaluator(diagnosticProbe).EvaluateAsync(ct);
-            diagnosticProbe.WriteDiagnostics(result, _tl.L);
+            diagnosticProbe.WriteDiagnostics(result, _logger);
             return result;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -56,8 +52,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         }
         catch (Exception e)
         {
-            _tl.L.WriteError("Prerequisite evaluation failed unexpectedly. Ex: {0}", e);
-            _tl.T.TrackException(e);
+            _logger.WriteError("Prerequisite evaluation failed unexpectedly. Ex: {0}", e);
             return PrerequisiteResult.Failed(
                 new[]
                 {

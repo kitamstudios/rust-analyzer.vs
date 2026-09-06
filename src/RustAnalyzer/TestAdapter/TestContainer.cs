@@ -22,7 +22,6 @@ public class TestContainer : BaseTestContainer, ITestContainer
         Discoverer = discoverer;
         TL = tl;
 
-        TL.T.TrackEvent("NewTestContainer", ("ManifestPath", testContainerPath));
         TL.L.WriteLine("New Test container {0} [{1}]", testContainerPath, TimeStamp);
     }
 

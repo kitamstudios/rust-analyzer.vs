@@ -16,6 +16,7 @@ using KS.RustAnalyzer.Shell;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using KS.RustAnalyzer.Tests.Common;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
@@ -40,6 +41,7 @@ public sealed class AutomaticRustBoundaryTests
         {
             AvailabilityPolicy = unavailable.Policy,
             RADownloader = downloader.Object,
+            UsageTelemetry = unavailable.Telemetry,
         };
         var starts = 0;
         client.StartAsync += (_, _) =>
@@ -66,6 +68,7 @@ public sealed class AutomaticRustBoundaryTests
         {
             AvailabilityPolicy = ready.Policy,
             RADownloader = readyDownloader.Object,
+            UsageTelemetry = ready.Telemetry,
         };
         var readyStarts = 0;
         readyClient.StartAsync += (_, _) =>
@@ -91,6 +94,7 @@ public sealed class AutomaticRustBoundaryTests
         using var client = new LanguageClient(fixture.Context.Factory)
         {
             AvailabilityPolicy = fixture.Policy,
+            UsageTelemetry = fixture.Telemetry,
         };
         var starts = 0;
         client.StartAsync += (_, _) =>
@@ -119,6 +123,7 @@ public sealed class AutomaticRustBoundaryTests
         using var client = new LanguageClient(fixture.Context.Factory)
         {
             AvailabilityPolicy = fixture.Policy,
+            UsageTelemetry = fixture.Telemetry,
         };
         var starts = 0;
         client.StartAsync += (_, _) =>
@@ -153,6 +158,7 @@ public sealed class AutomaticRustBoundaryTests
         using var client = new LanguageClient(fixture.Context.Factory)
         {
             AvailabilityPolicy = fixture.Policy,
+            UsageTelemetry = fixture.Telemetry,
         };
         var starts = 0;
         var stops = 0;
@@ -219,7 +225,6 @@ public sealed class AutomaticRustBoundaryTests
         {
             AvailabilityPolicy = unavailable.Policy,
             L = unavailable.Logger,
-            T = unavailable.Telemetry,
         };
 
         var scanner = factory.CreateProvider(null);
@@ -252,11 +257,10 @@ public sealed class AutomaticRustBoundaryTests
         {
             AvailabilityPolicy = ready.Policy,
             L = ready.Logger,
-            T = ready.Telemetry,
         };
 
         readyFactory.CreateProvider(workspace.Object).Should().NotBeNull();
-        ready.Telemetry.Events.Should().ContainSingle().Which.Should().Be("Create Scanner");
+        ready.Telemetry.Events.Should().BeEmpty();
     }
 
     [Fact]
@@ -270,7 +274,6 @@ public sealed class AutomaticRustBoundaryTests
                 () => Mock.Of<IToolchainService>()),
             L = unavailable.Logger,
             OutputPane = Mock.Of<IBuildOutputSink>(),
-            T = unavailable.Telemetry,
         };
 
         var provider = factory.CreateProvider(null);
@@ -308,11 +311,10 @@ public sealed class AutomaticRustBoundaryTests
                 () => Mock.Of<IToolchainService>()),
             L = ready.Logger,
             OutputPane = Mock.Of<IBuildOutputSink>(),
-            T = ready.Telemetry,
         };
 
         readyFactory.CreateProvider(workspace.Object).Should().NotBeNull();
-        ready.Telemetry.Events.Should().ContainSingle().Which.Should().Be("Create Context Provider");
+        ready.Telemetry.Events.Should().BeEmpty();
     }
 
     [Fact]
@@ -358,14 +360,13 @@ public sealed class AutomaticRustBoundaryTests
     {
         using var unavailable = await PrerequisiteFixture.CreateAsync(PrerequisiteStatus.Suspended);
         var nodeProvider = new NodeBrowseObjectProvider(
-            unavailable.Telemetry,
             unavailable.Logger,
             unavailable.Policy);
         var debugProvider = new DebugLaunchTargetProvider
         {
             AvailabilityPolicy = unavailable.Policy,
             L = unavailable.Logger,
-            T = unavailable.Telemetry,
+            UsageTelemetry = unavailable.Telemetry,
         };
 
         nodeProvider.ProvideBrowseObject(null).Should().BeNull();
@@ -374,7 +375,6 @@ public sealed class AutomaticRustBoundaryTests
 
         unavailable.Logger.Lines.Should().HaveCount(2);
         unavailable.Telemetry.Events.Should().BeEmpty();
-        unavailable.Telemetry.Exceptions.Should().BeEmpty();
     }
 
     [Fact]
@@ -598,7 +598,6 @@ public sealed class AutomaticRustBoundaryTests
         var registry = new Mock<IRegistrySettingsService>(MockBehavior.Strict);
         var installer = new RlsInstallerService(
             registry.Object,
-            unavailable.Telemetry,
             unavailable.Logger,
             unavailable.Policy);
 
@@ -607,7 +606,6 @@ public sealed class AutomaticRustBoundaryTests
         registry.VerifyNoOtherCalls();
         unavailable.Logger.Lines.Should().ContainSingle();
         unavailable.Telemetry.Events.Should().BeEmpty();
-        unavailable.Telemetry.Exceptions.Should().BeEmpty();
     }
 
     [Theory]
@@ -800,8 +798,8 @@ public sealed class AutomaticRustBoundaryTests
             Context = new JoinableTaskContext();
             State = new PrerequisiteProcessState(Context.Factory);
             Logger = new RecordingLogger();
-            Telemetry = new RecordingTelemetry();
-            Policy = new PrerequisiteAvailabilityPolicy(State, Logger, Telemetry);
+            Telemetry = new RecordingFeatureUsageTelemetry();
+            Policy = new PrerequisiteAvailabilityPolicy(State, Logger);
         }
 
         public JoinableTaskContext Context { get; }
@@ -812,7 +810,7 @@ public sealed class AutomaticRustBoundaryTests
 
         public PrerequisiteProcessState State { get; }
 
-        public RecordingTelemetry Telemetry { get; }
+        public RecordingFeatureUsageTelemetry Telemetry { get; }
 
         public static async Task<PrerequisiteFixture> CreateAsync(PrerequisiteStatus status)
         {
@@ -867,31 +865,6 @@ public sealed class AutomaticRustBoundaryTests
         public void WriteError(string format, params object[] args)
         {
             Errors.Enqueue((format, args));
-        }
-    }
-
-    private sealed class RecordingTelemetry : ITelemetryService
-    {
-        public ConcurrentQueue<string> Events { get; } = new();
-
-        public ConcurrentQueue<Exception> Exceptions { get; } = new();
-
-        public void TrackEvent(string eventName, params (string Key, string Value)[] properties)
-        {
-            Events.Enqueue(eventName);
-        }
-
-        public void TrackException(Exception e, string siteName = null)
-        {
-            Exceptions.Enqueue(e);
-        }
-
-        public void TrackException(
-            Exception e,
-            (string Key, string Value)[] properties,
-            string siteName = null)
-        {
-            Exceptions.Enqueue(e);
         }
     }
 }

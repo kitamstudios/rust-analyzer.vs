@@ -168,7 +168,7 @@ public sealed class PrerequisiteEvaluatorTests
         PrerequisiteFailureKind.CargoNotOperational,
         "Prerequisite.CargoVersion",
         42)]
-    public async Task FailedProbeWritesOneLocalDiagnosticWithoutModalOrTelemetryOutputAsync(
+    public async Task FailedProbeWritesOneLocalDiagnosticWithoutModalOutputAsync(
         string operation,
         PrerequisiteFailureKind expectedFailure,
         string expectedOperation,
@@ -179,8 +179,7 @@ public sealed class PrerequisiteEvaluatorTests
         var probe = new FakePrerequisiteProbe();
         SetFailedProbe(probe, operation, standardOutput, standardError);
         var logger = new RecordingLogger();
-        var telemetry = new RecordingTelemetry();
-        var result = await new PreReqsCheckService(probe, telemetry, logger)
+        var result = await new PreReqsCheckService(probe, logger)
             .EvaluateAsync(default);
 
         result.Failures.Should().ContainSingle();
@@ -197,8 +196,6 @@ public sealed class PrerequisiteEvaluatorTests
         var prompt = new PrerequisiteFailurePromptModel(result);
         prompt.Message.Should().NotContain(standardOutput);
         prompt.Message.Should().NotContain(standardError);
-        telemetry.Events.Should().BeEmpty();
-        telemetry.Exceptions.Should().BeEmpty();
     }
 
     [Fact]
@@ -218,7 +215,6 @@ public sealed class PrerequisiteEvaluatorTests
 
         await new PreReqsCheckService(
                 probe,
-                new RecordingTelemetry(),
                 logger)
             .EvaluateAsync(default);
 
@@ -247,7 +243,6 @@ public sealed class PrerequisiteEvaluatorTests
 
         await new PreReqsCheckService(
                 startProbe,
-                new RecordingTelemetry(),
                 startLogger)
             .EvaluateAsync(default);
 
@@ -266,10 +261,8 @@ public sealed class PrerequisiteEvaluatorTests
     public async Task SuccessfulAndCanceledEvaluationsWriteNoProbeDiagnosticsAsync()
     {
         var logger = new RecordingLogger();
-        var telemetry = new RecordingTelemetry();
         var service = new PreReqsCheckService(
             new FakePrerequisiteProbe(),
-            telemetry,
             logger);
 
         var result = await service.EvaluateAsync(default);
@@ -282,8 +275,6 @@ public sealed class PrerequisiteEvaluatorTests
         await evaluateCanceled.Should().ThrowAsync<OperationCanceledException>();
         logger.Errors.Should().BeEmpty();
         logger.Lines.Should().BeEmpty();
-        telemetry.Events.Should().BeEmpty();
-        telemetry.Exceptions.Should().BeEmpty();
     }
 
     [Fact]
@@ -551,33 +542,6 @@ public sealed class PrerequisiteEvaluatorTests
         public void WriteError(string format, params object[] args)
         {
             Errors.Add((format, args));
-        }
-    }
-
-    private sealed class RecordingTelemetry : ITelemetryService
-    {
-        public List<string> Events { get; } = new();
-
-        public List<Exception> Exceptions { get; } = new();
-
-        public void TrackEvent(
-            string eventName,
-            params (string Key, string Value)[] properties)
-        {
-            Events.Add(eventName);
-        }
-
-        public void TrackException(Exception e, string siteName = null)
-        {
-            Exceptions.Add(e);
-        }
-
-        public void TrackException(
-            Exception e,
-            (string Key, string Value)[] properties,
-            string siteName = null)
-        {
-            Exceptions.Add(e);
         }
     }
 }

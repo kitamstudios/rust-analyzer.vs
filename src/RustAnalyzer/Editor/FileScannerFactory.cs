@@ -25,9 +25,6 @@ public class FileScannerFactory : IWorkspaceProviderFactory<IFileScanner>
     public ILogger L { get; set; }
 
     [Import]
-    public ITelemetryService T { get; set; }
-
-    [Import]
     public PrerequisiteAvailabilityPolicy AvailabilityPolicy { get; set; }
 
     public IFileScanner CreateProvider(IWorkspace workspaceContext)
@@ -40,9 +37,6 @@ public class FileScannerFactory : IWorkspaceProviderFactory<IFileScanner>
             return scanner;
         }
 
-        T.TrackEvent(
-            "Create Scanner",
-            new[] { ("Location", workspaceContext.Location) });
         L.WriteLine("Creating {0}.", GetType().Name);
 
         return scanner;

@@ -18,46 +18,66 @@
    gates set the latter to prevent internal telemetry. Release builds inject
    `RUSTANALYZER_TELEMETRY_CONNECTION_STRING` into generated compiled configuration. Never store it
    in source. Missing configuration produces no telemetry.
-6. Retain `ITelemetryService` unchanged as a temporary no-egress T1 bridge. T2 deletes it only after
+6. Before the CI build, validate the injected Application Insights connection string. Fail without
+   printing it when it is empty, contains control characters or duplicate keys, lacks a GUID
+   `InstrumentationKey`, lacks an absolute HTTPS `IngestionEndpoint`, or has a non-HTTPS
+   `LiveEndpoint`.
+7. Retain `ITelemetryService` unchanged as a temporary no-egress T1 bridge. T2 deletes it only after
    migrating every production caller and test double to `IFeatureUsageTelemetry`; the approved
    standalone TestAdapter API break permits its removal.
-7. Keep the packaged rust-analyzer as the sole recovery baseline.
-8. Retain automatic updates from the latest official Windows amd64 rust-analyzer release.
-9. Before download or extraction, require the SHA-256 published by official release metadata for
+8. Keep the packaged rust-analyzer as the sole recovery baseline.
+9. Retain automatic updates from the latest official Windows amd64 rust-analyzer release.
+10. Before download or extraction, require the SHA-256 published by official release metadata for
    the exact asset. A locally computed digest alone is not verification.
-10. Extract only the expected executable into its inactive version directory. Reject absolute,
+11. Extract only the expected executable into its inactive version directory. Reject absolute,
     nested, and parent-relative archive paths.
-11. Validate `rust-analyzer --version` before activation. It must exit successfully and report the
+12. Validate `rust-analyzer --version` before activation. It must exit successfully and report the
     manifest release. Serialize installation across Visual Studio processes and update the registry
     pointer last.
-12. If initial LSP startup fails, reset the pointer to the packaged version and retry once.
-13. If the packaged retry fails, stop retrying, keep its pointer, and use the ordinary local
+13. If initial LSP startup fails, reset the pointer to the packaged version and retry once.
+14. If the packaged retry fails, stop retrying, keep its pointer, and use the ordinary local
     initialization-failure path.
-14. Store the same provenance manifest beside packaged and downloaded rust-analyzer binaries.
-15. Before using a registry-selected downloaded binary, verify its adjacent manifest and executable
+15. Store the same provenance manifest beside packaged and downloaded rust-analyzer binaries.
+16. Before using a registry-selected downloaded binary, verify its adjacent manifest and executable
     digest. On failure, reset the pointer without starting it.
-16. Never clean completed downloaded-version directories. Under the installation lock, remove and
+17. Never clean completed downloaded-version directories. Under the installation lock, remove and
     recreate only a target directory proven partial by missing or invalid files, manifest, digest,
     or version validation.
-17. Add one script with `Verify`, `Check`, and `Update` modes:
+18. Add one script with `Verify`, `Check`, and `Update` modes:
     - `Verify` checks local files against their manifest without network access.
     - `Check` also resolves latest and fails when its release is newer than the packaged manifest.
     - `Update` acquires latest, verifies it, and updates all tracked package inputs.
-18. Add `Check` to preflight with one 30-second total network timeout. Fail on stale, malformed,
+19. Add `Check` to preflight with one 30-second total network timeout. Fail on stale, malformed,
     unavailable, or timed-out official metadata; show a precise diagnosis and refresh command.
     Never mutate tracked files during preflight.
-19. After the script passes its focused tests, run `Update` once and package the then-latest verified
+20. After the script passes its focused tests, run `Update` once and package the then-latest verified
     rust-analyzer files and manifest.
-20. Retain the existing 30-day freshness test and all other rust-analyzer tests.
-21. Delete `RustAnalyzer.Remote`, `RustAnalyzer.Remote.UnitTests`, and their live repository
+21. Retain the existing 30-day freshness test and all other rust-analyzer tests.
+22. Delete `RustAnalyzer.Remote`, `RustAnalyzer.Remote.UnitTests`, and their live repository
     references. Preserve historical feature records.
-22. Publish `PRIVACY.md`, linked from README, describing the exact schema, hashed identity, no
+23. Publish `PRIVACY.md`, linked from README, describing the exact schema, hashed identity, no
     consent prompt or user-facing opt-out, operational suppression, and 365-day raw-event retention.
     Existing Application Insights access controls remain unchanged.
-23. Make only critical product-consistency corrections caused by completed work or this feature.
-24. Record final canonical-VSIX and standalone-TestAdapter smoke tests in supported Visual Studio
+24. Make only critical product-consistency corrections caused by completed work or this feature.
+25. Record final canonical-VSIX and standalone-TestAdapter smoke tests in supported Visual Studio
     2022 and 2026 versions.
-25. Do not add CI supply-chain hardening, premium delivery, entitlement, or target abstractions.
+26. Do not add CI supply-chain hardening, premium delivery, entitlement, or target abstractions.
+27. As the final slice, replace the custom logger with explicitly pinned
+    `Microsoft.Extensions.Logging` 2.2.0 abstractions and factory behavior.
+28. Route semantic local logs through a shared VSIX Output-window provider and invocation-scoped
+    VSTest provider. Keep Build-pane output separate.
+29. Keep logging and feature telemetry independent. Add no Application Insights logging provider,
+    logging decorator, or automatic log-to-telemetry mapping.
+30. Permit unrestricted local diagnostic content, including paths, arguments, environment values,
+    settings, and exception text. None may cross into feature telemetry.
+31. Default local logging to `Information` and above. Use category, level, `EventId`, named
+    templates, exceptions, and limited deterministic scopes.
+32. Use best-effort in-process delivery only. Add no durable file, export, retry, drain, flush, or
+    shutdown guarantee.
+33. Expand the exact standalone TestAdapter payload for the explicit MEL runtime closure and update
+    its package tests.
+34. After logging migration, repeat affected VS2022/VS2026 Output-window and standalone-TestAdapter
+    validation.
 
 ## Design Options (Ox)
 
@@ -95,6 +115,7 @@
 | Remote deletion | Both projects are unused stubs and falsely imply an existing remote platform. |
 | Critical product truth | Current architecture, privacy, and delivery claims must match shipped behavior. |
 | Baseline closure | Premium work should start from recorded VS2022, VS2026, VSIX, and TestAdapter evidence. |
+| Local semantic logging | Standard categories, levels, events, templates, and host-specific local sinks replace the custom logger. |
 
 ### Excluded
 
@@ -156,6 +177,21 @@ The existing version directory is the inactive staging location. No second stagi
 downloaded fallback version is required. The installation lock covers inspection, partial-directory
 replacement, validation, pointer commit, and rollback.
 
+### Local structured logging
+
+```text
+┌──────────────┐   ┌────────────────┐   ┌─────────────────┐
+│ Product code │ → │ ILoggerFactory │ → │ VS Output pane  │
+└──────┬───────┘   └────────────────┘   │ VSTest messages │
+       │                                └─────────────────┘
+       ▼
+┌────────────────────────┐
+│ IFeatureUsageTelemetry │
+└────────────────────────┘
+```
+
+Logging remains local. Feature telemetry remains one separate, fixed, allow-listed event.
+
 ## Slices (Sx)
 
 | Slice | Outcome | Depends on |
@@ -164,6 +200,7 @@ replacement, validation, pointer commit, and rollback.
 | S2 | Packaged and downloaded rust-analyzer binaries are verified, attributable, and recoverable. | - |
 | S3 | Unused Remote projects and critical product contradictions are removed. | S1, S2 |
 | S4 | Canonical VSIX and standalone TestAdapter behavior is recorded on both supported Visual Studio generations. | S3 |
+| S5 | MEL semantic logging replaces the custom logger; affected host delivery is revalidated. | S4 |
 
 ## Tasks (Tx)
 
@@ -172,12 +209,15 @@ Execute one task at a time.
 | # | Slice | Task | Status | Commit |
 |---|---|---|---|---|
 | T1 | S1 | Add the typed telemetry boundary, hashed identity, injected release configuration, strict allow-list, temporary no-egress migration bridge, and focused contract tests. | Done | `7221e7b` |
-| T2 | S1 | Replace current telemetry calls with one terminal event per approved operation; remove duplicates, diagnostics, unsafe payloads, and lifecycle noise. | Pending | - |
+| T2 | S1 | Replace current telemetry calls with one terminal event per approved operation; remove duplicates, diagnostics, unsafe payloads, and lifecycle noise. | Done | pending |
 | T3 | S2 | Add the rust-analyzer `Verify`/`Check`/`Update` script, shared provenance manifest, preflight freshness gate, build verification, and focused script tests. Preserve existing tests, then run `Update` once. | Pending | - |
 | T4 | S2 | Harden runtime acquisition, verification, safe extraction, validation, cross-process activation, packaged fallback, local provenance, and focused failure tests. | Pending | - |
 | T5 | S3 | Delete both Remote projects and reconcile the solution, build/test gates, dependency ledger, architecture, and premium boundary. | Pending | - |
 | T6 | S3 | Correct only a super-critical current-product fact made false by T1–T5. Defer unrelated README, historical-feature, build-skill, and backlog edits. | Pending | - |
 | T7 | S4 | Human-test the canonical VSIX and packaged standalone TestAdapter in one supported VS2022 17.x host and one VS2026 18.x host; record exact host/artifact versions plus install/load, LSP, Cargo, and test discovery/execution outcomes. | Pending | - |
+| T8 | S5 | Add explicit MEL 2.2 ownership, the VSIX Output-window and VSTest providers, factory composition, payload closure, and focused provider tests. | Pending | - |
+| T9 | S5 | Migrate semantic local logging, remove the custom logger and logging/telemetry bundle, and preserve independent telemetry calls. | Pending | - |
+| T10 | S5 | Repeat affected VS2022/VS2026 Output-window and standalone-TestAdapter validation after the logging payload change. | Pending | - |
 
 ## Task Contracts
 
@@ -208,7 +248,8 @@ Execute one task at a time.
 - Apply the audit dispositions below at canonical terminal boundaries.
 - Emit at most one event per operation invocation.
 - Delete `ITelemetryService`, generic event methods, exception telemetry, and migrated test doubles.
-- Add `PRIVACY.md`; link it from README.
+- Add a reusable CI validation script for the injected connection-string format.
+- Add `PRIVACY.md`.
 
 **Acceptance**
 
@@ -218,6 +259,7 @@ Execute one task at a time.
   arbitrary property reaches telemetry.
 - Privacy text states default-on collection, hashed identity, exact schema, operational suppression,
   365-day raw retention, and unchanged existing access controls.
+- CI rejects missing or malformed configuration without echoing it.
 - Focused boundary tests prove one event and correct outcome for each feature family.
 
 ### T3 — Packaged acquisition and provenance
@@ -280,7 +322,7 @@ Execute one task at a time.
 
 **Work**
 
-- Add README non-affiliation guidance; preserve T2's privacy link.
+- Add README non-affiliation guidance and link `PRIVACY.md`.
 - Update current design facts for telemetry, updater, provenance, and Remote deletion.
 - Update only the current-constraints section of the premium discussion when made false.
 
@@ -304,6 +346,60 @@ Execute one task at a time.
 - Evidence names the exact artifacts and host versions.
 - Feature 003 and Feature 004 status reflect the recorded outcome.
 
+### T8 — MEL logging foundation
+
+**Work**
+
+- Add explicit `Microsoft.Extensions.Logging.Abstractions` and `Microsoft.Extensions.Logging` 2.2.0
+  ownership without upgrading the existing package family.
+- Export one shared VSIX `ILoggerFactory` through MEF; add no second DI container.
+- Add a category-preserving Output-window provider with one coalesced JTF FIFO drain.
+- Add an invocation-scoped VSTest provider over `IMessageLogger`; serialize concurrent sends.
+- Expand the curated TestAdapter payload and exact-package assertions for the required runtime DLLs.
+- Bridge the custom logger one way into MEL until T9 removes it.
+
+**Acceptance**
+
+- VSIX logs `Information` and above without synchronously waiting for the UI thread.
+- Pane creation and writes respect the JTF/UI boundary and never activate the pane automatically.
+- VSTest maps levels correctly and sends no messages after its owning callback.
+- Provider failure cannot recurse or replace the product exception.
+- Logging has no Application Insights or feature-telemetry provider.
+- Focused tests cover categories, levels, `EventId`, templates, concurrency, ordering, and disposal.
+
+### T9 — Semantic logging migration
+
+**Work**
+
+- Migrate callers to category loggers, levels, `EventId`, named templates, exception overloads, and
+  limited deterministic scopes.
+- Permit unrestricted local diagnostic fields as approved.
+- Use `LoggerMessage.Define` only for repeated hot paths.
+- Remove the custom `ILogger`, both custom sinks, the temporary bridge, and logging from `TL`.
+- Keep local logging and fixed feature telemetry as explicit separate calls.
+
+**Acceptance**
+
+- No custom logger or two-purpose logging/telemetry bundle remains.
+- Existing Output-window, Build-pane, and VSTest routing semantics remain distinct.
+- No log, scope, category, event, template property, or exception enters telemetry.
+- No duplicate logging path or retained callback-scoped VSTest logger remains.
+- Existing product error behavior is unchanged.
+
+### T10 — Logging host closure
+
+**Work**
+
+- Re-run the affected human VS2022 and VS2026 scenarios after the payload change.
+- Record exact artifacts, hosts, Output-window behavior, and standalone TestAdapter messages.
+
+**Acceptance**
+
+- Semantic logs reach the private VSIX Output pane on both hosts.
+- Build output remains in the Build pane.
+- Standalone TestAdapter informational, warning, and error messages reach VSTest on both hosts.
+- Final Feature 004 evidence refers to the post-logging artifacts.
+
 ## Risks (Rx)
 
 - **R1:** The identity hash is pseudonymous and guessable from candidate environment values. Never
@@ -325,6 +421,12 @@ Execute one task at a time.
   explicitly accepts that API break.
 - **R10:** The generated client telemetry connection string is recoverable from shipped binaries and
   can be used to submit false events. Treat ingestion as untrusted and enforce service-side controls.
+- **R11:** Explicit MEL ownership expands the standalone TestAdapter payload and can introduce
+  assembly-load conflicts. Pin 2.2.0 and verify the exact closure.
+- **R12:** Unrestricted local diagnostics can expose sensitive values when users copy or share
+  Output/VSTest logs. This exposure is explicitly accepted; never export it through telemetry.
+- **R13:** Non-blocking Output-window delivery can lose queued entries during shutdown or host
+  failure. Durable delivery remains out of scope.
 
 ## Assumptions (Ax)
 
@@ -336,6 +438,8 @@ Execute one task at a time.
 - **A4:** The registry pointer remains the activation authority.
 - **A5:** The main VSIX and standalone TestAdapter retain their identities and delivery formats.
 - **A6:** Existing Application Insights access controls need no repository or Azure change.
+- **A7:** The existing restored MEL 2.2.0 family remains compatible with net48, netstandard2.0,
+  VS2022, and VS2026 when explicitly owned.
 
 ## Deferrals (Dx)
 

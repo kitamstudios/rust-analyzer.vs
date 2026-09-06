@@ -1,7 +1,6 @@
 using System;
 using System.ComponentModel.Composition;
 using System.IO;
-using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -22,19 +21,12 @@ public class RegistrySettingsService : IRegistrySettingsService
 {
     private const string DismissedRegKeyName = "release_notes_dismissed";
 
-    private readonly TL _tl;
-
     private readonly IServiceProvider _serviceProvider;
 
     [ImportingConstructor]
-    public RegistrySettingsService([Import(typeof(SVsServiceProvider))] IServiceProvider serviceProvider, [Import] ITelemetryService t, [Import] ILogger l)
+    public RegistrySettingsService([Import(typeof(SVsServiceProvider))] IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
-        _tl = new TL
-        {
-            T = t,
-            L = l,
-        };
     }
 
     public bool InfoBarDismissedByUser

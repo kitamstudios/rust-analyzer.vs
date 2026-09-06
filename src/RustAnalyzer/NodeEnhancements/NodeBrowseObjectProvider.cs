@@ -24,14 +24,12 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
 
     [ImportingConstructor]
     public NodeBrowseObjectProvider(
-        [Import] ITelemetryService t,
         [Import] ILogger l,
         [Import] PrerequisiteAvailabilityPolicy availabilityPolicy)
     {
         _availabilityPolicy = availabilityPolicy;
         _tl = new TL
         {
-            T = t,
             L = l,
         };
     }

@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
@@ -20,13 +22,38 @@ namespace KS.RustAnalyzer.TestAdapter;
 [FileExtension(Constants.TestsContainerExtension)]
 public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
 {
+    private readonly IFeatureUsageTelemetry _telemetry;
+
+    public TestDiscoverer()
+        : this(FeatureUsageTelemetry.CreateForTestAdapter())
+    {
+    }
+
+    public TestDiscoverer(IFeatureUsageTelemetry telemetry)
+    {
+        _telemetry = EnsureArg.IsNotNull(telemetry, nameof(telemetry));
+    }
+
     public override void DiscoverTests(IEnumerable<PathEx> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
     {
-        var tl = logger.CreateTL();
-        var tasks = sources
-            .GroupBy(s => s)
-            .Select(async g => await DiscoverAndReportTestsFromOneSource(await g.Key.ReadTestContainerAsync(default), discoverySink, tl, default));
-        Task.WaitAll(tasks.ToArray());
+        var duration = Stopwatch.StartNew();
+        var tl = logger.CreateTL(_telemetry);
+        try
+        {
+            var tasks = sources
+                .GroupBy(s => s)
+                .Select(async g => await DiscoverAndReportTestsFromOneSource(await g.Key.ReadTestContainerAsync(default), discoverySink, tl, default));
+            Task.WaitAll(tasks.ToArray());
+            _telemetry.Track(UsageOperation.TestAdapterDiscover, UsageOutcome.Succeeded, duration.Elapsed);
+        }
+        catch (Exception e)
+        {
+            _telemetry.Track(
+                UsageOperation.TestAdapterDiscover,
+                IsCancellation(e) ? UsageOutcome.Cancelled : UsageOutcome.Failed,
+                duration.Elapsed);
+            throw;
+        }
     }
 
     /// <summary>
@@ -45,8 +72,14 @@ public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
         catch (Exception e)
         {
             tl.L.WriteError("DiscoverAndReportTestsFromOneSource failed with {0}", e);
-            tl.T.TrackException(e, new[] { ("Source", $"{tc.ThisPath}") });
             throw;
         }
+    }
+
+    private static bool IsCancellation(Exception exception)
+    {
+        return exception is OperationCanceledException
+            || (exception is AggregateException aggregate
+                && aggregate.Flatten().InnerExceptions.All(inner => inner is OperationCanceledException));
     }
 }

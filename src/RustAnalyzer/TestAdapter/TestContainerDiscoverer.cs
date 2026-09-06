@@ -40,7 +40,6 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
     [ImportingConstructor]
     public TestContainerDiscoverer(
         [Import] SVsServiceProvider serviceProvider,
-        [Import] ITelemetryService t,
         [Import] ILogger l,
         [Import] PrerequisiteAvailabilityPolicy availabilityPolicy)
         : this(
@@ -48,7 +47,6 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
                 .GetService<IVsFolderWorkspaceService>(),
             new TL
             {
-                T = t,
                 L = l,
             },
             availabilityPolicy,
@@ -236,7 +234,6 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
         }
 
         _tl.L.WriteLine("TestContainerDiscoverer loading new workspace at '{0}'.", workspace.Location);
-        _tl.T.TrackEvent("TcdLoadWorkspace", ("Location", workspace.Location));
         var metadataService = workspace.GetService<IMetadataService>();
         if (metadataService == null)
         {

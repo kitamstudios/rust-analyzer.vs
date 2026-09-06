@@ -23,6 +23,9 @@ $testAdapterPackage = Join-Path $testAdapterDirectory "KS.RustAnalyzer.TestAdapt
 $runsAssemblyTests = $Mode -ne "acceptance"
 $runsAcceptanceHarness = $Mode -eq "acceptance" -or $Mode -eq "full"
 
+Write-Host "Test phase: Telemetry connection string validation"
+& (Join-Path $PSScriptRoot "Test-TelemetryConnectionString.ps1")
+
 Write-Host "Test phase: TestAdapter packager regression"
 & (Join-Path $PSScriptRoot "Test-New-TestAdapterPackage.ps1")
 

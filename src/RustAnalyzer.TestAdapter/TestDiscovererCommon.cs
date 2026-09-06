@@ -15,7 +15,8 @@ public static class TestDiscovererCommon
 {
     private static readonly Regex TestExecutableFingerPrintCracker = new(@"^(.*)\-[\da-f]{16}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    public static TL CreateTL(this IMessageLogger @this) => new() { T = new TelemetryService(), L = new TestAdapterLogger(@this) };
+    public static TL CreateTL(this IMessageLogger @this, IFeatureUsageTelemetry telemetry)
+        => new() { T = telemetry, L = new TestAdapterLogger(@this) };
 
     /// <summary>
     /// Each TestContainer contains multiple Exes, each Exes has multiple tests. Each Exe is represented by a TestSuiteInfo.
@@ -39,7 +40,6 @@ public static class TestDiscovererCommon
         {
             var tsi = await suite;
             var testCaseInfos = tsi.Tests.Select(t => CreateTestCaseFromTest(tsi.Container.ThisPath, tsi.Exe, t));
-            tl.T.TrackEvent("DiscoverTestsFromOneSource", ("Source", tc.ThisPath), ("NumberOfTests", $"{testCaseInfos.Count()}"));
             ret.Add((tsi, testCaseInfos));
         }
 

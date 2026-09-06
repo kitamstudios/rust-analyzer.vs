@@ -44,7 +44,6 @@ public static class BuildJsonOutputParser
         catch (Exception e)
         {
             tl.L.WriteLine("CargoJsonOutputParser failed to parse line: {0}. Exception {1}.", jsonLine, e);
-            tl.T.TrackException(e, new[] { ("Id", "JObjectParse"), ("Line", jsonLine) });
             return new[] { new StringBuildMessage { Message = jsonLine } };
         }
 
@@ -62,7 +61,6 @@ public static class BuildJsonOutputParser
         catch (Exception e)
         {
             tl.L.WriteLine("CargoJsonOutputParser failed to parse line: {0}. Exception {1}.", jsonLine, e);
-            tl.T.TrackException(e, new[] { ("Id", "ParseCompilerX"), ("Line", jsonLine) });
             return new[] { new StringBuildMessage { Message = jsonLine } };
         }
 

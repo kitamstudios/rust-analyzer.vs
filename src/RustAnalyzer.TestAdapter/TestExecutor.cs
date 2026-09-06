@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
@@ -20,7 +22,18 @@ namespace KS.RustAnalyzer.TestAdapter;
 [ExtensionUri(Constants.ExecutorUriString)]
 public class TestExecutor : BaseTestExecutor, ITestExecutor
 {
+    private readonly IFeatureUsageTelemetry _telemetry;
     private bool _cancelled;
+
+    public TestExecutor()
+        : this(FeatureUsageTelemetry.CreateForTestAdapter())
+    {
+    }
+
+    public TestExecutor(IFeatureUsageTelemetry telemetry)
+    {
+        _telemetry = EnsureArg.IsNotNull(telemetry, nameof(telemetry));
+    }
 
     /// <summary>
     /// Signature requried by ITestExecutor.
@@ -28,28 +41,38 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
     public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
     {
         var ct = new CancellationToken(_cancelled);
-        var tl = frameworkHandle.CreateTL();
-        tl.L.WriteLine("RunTests starting. Executing {0} tests", tests.Count());
-        var tasks = tests
-            .GroupBy(t => t.Source)
-            .Select(g => (g.Key, g.AsEnumerable()))
-            .Select(async g => (await ((PathEx)g.Key).ReadTestContainerAsync(ct), g.Item2))
-            .Select(async x =>
+        var tl = frameworkHandle.CreateTL(_telemetry);
+        RunWithTelemetry(
+            () =>
             {
-                var (c, tcs) = await x;
-                c.TestExes.ForEach(exe => RunAndRecordTestResultsFromOneExe(exe, tcs, TestRunParams.FromContainer(c), runContext.IsBeingDebugged, frameworkHandle, tl, ct));
-            });
+                tl.L.WriteLine("RunTests starting. Executing {0} tests", tests.Count());
+                var tasks = tests
+                    .GroupBy(t => t.Source)
+                    .Select(g => (g.Key, g.AsEnumerable()))
+                    .Select(async g => (await ((PathEx)g.Key).ReadTestContainerAsync(ct), g.Item2))
+                    .Select(async x =>
+                    {
+                        var (c, tcs) = await x;
+                        c.TestExes.ForEach(exe => RunAndRecordTestResultsFromOneExe(exe, tcs, TestRunParams.FromContainer(c), runContext.IsBeingDebugged, frameworkHandle, tl, ct));
+                    });
 
-        Task.WaitAll(tasks.ToArray());
+                Task.WaitAll(tasks.ToArray());
+            },
+            tl.T);
     }
 
     public override void RunTests(IEnumerable<PathEx> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
     {
         var ct = new CancellationToken(_cancelled);
-        var tl = frameworkHandle.CreateTL();
-        tl.L.WriteLine("RunTests starting. Executing {0} sources.", sources.Count());
-        var tasks = sources.Select(async source => await RunTestsTestsFromOneSourceAsync(await source.ReadTestContainerAsync(ct), runContext, frameworkHandle, tl, ct));
-        Task.WaitAll(tasks.ToArray());
+        var tl = frameworkHandle.CreateTL(_telemetry);
+        RunWithTelemetry(
+            () =>
+            {
+                tl.L.WriteLine("RunTests starting. Executing {0} sources.", sources.Count());
+                var tasks = sources.Select(async source => await RunTestsTestsFromOneSourceAsync(await source.ReadTestContainerAsync(ct), runContext, frameworkHandle, tl, ct));
+                Task.WaitAll(tasks.ToArray());
+            },
+            tl.T);
     }
 
     /// <summary>
@@ -97,7 +120,6 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         catch (Exception e)
         {
             tl.L.WriteError("RunTests failed with {0}", e);
-            tl.T.TrackException(e);
             throw;
         }
     }
@@ -105,7 +127,6 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
     private static async Task RunTestsFromOneExe(PathEx exe, string[] args, IReadOnlyDictionary<string, TestCase> testCasesMap, IDictionary<string, string> envDict, TL tl, bool isBeingDebugged, IFrameworkHandle fh, CancellationToken ct)
     {
         tl.L.WriteLine("... RunTestsFromOneExe starting with {0}, {1}", exe, args.Length);
-        tl.T.TrackEvent("RunTestsFromOneSourceAsync", ("IsBeingDebugged", $"{isBeingDebugged}"), ("Args", string.Join("|", args)));
         var trs = Enumerable.Empty<TestResult>();
         if (isBeingDebugged)
         {
@@ -132,8 +153,6 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
                 tl.L.WriteError("RunTestsFromOneSourceAsync test executable exited with code {0}.", ec);
                 throw new ApplicationException($"Test executable returned {ec}. Check above for the arguments passed to test executable by running it on the command line.");
             }
-
-            tl.T.TrackEvent("RunTestsFromOneSourceAsync", ("Results", $"{trs.Count()}"));
         }
 
         foreach (var tr in trs)
@@ -151,6 +170,27 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
             Outcome = GetOutcome(tri.Event),
             Duration = TimeSpan.FromSeconds(tri.ExecutionTime)
         };
+    }
+
+    private static void RunWithTelemetry(Action operation, IFeatureUsageTelemetry telemetry)
+    {
+        var duration = Stopwatch.StartNew();
+        try
+        {
+            operation();
+            telemetry.Track(UsageOperation.TestAdapterExecute, UsageOutcome.Succeeded, duration.Elapsed);
+        }
+        catch (Exception e)
+        {
+            var cancelled = e is OperationCanceledException
+                || (e is AggregateException aggregate
+                    && aggregate.Flatten().InnerExceptions.All(inner => inner is OperationCanceledException));
+            telemetry.Track(
+                UsageOperation.TestAdapterExecute,
+                cancelled ? UsageOutcome.Cancelled : UsageOutcome.Failed,
+                duration.Elapsed);
+            throw;
+        }
     }
 
     private static TestOutcome GetOutcome(TestRunInfo.EventType @event)

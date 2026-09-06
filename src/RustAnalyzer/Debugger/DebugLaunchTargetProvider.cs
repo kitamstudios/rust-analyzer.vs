@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -27,7 +28,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
     public ILogger L { get; set; }
 
     [Import]
-    public ITelemetryService T { get; set; }
+    public IFeatureUsageTelemetry UsageTelemetry { get; set; }
 
     [Import]
     public PrerequisiteAvailabilityPolicy AvailabilityPolicy { get; set; }
@@ -39,7 +40,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
             return;
         }
 
-        var lcw = new LaunchConfigWrapper(debugLaunchActionContext.LaunchConfiguration, new TL { T = T, L = L, });
+        var lcw = new LaunchConfigWrapper(debugLaunchActionContext.LaunchConfiguration, L);
         workspaceContext.JTF.Run(async () => await LaunchDebugTargetAsync(workspaceContext, serviceProvider, lcw, default));
     }
 
@@ -63,6 +64,21 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
             return;
         }
 
+        var operation = lcw.ContainsKey(LaunchConfigurationConstants.NoDebugKey)
+            ? UsageOperation.LaunchRun
+            : UsageOperation.LaunchDebug;
+        await TrackLaunchAsync(
+            operation,
+            () => LaunchDebugTargetCoreAsync(workspaceContext, serviceProvider, lcw, operation, ct));
+    }
+
+    private async Task<bool> LaunchDebugTargetCoreAsync(
+        IWorkspace workspaceContext,
+        IServiceProvider serviceProvider,
+        LaunchConfigWrapper lcw,
+        UsageOperation operation,
+        CancellationToken ct)
+    {
         const string diagMessage = "Delete the .vs folder and try again. If that does not work please file a bug with the repro steps.";
         try
         {
@@ -75,9 +91,8 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
             {
                 string message = string.Format("Cannot find target '{0}' in '{1}', for profile '{2}'.", targetFQN, package?.FullPath, profile);
                 L.WriteError(message);
-                T.TrackException(new ArgumentOutOfRangeException("target", message));
                 await VsCommon.ShowMessageBoxAsync(message, diagMessage);
-                return;
+                return false;
             }
 
             var processName = target.GetPath(profile);
@@ -85,18 +100,16 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
             {
                 var message = string.Format("Unable to find file: '{0}'.", processName);
                 L.WriteLine(message);
-                T.TrackException(new FileNotFoundException(message, processName));
                 await VsCommon.ShowMessageBoxAsync(message, diagMessage);
-                return;
+                return false;
             }
 
             var args = await GetSettingsAsync(SettingsInfo.TypeCommandLineArguments, workspaceContext.GetService<ISettingsService>(), lcw);
             var env = await GetSettingsAsync(SettingsInfo.TypeDebuggerEnvironment, workspaceContext.GetService<ISettingsService>(), lcw);
             var workingDirectory = await GetSettingsAsync(SettingsInfo.TypeDebuggerWorkingDirectory, workspaceContext.GetService<ISettingsService>(), lcw);
-            var noDebugFlag = lcw.ContainsKey(LaunchConfigurationConstants.NoDebugKey) ? __VSDBGLAUNCHFLAGS.DBGLAUNCH_NoDebug : 0;
+            var noDebugFlag = operation == UsageOperation.LaunchRun ? __VSDBGLAUNCHFLAGS.DBGLAUNCH_NoDebug : 0;
 
             L.WriteLine("LaunchDebugTarget with profile: {0}, launchConfiguration: {1}", profile, lcw.SerializeObject());
-            T.TrackEvent("Debug", ("Target", targetFQN), ("Profile", profile), ("Manifest", package.FullPath), ("Args", args), ("Env", env.ReplaceNullWithBar()));
 
             var binLibPaths = await ToolchainServiceExtensions.GetBinAndLibPathsAsync(package.Parent.WorkspaceRoot, ct);
             var info = new VsDebugTargetInfo
@@ -122,12 +135,14 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
             };
 
             VsShellUtilities.LaunchDebugger(serviceProvider, info);
+            return true;
         }
         catch (KeyNotFoundException knfe)
         {
             await VsCommon.ShowMessageBoxAsync(
                 knfe.Message,
                 "Debugger will not be launched. Please report the repro steps + this message as this issue is hard to track down. 🙏");
+            return false;
         }
         catch (OperationCanceledException)
         {
@@ -139,7 +154,31 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                 "Operation '{0}' failed unexpectedly. Ex: {1}",
                 "DebugLaunchTargetProvider.LaunchDebugTargetAsync",
                 e);
-            T.TrackException(e);
+            throw;
+        }
+    }
+
+    private async Task TrackLaunchAsync(
+        UsageOperation operation,
+        Func<Task<bool>> launch)
+    {
+        var duration = Stopwatch.StartNew();
+        try
+        {
+            var succeeded = await launch();
+            UsageTelemetry.Track(
+                operation,
+                succeeded ? UsageOutcome.Succeeded : UsageOutcome.Failed,
+                duration.Elapsed);
+        }
+        catch (OperationCanceledException)
+        {
+            UsageTelemetry.Track(operation, UsageOutcome.Cancelled, duration.Elapsed);
+            throw;
+        }
+        catch (Exception)
+        {
+            UsageTelemetry.Track(operation, UsageOutcome.Failed, duration.Elapsed);
             throw;
         }
     }
@@ -156,12 +195,12 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
     public sealed class LaunchConfigWrapper
     {
         private readonly IPropertySettings _lc;
-        private readonly TL _tl;
+        private readonly ILogger _logger;
 
-        public LaunchConfigWrapper(IPropertySettings lc, TL tl)
+        public LaunchConfigWrapper(IPropertySettings lc, ILogger logger)
         {
             _lc = lc;
-            _tl = tl;
+            _logger = logger;
         }
 
         public string this[string key]
@@ -172,8 +211,7 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                 {
                     var msg = $"Key '{key}' is not set in launch configuration and / or is not a string.";
                     var e = new KeyNotFoundException(msg);
-                    _tl.T.TrackException(e, new[] { ("Key", key) });
-                    _tl.L.WriteError(msg);
+                    _logger.WriteError(msg);
                     throw e;
                 }
 

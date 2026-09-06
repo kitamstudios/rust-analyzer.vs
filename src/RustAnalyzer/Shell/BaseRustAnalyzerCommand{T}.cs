@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Community.VisualStudio.Toolkit;
 using EnsureThat;
@@ -20,7 +21,7 @@ public abstract class BaseRustAnalyzerCommand<T> : BaseCommand<T>
     private readonly PrerequisiteProcessState _prerequisiteState;
     private ILogger _logger;
     private PrerequisiteAvailabilityPolicy _availabilityPolicy;
-    private ITelemetryService _telemetry;
+    private IFeatureUsageTelemetry _usageTelemetry;
     private ShellInterop.IVsSolution _solution;
     private ShellInterop.IVsDebugger _debugger;
 
@@ -41,9 +42,9 @@ public abstract class BaseRustAnalyzerCommand<T> : BaseCommand<T>
 
     public CmdServices CmdServices { get; }
 
-    protected ITelemetryService Telemetry => _telemetry ??= Package.GetService<SComponentModel, IComponentModel2>(false)?.GetService<ITelemetryService>();
-
     protected ILogger Logger => _logger ??= Package.GetService<SComponentModel, IComponentModel2>(false)?.GetService<ILogger>();
+
+    protected IFeatureUsageTelemetry UsageTelemetry => _usageTelemetry ??= Package.GetService<SComponentModel, IComponentModel2>(false)?.GetService<IFeatureUsageTelemetry>();
 
     protected PrerequisiteAvailabilityPolicy AvailabilityPolicy =>
         _availabilityPolicy ??= Package.GetService<SComponentModel, IComponentModel2>(false)?.GetService<PrerequisiteAvailabilityPolicy>();
@@ -53,6 +54,29 @@ public abstract class BaseRustAnalyzerCommand<T> : BaseCommand<T>
     protected ShellInterop.IVsDebugger Debugger => _debugger ??= Package.GetService<ShellInterop.SVsShellDebugger, ShellInterop.IVsDebugger>(false);
 
     protected PrerequisiteProcessState PrerequisiteState => _prerequisiteState;
+
+    protected static async Task TrackUsageAsync(
+        IFeatureUsageTelemetry telemetry,
+        UsageOperation operation,
+        Func<Task<UsageOutcome>> execute)
+    {
+        var duration = Stopwatch.StartNew();
+        try
+        {
+            var outcome = await execute();
+            telemetry.Track(operation, outcome, duration.Elapsed);
+        }
+        catch (OperationCanceledException)
+        {
+            telemetry.Track(operation, UsageOutcome.Cancelled, duration.Elapsed);
+            throw;
+        }
+        catch (Exception)
+        {
+            telemetry.Track(operation, UsageOutcome.Failed, duration.Elapsed);
+            throw;
+        }
+    }
 
     protected sealed override void BeforeQueryStatus(EventArgs e)
     {
@@ -107,8 +131,6 @@ public abstract class BaseRustAnalyzerCommand<T> : BaseCommand<T>
             return;
         }
 
-        Telemetry.TrackEvent(typeof(T).Name);
-
         try
         {
             ExecuteCore(sender, eventArgs);
@@ -123,7 +145,6 @@ public abstract class BaseRustAnalyzerCommand<T> : BaseCommand<T>
                 "Operation '{0}' failed unexpectedly. Ex: {1}",
                 "BaseRustAnalyzerCommand.Execute",
                 e);
-            Telemetry.TrackException(e, new[] { ("Command", typeof(T).Name) });
             throw;
         }
     }

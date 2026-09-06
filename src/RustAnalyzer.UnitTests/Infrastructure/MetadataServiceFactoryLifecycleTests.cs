@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -220,7 +219,6 @@ public sealed class MetadataServiceFactoryLifecycleTests
         toolchainCreations.Should().Be(1);
         watcherResolutions.Should().Be(1);
         watcher.Object.OnBatchFileSystemChanged.AsyncInvocations.Should().ContainSingle();
-        fixture.Telemetry.Events.Count(name => name == "CreatingMDS").Should().Be(1);
         toolchain.VerifyNoOtherCalls();
         lifetime.Dispose();
     }
@@ -251,12 +249,10 @@ public sealed class MetadataServiceFactoryLifecycleTests
         lifetime.Dispose();
 
         watcher.Object.OnBatchFileSystemChanged.AsyncInvocations.Should().BeEmpty();
-        fixture.Telemetry.Events.Should().NotContain("DisposeMDS");
 
         fileSystemEvents.Release();
         await callback;
 
-        fixture.Telemetry.Events.Count(name => name == "DisposeMDS").Should().Be(1);
         toolchain.VerifyNoOtherCalls();
     }
 
@@ -317,11 +313,9 @@ public sealed class MetadataServiceFactoryLifecycleTests
         {
             Context = new JoinableTaskContext();
             State = new PrerequisiteProcessState(Context.Factory);
-            Telemetry = new RecordingTelemetry();
             Policy = new PrerequisiteAvailabilityPolicy(
                 State,
-                Mock.Of<ILogger>(),
-                Telemetry);
+                Mock.Of<ILogger>());
         }
 
         public JoinableTaskContext Context { get; }
@@ -330,8 +324,6 @@ public sealed class MetadataServiceFactoryLifecycleTests
 
         public PrerequisiteProcessState State { get; }
 
-        public RecordingTelemetry Telemetry { get; }
-
         public MetadataServiceFactory CreateFactory(Lazy<IToolchainService> cargoService)
         {
             return new MetadataServiceFactory
@@ -339,7 +331,6 @@ public sealed class MetadataServiceFactoryLifecycleTests
                 AvailabilityPolicy = Policy,
                 CargoService = cargoService,
                 L = Mock.Of<ILogger>(),
-                T = Telemetry,
             };
         }
 
@@ -368,29 +359,6 @@ public sealed class MetadataServiceFactoryLifecycleTests
         public void Dispose()
         {
             Context.Dispose();
-        }
-    }
-
-    private sealed class RecordingTelemetry : ITelemetryService
-    {
-        public ConcurrentQueue<string> Events { get; } = new();
-
-        public void TrackEvent(
-            string eventName,
-            params (string Key, string Value)[] properties)
-        {
-            Events.Enqueue(eventName);
-        }
-
-        public void TrackException(Exception e, string siteName = null)
-        {
-        }
-
-        public void TrackException(
-            Exception e,
-            (string Key, string Value)[] properties,
-            string siteName = null)
-        {
         }
     }
 }

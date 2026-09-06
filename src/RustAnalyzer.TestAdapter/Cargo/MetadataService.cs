@@ -31,7 +31,6 @@ public class MetadataService : IMetadataService, IDisposable
         _tl = tl;
         _synchronousEvents = syncEvents;
         _tl.L.WriteLine("Creating MDS. Workspace root: {0}.", workspaceRoot);
-        _tl.T.TrackEvent("CreatingMDS", ("WorkspaceRoot", $"{workspaceRoot}"));
     }
 
     public event EventHandler<Workspace.Package> PackageAdded;
@@ -147,7 +146,6 @@ public class MetadataService : IMetadataService, IDisposable
     private void Dispose(bool disposing)
     {
         _tl.L.WriteLine("Disposing MDS. Package cache has {0} entries.", _packageCache.Count);
-        _tl.T.TrackEvent("DisposeMDS", ("PackageCount", $"{_packageCache.Count}"));
         if (!_disposedValue)
         {
             if (disposing)

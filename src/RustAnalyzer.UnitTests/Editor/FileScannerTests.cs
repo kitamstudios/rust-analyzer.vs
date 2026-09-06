@@ -32,7 +32,7 @@ public class FileScannerTests
         await state.GetOrEvaluateAsync(_ => Task.FromResult(PrerequisiteResult.Success), default);
         var fs = new FileScanner(
             () => TestHelpers.MS(workspaceRoot),
-            new PrerequisiteAvailabilityPolicy(state, TestHelpers.TL.L, TestHelpers.TL.T));
+            new PrerequisiteAvailabilityPolicy(state, TestHelpers.TL.L));
         var filePath = workspaceRoot.Combine((PathEx)filePathRel);
 
         var refInfos = await fs.ScanContentAsync<IReadOnlyCollection<FileReferenceInfo>>(filePath, default);
@@ -61,7 +61,7 @@ public class FileScannerTests
         await state.GetOrEvaluateAsync(_ => Task.FromResult(PrerequisiteResult.Success), default);
         var fs = new FileScanner(
             () => TestHelpers.MS(workspaceRoot),
-            new PrerequisiteAvailabilityPolicy(state, TestHelpers.TL.L, TestHelpers.TL.T));
+            new PrerequisiteAvailabilityPolicy(state, TestHelpers.TL.L));
         var filePath = workspaceRoot.Combine((PathEx)filePathRel);
 
         var dataValues = await fs.ScanContentAsync<IReadOnlyCollection<FileDataValue>>(filePath, default);

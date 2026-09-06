@@ -41,7 +41,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         }
 
         var logger = new RecordingLogger();
-        var policy = new PrerequisiteAvailabilityPolicy(state, logger, new RecordingTelemetry());
+        var policy = new PrerequisiteAvailabilityPolicy(state, logger);
 
         policy.IsReady(AutomaticRustPath.LanguageClientActivation).Should().BeFalse();
         policy.IsReady(AutomaticRustPath.LanguageClientActivation).Should().BeFalse();
@@ -67,8 +67,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         var state = new PrerequisiteProcessState(context.Factory);
         await state.GetOrEvaluateAsync(_ => Task.FromResult(PrerequisiteResult.Success), default);
         var logger = new RecordingLogger();
-        var telemetry = new RecordingTelemetry();
-        var policy = new PrerequisiteAvailabilityPolicy(state, logger, telemetry);
+        var policy = new PrerequisiteAvailabilityPolicy(state, logger);
 
         foreach (AutomaticRustPath path in Enum.GetValues(typeof(AutomaticRustPath)))
         {
@@ -77,7 +76,6 @@ public sealed class PrerequisiteAvailabilityPolicyTests
 
         logger.Lines.Should().BeEmpty();
         logger.Errors.Should().BeEmpty();
-        telemetry.Exceptions.Should().BeEmpty();
     }
 
     [Fact]
@@ -88,7 +86,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         await state.GetOrEvaluateAsync(_ => Task.FromResult(CreateFailedResult()), default);
         state.Suspend();
         var logger = new RecordingLogger();
-        var policy = new PrerequisiteAvailabilityPolicy(state, logger, new RecordingTelemetry());
+        var policy = new PrerequisiteAvailabilityPolicy(state, logger);
         var paths = Enum.GetValues(typeof(AutomaticRustPath)).Cast<AutomaticRustPath>().ToArray();
 
         Parallel.ForEach(
@@ -108,8 +106,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         var logger = new RecordingLogger();
         var policy = new PrerequisiteAvailabilityPolicy(
             new PrerequisiteProcessState(context.Factory),
-            logger,
-            new RecordingTelemetry());
+            logger);
 
         Action check = () => policy.IsReady((AutomaticRustPath)int.MaxValue);
 
@@ -125,7 +122,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         using var context = new JoinableTaskContext();
         var state = new PrerequisiteProcessState(context.Factory);
         var logger = new RecordingLogger();
-        var policy = new PrerequisiteAvailabilityPolicy(state, logger, new RecordingTelemetry());
+        var policy = new PrerequisiteAvailabilityPolicy(state, logger);
         policy.ReportSuspended();
         await state.GetOrEvaluateAsync(_ => Task.FromResult(CreateFailedResult()), default);
         state.Suspend();
@@ -139,13 +136,12 @@ public sealed class PrerequisiteAvailabilityPolicyTests
     }
 
     [Fact]
-    public void InfoBarFailurePreservesExceptionInOneLogAndOneTelemetryEvent()
+    public void InfoBarFailurePreservesExceptionInOneLog()
     {
         using var context = new JoinableTaskContext();
         var state = new PrerequisiteProcessState(context.Factory);
         var logger = new RecordingLogger();
-        var telemetry = new RecordingTelemetry();
-        var policy = new PrerequisiteAvailabilityPolicy(state, logger, telemetry);
+        var policy = new PrerequisiteAvailabilityPolicy(state, logger);
         var exceptions = Enumerable.Range(0, 32)
             .Select(index => new InvalidOperationException($"InfoBar failure {index}."))
             .ToArray();
@@ -153,9 +149,8 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         Parallel.ForEach(exceptions, policy.ReportInfoBarFailure);
 
         logger.Errors.Should().ContainSingle();
-        telemetry.Exceptions.Should().ContainSingle();
         logger.Errors.Single().Arguments.Should().ContainSingle();
-        logger.Errors.Single().Arguments[0].Should().BeSameAs(telemetry.Exceptions.Single());
+        logger.Errors.Single().Arguments[0].Should().BeOneOf(exceptions);
     }
 
     [Fact]
@@ -175,8 +170,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
             default);
         var policy = new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger(),
-            new RecordingTelemetry());
+            new RecordingLogger());
 
         var backgroundCheck = policy.IsReadyAsync(
             AutomaticRustPath.LanguageClientActivation,
@@ -199,8 +193,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         var state = new PrerequisiteProcessState(context.Factory);
         var policy = new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger(),
-            new RecordingTelemetry());
+            new RecordingLogger());
 
         (await policy.IsReadyAsync(
             AutomaticRustPath.WorkspaceMetadata,
@@ -217,8 +210,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         var state = new PrerequisiteProcessState(context.Factory);
         var policy = new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger(),
-            new RecordingTelemetry());
+            new RecordingLogger());
 
         var observation = policy.WaitForReadyAsync(
             AutomaticRustPath.LanguageClientActivation,
@@ -242,8 +234,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         var state = new PrerequisiteProcessState(context.Factory);
         var policy = new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger(),
-            new RecordingTelemetry());
+            new RecordingLogger());
         var observation = policy.WaitForReadyAsync(
             AutomaticRustPath.WorkspaceMetadata,
             default);
@@ -270,8 +261,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         var state = new PrerequisiteProcessState(context.Factory);
         var policy = new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger(),
-            new RecordingTelemetry());
+            new RecordingLogger());
         var observation = policy.WaitForReadyAsync(
             AutomaticRustPath.RustTestDiscoveryExecutionHandoff,
             default);
@@ -301,8 +291,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         await state.GetOrEvaluateAsync(_ => Task.FromResult(PrerequisiteResult.Success), default);
         var policy = new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger(),
-            new RecordingTelemetry());
+            new RecordingLogger());
         cancellation.Cancel();
         Func<Task> check = async () =>
             await policy.IsReadyAsync(
@@ -330,8 +319,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
             default);
         var policy = new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger(),
-            new RecordingTelemetry());
+            new RecordingLogger());
         var observer = policy.IsReadyAsync(
             AutomaticRustPath.LanguageClientActivation,
             observerCancellation.Token);
@@ -369,8 +357,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
             packageCancellation.Token);
         var policy = new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger(),
-            new RecordingTelemetry());
+            new RecordingLogger());
         var observer = policy.IsReadyAsync(
             AutomaticRustPath.RustTestDiscoveryExecutionHandoff,
             default);
@@ -416,28 +403,6 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         public string[] FormatLines()
         {
             return Lines.Select(line => string.Format(line.Format, line.Arguments)).ToArray();
-        }
-    }
-
-    private sealed class RecordingTelemetry : ITelemetryService
-    {
-        public ConcurrentQueue<Exception> Exceptions { get; } = new();
-
-        public void TrackEvent(string eventName, params (string Key, string Value)[] properties)
-        {
-        }
-
-        public void TrackException(Exception e, string siteName = null)
-        {
-            Exceptions.Enqueue(e);
-        }
-
-        public void TrackException(
-            Exception e,
-            (string Key, string Value)[] properties,
-            string siteName = null)
-        {
-            Exceptions.Enqueue(e);
         }
     }
 }

@@ -18,9 +18,6 @@ namespace KS.RustAnalyzer.Infrastructure;
 public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
 {
     [Import]
-    public ITelemetryService T { get; set; }
-
-    [Import]
     public ILogger L { get; set; }
 
     [Import]
@@ -49,7 +46,7 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
             workspaceContext,
             getFileWatcherService,
             CargoService,
-            new TL { T = T, L = L, },
+            new TL { L = L, },
             AvailabilityPolicy,
             joinableTaskFactory);
     }

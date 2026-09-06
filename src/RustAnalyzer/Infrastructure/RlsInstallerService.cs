@@ -46,7 +46,6 @@ public class RlsInstallerService : IRlsInstallerService
     [ImportingConstructor]
     public RlsInstallerService(
         IRegistrySettingsService regSettings,
-        [Import] ITelemetryService t,
         [Import] ILogger l,
         [Import] PrerequisiteAvailabilityPolicy availabilityPolicy)
     {
@@ -54,7 +53,6 @@ public class RlsInstallerService : IRlsInstallerService
         _availabilityPolicy = availabilityPolicy;
         _tl = new TL
         {
-            T = t,
             L = l,
         };
     }
@@ -76,7 +74,6 @@ public class RlsInstallerService : IRlsInstallerService
             if (installedVer.CompareTo(latestRel.Version) >= 0)
             {
                 _tl.L.WriteLine($"Not going to download RLS. Installed = {installedVer}, Latest = {latestRel.Uri}.");
-                _tl.T.TrackEvent("RLSDS.RlsUpToDate", ("Installed", installedVer), ("Latest", latestRel.Uri.ToString()));
                 return;
             }
 
@@ -86,19 +83,16 @@ public class RlsInstallerService : IRlsInstallerService
             Install(zipStream, latestRel.Version);
 
             await CommitAsync(latestRel);
-            _tl.T.TrackEvent("RLSDS.RlsInstalled", ("Installed", installedVer));
         }
         catch (RlsReleaseLookupException ex)
         {
             // Nothing was downloaded and nothing is broken: the packaged rust-analyzer still works, so
             // this reports what actually happened instead of a download failure that never started.
             _tl.L.WriteError($"Latest release could not be determined; keeping the packaged version. {ex}");
-            _tl.T.TrackException(ex);
         }
         catch (Exception ex)
         {
             _tl.L.WriteError($"Download failed. StatusCode {ex}");
-            _tl.T.TrackException(ex);
             throw;
         }
     }
@@ -138,7 +132,6 @@ public class RlsInstallerService : IRlsInstallerService
         if (!response.IsSuccessStatusCode)
         {
             _tl.L.WriteError($"Download failed. StatusCode {response.StatusCode}.");
-            _tl.T.TrackEvent("RLSDS.RlsDownloadFailed", ("StatusCode", response.StatusCode.ToString()));
             throw new Exception($"RLSDS.RlsDownloadFailed. {response.StatusCode}.");
         }
 

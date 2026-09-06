@@ -91,7 +91,6 @@ public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOp
         _tl = new TL
         {
             L = cmServiceProvider?.GetService<ILogger>(),
-            T = cmServiceProvider?.GetService<ITelemetryService>(),
         };
         _regSettings = cmServiceProvider?.GetService<IRegistrySettingsService>();
         _preReqs = cmServiceProvider?.GetService<IPreReqsCheckService>();
@@ -148,7 +147,6 @@ public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOp
                         $"- OK: Disable the above and restart VS. (You can enable them back later from Extensions > Manage Extensions.)\r\n- Cancel: Disable {Vsix.Name} and restart VS.");
                 if (mbRet == VSConstants.MessageBoxResult.IDOK)
                 {
-                    _tl.T.TrackEvent("DisableIncompatExts", ("Extensions", string.Join(",", incompatibleExtensions.Select(x => x.Id))));
                     foreach (var e in incompatibleExtensions)
                     {
                         exMgr.Disable(e.Extension);
@@ -156,7 +154,6 @@ public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOp
                 }
                 else
                 {
-                    _tl.T.TrackEvent("DisableThisExt");
                     var thisExtension = allExtensionIds[Vsix.Id];
                     exMgr.Disable(thisExtension);
                 }
@@ -167,7 +164,6 @@ public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOp
         catch (Exception e)
         {
             _tl.L.WriteLine("Failed in searching and disabling incompatible extensions. Ex: {0}", e);
-            _tl.T.TrackException(e);
         }
     }
 
@@ -266,8 +262,6 @@ public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOp
                 default:
                     break;
             }
-
-            tl.T.TrackEvent("InfoBarAction", ("Context", actionContext));
         }
     }
 

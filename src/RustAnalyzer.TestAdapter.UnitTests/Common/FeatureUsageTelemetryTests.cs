@@ -27,6 +27,14 @@ public sealed class FeatureUsageTelemetryTests
     }
 
     [Fact]
+    public void LegacyTelemetryContractIsRemoved()
+    {
+        typeof(IFeatureUsageTelemetry).Assembly
+            .GetType("KS.RustAnalyzer.TestAdapter.Common.ITelemetryService")
+            .Should().BeNull();
+    }
+
+    [Fact]
     public void MapsEveryOperation()
     {
         var expected = new[]
@@ -264,6 +272,19 @@ public sealed class FeatureUsageTelemetryTests
             .Which.Name.Should().Be(FeatureUsageTelemetry.EventName);
     }
 
+    [Fact]
+    public void TelemetryFailureDoesNotChangeApplicationOutcome()
+    {
+        using var environment = StandardEnvironment();
+        var telemetry = CreateConfigured(new ThrowingTelemetryChannel());
+        Action track = () => telemetry.Track(
+            UsageOperation.CargoBuild,
+            UsageOutcome.Succeeded,
+            TimeSpan.Zero);
+
+        track.Should().NotThrow();
+    }
+
     [Theory]
     [InlineData("1")]
     [InlineData("false")]
@@ -320,22 +341,8 @@ public sealed class FeatureUsageTelemetryTests
         channel.Items.Should().BeEmpty();
     }
 
-    [Fact]
-    public void LegacyTelemetryHasNoEgress()
-    {
-        var telemetry = new TelemetryService();
-
-        telemetry.TrackEvent("event", ("path", @"C:\secret"));
-        telemetry.TrackException(new InvalidOperationException("secret"));
-        telemetry.TrackException(
-            new InvalidOperationException("secret"),
-            new[] { ("path", @"C:\secret") });
-
-        GetInstanceFields(telemetry).Should().BeEmpty();
-    }
-
     private static IFeatureUsageTelemetry CreateConfigured(
-        RecordingTelemetryChannel channel,
+        ITelemetryChannel channel,
         UsageHostKind hostKind = UsageHostKind.TestAdapter)
     {
         return Create(hostKind, CreateConnectionString(), channel);
@@ -459,6 +466,26 @@ public sealed class FeatureUsageTelemetryTests
         public void Process(ITelemetry item)
         {
             Items.Add(item);
+        }
+    }
+
+    private sealed class ThrowingTelemetryChannel : ITelemetryChannel
+    {
+        public bool? DeveloperMode { get; set; }
+
+        public string EndpointAddress { get; set; }
+
+        public void Send(ITelemetry item)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public void Flush()
+        {
+        }
+
+        public void Dispose()
+        {
         }
     }
 }

@@ -22,9 +22,6 @@ public interface ISettingsService
 public sealed class SettingsServiceFactory : IWorkspaceServiceFactory
 {
     [Import]
-    public ITelemetryService T { get; set; }
-
-    [Import]
     public ILogger L { get; set; }
 
     public object CreateService(IWorkspace workspaceContext)
@@ -33,7 +30,7 @@ public sealed class SettingsServiceFactory : IWorkspaceServiceFactory
             (PathEx)workspaceContext.Location,
             workspaceContext.GetSettingsManager(),
             async () => await Options.GetLiveInstanceAsync(),
-            new TL { T = T, L = L, });
+            new TL { L = L, });
     }
 }
 
@@ -56,7 +53,6 @@ public sealed class SettingsService : ISettingsService
     {
         if (_settingsManager == null)
         {
-            _tl.T.TrackException(new NullReferenceException("CurrentWorkspace is null."));
             return default;
         }
 
@@ -88,10 +84,8 @@ public sealed class SettingsService : ISettingsService
 
     public async Task SetAsync(string type, PathEx fullItemPath, string value)
     {
-        _tl.T.TrackEvent("SaveSettings", ("Type", type), ("RelativePath", fullItemPath), ("CmdLineArgs", value));
         if (_settingsManager == null)
         {
-            _tl.T.TrackException(new NullReferenceException("CurrentWorkspace is null."));
             return;
         }
 
@@ -104,7 +98,6 @@ public sealed class SettingsService : ISettingsService
         }
         catch (Exception e)
         {
-            _tl.T.TrackException(e);
             _tl.L.WriteError("Exception: {0}.", e);
         }
     }

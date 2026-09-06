@@ -23,7 +23,7 @@ public sealed class OutputWindowLogger : ILogger
     public OutputWindowLogger()
     {
         _getOrCreatePane = GetOrCreatePane;
-        _observeFault = exception => T?.TrackException(exception);
+        _observeFault = _ => { };
         _runOnMainThreadAsync = RunOnMainThreadAsync;
     }
 
@@ -36,9 +36,6 @@ public sealed class OutputWindowLogger : ILogger
         _getOrCreatePane = getOrCreatePane;
         _observeFault = observeFault;
     }
-
-    [Import]
-    public ITelemetryService T { get; set; }
 
     [Import]
     public SVsServiceProvider ServiceProvider { get; set; }

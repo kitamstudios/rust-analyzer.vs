@@ -72,7 +72,7 @@ public sealed class PrerequisiteStartupCoordinatorTests
             context,
             state,
             operations,
-            new PrerequisiteAvailabilityPolicy(state, logger, new RecordingTelemetry()));
+            new PrerequisiteAvailabilityPolicy(state, logger));
 
         await EvaluateAndRunAsync(coordinator, state, calls, CreateFailedResult(), default);
         await EvaluateAndRunAsync(coordinator, state, calls, CreateFailedResult(), default);
@@ -159,8 +159,7 @@ public sealed class PrerequisiteStartupCoordinatorTests
         using var context = new JoinableTaskContext();
         var probe = new HostVersionPrerequisiteProbe(_ => Task.FromResult<Version>(null));
         var logger = new RecordingLogger();
-        var telemetry = new RecordingTelemetry();
-        var service = new PreReqsCheckService(probe, telemetry, logger);
+        var service = new PreReqsCheckService(probe, logger);
         var state = new PrerequisiteProcessState(context.Factory);
         var calls = new List<string>();
         var operations = new TestStartupOperations(state, calls)
@@ -169,7 +168,7 @@ public sealed class PrerequisiteStartupCoordinatorTests
         };
         var coordinator = new PrerequisiteStartupCoordinator(
             state,
-            new PrerequisiteAvailabilityPolicy(state, logger, telemetry),
+            new PrerequisiteAvailabilityPolicy(state, logger),
             context.Factory,
             RunInlineAsync,
             operations);
@@ -190,7 +189,6 @@ public sealed class PrerequisiteStartupCoordinatorTests
         state.CachedResult.Failures.Should().ContainSingle();
         state.CachedResult.Failures[0].Kind.Should().Be(PrerequisiteFailureKind.UnsupportedVisualStudioHost);
         logger.Errors.Should().BeEmpty();
-        telemetry.Exceptions.Should().BeEmpty();
     }
 
     [Fact]
@@ -259,17 +257,14 @@ public sealed class PrerequisiteStartupCoordinatorTests
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
         var logger = new RecordingLogger();
-        var telemetry = new RecordingTelemetry();
         var service = new PreReqsCheckService(
             new HostVersionPrerequisiteProbe(_ => Task.FromResult(new Version(17, 12))),
-            telemetry,
             logger);
         Func<Task> evaluate = async () => await service.EvaluateAsync(cancellation.Token);
 
         await evaluate.Should().ThrowAsync<OperationCanceledException>();
-
         logger.Errors.Should().BeEmpty();
-        telemetry.Exceptions.Should().BeEmpty();
+        logger.Errors.Should().BeEmpty();
     }
 
     [Fact]
@@ -285,12 +280,11 @@ public sealed class PrerequisiteStartupCoordinatorTests
             InfoBarAction = () => Task.FromException<bool>(expected),
         };
         var logger = new RecordingLogger();
-        var telemetry = new RecordingTelemetry();
         var coordinator = CreateCoordinator(
             context,
             state,
             operations,
-            new PrerequisiteAvailabilityPolicy(state, logger, telemetry));
+            new PrerequisiteAvailabilityPolicy(state, logger));
 
         await EvaluateAndRunAsync(coordinator, state, calls, CreateFailedResult(), default);
         await EvaluateAndRunAsync(coordinator, state, calls, CreateFailedResult(), default);
@@ -298,7 +292,6 @@ public sealed class PrerequisiteStartupCoordinatorTests
         calls.Should().Equal(Evaluation, Prompt, InfoBar);
         logger.Errors.Should().ContainSingle();
         logger.Errors[0].Arguments.Should().ContainSingle().Which.Should().BeSameAs(expected);
-        telemetry.Exceptions.Should().Equal(expected);
         state.Status.Should().Be(PrerequisiteStatus.Suspended);
     }
 
@@ -396,7 +389,6 @@ public sealed class PrerequisiteStartupCoordinatorTests
         packageSource.Should().NotContain("_preReqs.SatisfyAsync");
         availabilityPolicySource.Should().Contain(
             "_logger.WriteError(\"Failed to show prerequisite suspension InfoBar. Ex: {0}\", exception);");
-        availabilityPolicySource.Should().Contain("_telemetry.TrackException(exception);");
         packageSource.Should().NotContain("CommunityVS.Shell.GetVsVersionAsync()");
         evaluatorSource
             .Split(new[] { "CommunityVS.Shell.GetVsVersionAsync()" }, StringSplitOptions.None)
@@ -453,8 +445,7 @@ public sealed class PrerequisiteStartupCoordinatorTests
         var probe = new HostVersionPrerequisiteProbe(
             _ => Task.FromException<Version>(expected));
         var logger = new RecordingLogger();
-        var telemetry = new RecordingTelemetry();
-        var service = new PreReqsCheckService(probe, telemetry, logger);
+        var service = new PreReqsCheckService(probe, logger);
         var state = new PrerequisiteProcessState(context.Factory);
         var calls = new List<string>();
         string promptMessage = null;
@@ -495,7 +486,6 @@ public sealed class PrerequisiteStartupCoordinatorTests
         logger.Errors.Should().HaveCount(1);
         string.Format(logger.Errors[0].Format, logger.Errors[0].Arguments)
             .Should().Contain(expected.ToString());
-        telemetry.Exceptions.Should().Equal(expected);
     }
 
     private static PrerequisiteStartupCoordinator CreateCoordinator(
@@ -516,8 +506,7 @@ public sealed class PrerequisiteStartupCoordinatorTests
     {
         return new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger(),
-            new RecordingTelemetry());
+            new RecordingLogger());
     }
 
     private static Task EvaluateAndRunAsync(
@@ -674,28 +663,6 @@ public sealed class PrerequisiteStartupCoordinatorTests
         public void WriteError(string format, params object[] args)
         {
             Errors.Add((format, args));
-        }
-    }
-
-    private sealed class RecordingTelemetry : ITelemetryService
-    {
-        public List<Exception> Exceptions { get; } = new();
-
-        public void TrackEvent(string eventName, params (string Key, string Value)[] properties)
-        {
-        }
-
-        public void TrackException(Exception e, string siteName = null)
-        {
-            Exceptions.Add(e);
-        }
-
-        public void TrackException(
-            Exception e,
-            (string Key, string Value)[] properties,
-            string siteName = null)
-        {
-            Exceptions.Add(e);
         }
     }
 }

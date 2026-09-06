@@ -47,20 +47,18 @@ public sealed class PrerequisiteAvailabilityPolicy
     private readonly ILogger _logger;
     private readonly int[] _reportedSuppressions = new int[PathNames.Length];
     private readonly PrerequisiteProcessState _state;
-    private readonly ITelemetryService _telemetry;
     private int _infoBarFailureReported;
     private int _suspensionReported;
 
     [ImportingConstructor]
-    public PrerequisiteAvailabilityPolicy([Import] ILogger logger, [Import] ITelemetryService telemetry)
-        : this(PrerequisiteProcessState.Current, logger, telemetry)
+    public PrerequisiteAvailabilityPolicy([Import] ILogger logger)
+        : this(PrerequisiteProcessState.Current, logger)
     {
     }
 
     public PrerequisiteAvailabilityPolicy(
         PrerequisiteProcessState state,
-        ILogger logger,
-        ITelemetryService telemetry)
+        ILogger logger)
     {
         _state = EnsureArg.IsNotNull(
             state,
@@ -70,10 +68,6 @@ public sealed class PrerequisiteAvailabilityPolicy
             logger,
             nameof(logger),
             options => options.WithException(new ArgumentNullException(nameof(logger))));
-        _telemetry = EnsureArg.IsNotNull(
-            telemetry,
-            nameof(telemetry),
-            options => options.WithException(new ArgumentNullException(nameof(telemetry))));
     }
 
     public bool IsReady(AutomaticRustPath path)
@@ -154,7 +148,6 @@ public sealed class PrerequisiteAvailabilityPolicy
         if (Interlocked.CompareExchange(ref _infoBarFailureReported, 1, 0) == 0)
         {
             _logger.WriteError("Failed to show prerequisite suspension InfoBar. Ex: {0}", exception);
-            _telemetry.TrackException(exception);
         }
     }
 

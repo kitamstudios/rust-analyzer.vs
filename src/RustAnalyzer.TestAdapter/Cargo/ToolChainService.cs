@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.ComponentModel.Composition;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -20,11 +21,11 @@ public sealed class ToolchainService : IToolchainService
     private readonly TL _tl;
 
     [ImportingConstructor]
-    public ToolchainService([Import] ITelemetryService t, [Import] ILogger l)
+    public ToolchainService([Import] IFeatureUsageTelemetry telemetry, [Import] ILogger l)
     {
         _tl = new TL
         {
-            T = t,
+            T = telemetry,
             L = l,
         };
     }
@@ -43,15 +44,13 @@ public sealed class ToolchainService : IToolchainService
     public async Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
     {
         var success = await ExecuteOperationAsync(
+            UsageOperation.CargoBuild,
             "build",
             bti.ManifestPath,
             arguments: $"build --manifest-path \"{bti.ManifestPath}\" --profile {bti.Profile} --message-format json {bti.AdditionalBuildArgs}",
-            profile: bti.Profile,
             outputPane: bos.OutputSink,
             buildMessageReporter: bos.BuildActionProgressReporter,
             outputPreprocessor: x => BuildJsonOutputParser.Parse(bti.WorkspaceRoot, x, _tl),
-            ts: _tl.T,
-            l: _tl.L,
             ct: ct);
 
         if (success)
@@ -70,45 +69,39 @@ public sealed class ToolchainService : IToolchainService
     public Task<bool> CleanAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
     {
         return ExecuteOperationAsync(
+            UsageOperation.CargoClean,
             "clean",
             bti.ManifestPath,
             arguments: $"clean --manifest-path \"{bti.ManifestPath}\" --profile {bti.Profile}",
-            profile: bti.Profile,
             outputPane: bos.OutputSink,
             buildMessageReporter: bos.BuildActionProgressReporter,
             outputPreprocessor: OutputPreprocessorForCargoToolsWithoutJsonOutput,
-            ts: _tl.T,
-            l: _tl.L,
             ct: ct);
     }
 
     public Task<bool> RunClippyAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
     {
         return ExecuteOperationAsync(
+            UsageOperation.CargoClippy,
             "Clippy",
             bti.ManifestPath,
             arguments: $"clippy --manifest-path \"{bti.ManifestPath}\" --profile {bti.Profile} {bti.AdditionalBuildArgs}",
-            profile: bti.Profile,
             outputPane: bos.OutputSink,
             buildMessageReporter: bos.BuildActionProgressReporter,
             outputPreprocessor: OutputPreprocessorForCargoToolsWithoutJsonOutput,
-            ts: _tl.T,
-            l: _tl.L,
             ct: ct);
     }
 
     public Task<bool> RunFmtAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
     {
         return ExecuteOperationAsync(
+            UsageOperation.CargoFormat,
             "Fmt",
             bti.ManifestPath,
             arguments: $"fmt --manifest-path \"{bti.ManifestPath}\" {bti.AdditionalBuildArgs}",
-            profile: bti.Profile,
             outputPane: bos.OutputSink,
             buildMessageReporter: bos.BuildActionProgressReporter,
             outputPreprocessor: OutputPreprocessorForCargoToolsWithoutJsonOutput,
-            ts: _tl.T,
-            l: _tl.L,
             ct: ct);
     }
 
@@ -131,11 +124,6 @@ public sealed class ToolchainService : IToolchainService
         catch (Exception e)
         {
             _tl.L.WriteLine("Unable to obtain metadata for file {0}. Ex: {1}", manifestPath, e);
-            if (!e.IsCargo101Error())
-            {
-                _tl.T.TrackException(e);
-            }
-
             throw;
         }
     }
@@ -158,8 +146,6 @@ public sealed class ToolchainService : IToolchainService
                 .Concat(tc.AdditionalTestDiscoveryArguments.FromNullSeparatedArray())
                 .ToArray();
 
-            _tl.T.TrackEvent("GetTestSuiteInfoAsync", ("TestContainer", testContainerPath), ("Profile", profile), ("Args", string.Join("|", args)));
-
             using var proc = await ProcessRunner.RunWithLogging(cargoFullPath, args, workingDir, ImmutableDictionary<string, string>.Empty, ct, _tl.L);
 
             var testExes = BuildJsonOutputParser.ParseTestExecutables(proc.StandardOutputLines)
@@ -171,7 +157,6 @@ public sealed class ToolchainService : IToolchainService
             {
                 var e = new InvalidOperationException(string.Format("Cargo produced no structured test executable artifacts. Command line '{0}'. Exit code: {1}", proc.Arguments, proc.ExitCode));
                 _tl.L.WriteError(e.Message);
-                _tl.T.TrackException(e);
                 throw e;
             }
 
@@ -188,11 +173,6 @@ public sealed class ToolchainService : IToolchainService
         catch (Exception e)
         {
             _tl.L.WriteLine("Unable to obtain metadata for file {0}. Ex: {1}", tc.Manifest, e);
-            if (!e.IsCargo101Error())
-            {
-                _tl.T.TrackException(e);
-            }
-
             throw;
         }
     }
@@ -252,23 +232,58 @@ public sealed class ToolchainService : IToolchainService
         return w;
     }
 
-    private async Task<bool> ExecuteOperationAsync(string opName, PathEx filePath, string arguments, string profile, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, Func<string, BuildMessage[]> outputPreprocessor, ITelemetryService ts, ILogger l, CancellationToken ct)
+    private async Task<bool> ExecuteOperationAsync(
+        UsageOperation operation,
+        string opName,
+        PathEx filePath,
+        string arguments,
+        IBuildOutputSink outputPane,
+        Func<BuildMessage, Task> buildMessageReporter,
+        Func<string, BuildMessage[]> outputPreprocessor,
+        CancellationToken ct)
     {
-        outputPane.Clear();
+        return await TrackOperationAsync(
+            operation,
+            ct,
+            async () =>
+            {
+                outputPane.Clear();
+                var cargoFullPath = GetCargoExePath();
+                return await RunAsync(
+                    cargoFullPath,
+                    opName,
+                    arguments,
+                    filePath.GetDirectoryName(),
+                    redirector: new BuildOutputRedirector(outputPane, (PathEx)Path.GetDirectoryName(filePath), buildMessageReporter, outputPreprocessor),
+                    ct: ct);
+            });
+    }
 
-        var cargoFullPath = GetCargoExePath();
-
-        ts.TrackEvent(
-            opName,
-            new[] { ("FilePath", filePath), ("Profile", profile), ("CargoPath", cargoFullPath), ("Arguments", arguments) });
-
-        return await RunAsync(
-            cargoFullPath,
-            opName,
-            arguments,
-            filePath.GetDirectoryName(),
-            redirector: new BuildOutputRedirector(outputPane, (PathEx)Path.GetDirectoryName(filePath), buildMessageReporter, outputPreprocessor),
-            ct: ct);
+    private async Task<bool> TrackOperationAsync(
+        UsageOperation operation,
+        CancellationToken ct,
+        Func<Task<bool>> execute)
+    {
+        var duration = Stopwatch.StartNew();
+        try
+        {
+            var succeeded = await execute();
+            var outcome = ct.IsCancellationRequested
+                ? UsageOutcome.Cancelled
+                : succeeded ? UsageOutcome.Succeeded : UsageOutcome.Failed;
+            _tl.T.Track(operation, outcome, duration.Elapsed);
+            return succeeded;
+        }
+        catch (OperationCanceledException)
+        {
+            _tl.T.Track(operation, UsageOutcome.Cancelled, duration.Elapsed);
+            throw;
+        }
+        catch (Exception)
+        {
+            _tl.T.Track(operation, UsageOutcome.Failed, duration.Elapsed);
+            throw;
+        }
     }
 
     private static async Task<bool> RunAsync(PathEx exeFullPath, string opName, string arguments, PathEx workingDir, ProcessOutputRedirector redirector, CancellationToken ct)

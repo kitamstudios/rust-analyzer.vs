@@ -288,20 +288,26 @@ public static class FeatureUsageTelemetry
 
         public void Track(UsageOperation operation, UsageOutcome outcome, TimeSpan duration)
         {
-            if (!Operations.TryGetValue(operation, out var operationValue)
-                || !Outcomes.TryGetValue(outcome, out var outcomeValue)
-                || !TryGetDurationBucket(duration, out var durationBucket))
+            try
             {
-                return;
+                if (!Operations.TryGetValue(operation, out var operationValue)
+                    || !Outcomes.TryGetValue(outcome, out var outcomeValue)
+                    || !TryGetDurationBucket(duration, out var durationBucket))
+                {
+                    return;
+                }
+
+                var telemetry = new EventTelemetry(EventName);
+                telemetry.Properties.Add("feature", operationValue.Feature);
+                telemetry.Properties.Add("action", operationValue.Action);
+                telemetry.Properties.Add("outcome", outcomeValue);
+                telemetry.Properties.Add("duration_bucket", durationBucket);
+
+                _telemetryClient.TrackEvent(telemetry);
             }
-
-            var telemetry = new EventTelemetry(EventName);
-            telemetry.Properties.Add("feature", operationValue.Feature);
-            telemetry.Properties.Add("action", operationValue.Action);
-            telemetry.Properties.Add("outcome", outcomeValue);
-            telemetry.Properties.Add("duration_bucket", durationBucket);
-
-            _telemetryClient.TrackEvent(telemetry);
+            catch (Exception)
+            {
+            }
         }
     }
 

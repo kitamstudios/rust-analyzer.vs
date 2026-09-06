@@ -27,6 +27,8 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
     private readonly CancellationToken _lifetimeToken;
     private readonly AsyncLazy<object> _loading;
     private readonly object _sync = new();
+    private Stopwatch _activationDuration;
+    private bool _activationReported;
     private bool _disposed;
     private bool _stopped;
     private Task _stopping;
@@ -60,7 +62,7 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
     public ILogger L { get; set; }
 
     [Import]
-    public ITelemetryService T { get; set; }
+    public IFeatureUsageTelemetry UsageTelemetry { get; set; }
 
     [Import]
     public IRlsInstallerService RADownloader { get; set; }
@@ -110,6 +112,7 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
                 return null;
             }
 
+            BeginActivation();
             var rlsPath = await RADownloader.GetExePathAsync();
             activationCancellation.Token.ThrowIfCancellationRequested();
             L.WriteLine("Starting rust-analyzer from path: {0}.", rlsPath);
@@ -134,6 +137,7 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
                 if (_stopped || _disposed)
                 {
                     process.Dispose();
+                    ReportActivation(UsageOutcome.Cancelled);
                     return null;
                 }
 
@@ -143,18 +147,27 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
             if (started)
             {
                 L.WriteLine("Done starting rust-analyzer from path. PID: {0}", process.Id);
-                T.TrackEvent("rust-analyzer-start", ("Path", rlsPath));
-
                 return await Task.FromResult(new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream));
             }
 
             L.WriteLine("Error starting rust-analyzer from path.");
-            T.TrackException(new InvalidOperationException(), new[] { ("Path", (string)rlsPath) });
+            ReportActivation(UsageOutcome.Failed);
             return null;
         }
         catch (OperationCanceledException) when (_lifetimeToken.IsCancellationRequested && !token.IsCancellationRequested)
         {
+            ReportActivation(UsageOutcome.Cancelled);
             return null;
+        }
+        catch (OperationCanceledException)
+        {
+            ReportActivation(UsageOutcome.Cancelled);
+            throw;
+        }
+        catch (Exception)
+        {
+            ReportActivation(UsageOutcome.Failed);
+            throw;
         }
     }
 
@@ -170,6 +183,7 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
 
     public Task StopServerAsync()
     {
+        ReportActivation(UsageOutcome.Cancelled);
         lock (_sync)
         {
             if (_stopping != null)
@@ -193,6 +207,7 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
 
     public void Dispose()
     {
+        ReportActivation(UsageOutcome.Cancelled);
         lock (_sync)
         {
             if (_disposed)
@@ -210,6 +225,7 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
 
     public Task OnServerInitializedAsync()
     {
+        ReportActivation(UsageOutcome.Succeeded);
         return Task.CompletedTask;
     }
 
@@ -222,6 +238,7 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
 
     public Task<InitializationFailureContext> OnServerInitializeFailedAsync(ILanguageClientInitializationInfo initializationState)
     {
+        ReportActivation(UsageOutcome.Failed);
         if (IsStopped ||
             !AvailabilityPolicy.IsReady(AutomaticRustPath.LanguageClientActivation))
         {
@@ -233,7 +250,6 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
         message = $"{message}\n {exception}";
 
         L.WriteLine(message);
-        T.TrackException(initializationState.InitializationException);
 
         var failureContext = new InitializationFailureContext()
         {
@@ -252,6 +268,35 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
                 return _stopped || _disposed;
             }
         }
+    }
+
+    private void BeginActivation()
+    {
+        lock (_sync)
+        {
+            _activationDuration = Stopwatch.StartNew();
+            _activationReported = false;
+        }
+    }
+
+    private void ReportActivation(UsageOutcome outcome)
+    {
+        Stopwatch duration;
+        lock (_sync)
+        {
+            if (_activationDuration == null || _activationReported)
+            {
+                return;
+            }
+
+            _activationReported = true;
+            duration = _activationDuration;
+        }
+
+        UsageTelemetry.Track(
+            UsageOperation.LanguageServerActivate,
+            outcome,
+            duration.Elapsed);
     }
 
     private async Task OnLoadedCoreAsync()

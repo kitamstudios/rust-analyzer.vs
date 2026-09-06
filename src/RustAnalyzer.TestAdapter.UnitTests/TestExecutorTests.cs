@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using ApprovalTests;
@@ -58,8 +59,13 @@ public class TestExecutorTests : TestsWithLogger
         await _tcs.DoBuildAsync(tps.WorkspacePath, tps.ManifestPath, profile);
         new TestDiscoverer().DiscoverTests(testCases.Select(tc => tc.Source), Mock.Of<IDiscoveryContext>(), MessageLogger, Mock.Of<ITestCaseDiscoverySink>());
 
-        new TestExecutor().RunTests(testCases, Mock.Of<IRunContext>(), FrameworkHandle);
+        var telemetry = new RecordingFeatureUsageTelemetry();
+        new TestExecutor(telemetry).RunTests(testCases, Mock.Of<IRunContext>(), FrameworkHandle);
 
         FrameworkHandle.Results.Select(r => $"{((PathEx)r.TestCase.Source).GetFileNameWithoutExtension()}|{r.DisplayName}").Should().BeEquivalentTo(tests);
+        telemetry.Events.Should().ContainSingle()
+            .Which.Should().Match<(UsageOperation Operation, UsageOutcome Outcome, TimeSpan Duration)>(
+                value => value.Operation == UsageOperation.TestAdapterExecute
+                    && value.Outcome == UsageOutcome.Succeeded);
     }
 }

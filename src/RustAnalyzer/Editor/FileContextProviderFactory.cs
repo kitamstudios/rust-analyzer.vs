@@ -25,9 +25,6 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
     public ILogger L { get; set; }
 
     [Import]
-    public ITelemetryService T { get; set; }
-
-    [Import]
     public Lazy<IToolchainService> LazyCargoService { get; set; }
 
     public IToolchainService CargoService { get; set; }
@@ -48,9 +45,6 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
             return provider;
         }
 
-        T.TrackEvent(
-            "Create Context Provider",
-            new[] { ("Location", workspaceContext.Location) });
         L.WriteLine("Creating {0}.", GetType().Name);
 
         return provider;
