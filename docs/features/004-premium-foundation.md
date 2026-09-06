@@ -211,7 +211,7 @@ Execute one task at a time.
 | T1 | S1 | Add the typed telemetry boundary, hashed identity, injected release configuration, strict allow-list, temporary no-egress migration bridge, and focused contract tests. | Done | `7221e7b` |
 | T2 | S1 | Replace current telemetry calls with one terminal event per approved operation; remove duplicates, diagnostics, unsafe payloads, and lifecycle noise. | Done | `bf18959` |
 | T3 | S2 | Add the rust-analyzer `Verify`/`Check`/`Update` script, shared provenance manifest, preflight freshness gate, build verification, and focused script tests. Preserve existing tests, then run `Update` once. | Done | `2852d52` |
-| T4 | S2 | Harden runtime acquisition, verification, safe extraction, validation, cross-process activation, packaged fallback, local provenance, and focused failure tests. | Done | pending |
+| T4 | S2 | Harden runtime acquisition, verification, safe extraction, validation, cross-process activation, packaged fallback, local provenance, and focused failure tests. | Done | `4be82d7` |
 | T5 | S3 | Delete both Remote projects and reconcile the solution, build/test gates, dependency ledger, architecture, and premium boundary. | Pending | - |
 | T6 | S3 | Correct only a super-critical current-product fact made false by T1–T5. Defer unrelated README, historical-feature, build-skill, and backlog edits. | Pending | - |
 | T7 | S4 | Human-test the canonical VSIX and packaged standalone TestAdapter in one supported VS2022 17.x host and one VS2026 18.x host; record exact host/artifact versions plus install/load, LSP, Cargo, and test discovery/execution outcomes. | Pending | - |
@@ -479,6 +479,14 @@ Execute one task at a time.
 - Refreshed packaged rust-analyzer to `2026-08-31` using its official archive digest.
 - Shipped one deterministic provenance manifest beside the executable and PDB.
 - Full verification passed with 14 provenance checks, 489 assembly tests, and 18 acceptance outcomes.
+
+### T4 outcome
+
+- Runtime downloads now require official metadata and digest verification before safe extraction.
+- Selection validates local provenance; updates commit under a bounded cooperative lock.
+- Non-cancellation failures select packaged; caller cancellation propagates.
+- Initial downloaded startup failure retries packaged once without blocking the UI thread.
+- Full verification passed with 524 assembly tests and 18 acceptance outcomes.
 
 ### Telemetry audit
 
