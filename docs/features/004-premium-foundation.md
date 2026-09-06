@@ -215,7 +215,7 @@ Execute one task at a time.
 | T5 | S3 | Delete both Remote projects and reconcile the solution, build/test gates, dependency ledger, architecture, and premium boundary. | Done | `e41a348` |
 | T6 | S3 | Correct only a super-critical current-product fact made false by T1–T5. Defer unrelated README, historical-feature, build-skill, and backlog edits. | Done | `ea87618` |
 | T7 | S4 | Human-test the canonical VSIX and packaged standalone TestAdapter in one supported VS2022 17.x host and one VS2026 18.x host; record exact host/artifact versions plus install/load, LSP, Cargo, and test discovery/execution outcomes. | Deferred | - |
-| T8 | S5 | Add explicit MEL 2.2 ownership, the VSIX Output-window and VSTest providers, factory composition, payload closure, and focused provider tests. | Pending | - |
+| T8 | S5 | Add explicit MEL 2.2 ownership, the VSIX Output-window and VSTest providers, factory composition, payload closure, and focused provider tests. | Done | `1d378af` |
 | T9 | S5 | Migrate semantic local logging, remove the custom logger and logging/telemetry bundle, and preserve independent telemetry calls. | Pending | - |
 | T10 | S5 | Repeat affected VS2022/VS2026 Output-window and standalone-TestAdapter validation after the logging payload change. | Deferred | - |
 
@@ -502,6 +502,13 @@ Execute one task at a time.
 - Reconciled supported hosts, privacy, non-affiliation, telemetry, provenance, updater, and Remote facts.
 - Marked Feature 003 complete; retained the README paid-extension announcement by human decision.
 - Documentation verification and design review passed; no executable behavior changed.
+
+### T8 outcome
+
+- Added one shared MEL 2.2 factory with VS Output-window and invocation-scoped VSTest providers.
+- Preserved separate Build output and feature telemetry; retained a one-way legacy bridge for T9.
+- Expanded the standalone TestAdapter payload from 6 to 14 files with exact closure checks.
+- Full verification passed with 528 assembly tests and 18 acceptance outcomes.
 
 ### Telemetry audit
 
