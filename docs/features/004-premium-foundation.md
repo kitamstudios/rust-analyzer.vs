@@ -214,10 +214,10 @@ Execute one task at a time.
 | T4 | S2 | Harden runtime acquisition, verification, safe extraction, validation, cross-process activation, packaged fallback, local provenance, and focused failure tests. | Done | `4be82d7` |
 | T5 | S3 | Delete both Remote projects and reconcile the solution, build/test gates, dependency ledger, architecture, and premium boundary. | Done | `e41a348` |
 | T6 | S3 | Correct only a super-critical current-product fact made false by T1–T5. Defer unrelated README, historical-feature, build-skill, and backlog edits. | Done | `ea87618` |
-| T7 | S4 | Human-test the canonical VSIX and packaged standalone TestAdapter in one supported VS2022 17.x host and one VS2026 18.x host; record exact host/artifact versions plus install/load, LSP, Cargo, and test discovery/execution outcomes. | Pending | - |
+| T7 | S4 | Human-test the canonical VSIX and packaged standalone TestAdapter in one supported VS2022 17.x host and one VS2026 18.x host; record exact host/artifact versions plus install/load, LSP, Cargo, and test discovery/execution outcomes. | Deferred | - |
 | T8 | S5 | Add explicit MEL 2.2 ownership, the VSIX Output-window and VSTest providers, factory composition, payload closure, and focused provider tests. | Pending | - |
 | T9 | S5 | Migrate semantic local logging, remove the custom logger and logging/telemetry bundle, and preserve independent telemetry calls. | Pending | - |
-| T10 | S5 | Repeat affected VS2022/VS2026 Output-window and standalone-TestAdapter validation after the logging payload change. | Pending | - |
+| T10 | S5 | Repeat affected VS2022/VS2026 Output-window and standalone-TestAdapter validation after the logging payload change. | Deferred | - |
 
 ## Task Contracts
 
@@ -455,6 +455,8 @@ Execute one task at a time.
 - **D10:** Broad documentation or backlog rewrites.
 - **D11:** Launch/workspace correctness, toolchain/protocol UX, and process-lifetime redesign.
 - **D12:** Performance investigations and ApprovalTests/tool-version hardening.
+- **D13:** T7 and T10 human VS2022/VS2026 smoke evidence. The human deferred both on 2026-09-06;
+  T8 and T9 may proceed without claiming host validation.
 
 ## Notes & Decisions
 
