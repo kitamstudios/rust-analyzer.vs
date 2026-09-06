@@ -63,7 +63,7 @@
     2022 and 2026 versions.
 26. Do not add CI supply-chain hardening, premium delivery, entitlement, or target abstractions.
 27. As the final slice, replace the custom logger with explicitly pinned
-    `Microsoft.Extensions.Logging` 2.2.0 abstractions and factory behavior.
+    `Microsoft.Extensions.Logging` 6.0.0 and built-in `[LoggerMessage]` source generation.
 28. Route semantic local logs through a shared VSIX Output-window provider and invocation-scoped
     VSTest provider. Keep Build-pane output separate.
 29. Keep logging and feature telemetry independent. Add no Application Insights logging provider,
@@ -371,10 +371,10 @@ Execute one task at a time.
 
 **Work**
 
-- Migrate callers to category loggers, levels, `EventId`, named templates, exception overloads, and
-  limited deterministic scopes.
+- Upgrade the MEL family to 6.0.0 and rederive the standalone runtime closure.
+- Declare events as built-in `[LoggerMessage]` partial methods in layer-local logging catalogs.
+- Keep event metadata and templates out of product types; they retain only typed catalog calls.
 - Permit unrestricted local diagnostic fields as approved.
-- Use `LoggerMessage.Define` only for repeated hot paths.
 - Remove the custom `ILogger`, both custom sinks, the temporary bridge, and logging from `TL`.
 - Keep local logging and fixed feature telemetry as explicit separate calls.
 
@@ -421,8 +421,8 @@ Execute one task at a time.
   explicitly accepts that API break.
 - **R10:** The generated client telemetry connection string is recoverable from shipped binaries and
   can be used to submit false events. Treat ingestion as untrusted and enforce service-side controls.
-- **R11:** Explicit MEL ownership expands the standalone TestAdapter payload and can introduce
-  assembly-load conflicts. Pin 2.2.0 and verify the exact closure.
+- **R11:** MEL 6.0 source generation expands the standalone TestAdapter payload and can introduce
+  assembly-load conflicts. Rederive and verify the exact closure.
 - **R12:** Unrestricted local diagnostics can expose sensitive values when users copy or share
   Output/VSTest logs. This exposure is explicitly accepted; never export it through telemetry.
 - **R13:** Non-blocking Output-window delivery can lose queued entries during shutdown or host
@@ -438,8 +438,8 @@ Execute one task at a time.
 - **A4:** The registry pointer remains the activation authority.
 - **A5:** The main VSIX and standalone TestAdapter retain their identities and delivery formats.
 - **A6:** Existing Application Insights access controls need no repository or Azure change.
-- **A7:** The existing restored MEL 2.2.0 family remains compatible with net48, netstandard2.0,
-  VS2022, and VS2026 when explicitly owned.
+- **A7:** MEL 6.0.0 source generation supports the repository's C# 10 compiler, net48, and
+  netstandard2.0 targets; its runtime closure must be derived rather than assumed.
 
 ## Deferrals (Dx)
 
@@ -459,6 +459,12 @@ Execute one task at a time.
   T8 and T9 may proceed without claiming host validation.
 
 ## Notes & Decisions
+
+### T9 source-generation decision
+
+- The human selected built-in `[LoggerMessage]` generation over hand-written `EventId` fields.
+- Events live in layer-local partial catalogs; product types own only typed calls.
+- Use MEL 6.0.0 consistently, rederive both payloads, and add no repository-owned generator.
 
 ### T1 outcome
 
