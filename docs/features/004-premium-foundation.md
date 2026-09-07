@@ -1,6 +1,6 @@
 # Feature: Premium Foundation
 **Branch:** vibe/004-premium-foundation
-**Status:** In Progress
+**Status:** Complete
 
 ## Requirements
 
@@ -221,7 +221,7 @@ Execute one task at a time.
 | T11 | S5 | Migrate prerequisite, settings, updater, and language-client logging. | Done | `036ba20` |
 | T12 | S5 | Migrate package, debugger, editor, node, and command logging. | Done | `f228b8e` |
 | T13 | S5 | Migrate Open Folder test-container logging. | Done | `fe944ce` |
-| T14 | S5 | Remove approved legacy logging APIs and reconcile the final architecture. | Pending | - |
+| T14 | S5 | Remove approved legacy logging APIs and reconcile the final architecture. | Done | `0677ef5` |
 
 ## Task Contracts
 
@@ -569,6 +569,13 @@ Execute one task at a time.
 - Preserved workspace subscriptions, cancellation, disposal, and copied-container logger lifetimes.
 - Kept legacy delivery single and Build output and telemetry separate.
 - Full verification passed with 570 assembly tests and 18 acceptance outcomes.
+
+### T14 outcome
+
+- Removed `ILogger`, `TL`, `LegacyLoggerBridge`, `TestAdapterLogger`, and compatibility-only APIs.
+- Kept direct MEL events, provider ownership, channel separation, and the 14-file payload unchanged.
+- Reconciled the final logging architecture; T7 real-host smoke remains explicitly deferred.
+- Full verification passed with 562 assembly tests and 18 acceptance outcomes.
 
 ### Telemetry audit
 
