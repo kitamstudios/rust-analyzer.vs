@@ -219,7 +219,7 @@ Execute one task at a time.
 | T9 | S5 | Add transitional VSTest composition and migrate discovery/execution callbacks. | Done | `085fdab` |
 | T10 | S5 | Migrate Cargo parsing, metadata, toolchain, and process logging. | Done | `ff90907` |
 | T11 | S5 | Migrate prerequisite, settings, updater, and language-client logging. | Done | `036ba20` |
-| T12 | S5 | Migrate package, debugger, editor, node, and command logging. | Pending | - |
+| T12 | S5 | Migrate package, debugger, editor, node, and command logging. | Done | `f228b8e` |
 | T13 | S5 | Migrate Open Folder test-container logging. | Pending | - |
 | T14 | S5 | Remove approved legacy logging APIs and reconcile the final architecture. | Pending | - |
 
@@ -555,6 +555,13 @@ Execute one task at a time.
 - Borrowed the shared VSIX factory while preserving legacy construction and single delivery.
 - Kept LSP transport, notifications, telemetry, MEL 2.2, and the 14-file payload separate.
 - Full verification passed with 558 assembly tests and 18 acceptance outcomes.
+
+### T12 outcome
+
+- Migrated 21 package, debugger, editor, node, and command logs to owner-category MEL.
+- Preserved category-local command IDs and duplicate-free legacy construction.
+- Kept cancellation silent and telemetry, notifications, Build output, and transport separate.
+- Full verification passed with 566 assembly tests and 18 acceptance outcomes.
 
 ### Telemetry audit
 
