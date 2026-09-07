@@ -216,7 +216,7 @@ Execute one task at a time.
 | T6 | S3 | Correct only a super-critical current-product fact made false by T1–T5. Defer unrelated README, historical-feature, build-skill, and backlog edits. | Done | `ea87618` |
 | T7 | S4 | Human-test the canonical VSIX and packaged standalone TestAdapter in one supported VS2022 17.x host and one VS2026 18.x host; record exact host/artifact versions plus install/load, LSP, Cargo, and test discovery/execution outcomes. | Deferred | - |
 | T8 | S5 | Add explicit MEL 2.2 ownership, the VSIX Output-window and VSTest providers, factory composition, payload closure, and focused provider tests. | Done | `1d378af` |
-| T9 | S5 | Add transitional VSTest composition and migrate discovery/execution callbacks. | Pending | - |
+| T9 | S5 | Add transitional VSTest composition and migrate discovery/execution callbacks. | Done | `085fdab` |
 | T10 | S5 | Migrate Cargo parsing, metadata, toolchain, and process logging. | Pending | - |
 | T11 | S5 | Migrate prerequisite, settings, updater, and language-client logging. | Pending | - |
 | T12 | S5 | Migrate package, debugger, editor, node, and command logging. | Pending | - |
@@ -534,6 +534,13 @@ Execute one task at a time.
 - Preserved separate Build output and feature telemetry; retained a one-way legacy bridge for T9.
 - Expanded the standalone TestAdapter payload from 6 to 14 files with exact closure checks.
 - Full verification passed with 528 assembly tests and 18 acceptance outcomes.
+
+### T9 outcome
+
+- Added one callback-owned VSTest MEL context and migrated 12 discovery/execution logs.
+- Retained legacy APIs and nested Cargo/process compatibility without duplicate delivery.
+- Kept MEL 2.2 and the exact 14-file standalone payload unchanged.
+- Full verification passed with 530 assembly tests and 18 acceptance outcomes.
 
 ### Telemetry audit
 
