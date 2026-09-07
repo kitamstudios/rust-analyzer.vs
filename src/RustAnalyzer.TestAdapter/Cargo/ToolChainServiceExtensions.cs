@@ -8,8 +8,11 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
@@ -232,16 +235,18 @@ public static class ToolchainServiceExtensions
         }
     }
 
-    public static async Task SetToolchainOverrideAsync(this PathEx workspaceRoot, string toolChain, ILogger l, CancellationToken ct)
+    public static Task SetToolchainOverrideAsync(
+        this PathEx workspaceRoot,
+        string toolChain,
+        MelLogger logger,
+        CancellationToken ct)
     {
-        var opName = "rustup";
-        var args = $"override set {toolChain}";
-
-        l.WriteLine("Running: {0} {1}", opName, args);
-        l.WriteLine("Workspace: {0}", workspaceRoot);
-
-        var output = await GetCommandOutput(opName, args, workspaceRoot, ct);
-        l.WriteLine("{0}", string.Join("\n", output));
+        return SetToolchainOverrideCoreAsync(
+            workspaceRoot,
+            toolChain,
+            EnsureArg.IsNotNull(logger, nameof(logger)),
+            GetCommandOutput,
+            ct);
     }
 
     public static async Task<string[]> GetCommandOutput(string opName, string args, PathEx workingDirectory, CancellationToken ct)
@@ -282,6 +287,37 @@ public static class ToolchainServiceExtensions
             $"==== {rustupPath.GetFileName()} done. ====\n",
             $"==== {rustupPath.GetFileName()} cancelled.====\n",
             ct);
+    }
+
+    private static async Task SetToolchainOverrideCoreAsync(
+        PathEx workspaceRoot,
+        string toolChain,
+        MelLogger logger,
+        Func<string, string, PathEx, CancellationToken, Task<string[]>> getCommandOutput,
+        CancellationToken ct)
+    {
+        var opName = "rustup";
+        var args = $"override set {toolChain}";
+
+        logger.LogInformation(
+            new EventId(1, "ToolchainOverrideCommandStarted"),
+            "Running: {ExecutableName} {Arguments}",
+            opName,
+            args);
+        logger.LogInformation(
+            new EventId(2, "ToolchainOverrideWorkspaceSelected"),
+            "Workspace: {WorkspaceRoot}",
+            workspaceRoot);
+
+        var output = await getCommandOutput(
+            opName,
+            args,
+            workspaceRoot,
+            ct);
+        logger.LogInformation(
+            new EventId(3, "ToolchainOverrideCommandCompleted"),
+            "{Output}",
+            string.Join("\n", output));
     }
 }
 

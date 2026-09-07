@@ -6,6 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
@@ -13,25 +15,27 @@ public class MetadataService : IMetadataService, IDisposable
 {
     private readonly IToolchainService _cargoService;
     private readonly PathEx _workspaceRoot;
-    private readonly TL _tl;
+    private readonly MelLogger _logger;
     private readonly bool _synchronousEvents;
     private readonly SemaphoreSlim _packageCacheLocker = new(1, 1);
     private ConcurrentDictionary<PathEx, Workspace.Package> _packageCache = new();
     private bool _disposedValue;
 
-    public MetadataService(IToolchainService cargoService, PathEx workspaceRoot, TL tl)
-        : this(cargoService, workspaceRoot, tl, syncEvents: false)
+    public MetadataService(IToolchainService cargoService, PathEx workspaceRoot, MelLogger logger)
+        : this(cargoService, workspaceRoot, logger, syncEvents: false)
     {
     }
 
-    protected MetadataService(IToolchainService cargoService, PathEx workspaceRoot, TL tl, bool syncEvents = false)
+    protected MetadataService(IToolchainService cargoService, PathEx workspaceRoot, MelLogger logger, bool syncEvents = false)
     {
         _cargoService = cargoService;
         _workspaceRoot = workspaceRoot;
-        _tl = tl;
+        _logger = EnsureArg.IsNotNull(logger, nameof(logger));
         _synchronousEvents = syncEvents;
-        _tl.L.WriteLine("Creating MDS. Workspace root: {0}.", workspaceRoot);
-        _tl.T.TrackEvent("CreatingMDS", ("WorkspaceRoot", $"{workspaceRoot}"));
+        _logger.LogInformation(
+            new EventId(1, "MetadataServiceCreated"),
+            "Creating MDS. Workspace root: {WorkspaceRoot}.",
+            workspaceRoot);
     }
 
     public event EventHandler<Workspace.Package> PackageAdded;
@@ -51,16 +55,24 @@ public class MetadataService : IMetadataService, IDisposable
 
     public Task<Workspace.Package> GetPackageAsync(PathEx manifestPath, CancellationToken ct)
     {
-        _tl.L.WriteLine("GetPackageAsync. Manifest path: {0}.", manifestPath);
+        _logger.LogInformation(
+            new EventId(2, "PackageRequested"),
+            "GetPackageAsync. Manifest path: {ManifestPath}.",
+            manifestPath);
         return ProtectPackageCacheAndRunAsync((ct) => GetCachedPackageAsync(manifestPath, ct), ct);
     }
 
     public async Task<Workspace.Package> GetContainingPackageAsync(PathEx filePath, CancellationToken ct)
     {
-        _tl.L.WriteLine("GetContainingPackageAsync. File path: {0}.", filePath);
+        _logger.LogInformation(
+            new EventId(3, "ContainingPackageRequested"),
+            "GetContainingPackageAsync. File path: {FilePath}.",
+            filePath);
         if (!filePath.TryGetParentManifestOrThisUnderWorkspace(_workspaceRoot, out PathEx? manifest))
         {
-            _tl.L.WriteLine("GetContainingPackageAsync. No containing package found.");
+            _logger.LogInformation(
+                new EventId(4, "ContainingPackageNotFound"),
+                "GetContainingPackageAsync. No containing package found.");
             return null;
         }
 
@@ -82,7 +94,10 @@ public class MetadataService : IMetadataService, IDisposable
                 {
                     if (filePath.TryGetParentManifestOrThisUnderWorkspace(_workspaceRoot, out PathEx? manifest))
                     {
-                        _tl.L.WriteLine("OnWorkspaceUpdateAsync: Removing from cache: {0}", manifest);
+                        _logger.LogInformation(
+                            new EventId(5, "PackageCacheEntryRemoved"),
+                            "OnWorkspaceUpdateAsync: Removing from cache: {ManifestPath}",
+                            manifest);
                         if (_packageCache.TryRemove(manifest.Value, out var package))
                         {
                             OnPackageRemoved(package);
@@ -128,7 +143,10 @@ public class MetadataService : IMetadataService, IDisposable
             return package;
         }
 
-        _tl.L.WriteLine("... Cache miss: {0}.", manifestPath);
+        _logger.LogInformation(
+            new EventId(6, "PackageCacheMiss"),
+            "... Cache miss: {ManifestPath}.",
+            manifestPath);
         package = await GetPackageAsyncCore(manifestPath, ct);
         _packageCache[manifestPath] = package;
         OnPackageAdded(package);
@@ -146,8 +164,10 @@ public class MetadataService : IMetadataService, IDisposable
 
     private void Dispose(bool disposing)
     {
-        _tl.L.WriteLine("Disposing MDS. Package cache has {0} entries.", _packageCache.Count);
-        _tl.T.TrackEvent("DisposeMDS", ("PackageCount", $"{_packageCache.Count}"));
+        _logger.LogInformation(
+            new EventId(7, "MetadataServiceDisposing"),
+            "Disposing MDS. Package cache has {PackageCount} entries.",
+            _packageCache.Count);
         if (!_disposedValue)
         {
             if (disposing)
@@ -251,9 +271,10 @@ public class MetadataService : IMetadataService, IDisposable
             return;
         }
 
-        _tl.L.WriteError(
-            "Operation '{0}' failed unexpectedly. Ex: {1}",
-            operation,
-            exception);
+        _logger.LogError(
+            new EventId(8, "EventDispatchFailed"),
+            exception,
+            "Operation '{Operation}' failed unexpectedly.",
+            operation);
     }
 }

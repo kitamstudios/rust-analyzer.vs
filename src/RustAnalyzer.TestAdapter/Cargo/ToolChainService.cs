@@ -3,13 +3,16 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.ComponentModel.Composition;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
@@ -17,16 +20,45 @@ namespace KS.RustAnalyzer.TestAdapter.Cargo;
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class ToolchainService : IToolchainService
 {
-    private readonly TL _tl;
+    private readonly IFeatureUsageTelemetry _telemetry;
+    private readonly MelLogger _logger;
+    private readonly MelLogger _processLogger;
+    private readonly MelLogger _buildJsonOutputParserLogger;
 
     [ImportingConstructor]
-    public ToolchainService([Import] ITelemetryService t, [Import] ILogger l)
+    public ToolchainService(
+        [Import] IFeatureUsageTelemetry telemetry,
+        [Import] ILoggerFactory loggerFactory)
     {
-        _tl = new TL
-        {
-            T = t,
-            L = l,
-        };
+        _telemetry = EnsureArg.IsNotNull(telemetry, nameof(telemetry));
+        loggerFactory = EnsureArg.IsNotNull(loggerFactory, nameof(loggerFactory));
+        _logger = loggerFactory.CreateLogger(typeof(ToolchainService).FullName);
+        _processLogger = loggerFactory.CreateLogger(typeof(ProcessRunner).FullName);
+        _buildJsonOutputParserLogger =
+            loggerFactory.CreateLogger(typeof(BuildJsonOutputParser).FullName);
+    }
+
+    internal ToolchainService(
+        IFeatureUsageTelemetry telemetry,
+        MelLogger logger,
+        MelLogger processLogger)
+        : this(telemetry, logger, processLogger, logger)
+    {
+    }
+
+    private ToolchainService(
+        IFeatureUsageTelemetry telemetry,
+        MelLogger logger,
+        MelLogger processLogger,
+        MelLogger buildJsonOutputParserLogger)
+    {
+        _telemetry = EnsureArg.IsNotNull(telemetry, nameof(telemetry));
+        _logger = EnsureArg.IsNotNull(logger, nameof(logger));
+        _processLogger =
+            EnsureArg.IsNotNull(processLogger, nameof(processLogger));
+        _buildJsonOutputParserLogger = EnsureArg.IsNotNull(
+            buildJsonOutputParserLogger,
+            nameof(buildJsonOutputParserLogger));
     }
 
     /// <summary>
@@ -36,22 +68,27 @@ public sealed class ToolchainService : IToolchainService
     {
         var cargoExePath = (PathEx)Constants.CargoExe.FindInPath();
 
-        _tl.L.WriteLine("... using {0} from '{1}'.", Constants.CargoExe, cargoExePath);
+        _logger.LogInformation(
+            new EventId(1, "CargoExecutableResolved"),
+            "... using {ExecutableName} from '{ExecutablePath}'.",
+            Constants.CargoExe,
+            cargoExePath);
         return cargoExePath;
     }
 
     public async Task<bool> BuildAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
     {
         var success = await ExecuteOperationAsync(
+            UsageOperation.CargoBuild,
             "build",
             bti.ManifestPath,
             arguments: $"build --manifest-path \"{bti.ManifestPath}\" --profile {bti.Profile} --message-format json {bti.AdditionalBuildArgs}",
-            profile: bti.Profile,
             outputPane: bos.OutputSink,
             buildMessageReporter: bos.BuildActionProgressReporter,
-            outputPreprocessor: x => BuildJsonOutputParser.Parse(bti.WorkspaceRoot, x, _tl),
-            ts: _tl.T,
-            l: _tl.L,
+            outputPreprocessor: x => BuildJsonOutputParser.Parse(
+                bti.WorkspaceRoot,
+                x,
+                _buildJsonOutputParserLogger),
             ct: ct);
 
         if (success)
@@ -70,45 +107,39 @@ public sealed class ToolchainService : IToolchainService
     public Task<bool> CleanAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
     {
         return ExecuteOperationAsync(
+            UsageOperation.CargoClean,
             "clean",
             bti.ManifestPath,
             arguments: $"clean --manifest-path \"{bti.ManifestPath}\" --profile {bti.Profile}",
-            profile: bti.Profile,
             outputPane: bos.OutputSink,
             buildMessageReporter: bos.BuildActionProgressReporter,
             outputPreprocessor: OutputPreprocessorForCargoToolsWithoutJsonOutput,
-            ts: _tl.T,
-            l: _tl.L,
             ct: ct);
     }
 
     public Task<bool> RunClippyAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
     {
         return ExecuteOperationAsync(
+            UsageOperation.CargoClippy,
             "Clippy",
             bti.ManifestPath,
             arguments: $"clippy --manifest-path \"{bti.ManifestPath}\" --profile {bti.Profile} {bti.AdditionalBuildArgs}",
-            profile: bti.Profile,
             outputPane: bos.OutputSink,
             buildMessageReporter: bos.BuildActionProgressReporter,
             outputPreprocessor: OutputPreprocessorForCargoToolsWithoutJsonOutput,
-            ts: _tl.T,
-            l: _tl.L,
             ct: ct);
     }
 
     public Task<bool> RunFmtAsync(BuildTargetInfo bti, BuildOutputSinks bos, CancellationToken ct)
     {
         return ExecuteOperationAsync(
+            UsageOperation.CargoFormat,
             "Fmt",
             bti.ManifestPath,
             arguments: $"fmt --manifest-path \"{bti.ManifestPath}\" {bti.AdditionalBuildArgs}",
-            profile: bti.Profile,
             outputPane: bos.OutputSink,
             buildMessageReporter: bos.BuildActionProgressReporter,
             outputPreprocessor: OutputPreprocessorForCargoToolsWithoutJsonOutput,
-            ts: _tl.T,
-            l: _tl.L,
             ct: ct);
     }
 
@@ -124,18 +155,17 @@ public sealed class ToolchainService : IToolchainService
                 cargoFullPath.GetDirectoryName(),
                 ImmutableDictionary<string, string>.Empty,
                 ct,
-                _tl.L);
+                _processLogger);
             var w = JsonConvert.DeserializeObject<Workspace>(string.Join(string.Empty, proc.StandardOutputLines));
             return AddRootPackageIfNecessary(w, manifestPath);
         }
         catch (Exception e)
         {
-            _tl.L.WriteLine("Unable to obtain metadata for file {0}. Ex: {1}", manifestPath, e);
-            if (!e.IsCargo101Error())
-            {
-                _tl.T.TrackException(e);
-            }
-
+            _logger.LogError(
+                new EventId(2, "WorkspaceMetadataFailed"),
+                e,
+                "Unable to obtain metadata for file {ManifestPath}.",
+                manifestPath);
             throw;
         }
     }
@@ -144,23 +174,36 @@ public sealed class ToolchainService : IToolchainService
     {
         var cargoFullPath = GetCargoExePath();
         var tc = await testContainerPath.ReadTestContainerAsync(ct);
-        _tl.L.WriteLine($"GetTestSuiteInfoAsync: Finding tests for {testContainerPath}");
+        _logger.LogInformation(
+            new EventId(3, "TestSuiteDiscoveryStarted"),
+            "GetTestSuiteInfoAsync: Finding tests for {TestContainerPath}",
+            testContainerPath);
 
         try
         {
             var workingDir = tc.Manifest.GetDirectoryName();
             var cargoVersion = await ToolchainServiceExtensions.GetCommandOutputSingleLine("cargo", "--version", workingDir, ct);
-            _tl.L.WriteLine($"Using: {cargoVersion}");
+            _logger.LogInformation(
+                new EventId(4, "CargoVersionResolved"),
+                "Using: {CargoVersion}",
+                cargoVersion);
             var rustcVersion = await ToolchainServiceExtensions.GetCommandOutputSingleLine("test", "--version", workingDir, ct);
-            _tl.L.WriteLine($"Using: {rustcVersion}");
+            _logger.LogInformation(
+                new EventId(5, "RustCompilerVersionResolved"),
+                "Using: {RustCompilerVersion}",
+                rustcVersion);
 
             var args = new[] { "test", "--no-run", "--message-format=json", "--manifest-path", tc.Manifest, "--profile", profile }
                 .Concat(tc.AdditionalTestDiscoveryArguments.FromNullSeparatedArray())
                 .ToArray();
 
-            _tl.T.TrackEvent("GetTestSuiteInfoAsync", ("TestContainer", testContainerPath), ("Profile", profile), ("Args", string.Join("|", args)));
-
-            using var proc = await ProcessRunner.RunWithLogging(cargoFullPath, args, workingDir, ImmutableDictionary<string, string>.Empty, ct, _tl.L);
+            using var proc = await ProcessRunner.RunWithLogging(
+                cargoFullPath,
+                args,
+                workingDir,
+                ImmutableDictionary<string, string>.Empty,
+                ct,
+                _processLogger);
 
             var testExes = BuildJsonOutputParser.ParseTestExecutables(proc.StandardOutputLines)
                 .Distinct()
@@ -170,8 +213,12 @@ public sealed class ToolchainService : IToolchainService
             if (testExes.Length == 0)
             {
                 var e = new InvalidOperationException(string.Format("Cargo produced no structured test executable artifacts. Command line '{0}'. Exit code: {1}", proc.Arguments, proc.ExitCode));
-                _tl.L.WriteError(e.Message);
-                _tl.T.TrackException(e);
+                _logger.LogError(
+                    new EventId(6, "TestArtifactsMissing"),
+                    e,
+                    "Cargo produced no structured test executable artifacts. Command line '{Arguments}'. Exit code: {ExitCode}",
+                    proc.Arguments,
+                    proc.ExitCode);
                 throw e;
             }
 
@@ -180,19 +227,21 @@ public sealed class ToolchainService : IToolchainService
 
             if (!tc.TestExes.Any())
             {
-                _tl.L.WriteError($"GetTestSuiteInfoAsync: Something is not right. No test executables found in '{tc.ThisPath}'.");
+                _logger.LogError(
+                    new EventId(7, "TestExecutablesMissing"),
+                    "GetTestSuiteInfoAsync: Something is not right. No test executables found in '{TestContainerPath}'.",
+                    tc.ThisPath);
             }
 
             return tc.TestExes.Select(async exe => await GetTestSuiteInfoFromOneTestExeAsync(tc, exe, ct));
         }
         catch (Exception e)
         {
-            _tl.L.WriteLine("Unable to obtain metadata for file {0}. Ex: {1}", tc.Manifest, e);
-            if (!e.IsCargo101Error())
-            {
-                _tl.T.TrackException(e);
-            }
-
+            _logger.LogError(
+                new EventId(8, "TestSuiteMetadataFailed"),
+                e,
+                "Unable to obtain metadata for file {ManifestPath}.",
+                tc.Manifest);
             throw;
         }
     }
@@ -202,12 +251,21 @@ public sealed class ToolchainService : IToolchainService
     private async Task<TestSuiteInfo> GetTestSuiteInfoFromOneTestExeAsync(TestContainer container, PathEx testExePath, CancellationToken ct)
     {
         var workspaceRoot = container.TargetDir.GetDirectoryName();
-        using var proc = await ProcessRunner.RunWithLogging(workspaceRoot + testExePath, new[] { "--list", "--format", "json", "-Zunstable-options" }, workspaceRoot, ImmutableDictionary<string, string>.Empty, ct, _tl.L);
+        using var proc = await ProcessRunner.RunWithLogging(
+            workspaceRoot + testExePath,
+            new[] { "--list", "--format", "json", "-Zunstable-options" },
+            workspaceRoot,
+            ImmutableDictionary<string, string>.Empty,
+            ct,
+            _processLogger);
 
         var tests = Enumerable.Empty<TestSuiteInfo.TestInfo>();
         if (!proc.StandardOutputLines.FirstOrDefault()?.Trim()?.StartsWith("{") ?? false)
         {
-            _tl.L.WriteError($"{Vsix.Name} requires nightly toolchain. Please install the nightly toolchain following instructions in https://rust-lang.github.io/rustup/concepts/channels.html. Details: Fix for https://github.com/rust-lang/rust/issues/49359 is required to support unit testing experience. The RFC process is currently underway. Till then the fix is available only in nightly toolchain.");
+            _logger.LogError(
+                new EventId(9, "NightlyToolchainRequired"),
+                "{ExtensionName} requires nightly toolchain. Please install the nightly toolchain following instructions in https://rust-lang.github.io/rustup/concepts/channels.html. Details: Fix for https://github.com/rust-lang/rust/issues/49359 is required to support unit testing experience. The RFC process is currently underway. Till then the fix is available only in nightly toolchain.",
+                Vsix.Name);
         }
         else
         {
@@ -252,23 +310,58 @@ public sealed class ToolchainService : IToolchainService
         return w;
     }
 
-    private async Task<bool> ExecuteOperationAsync(string opName, PathEx filePath, string arguments, string profile, IBuildOutputSink outputPane, Func<BuildMessage, Task> buildMessageReporter, Func<string, BuildMessage[]> outputPreprocessor, ITelemetryService ts, ILogger l, CancellationToken ct)
+    private async Task<bool> ExecuteOperationAsync(
+        UsageOperation operation,
+        string opName,
+        PathEx filePath,
+        string arguments,
+        IBuildOutputSink outputPane,
+        Func<BuildMessage, Task> buildMessageReporter,
+        Func<string, BuildMessage[]> outputPreprocessor,
+        CancellationToken ct)
     {
-        outputPane.Clear();
+        return await TrackOperationAsync(
+            operation,
+            ct,
+            async () =>
+            {
+                outputPane.Clear();
+                var cargoFullPath = GetCargoExePath();
+                return await RunAsync(
+                    cargoFullPath,
+                    opName,
+                    arguments,
+                    filePath.GetDirectoryName(),
+                    redirector: new BuildOutputRedirector(outputPane, (PathEx)Path.GetDirectoryName(filePath), buildMessageReporter, outputPreprocessor),
+                    ct: ct);
+            });
+    }
 
-        var cargoFullPath = GetCargoExePath();
-
-        ts.TrackEvent(
-            opName,
-            new[] { ("FilePath", filePath), ("Profile", profile), ("CargoPath", cargoFullPath), ("Arguments", arguments) });
-
-        return await RunAsync(
-            cargoFullPath,
-            opName,
-            arguments,
-            filePath.GetDirectoryName(),
-            redirector: new BuildOutputRedirector(outputPane, (PathEx)Path.GetDirectoryName(filePath), buildMessageReporter, outputPreprocessor),
-            ct: ct);
+    private async Task<bool> TrackOperationAsync(
+        UsageOperation operation,
+        CancellationToken ct,
+        Func<Task<bool>> execute)
+    {
+        var duration = Stopwatch.StartNew();
+        try
+        {
+            var succeeded = await execute();
+            var outcome = ct.IsCancellationRequested
+                ? UsageOutcome.Cancelled
+                : succeeded ? UsageOutcome.Succeeded : UsageOutcome.Failed;
+            _telemetry.Track(operation, outcome, duration.Elapsed);
+            return succeeded;
+        }
+        catch (OperationCanceledException)
+        {
+            _telemetry.Track(operation, UsageOutcome.Cancelled, duration.Elapsed);
+            throw;
+        }
+        catch (Exception)
+        {
+            _telemetry.Track(operation, UsageOutcome.Failed, duration.Elapsed);
+            throw;
+        }
     }
 
     private static async Task<bool> RunAsync(PathEx exeFullPath, string opName, string arguments, PathEx workingDir, ProcessOutputRedirector redirector, CancellationToken ct)

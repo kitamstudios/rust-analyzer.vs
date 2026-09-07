@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel.Composition;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
 
@@ -22,10 +23,7 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
     public IBuildOutputSink OutputPane { get; set; }
 
     [Import]
-    public ILogger L { get; set; }
-
-    [Import]
-    public ITelemetryService T { get; set; }
+    public ILoggerFactory LoggerFactory { get; set; }
 
     [Import]
     public Lazy<IToolchainService> LazyCargoService { get; set; }
@@ -48,10 +46,12 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
             return provider;
         }
 
-        T.TrackEvent(
-            "Create Context Provider",
-            new[] { ("Location", workspaceContext.Location) });
-        L.WriteLine("Creating {0}.", GetType().Name);
+        var logger = LoggerFactory.CreateLogger(
+            typeof(FileContextProviderFactory).FullName);
+        logger.LogInformation(
+            new EventId(1, "ProviderCreated"),
+            "Creating {ProviderType}.",
+            GetType().Name);
 
         return provider;
     }

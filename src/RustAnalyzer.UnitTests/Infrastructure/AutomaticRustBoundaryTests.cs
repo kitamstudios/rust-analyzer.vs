@@ -16,6 +16,8 @@ using KS.RustAnalyzer.Shell;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using KS.RustAnalyzer.Tests.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
@@ -40,6 +42,7 @@ public sealed class AutomaticRustBoundaryTests
         {
             AvailabilityPolicy = unavailable.Policy,
             RADownloader = downloader.Object,
+            UsageTelemetry = unavailable.Telemetry,
         };
         var starts = 0;
         client.StartAsync += (_, _) =>
@@ -55,17 +58,19 @@ public sealed class AutomaticRustBoundaryTests
 
         starts.Should().Be(0);
         downloader.VerifyNoOtherCalls();
-        unavailable.Logger.Lines.Should().ContainSingle();
+        unavailable.Lines.Should().ContainSingle();
 
         using var ready = await PrerequisiteFixture.CreateAsync(PrerequisiteStatus.Ready);
         var expected = new InvalidOperationException("Language server path requested.");
         var readyDownloader = new Mock<IRlsInstallerService>(MockBehavior.Strict);
-        readyDownloader.Setup(service => service.GetExePathAsync())
+        readyDownloader.Setup(service => service.GetExePathAsync(
+                It.IsAny<CancellationToken>()))
             .Returns(Task.FromException<PathEx>(expected));
         using var readyClient = new LanguageClient(ready.Context.Factory)
         {
             AvailabilityPolicy = ready.Policy,
             RADownloader = readyDownloader.Object,
+            UsageTelemetry = ready.Telemetry,
         };
         var readyStarts = 0;
         readyClient.StartAsync += (_, _) =>
@@ -81,7 +86,10 @@ public sealed class AutomaticRustBoundaryTests
         (await activate.Should().ThrowAsync<InvalidOperationException>())
             .Which.Should().BeSameAs(expected);
         readyStarts.Should().Be(1);
-        readyDownloader.Verify(service => service.GetExePathAsync(), Times.Once);
+        readyDownloader.Verify(
+            service => service.GetExePathAsync(
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -91,6 +99,7 @@ public sealed class AutomaticRustBoundaryTests
         using var client = new LanguageClient(fixture.Context.Factory)
         {
             AvailabilityPolicy = fixture.Policy,
+            UsageTelemetry = fixture.Telemetry,
         };
         var starts = 0;
         client.StartAsync += (_, _) =>
@@ -119,6 +128,7 @@ public sealed class AutomaticRustBoundaryTests
         using var client = new LanguageClient(fixture.Context.Factory)
         {
             AvailabilityPolicy = fixture.Policy,
+            UsageTelemetry = fixture.Telemetry,
         };
         var starts = 0;
         client.StartAsync += (_, _) =>
@@ -153,6 +163,7 @@ public sealed class AutomaticRustBoundaryTests
         using var client = new LanguageClient(fixture.Context.Factory)
         {
             AvailabilityPolicy = fixture.Policy,
+            UsageTelemetry = fixture.Telemetry,
         };
         var starts = 0;
         var stops = 0;
@@ -188,7 +199,7 @@ public sealed class AutomaticRustBoundaryTests
 
         await handler.HandleAsync(null, null, default);
 
-        unavailable.Logger.Lines.Should().ContainSingle();
+        unavailable.Lines.Should().ContainSingle();
 
         using var ready = await PrerequisiteFixture.CreateAsync(PrerequisiteStatus.Ready);
         var metadata = new Mock<IMetadataService>(MockBehavior.Strict);
@@ -218,8 +229,7 @@ public sealed class AutomaticRustBoundaryTests
         var factory = new FileScannerFactory
         {
             AvailabilityPolicy = unavailable.Policy,
-            L = unavailable.Logger,
-            T = unavailable.Telemetry,
+            LoggerFactory = unavailable.LoggerFactory,
         };
 
         var scanner = factory.CreateProvider(null);
@@ -228,7 +238,7 @@ public sealed class AutomaticRustBoundaryTests
             .IsUpToDateAsync(null, null, default, default)).Should().BeFalse();
 
         unavailable.Telemetry.Events.Should().BeEmpty();
-        unavailable.Logger.Lines.Should().ContainSingle();
+        unavailable.Lines.Should().ContainSingle();
 
         using var ready = await PrerequisiteFixture.CreateAsync(PrerequisiteStatus.Ready);
         var expected = new InvalidOperationException("Metadata requested.");
@@ -251,12 +261,11 @@ public sealed class AutomaticRustBoundaryTests
         var readyFactory = new FileScannerFactory
         {
             AvailabilityPolicy = ready.Policy,
-            L = ready.Logger,
-            T = ready.Telemetry,
+            LoggerFactory = ready.LoggerFactory,
         };
 
         readyFactory.CreateProvider(workspace.Object).Should().NotBeNull();
-        ready.Telemetry.Events.Should().ContainSingle().Which.Should().Be("Create Scanner");
+        ready.Telemetry.Events.Should().BeEmpty();
     }
 
     [Fact]
@@ -268,9 +277,8 @@ public sealed class AutomaticRustBoundaryTests
             AvailabilityPolicy = unavailable.Policy,
             LazyCargoService = new Lazy<IToolchainService>(
                 () => Mock.Of<IToolchainService>()),
-            L = unavailable.Logger,
+            LoggerFactory = unavailable.LoggerFactory,
             OutputPane = Mock.Of<IBuildOutputSink>(),
-            T = unavailable.Telemetry,
         };
 
         var provider = factory.CreateProvider(null);
@@ -278,7 +286,7 @@ public sealed class AutomaticRustBoundaryTests
 
         contexts.Should().BeEmpty();
         unavailable.Telemetry.Events.Should().BeEmpty();
-        unavailable.Logger.Lines.Should().ContainSingle();
+        unavailable.Lines.Should().ContainSingle();
 
         using var ready = await PrerequisiteFixture.CreateAsync(PrerequisiteStatus.Ready);
         var metadata = new Mock<IMetadataService>(MockBehavior.Strict);
@@ -306,13 +314,12 @@ public sealed class AutomaticRustBoundaryTests
             AvailabilityPolicy = ready.Policy,
             LazyCargoService = new Lazy<IToolchainService>(
                 () => Mock.Of<IToolchainService>()),
-            L = ready.Logger,
+            LoggerFactory = ready.LoggerFactory,
             OutputPane = Mock.Of<IBuildOutputSink>(),
-            T = ready.Telemetry,
         };
 
         readyFactory.CreateProvider(workspace.Object).Should().NotBeNull();
-        ready.Telemetry.Events.Should().ContainSingle().Which.Should().Be("Create Context Provider");
+        ready.Telemetry.Events.Should().BeEmpty();
     }
 
     [Fact]
@@ -330,7 +337,7 @@ public sealed class AutomaticRustBoundaryTests
         (await clean.ExecuteBuildAsync(progress, default)).Should().BeFalse();
 
         toolchain.VerifyNoOtherCalls();
-        unavailable.Logger.Lines.Should().HaveCount(2);
+        unavailable.Lines.Should().HaveCount(2);
 
         using var ready = await PrerequisiteFixture.CreateAsync(PrerequisiteStatus.Ready);
         var updates = 0;
@@ -358,23 +365,21 @@ public sealed class AutomaticRustBoundaryTests
     {
         using var unavailable = await PrerequisiteFixture.CreateAsync(PrerequisiteStatus.Suspended);
         var nodeProvider = new NodeBrowseObjectProvider(
-            unavailable.Telemetry,
-            unavailable.Logger,
+            unavailable.LoggerFactory,
             unavailable.Policy);
         var debugProvider = new DebugLaunchTargetProvider
         {
             AvailabilityPolicy = unavailable.Policy,
-            L = unavailable.Logger,
-            T = unavailable.Telemetry,
+            LoggerFactory = unavailable.LoggerFactory,
+            UsageTelemetry = unavailable.Telemetry,
         };
 
         nodeProvider.ProvideBrowseObject(null).Should().BeNull();
         debugProvider.SupportsContext(null, null).Should().BeFalse();
         debugProvider.LaunchDebugTarget(null, null, null);
 
-        unavailable.Logger.Lines.Should().HaveCount(2);
+        unavailable.Lines.Should().HaveCount(2);
         unavailable.Telemetry.Events.Should().BeEmpty();
-        unavailable.Telemetry.Exceptions.Should().BeEmpty();
     }
 
     [Fact]
@@ -388,7 +393,7 @@ public sealed class AutomaticRustBoundaryTests
                 workspaceLookups++;
                 throw new InvalidOperationException("Workspace service should not be requested.");
             },
-            new TL { L = unavailable.Logger, T = unavailable.Telemetry },
+            unavailable.LoggerFactory,
             unavailable.Policy,
             unavailable.Context.Factory);
 
@@ -396,7 +401,7 @@ public sealed class AutomaticRustBoundaryTests
 
         workspaceLookups.Should().Be(0);
         discoverer.TestContainers.Should().BeEmpty();
-        unavailable.Logger.Lines.Should().ContainSingle();
+        unavailable.Lines.Should().ContainSingle();
 
         using var ready = await PrerequisiteFixture.CreateAsync(PrerequisiteStatus.Ready);
         var readyWorkspaceLookups = 0;
@@ -411,7 +416,7 @@ public sealed class AutomaticRustBoundaryTests
                 readyWorkspaceLookups++;
                 return workspaceService.Object;
             },
-            new TL { L = ready.Logger, T = ready.Telemetry },
+            ready.LoggerFactory,
             ready.Policy,
             ready.Context.Factory);
 
@@ -437,7 +442,7 @@ public sealed class AutomaticRustBoundaryTests
                 Interlocked.Increment(ref workspaceLookups);
                 return workspaceService.Object;
             },
-            new TL { L = fixture.Logger, T = fixture.Telemetry },
+            fixture.LoggerFactory,
             fixture.Policy,
             fixture.Context.Factory);
 
@@ -467,7 +472,7 @@ public sealed class AutomaticRustBoundaryTests
                 workspaceLookups++;
                 return workspaceService.Object;
             },
-            new TL { L = fixture.Logger, T = fixture.Telemetry },
+            fixture.LoggerFactory,
             fixture.Policy,
             fixture.Context.Factory);
         var firstCompletion = new TaskCompletionSource<PrerequisiteResult>(
@@ -505,7 +510,7 @@ public sealed class AutomaticRustBoundaryTests
                 workspaceLookups++;
                 return workspaceService.Object;
             },
-            new TL { L = fixture.Logger, T = fixture.Telemetry },
+            fixture.LoggerFactory,
             fixture.Policy,
             fixture.Context.Factory);
 
@@ -538,7 +543,7 @@ public sealed class AutomaticRustBoundaryTests
             new AsyncEvent<EventArgs>());
         var discoverer = new TestContainerDiscoverer(
             () => workspaceService.Object,
-            new TL { L = fixture.Logger, T = fixture.Telemetry },
+            fixture.LoggerFactory,
             fixture.Policy,
             fixture.Context.Factory);
         await discoverer.Initialization;
@@ -575,7 +580,7 @@ public sealed class AutomaticRustBoundaryTests
             new AsyncEvent<EventArgs>());
         var discoverer = new TestContainerDiscoverer(
             () => workspaceService.Object,
-            new TL { L = fixture.Logger, T = fixture.Telemetry },
+            fixture.LoggerFactory,
             fixture.Policy,
             fixture.Context.Factory);
 
@@ -598,16 +603,14 @@ public sealed class AutomaticRustBoundaryTests
         var registry = new Mock<IRegistrySettingsService>(MockBehavior.Strict);
         var installer = new RlsInstallerService(
             registry.Object,
-            unavailable.Telemetry,
-            unavailable.Logger,
+            unavailable.LoggerFactory,
             unavailable.Policy);
 
         await installer.InstallLatestAsync();
 
         registry.VerifyNoOtherCalls();
-        unavailable.Logger.Lines.Should().ContainSingle();
+        unavailable.Lines.Should().ContainSingle();
         unavailable.Telemetry.Events.Should().BeEmpty();
-        unavailable.Telemetry.Exceptions.Should().BeEmpty();
     }
 
     [Theory]
@@ -799,20 +802,26 @@ public sealed class AutomaticRustBoundaryTests
         {
             Context = new JoinableTaskContext();
             State = new PrerequisiteProcessState(Context.Factory);
-            Logger = new RecordingLogger();
-            Telemetry = new RecordingTelemetry();
-            Policy = new PrerequisiteAvailabilityPolicy(State, Logger, Telemetry);
+            Logging = new RecordingLoggerFixture();
+            Telemetry = new RecordingFeatureUsageTelemetry();
+            Policy = new PrerequisiteAvailabilityPolicy(
+                State,
+                Logging.CreateLogger(typeof(PrerequisiteAvailabilityPolicy)));
         }
 
         public JoinableTaskContext Context { get; }
 
-        public RecordingLogger Logger { get; }
+        public ILoggerFactory LoggerFactory => Logging.Factory;
+
+        public IEnumerable<RecordingLogEntry> Lines => Logging.Lines;
+
+        public RecordingLoggerFixture Logging { get; }
 
         public PrerequisiteAvailabilityPolicy Policy { get; }
 
         public PrerequisiteProcessState State { get; }
 
-        public RecordingTelemetry Telemetry { get; }
+        public RecordingFeatureUsageTelemetry Telemetry { get; }
 
         public static async Task<PrerequisiteFixture> CreateAsync(PrerequisiteStatus status)
         {
@@ -849,49 +858,8 @@ public sealed class AutomaticRustBoundaryTests
 
         public void Dispose()
         {
+            Logging.Dispose();
             Context.Dispose();
-        }
-    }
-
-    private sealed class RecordingLogger : ILogger
-    {
-        public ConcurrentQueue<(string Format, object[] Arguments)> Errors { get; } = new();
-
-        public ConcurrentQueue<(string Format, object[] Arguments)> Lines { get; } = new();
-
-        public void WriteLine(string format, params object[] args)
-        {
-            Lines.Enqueue((format, args));
-        }
-
-        public void WriteError(string format, params object[] args)
-        {
-            Errors.Enqueue((format, args));
-        }
-    }
-
-    private sealed class RecordingTelemetry : ITelemetryService
-    {
-        public ConcurrentQueue<string> Events { get; } = new();
-
-        public ConcurrentQueue<Exception> Exceptions { get; } = new();
-
-        public void TrackEvent(string eventName, params (string Key, string Value)[] properties)
-        {
-            Events.Enqueue(eventName);
-        }
-
-        public void TrackException(Exception e, string siteName = null)
-        {
-            Exceptions.Enqueue(e);
-        }
-
-        public void TrackException(
-            Exception e,
-            (string Key, string Value)[] properties,
-            string siteName = null)
-        {
-            Exceptions.Enqueue(e);
         }
     }
 }

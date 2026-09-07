@@ -21,8 +21,11 @@ are not active users or buyers.
 - The free product is one Windows amd64 VSIX for VS2022 and VS2026.
 - The standalone TestAdapter is a separate free contract.
 - Feature 003 retired RustDevelopmentPack; no paid artifact or publication path exists.
-- `RustAnalyzer.Remote` is a stub. Cargo, path, process, and debug flows are local and Windows-only.
-- Telemetry privacy and updater integrity remain unresolved.
+- No Remote project exists. Cargo, path, process, and debug flows are local and Windows-only.
+- Feature telemetry has a typed, allow-listed privacy boundary, operational suppression, and
+  build-injected public client configuration.
+- Packaged and runtime rust-analyzer acquisition now require provenance and official digests, with
+  build/preflight verification, hardened activation, and packaged fallback.
 
 ## Boundary
 

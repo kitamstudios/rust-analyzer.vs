@@ -49,6 +49,7 @@
     <Compile Include="Infrastructure\RlsUpdatedNotification.cs" />
     <Compile Include="Infrastructure\RegistrySettingsService.cs" />
     <Compile Include="Infrastructure\SettingsInfo.cs" />
+    <Compile Include="Infrastructure\VsixFeatureUsageTelemetry.cs" />
     <Compile Include="LanguageService\CommentHelper.cs" />
     <Compile Include="LanguageService\CommentSelectionCommandHandler.cs" />
     <Compile Include="Infrastructure\StringBuildMessagePreprocessor.cs" />
@@ -93,7 +94,8 @@
     <Compile Include="Editor\FileContextProvider.cs" />
     <Compile Include="Editor\FileScanner.cs" />
     <Compile Include="LanguageService\LanguageClient.cs" />
-    <Compile Include="Infrastructure\OutputWindowLogger.cs" />
+    <Compile Include="Infrastructure\OutputWindowLoggerProvider.cs" />
+    <Compile Include="Infrastructure\VsixLoggerFactory.cs" />
     <Compile Include="Editor\FileScannerFactory.cs" />
     <Compile Include="Infrastructure\BuildOutputSink.cs" />
     <Compile Include="Editor\FileContextProviderFactory.cs" />
@@ -114,11 +116,15 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\external\rust-analyzer.exe">
-      <Link>2026-08-24\rust-analyzer.exe</Link>
+      <Link>2026-08-31\rust-analyzer.exe</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="..\external\rust_analyzer.pdb">
-      <Link>2026-08-24\rust_analyzer.pdb</Link>
+      <Link>2026-08-31\rust_analyzer.pdb</Link>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="..\external\rust-analyzer.provenance.json">
+      <Link>2026-08-31\rust-analyzer.provenance.json</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="languages.pkgdef">
@@ -163,6 +169,8 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0" />
     <PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
     <Reference Include="Microsoft.VisualBasic" />
     <PackageReference Include="System.ComponentModel.Composition" Version="8.0.0" ExcludeAssets="runtime" />

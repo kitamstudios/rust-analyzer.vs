@@ -20,6 +20,8 @@ $solution = Join-Path $repoRoot "src\RustAnalyzer.sln"
 $projectsRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot "_built\projects"))
 $projectOutputRootWithSeparator = "$projectsRoot$([IO.Path]::DirectorySeparatorChar)"
 $msbuild = Get-VisualStudioTool -Name MSBuild -MajorVersion $VisualStudioMajorVersion
+Write-Host "Verifying packaged rust-analyzer..."
+& (Join-Path $PSScriptRoot "Manage-RustAnalyzer.ps1") -Mode Verify
 Write-Host "Using MSBuild: $msbuild"
 & $msbuild `
     $solution `

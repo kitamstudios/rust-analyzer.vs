@@ -8,10 +8,11 @@ using EnsureThat;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.VSIntegration.UI;
-using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.NodeEnhancements;
 
@@ -19,21 +20,25 @@ namespace KS.RustAnalyzer.NodeEnhancements;
 public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
 {
     private readonly PrerequisiteAvailabilityPolicy _availabilityPolicy;
-    private readonly TL _tl;
+    private readonly MelLogger _logger;
     private NodeBrowseObjectPropertyFilter<NodeBrowseObject> _browseObject;
 
     [ImportingConstructor]
     public NodeBrowseObjectProvider(
-        [Import] ITelemetryService t,
-        [Import] ILogger l,
+        [Import] ILoggerFactory loggerFactory,
         [Import] PrerequisiteAvailabilityPolicy availabilityPolicy)
+        : this(
+            loggerFactory.CreateLogger(typeof(NodeBrowseObjectProvider).FullName),
+            availabilityPolicy)
+    {
+    }
+
+    private NodeBrowseObjectProvider(
+        MelLogger logger,
+        PrerequisiteAvailabilityPolicy availabilityPolicy)
     {
         _availabilityPolicy = availabilityPolicy;
-        _tl = new TL
-        {
-            T = t,
-            L = l,
-        };
+        _logger = logger;
     }
 
     public object ProvideBrowseObject(WorkspaceVisualNodeBase node)
@@ -44,7 +49,7 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
         }
 
         var browseObject = GetBrowseObject();
-        _tl.L.WriteLine("Getting browse object for {0}.", node.NodeFullMoniker);
+        LogBrowseObjectRequested(node.NodeFullMoniker);
 
         if (node is not IFileSystemNode fsNode || !File.Exists(fsNode.FullPath))
         {
@@ -123,9 +128,18 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
             return;
         }
 
-        _tl.L.WriteError(
-            "Operation '{0}' failed unexpectedly. Ex: {1}",
-            operation,
-            exception);
+        _logger.LogError(
+            new EventId(2, "BrowseObjectUpdateFailed"),
+            exception,
+            "Operation '{Operation}' failed unexpectedly.",
+            operation);
+    }
+
+    private void LogBrowseObjectRequested(string nodeMoniker)
+    {
+        _logger.LogInformation(
+            new EventId(1, "BrowseObjectRequested"),
+            "Getting browse object for {NodeMoniker}.",
+            nodeMoniker);
     }
 }

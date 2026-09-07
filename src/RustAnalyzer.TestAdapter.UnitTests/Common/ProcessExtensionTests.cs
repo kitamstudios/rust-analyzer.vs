@@ -1,9 +1,14 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using FluentAssertions.Extensions;
 using KS.RustAnalyzer.TestAdapter.Common;
+using KS.RustAnalyzer.Tests.Common;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests.Common;
@@ -59,6 +64,39 @@ public sealed class ProcessExtensionTests
 
         proc.HasExited.Should().BeTrue();
         act.Should().NotThrow();
+    }
+
+    [Fact]
+    public async Task RunWithLoggingUsesStructuredProcessCategoryAsync()
+    {
+        using var provider = new RecordingLoggerProvider();
+        using var factory = new LoggerFactory(new[] { provider, });
+        var logger = factory.CreateLogger(typeof(ProcessRunner).FullName);
+
+        using var process = await ProcessRunner.RunWithLogging(
+            "cmd.exe",
+            new[] { "/c", "exit", "0" },
+            Environment.CurrentDirectory,
+            new Dictionary<string, string>(),
+            CancellationToken.None,
+            logger);
+
+        var entries = provider.Entries.ToArray();
+        entries.Select(entry => entry.EventId).Should().Equal(
+            new EventId(1, "ProcessStarted"),
+            new EventId(2, "ProcessFinished"));
+        entries.Should().OnlyContain(
+            entry => entry.Category == typeof(ProcessRunner).FullName
+                && entry.Level == LogLevel.Information
+                && entry.Exception == null);
+        entries[0].Template.Should().Be(
+            "Started PID:{ProcessId} with args: {Arguments}...");
+        entries[0].Properties["ProcessId"].Should().Be(process.ProcessId);
+        entries[0].Properties["Arguments"].Should().Be(process.Arguments);
+        entries[1].Template.Should().Be(
+            "... Finished PID {ProcessId} with exit code {ExitCode}.");
+        entries[1].Properties["ProcessId"].Should().Be(process.ProcessId);
+        entries[1].Properties["ExitCode"].Should().Be(0);
     }
 }
 

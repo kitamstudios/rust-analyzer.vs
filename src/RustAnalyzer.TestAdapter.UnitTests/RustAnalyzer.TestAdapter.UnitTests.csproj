@@ -53,10 +53,12 @@
     <Compile Include="Cargo\ToolchainServiceTests.cs" />
     <Compile Include="Cargo\WorkspaceExtensionsTests.cs" />
     <Compile Include="Common\EnvironmentExtensionsTests.cs" />
+    <Compile Include="Common\FeatureUsageTelemetryTests.cs" />
     <Compile Include="Common\LoggingTests.cs" />
     <Compile Include="Common\PathExtensionsTests.cs" />
     <Compile Include="Common\ProcessExtensionTests.cs" />
     <Compile Include="Common\StringExtensionsTests.cs" />
+    <Compile Include="FeatureUsageBoundaryTests.cs" />
     <Compile Include="MessageLogger.cs" />
     <Compile Include="SpyFrameworkHandle.cs" />
     <Compile Include="SpyTestCaseDiscoverySink.cs" />

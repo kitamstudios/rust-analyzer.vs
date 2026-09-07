@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,17 +7,100 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using KS.RustAnalyzer.Infrastructure;
+using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using KS.RustAnalyzer.Tests.Common;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Workspace;
 using Moq;
 using Xunit;
+using MelEventId = Microsoft.Extensions.Logging.EventId;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
+using MelLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace KS.RustAnalyzer.UnitTests.Infrastructure;
 
 [Trait("type", "UnitTests")]
 public sealed class MetadataServiceFactoryLifecycleTests
 {
+    [Fact]
+    public async Task ReadyServicePreservesMetadataOwnerLogContractsAsync()
+    {
+        using var fixture = new PrerequisiteFixture();
+        await fixture.MakeReadyAsync();
+        var toolchain = new Mock<IToolchainService>(MockBehavior.Strict);
+        var watcher = CreateWatcher();
+        var factory = fixture.CreateFactory(
+            new Lazy<IToolchainService>(() => toolchain.Object));
+        var created = factory.CreateService(
+            CreateWorkspace().Object,
+            () => watcher.Object,
+            fixture.Context.Factory);
+        var metadata = created.Should().BeAssignableTo<IMetadataService>().Which;
+        using var lifetime = created.Should().BeAssignableTo<IDisposable>().Which;
+        var filePath = (PathEx)@"C:\outside\main.rs";
+
+        (await metadata.GetContainingPackageAsync(filePath, default))
+            .Should().BeNull();
+
+        var requested = fixture.LoggerProvider.Entries.Single(
+            entry => entry.EventId.Id == 3);
+        requested.Category.Should().Be(typeof(MetadataService).FullName);
+        requested.EventId.Should().Be(
+            new MelEventId(3, "ContainingPackageRequested"));
+        requested.Level.Should().Be(MelLogLevel.Information);
+        requested.Template.Should().Be(
+            "GetContainingPackageAsync. File path: {FilePath}.");
+        requested.Properties["FilePath"].Should().Be(filePath);
+        requested.Exception.Should().BeNull();
+
+        var notFound = fixture.LoggerProvider.Entries.Single(
+            entry => entry.EventId.Id == 4);
+        notFound.Category.Should().Be(typeof(MetadataService).FullName);
+        notFound.EventId.Should().Be(
+            new MelEventId(4, "ContainingPackageNotFound"));
+        notFound.Level.Should().Be(MelLogLevel.Information);
+        notFound.Template.Should().Be(
+            "GetContainingPackageAsync. No containing package found.");
+        notFound.Exception.Should().BeNull();
+        toolchain.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task DeferredInitializationFaultUsesFactoryOwnerOnceAsync()
+    {
+        using var fixture = new PrerequisiteFixture();
+        await fixture.MakeReadyAsync();
+        var expected =
+            new InvalidOperationException("Toolchain composition failed.");
+        var factory = fixture.CreateFactory(
+            new Lazy<IToolchainService>(() => throw expected));
+        var created = factory.CreateService(
+            CreateWorkspace().Object,
+            () => CreateWatcher().Object,
+            fixture.Context.Factory);
+        var metadata = created.Should().BeAssignableTo<IMetadataService>().Which;
+        using var lifetime = created.Should().BeAssignableTo<IDisposable>().Which;
+        Func<Task> access = async () =>
+            await metadata.GetCachedPackagesAsync(default);
+
+        (await access.Should().ThrowAsync<InvalidOperationException>())
+            .Which.Should().BeSameAs(expected);
+
+        var entry = fixture.LoggerProvider.Entries.Should()
+            .ContainSingle()
+            .Which;
+        entry.Category.Should().Be(typeof(MetadataServiceFactory).FullName);
+        entry.EventId.Should().Be(
+            new MelEventId(1, "InitializationFailed"));
+        entry.Level.Should().Be(MelLogLevel.Error);
+        entry.Template.Should().Be(
+            "Operation '{Operation}' failed unexpectedly.");
+        entry.Properties["Operation"].Should().Be(
+            "MetadataServiceFactory.PrerequisiteGatedMetadataService.InitializeAsync");
+        entry.Exception.Should().BeSameAs(expected);
+    }
+
     [Fact]
     public async Task ConstructionIsInertUntilLaterReadyAsync()
     {
@@ -220,7 +302,6 @@ public sealed class MetadataServiceFactoryLifecycleTests
         toolchainCreations.Should().Be(1);
         watcherResolutions.Should().Be(1);
         watcher.Object.OnBatchFileSystemChanged.AsyncInvocations.Should().ContainSingle();
-        fixture.Telemetry.Events.Count(name => name == "CreatingMDS").Should().Be(1);
         toolchain.VerifyNoOtherCalls();
         lifetime.Dispose();
     }
@@ -251,12 +332,10 @@ public sealed class MetadataServiceFactoryLifecycleTests
         lifetime.Dispose();
 
         watcher.Object.OnBatchFileSystemChanged.AsyncInvocations.Should().BeEmpty();
-        fixture.Telemetry.Events.Should().NotContain("DisposeMDS");
 
         fileSystemEvents.Release();
         await callback;
 
-        fixture.Telemetry.Events.Count(name => name == "DisposeMDS").Should().Be(1);
         toolchain.VerifyNoOtherCalls();
     }
 
@@ -316,21 +395,24 @@ public sealed class MetadataServiceFactoryLifecycleTests
         public PrerequisiteFixture()
         {
             Context = new JoinableTaskContext();
+            LoggerProvider = new RecordingLoggerProvider();
+            LoggerFactory = new Microsoft.Extensions.Logging.LoggerFactory(
+                new[] { LoggerProvider, });
             State = new PrerequisiteProcessState(Context.Factory);
-            Telemetry = new RecordingTelemetry();
             Policy = new PrerequisiteAvailabilityPolicy(
                 State,
-                Mock.Of<ILogger>(),
-                Telemetry);
+                Mock.Of<MelLogger>());
         }
 
         public JoinableTaskContext Context { get; }
 
+        public Microsoft.Extensions.Logging.ILoggerFactory LoggerFactory { get; }
+
+        public RecordingLoggerProvider LoggerProvider { get; }
+
         public PrerequisiteAvailabilityPolicy Policy { get; }
 
         public PrerequisiteProcessState State { get; }
-
-        public RecordingTelemetry Telemetry { get; }
 
         public MetadataServiceFactory CreateFactory(Lazy<IToolchainService> cargoService)
         {
@@ -338,8 +420,7 @@ public sealed class MetadataServiceFactoryLifecycleTests
             {
                 AvailabilityPolicy = Policy,
                 CargoService = cargoService,
-                L = Mock.Of<ILogger>(),
-                T = Telemetry,
+                LoggerFactory = LoggerFactory,
             };
         }
 
@@ -367,30 +448,8 @@ public sealed class MetadataServiceFactoryLifecycleTests
 
         public void Dispose()
         {
+            LoggerFactory.Dispose();
             Context.Dispose();
-        }
-    }
-
-    private sealed class RecordingTelemetry : ITelemetryService
-    {
-        public ConcurrentQueue<string> Events { get; } = new();
-
-        public void TrackEvent(
-            string eventName,
-            params (string Key, string Value)[] properties)
-        {
-            Events.Enqueue(eventName);
-        }
-
-        public void TrackException(Exception e, string siteName = null)
-        {
-        }
-
-        public void TrackException(
-            Exception e,
-            (string Key, string Value)[] properties,
-            string siteName = null)
-        {
         }
     }
 }

@@ -4,30 +4,43 @@ using System.Diagnostics;
 using System.IO;
 using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestWindow.Extensibility;
 using Microsoft.VisualStudio.TestWindow.Extensibility.Model;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter;
 
 [DebuggerDisplay("{Constants.ExecutorUriString}/{Source}")]
 public class TestContainer : BaseTestContainer, ITestContainer
 {
-    public TestContainer(PathEx testContainerPath, ITestContainerDiscoverer discoverer, TL tl)
+    private readonly MelLogger _logger;
+
+    public TestContainer(
+        PathEx testContainerPath,
+        ITestContainerDiscoverer discoverer,
+        MelLogger logger)
     {
         EnsureArg.IsTrue(testContainerPath.FileExists(), nameof(testContainerPath));
         TestContainerPath = testContainerPath;
         TimeStamp = GetTimeStamp();
         Discoverer = discoverer;
-        TL = tl;
+        _logger = EnsureArg.IsNotNull(logger, nameof(logger));
 
-        TL.T.TrackEvent("NewTestContainer", ("ManifestPath", testContainerPath));
-        TL.L.WriteLine("New Test container {0} [{1}]", testContainerPath, TimeStamp);
+        _logger.LogInformation(
+            new EventId(1, "ContainerCreated"),
+            "New Test container {TestContainerPath} [{Timestamp}]",
+            testContainerPath,
+            TimeStamp);
     }
 
     private TestContainer(TestContainer testContainer)
-        : this(testContainer.TestContainerPath, testContainer.Discoverer, testContainer.TL)
+        : this(
+            testContainer.TestContainerPath,
+            testContainer.Discoverer,
+            testContainer._logger)
     {
     }
 
@@ -45,8 +58,6 @@ public class TestContainer : BaseTestContainer, ITestContainer
 
     public DateTime TimeStamp { get; }
 
-    public TL TL { get; }
-
     public int CompareTo(ITestContainer other)
     {
         if (other is not TestContainer otherContainer)
@@ -60,7 +71,12 @@ public class TestContainer : BaseTestContainer, ITestContainer
             return res;
         }
 
-        TL.L.WriteLine("Test container comparision {0} vs {1} for {2}", TimeStamp, otherContainer.TimeStamp, TestContainerPath);
+        _logger.LogInformation(
+            new EventId(2, "ContainerCompared"),
+            "Test container comparision {Timestamp} vs {OtherTimestamp} for {TestContainerPath}",
+            TimeStamp,
+            otherContainer.TimeStamp,
+            TestContainerPath);
 
         return TimeStamp.CompareTo(otherContainer.TimeStamp);
     }

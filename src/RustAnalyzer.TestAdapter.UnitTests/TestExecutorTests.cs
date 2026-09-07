@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using ApprovalTests;
@@ -19,7 +20,8 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests;
 [Trait("type", "IntegrationTests")]
 public class TestExecutorTests : TestsWithLogger
 {
-    private readonly IToolchainService _tcs = new ToolchainService(TestHelpers.TL.T, TestHelpers.TL.L);
+    private readonly IToolchainService _tcs =
+        new ToolchainService(TestHelpers.Telemetry, TestHelpers.LoggerFactory);
 
     public TestExecutorTests(ITestOutputHelper output)
         : base(output)
@@ -44,6 +46,17 @@ public class TestExecutorTests : TestsWithLogger
             .OrderBy(x => x.TestCase.FullyQualifiedName).ThenBy(x => x.TestCase.LineNumber)
             .SerializeAndNormalizeObject();
         Approvals.Verify(normalizedStr);
+        FrameworkHandle.Messages.Should().Contain(
+            entry => entry.Message.Contains(
+                typeof(TestDiscovererCommon).FullName));
+        FrameworkHandle.Messages.Should().Contain(
+            entry => entry.Message.Contains(
+                typeof(ToolchainService).FullName));
+        FrameworkHandle.Messages.Should().Contain(
+            entry => entry.Message.Contains(typeof(ProcessRunner).FullName));
+        FrameworkHandle.Messages.Should().NotContain(
+            entry => entry.Message.Contains(
+                "KS.RustAnalyzer.TestAdapter.Legacy"));
     }
 
     [Theory]
@@ -58,8 +71,13 @@ public class TestExecutorTests : TestsWithLogger
         await _tcs.DoBuildAsync(tps.WorkspacePath, tps.ManifestPath, profile);
         new TestDiscoverer().DiscoverTests(testCases.Select(tc => tc.Source), Mock.Of<IDiscoveryContext>(), MessageLogger, Mock.Of<ITestCaseDiscoverySink>());
 
-        new TestExecutor().RunTests(testCases, Mock.Of<IRunContext>(), FrameworkHandle);
+        var telemetry = new RecordingFeatureUsageTelemetry();
+        new TestExecutor(telemetry).RunTests(testCases, Mock.Of<IRunContext>(), FrameworkHandle);
 
         FrameworkHandle.Results.Select(r => $"{((PathEx)r.TestCase.Source).GetFileNameWithoutExtension()}|{r.DisplayName}").Should().BeEquivalentTo(tests);
+        telemetry.Events.Should().ContainSingle()
+            .Which.Should().Match<(UsageOperation Operation, UsageOutcome Outcome, TimeSpan Duration)>(
+                value => value.Operation == UsageOperation.TestAdapterExecute
+                    && value.Outcome == UsageOutcome.Succeeded);
     }
 }

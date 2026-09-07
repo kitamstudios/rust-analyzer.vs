@@ -10,13 +10,14 @@ using EnsureThat;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.TestWindow.Extensibility;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
-using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter;
 
@@ -29,8 +30,9 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
     private readonly Func<IVsFolderWorkspaceService> _getWorkspaceFactory;
     private readonly CancellationTokenSource _lifetimeCancellation = new();
     private readonly CancellationToken _lifetimeToken;
+    private readonly MelLogger _logger;
     private readonly object _sync = new();
-    private readonly TL _tl;
+    private readonly MelLogger _testContainerLogger;
     private readonly SemaphoreSlim _workspaceChangeGate = new(1, 1);
     private IMetadataService _currentMetadataService;
     private IWorkspace _currentWorkspace;
@@ -40,17 +42,12 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
     [ImportingConstructor]
     public TestContainerDiscoverer(
         [Import] SVsServiceProvider serviceProvider,
-        [Import] ITelemetryService t,
-        [Import] ILogger l,
+        [Import] ILoggerFactory loggerFactory,
         [Import] PrerequisiteAvailabilityPolicy availabilityPolicy)
         : this(
             () => VS.GetRequiredService<SComponentModel, IComponentModel>()
                 .GetService<IVsFolderWorkspaceService>(),
-            new TL
-            {
-                T = t,
-                L = l,
-            },
+            loggerFactory,
             availabilityPolicy,
             RustAnalyzerPackage.JTF)
     {
@@ -58,7 +55,7 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
 
     public TestContainerDiscoverer(
         Func<IVsFolderWorkspaceService> getWorkspaceFactory,
-        TL tl,
+        ILoggerFactory loggerFactory,
         PrerequisiteAvailabilityPolicy availabilityPolicy,
         JoinableTaskFactory joinableTaskFactory)
     {
@@ -67,10 +64,11 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
             nameof(getWorkspaceFactory),
             options => options.WithException(
                 new ArgumentNullException(nameof(getWorkspaceFactory))));
-        _tl = EnsureArg.IsNotNull(
-            tl,
-            nameof(tl),
-            options => options.WithException(new ArgumentNullException(nameof(tl))));
+        loggerFactory = EnsureArg.IsNotNull(
+            loggerFactory,
+            nameof(loggerFactory),
+            options => options.WithException(
+                new ArgumentNullException(nameof(loggerFactory))));
         _availabilityPolicy = EnsureArg.IsNotNull(
             availabilityPolicy,
             nameof(availabilityPolicy),
@@ -81,6 +79,10 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
             nameof(joinableTaskFactory),
             options => options.WithException(
                 new ArgumentNullException(nameof(joinableTaskFactory))));
+        _logger = loggerFactory.CreateLogger(
+            typeof(TestContainerDiscoverer).FullName);
+        _testContainerLogger = loggerFactory.CreateLogger(
+            typeof(TestContainer).FullName);
 
         _lifetimeToken = _lifetimeCancellation.Token;
         var initialization = joinableTaskFactory.RunAsync(InitializeAsync);
@@ -235,8 +237,10 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
             return;
         }
 
-        _tl.L.WriteLine("TestContainerDiscoverer loading new workspace at '{0}'.", workspace.Location);
-        _tl.T.TrackEvent("TcdLoadWorkspace", ("Location", workspace.Location));
+        _logger.LogInformation(
+            new EventId(1, "WorkspaceLoading"),
+            "TestContainerDiscoverer loading new workspace at '{WorkspaceLocation}'.",
+            workspace.Location);
         var metadataService = workspace.GetService<IMetadataService>();
         if (metadataService == null)
         {
@@ -267,7 +271,10 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
 
     private void UnloadOldWorkspaceUnderLock()
     {
-        _tl.L.WriteLine("Unloading workspace at '{0}'.", _currentWorkspace?.Location);
+        _logger.LogInformation(
+            new EventId(2, "WorkspaceUnloading"),
+            "Unloading workspace at '{WorkspaceLocation}'.",
+            _currentWorkspace?.Location);
         if (_currentMetadataService != null)
         {
             _currentMetadataService.TestContainerUpdated -= TestContainerUpdatedEventHandler;
@@ -289,7 +296,10 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
                 return;
             }
 
-            _tl.L.WriteLine("TCD: Package Added EventHandler: '{0}'", e.ManifestPath);
+            _logger.LogInformation(
+                new EventId(3, "PackageAdded"),
+                "TCD: Package Added EventHandler: '{ManifestPath}'",
+                e.ManifestPath);
             GetTestContainers(e).ForEach(c => TestContainerUpdatedEventHandler(this, c));
         }
     }
@@ -304,7 +314,10 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
                 return;
             }
 
-            _tl.L.WriteLine("TCD: Package Removed EventHandler: '{0}'", e.ManifestPath);
+            _logger.LogInformation(
+                new EventId(4, "PackageRemoved"),
+                "TCD: Package Removed EventHandler: '{ManifestPath}'",
+                e.ManifestPath);
             GetTestContainers(e).ForEach(c => TestContainerUpdatedEventHandler(this, c));
         }
     }
@@ -319,7 +332,10 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
                 return;
             }
 
-            _tl.L.WriteLine("TCD: TestContainer Updated EventHandler: '{0}'", e);
+            _logger.LogInformation(
+                new EventId(5, "TestContainerUpdated"),
+                "TCD: TestContainer Updated EventHandler: '{TestContainerPath}'",
+                e);
             if (e.FileExists())
             {
                 TryAddTestContainer(e);
@@ -335,9 +351,17 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
 
     private void TryAddTestContainer(PathEx container)
     {
-        if (!_testContainersCache.TryAdd(container, new TestContainer(container, this, _tl)))
+        if (!_testContainersCache.TryAdd(
+                container,
+                new TestContainer(
+                    container,
+                    this,
+                    _testContainerLogger)))
         {
-            _tl.L.WriteError("TCD: Failed to add '{0}'", container);
+            _logger.LogError(
+                new EventId(6, "TestContainerAddFailed"),
+                "TCD: Failed to add '{TestContainerPath}'",
+                container);
         }
     }
 
@@ -345,7 +369,10 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
     {
         if (!_testContainersCache.TryRemove(container, out _))
         {
-            _tl.L.WriteError("TCD: Failed to remove container {0}.", container);
+            _logger.LogError(
+                new EventId(7, "TestContainerRemoveFailed"),
+                "TCD: Failed to remove container {TestContainerPath}.",
+                container);
         }
     }
 
@@ -385,9 +412,10 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
             }
         }
 
-        _tl.L.WriteError(
-            "Operation '{0}' failed unexpectedly. Ex: {1}",
-            operation,
-            exception);
+        _logger.LogError(
+            new EventId(8, "BackgroundOperationFailed"),
+            exception,
+            "Operation '{Operation}' failed unexpectedly.",
+            operation);
     }
 }

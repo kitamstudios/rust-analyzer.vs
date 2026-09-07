@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ApprovalTests;
 using ApprovalTests.Namers;
@@ -13,11 +14,60 @@ using FluentAssertions;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Xunit;
 
 public sealed class ToolchainServiceExtensionsTests
 {
+    [Fact]
+    [Trait("type", "IntegrationTests")]
+    public async Task ToolchainOverrideLoggerDeliversEachStructuredMessageOnceAsync()
+    {
+        using var provider = new RecordingLoggerProvider();
+        using var factory = new LoggerFactory(new[] { provider, });
+        var logger = factory.CreateLogger(
+            typeof(ToolchainServiceExtensions).FullName);
+
+        await TestHelpers.ThisTestRoot.SetToolchainOverrideAsync(
+            string.Empty,
+            logger,
+            CancellationToken.None);
+
+        var entries = provider.Entries.ToArray();
+        entries.Should().HaveCount(3);
+        entries.Select(entry => entry.EventId).Should().Equal(
+            new EventId(1, "ToolchainOverrideCommandStarted"),
+            new EventId(2, "ToolchainOverrideWorkspaceSelected"),
+            new EventId(3, "ToolchainOverrideCommandCompleted"));
+        entries.Should().OnlyContain(
+            entry =>
+                entry.Category
+                    == "KS.RustAnalyzer.TestAdapter.Cargo.ToolchainServiceExtensions"
+                && entry.Level == LogLevel.Information
+                && entry.Exception == null);
+
+        var started = entries[0];
+        started.Template.Should().Be(
+            "Running: {ExecutableName} {Arguments}");
+        started.Properties.Should().HaveCount(3);
+        started.Properties["ExecutableName"].Should().Be("rustup");
+        started.Properties["Arguments"].Should().Be("override set ");
+
+        var workspaceSelected = entries[1];
+        workspaceSelected.Template.Should().Be(
+            "Workspace: {WorkspaceRoot}");
+        workspaceSelected.Properties.Should().HaveCount(2);
+        workspaceSelected.Properties["WorkspaceRoot"]
+            .Should()
+            .Be(TestHelpers.ThisTestRoot);
+
+        var completed = entries[2];
+        completed.Template.Should().Be("{Output}");
+        completed.Properties.Should().HaveCount(2);
+        completed.Properties["Output"].Should().Be(completed.Message);
+    }
+
     [Fact]
     [Trait("type", "IntegrationTests")]
     public async Task TestGetActiveToolChainAsync()

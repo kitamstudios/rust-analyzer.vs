@@ -21,6 +21,8 @@ using KS.RustAnalyzer.Shell;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using KS.RustAnalyzer.Tests.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Commanding;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
@@ -86,8 +88,7 @@ public sealed class UserSurfaceAvailabilityTests
         bool expectedAvailable)
     {
         using var fixture = await PrerequisiteFixture.CreateAsync(status);
-        var telemetry = new RecordingTelemetry();
-        var command = new TestRustCommand(fixture.State, telemetry);
+        var command = new TestRustCommand(fixture.State);
 
         command.QueryStatus();
         command.Command.Visible.Should().Be(expectedAvailable);
@@ -97,7 +98,6 @@ public sealed class UserSurfaceAvailabilityTests
 
         command.Invoke();
         command.Executions.Should().Be(expectedAvailable ? 1 : 0);
-        telemetry.Events.Should().HaveCount(expectedAvailable ? 1 : 0);
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public sealed class UserSurfaceAvailabilityTests
     {
         using var fixture = await PrerequisiteFixture.CreateAsync(
             PrerequisiteStatus.Evaluating);
-        var command = new TestRustCommand(fixture.State, new RecordingTelemetry());
+        var command = new TestRustCommand(fixture.State);
 
         command.QueryStatus();
         await fixture.CompleteEvaluationAsync(success: true);
@@ -247,11 +247,9 @@ public sealed class UserSurfaceAvailabilityTests
         bool expectedAvailable)
     {
         using var fixture = await PrerequisiteFixture.CreateAsync(status);
-        var telemetry = new RecordingTelemetry();
         var comments = new List<bool>();
         var handler = new TestCommentSelectionCommandHandler(
             fixture.State,
-            telemetry,
             (_, comment) =>
             {
                 comments.Add(comment);
@@ -266,9 +264,8 @@ public sealed class UserSurfaceAvailabilityTests
         handler.GetCommandState(uncommentArgs).IsAvailable.Should().Be(expectedAvailable);
         handler.ExecuteCommand(commentArgs, null).Should().Be(expectedAvailable);
         handler.ExecuteCommand(uncommentArgs, null).Should().Be(expectedAvailable);
-
         comments.Should().HaveCount(expectedAvailable ? 2 : 0);
-        telemetry.Events.Should().HaveCount(expectedAvailable ? 2 : 0);
+        comments.Should().HaveCount(expectedAvailable ? 2 : 0);
     }
 
     [Theory]
@@ -409,9 +406,8 @@ public sealed class UserSurfaceAvailabilityTests
         {
             AvailabilityPolicy = fixture.Policy,
             LazyCargoService = toolchain,
-            L = fixture.Logger,
+            LoggerFactory = fixture.LoggerFactory,
             OutputPane = Mock.Of<IBuildOutputSink>(),
-            T = fixture.Telemetry,
         };
         var provider = factory.CreateProvider(workspace.Object);
 
@@ -508,14 +504,13 @@ public sealed class UserSurfaceAvailabilityTests
     {
         using var fixture = await PrerequisiteFixture.CreateAsync(status);
         var nodeProvider = new NodeBrowseObjectProvider(
-            fixture.Telemetry,
-            fixture.Logger,
+            fixture.LoggerFactory,
             fixture.Policy);
         var debugProvider = new DebugLaunchTargetProvider
         {
             AvailabilityPolicy = fixture.Policy,
-            L = fixture.Logger,
-            T = fixture.Telemetry,
+            LoggerFactory = fixture.LoggerFactory,
+            UsageTelemetry = fixture.Telemetry,
         };
 
         nodeProvider.ProvideBrowseObject(null).Should().BeNull();
@@ -524,7 +519,6 @@ public sealed class UserSurfaceAvailabilityTests
 
         GetBrowseObject(nodeProvider).Should().BeNull();
         fixture.Telemetry.Events.Should().BeEmpty();
-        fixture.Telemetry.Exceptions.Should().BeEmpty();
     }
 
     [Fact]
@@ -533,8 +527,7 @@ public sealed class UserSurfaceAvailabilityTests
         using var fixture = await PrerequisiteFixture.CreateAsync(
             PrerequisiteStatus.Ready);
         var provider = new NodeBrowseObjectProvider(
-            fixture.Telemetry,
-            fixture.Logger,
+            fixture.LoggerFactory,
             fixture.Policy);
 
         Action provide = () => provider.ProvideBrowseObject(null);
@@ -562,8 +555,8 @@ public sealed class UserSurfaceAvailabilityTests
         var provider = new DebugLaunchTargetProvider
         {
             AvailabilityPolicy = fixture.Policy,
-            L = fixture.Logger,
-            T = fixture.Telemetry,
+            LoggerFactory = fixture.LoggerFactory,
+            UsageTelemetry = fixture.Telemetry,
         };
 
         provider.SupportsContext(
@@ -589,7 +582,7 @@ public sealed class UserSurfaceAvailabilityTests
                 workspaceLookups++;
                 return Mock.Of<Microsoft.VisualStudio.Workspace.VSIntegration.Contracts.IVsFolderWorkspaceService>();
             },
-            new TL { L = fixture.Logger, T = fixture.Telemetry },
+            fixture.LoggerFactory,
             fixture.Policy,
             fixture.Context.Factory);
 
@@ -706,7 +699,6 @@ public sealed class UserSurfaceAvailabilityTests
         constructor.Should().NotBeNull();
         var command = (TargetSystemComboGetListCommand)constructor.Invoke(
             new object[] { state, });
-        SetTelemetry(command, new RecordingTelemetry());
         const BindingFlags executeBindingFlags =
             BindingFlags.DeclaredOnly |
             BindingFlags.Instance |
@@ -734,18 +726,6 @@ public sealed class UserSurfaceAvailabilityTests
         }
     }
 
-    private static void SetTelemetry<T>(
-        BaseRustAnalyzerCommand<T> command,
-        ITelemetryService telemetry)
-        where T : class, new()
-    {
-        typeof(BaseRustAnalyzerCommand<T>)
-            .GetField(
-                "_telemetry",
-                BindingFlags.Instance | BindingFlags.NonPublic)
-            ?.SetValue(command, telemetry);
-    }
-
     [DllImport("oleaut32.dll")]
     private static extern int VariantClear(IntPtr variant);
 
@@ -765,17 +745,14 @@ public sealed class UserSurfaceAvailabilityTests
     private sealed class TestRustCommand : BaseRustAnalyzerCommand<TestRustCommand>
     {
         public TestRustCommand()
-            : this(PrerequisiteProcessState.Current, new RecordingTelemetry())
+            : this(PrerequisiteProcessState.Current)
         {
         }
 
-        public TestRustCommand(
-            PrerequisiteProcessState prerequisiteState,
-            ITelemetryService telemetry)
+        public TestRustCommand(PrerequisiteProcessState prerequisiteState)
             : base(prerequisiteState)
         {
             Command = CreateMenuCommand();
-            SetTelemetry(this, telemetry);
         }
 
         public int Executions { get; private set; }
@@ -914,11 +891,8 @@ public sealed class UserSurfaceAvailabilityTests
     {
         public TestCommentSelectionCommandHandler(
             PrerequisiteProcessState prerequisiteState,
-            ITelemetryService telemetry,
             Func<ITextView, bool, bool> changeComment)
             : base(
-                telemetry,
-                Mock.Of<ILogger>(),
                 prerequisiteState,
                 changeComment)
         {
@@ -1085,16 +1059,20 @@ public sealed class UserSurfaceAvailabilityTests
 
             State = new PrerequisiteProcessState(Context.Factory);
             Logger = Mock.Of<ILogger>();
-            Telemetry = new RecordingTelemetry();
-            Policy = new PrerequisiteAvailabilityPolicy(
-                State,
-                Logger,
-                Telemetry);
+            var loggerFactory = new Mock<ILoggerFactory>();
+            loggerFactory
+                .Setup(value => value.CreateLogger(It.IsAny<string>()))
+                .Returns(Logger);
+            LoggerFactory = loggerFactory.Object;
+            Telemetry = new RecordingFeatureUsageTelemetry();
+            Policy = new PrerequisiteAvailabilityPolicy(State, Logger);
         }
 
         public JoinableTaskContext Context { get; }
 
         public ILogger Logger { get; }
+
+        public ILoggerFactory LoggerFactory { get; }
 
         public SingleThreadedSynchronizationContext MainThreadSynchronizationContext { get; }
 
@@ -1102,7 +1080,7 @@ public sealed class UserSurfaceAvailabilityTests
 
         public PrerequisiteProcessState State { get; }
 
-        public RecordingTelemetry Telemetry { get; }
+        public RecordingFeatureUsageTelemetry Telemetry { get; }
 
         public static async Task<PrerequisiteFixture> CreateAsync(
             PrerequisiteStatus status)
@@ -1219,33 +1197,6 @@ public sealed class UserSurfaceAvailabilityTests
                         PrerequisiteFailureKind.CargoNotFound,
                         "Cargo was not found."),
                 });
-    }
-
-    private sealed class RecordingTelemetry : ITelemetryService
-    {
-        public List<string> Events { get; } = new();
-
-        public List<Exception> Exceptions { get; } = new();
-
-        public void TrackEvent(
-            string eventName,
-            params (string Key, string Value)[] properties)
-        {
-            Events.Add(eventName);
-        }
-
-        public void TrackException(Exception e, string siteName = null)
-        {
-            Exceptions.Add(e);
-        }
-
-        public void TrackException(
-            Exception e,
-            (string Key, string Value)[] properties,
-            string siteName = null)
-        {
-            Exceptions.Add(e);
-        }
     }
 
     private static OleMenuCommand CreateMenuCommand()

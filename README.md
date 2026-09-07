@@ -8,12 +8,14 @@
 
 Download this extension from the [Visual Studio Marketplace][marketplace] or get the [CI build][vsixgallery].
 
+rust-analyzer.vs is an independent project and is not affiliated with or endorsed by Microsoft or
+the rust-analyzer project. See [Privacy](PRIVACY.md) for feature-usage telemetry details.
+
 ## Supported hosts and prerequisites
 
-One canonical Windows amd64 VSIX supports Community, Professional, and Enterprise with installation
-range `[17.12,19.0)`:
+One canonical Windows amd64 VSIX supports Community, Professional, and Enterprise for:
 
-- Visual Studio 2022 17.12 or later within 17.x
+- Visual Studio 2022 17.12+
 - Visual Studio 2026 18.x
 
 The Core Editor, `rustup` on the Visual Studio process `PATH`, a default Rust toolchain, and

@@ -6,12 +6,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Community.VisualStudio.Toolkit;
+using EnsureThat;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.Shell;
 
@@ -106,6 +109,23 @@ public sealed class KillOrphanedRaExesCommand : BaseRustAnalyzerCommand<KillOrph
 [Command(PackageGuids.guidRustAnalyzerToolsCmdSetString, PackageIds.IdInstallToolchain)]
 public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToolchainCommand>
 {
+    private readonly Func<Task<(bool Accepted, string CommandLine, string ToolchainName)>> _selectInstallationAsync;
+
+    public InstallToolchainCommand()
+    {
+        _selectInstallationAsync = SelectInstallationAsync;
+    }
+
+    private InstallToolchainCommand(
+        PrerequisiteProcessState prerequisiteState,
+        Func<Task<(bool Accepted, string CommandLine, string ToolchainName)>> selectInstallationAsync)
+        : base(prerequisiteState)
+    {
+        _selectInstallationAsync = EnsureArg.IsNotNull(
+            selectInstallationAsync,
+            nameof(selectInstallationAsync));
+    }
+
     protected override void BeforeQueryStatusReady(EventArgs e)
     {
         Command.Visible = Command.Enabled = Command.Supported = true;
@@ -125,6 +145,62 @@ public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToo
             return;
         }
 
+        await ExecuteReadyAsync();
+    }
+
+    private async Task ExecuteReadyAsync()
+    {
+        var (accepted, cmdLine, tcName) = await _selectInstallationAsync();
+        if (!accepted)
+        {
+            return;
+        }
+
+        if (!PrerequisiteState.IsAvailable)
+        {
+            return;
+        }
+
+        await VsCommon.ShowInfoBarAsync(true, FormatInstallationStartedMessage(tcName));
+        var logger = MelLogger;
+        var telemetry = UsageTelemetry;
+        var installation = RustAnalyzerPackage.JTF.RunAsync(
+            () => TrackUsageAsync(
+                telemetry,
+                UsageOperation.ToolchainInstall,
+                async () =>
+                {
+                    if (!PrerequisiteState.IsAvailable)
+                    {
+                        return UsageOutcome.Cancelled;
+                    }
+
+                    var res = await ToolchainServiceExtensions.InstallToolchain(cmdLine, CmdServices.BuildOutputSink, default);
+
+                    await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
+                    if (!PrerequisiteState.IsAvailable)
+                    {
+                        return UsageOutcome.Cancelled;
+                    }
+
+                    var msg = $"Finished installing toolchain '{tcName}'. Use Tools > Rust Tools > Switch Active Toolchain to switch to it.";
+                    if (!res)
+                    {
+                        msg = $"Failed to install toolchain '{tcName}'. See Output > Build pane for details. Try again and maybe run from the command line.";
+                    }
+
+                    await VsCommon.ShowInfoBarAsync(res, msg);
+                    return res ? UsageOutcome.Succeeded : UsageOutcome.Failed;
+                }));
+        ObserveBackgroundOperation(
+            installation.Task,
+            logger,
+            "InstallToolchainCommand.ExecuteCoreAsync");
+    }
+
+    private async Task<(bool Accepted, string CommandLine, string ToolchainName)> SelectInstallationAsync()
+    {
+        await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
         var targets = await ToolchainServiceExtensions.GetTargets(default);
         CmdServices.VsUIShell.GetDialogOwnerHwnd(out IntPtr hwndOwner);
 
@@ -136,50 +212,16 @@ public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToo
             wiz.StartPosition = FormStartPosition.CenterParent;
             if (wiz.ShowDialog(new NativeHwndWrapper(hwndOwner)) != DialogResult.OK)
             {
-                return;
+                return (false, null, null);
             }
+
+            var (commandLine, toolchainName) = wiz.GetCommandLineInfo();
+            return (true, commandLine, toolchainName);
         }
         finally
         {
             CmdServices.VsUIShell.EnableModeless(1);
         }
-
-        var (cmdLine, tcName) = wiz.GetCommandLineInfo();
-        if (!PrerequisiteState.IsAvailable)
-        {
-            return;
-        }
-
-        await VsCommon.ShowInfoBarAsync(true, FormatInstallationStartedMessage(tcName));
-        var logger = Logger;
-        var installation = RustAnalyzerPackage.JTF.RunAsync(
-            async () =>
-            {
-                if (!PrerequisiteState.IsAvailable)
-                {
-                    return;
-                }
-
-                var res = await ToolchainServiceExtensions.InstallToolchain(cmdLine, CmdServices.BuildOutputSink, default);
-
-                await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
-                if (!PrerequisiteState.IsAvailable)
-                {
-                    return;
-                }
-
-                var msg = $"Finished installing toolchain '{tcName}'. Use Tools > Rust Tools > Switch Active Toolchain to switch to it.";
-                if (!res)
-                {
-                    msg = $"Failed to install toolchain '{tcName}'. See Output > Build pane for details. Try again and maybe run from the command line.";
-                }
-
-                await VsCommon.ShowInfoBarAsync(res, msg);
-            });
-        ObserveBackgroundOperation(
-            installation.Task,
-            logger,
-            "InstallToolchainCommand.ExecuteCoreAsync");
     }
 
     private static string FormatInstallationStartedMessage(string tcName)
@@ -189,7 +231,7 @@ public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToo
 
     private static void ObserveBackgroundOperation(
         Task operation,
-        ILogger logger,
+        MelLogger logger,
         string operationName)
     {
         var observation = operation.ContinueWith(
@@ -204,7 +246,7 @@ public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToo
     }
 
     private static void ReportUnexpectedFault(
-        ILogger logger,
+        MelLogger logger,
         string operation,
         Exception exception)
     {
@@ -213,10 +255,11 @@ public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToo
             return;
         }
 
-        logger?.WriteError(
-            "Operation '{0}' failed unexpectedly. Ex: {1}",
-            operation,
-            exception);
+        logger?.LogError(
+            new EventId(2, "BackgroundOperationFailed"),
+            exception,
+            "Operation '{Operation}' failed unexpectedly.",
+            operation);
     }
 }
 
@@ -283,9 +326,15 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
             command => command.Visible = command.Enabled = command.Supported = false);
     }
 
+#pragma warning disable VSTHRD010
     protected override void ExecuteCore(object sender, OleMenuCmdEventArgs e)
     {
-        ThreadHelper.ThrowIfNotOnUIThread();
+        _verifyOnUIThread();
+
+        if (!PrerequisiteState.IsAvailable)
+        {
+            return;
+        }
 
         string workspaceRoot = null;
         if (ErrorHandler.Failed(Solution?.GetSolutionInfo(out workspaceRoot, out var _, out var _) ?? VSConstants.E_FAIL))
@@ -300,21 +349,29 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
         }
 
         var name = command.Properties[ToolchainNameProperty] as string;
-        if (!PrerequisiteState.IsAvailable)
-        {
-            return;
-        }
-
-        var logger = Logger;
+        var logger = MelLogger;
+        var toolchainServiceExtensionsLogger = LoggerFactory?.CreateLogger(
+            typeof(ToolchainServiceExtensions).FullName)
+            ?? logger;
+        var telemetry = UsageTelemetry;
         var toolchainSwitch = RustAnalyzerPackage.JTF
             .RunAsync(
-                async () =>
-                {
-                    if (PrerequisiteState.IsAvailable)
+                () => TrackUsageAsync(
+                    telemetry,
+                    UsageOperation.ToolchainSwitch,
+                    async () =>
                     {
-                        await ((PathEx)workspaceRoot).SetToolchainOverrideAsync(name, logger, default);
-                    }
-                });
+                        if (PrerequisiteState.IsAvailable)
+                        {
+                            await ((PathEx)workspaceRoot).SetToolchainOverrideAsync(
+                                name,
+                                toolchainServiceExtensionsLogger,
+                                default);
+                            return UsageOutcome.Succeeded;
+                        }
+
+                        return UsageOutcome.Cancelled;
+                    }));
         ObserveBackgroundOperation(
             toolchainSwitch.Task,
             logger,
@@ -323,6 +380,7 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
         CommandCache.ForEach(c => c.Checked = false);
         command.Checked = true;
     }
+#pragma warning restore VSTHRD010
 
     private void QueryToolchains()
     {
@@ -376,7 +434,7 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
 
     private static void ObserveBackgroundOperation(
         Task operation,
-        ILogger logger,
+        MelLogger logger,
         string operationName)
     {
         var observation = operation.ContinueWith(
@@ -391,7 +449,7 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
     }
 
     private static void ReportUnexpectedFault(
-        ILogger logger,
+        MelLogger logger,
         string operation,
         Exception exception)
     {
@@ -400,9 +458,10 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
             return;
         }
 
-        logger?.WriteError(
-            "Operation '{0}' failed unexpectedly. Ex: {1}",
-            operation,
-            exception);
+        logger?.LogError(
+            new EventId(2, "BackgroundOperationFailed"),
+            exception,
+            "Operation '{Operation}' failed unexpectedly.",
+            operation);
     }
 }

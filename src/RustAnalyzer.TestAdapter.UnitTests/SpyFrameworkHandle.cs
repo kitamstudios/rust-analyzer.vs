@@ -20,6 +20,8 @@ public class SpyFrameworkHandle : IFrameworkHandle
 
     public IReadOnlyCollection<TestResult> Results => _results;
 
+    public ConcurrentQueue<(TestMessageLevel Level, string Message)> Messages { get; } = new();
+
     public bool EnableShutdownAfterTestRun { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
     public int LaunchProcessWithDebuggerAttached(string filePath, string workingDirectory, string arguments, IDictionary<string, string> environmentVariables)
@@ -49,6 +51,7 @@ public class SpyFrameworkHandle : IFrameworkHandle
 
     public void SendMessage(TestMessageLevel testMessageLevel, string message)
     {
+        Messages.Enqueue((testMessageLevel, message));
         _output.WriteLine("{0}: {1}", testMessageLevel, message);
     }
 }

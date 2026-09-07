@@ -4,7 +4,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Threading;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.Infrastructure;
 
@@ -44,23 +46,24 @@ public sealed class PrerequisiteAvailabilityPolicy
         "toolchain status query",
     };
 
-    private readonly ILogger _logger;
+    private readonly MelLogger _logger;
     private readonly int[] _reportedSuppressions = new int[PathNames.Length];
     private readonly PrerequisiteProcessState _state;
-    private readonly ITelemetryService _telemetry;
     private int _infoBarFailureReported;
     private int _suspensionReported;
 
     [ImportingConstructor]
-    public PrerequisiteAvailabilityPolicy([Import] ILogger logger, [Import] ITelemetryService telemetry)
-        : this(PrerequisiteProcessState.Current, logger, telemetry)
+    public PrerequisiteAvailabilityPolicy([Import] ILoggerFactory loggerFactory)
+        : this(
+            PrerequisiteProcessState.Current,
+            loggerFactory.CreateLogger(
+                typeof(PrerequisiteAvailabilityPolicy).FullName))
     {
     }
 
     public PrerequisiteAvailabilityPolicy(
         PrerequisiteProcessState state,
-        ILogger logger,
-        ITelemetryService telemetry)
+        MelLogger logger)
     {
         _state = EnsureArg.IsNotNull(
             state,
@@ -70,10 +73,6 @@ public sealed class PrerequisiteAvailabilityPolicy
             logger,
             nameof(logger),
             options => options.WithException(new ArgumentNullException(nameof(logger))));
-        _telemetry = EnsureArg.IsNotNull(
-            telemetry,
-            nameof(telemetry),
-            options => options.WithException(new ArgumentNullException(nameof(telemetry))));
     }
 
     public bool IsReady(AutomaticRustPath path)
@@ -87,8 +86,9 @@ public sealed class PrerequisiteAvailabilityPolicy
 
         if (Interlocked.CompareExchange(ref _reportedSuppressions[pathIndex], 1, 0) == 0)
         {
-            _logger.WriteLine(
-                "Suppressed automatic Rust path '{0}': prerequisite state is {1} for this Visual Studio session. Restart Visual Studio to recheck prerequisites.",
+            _logger.LogInformation(
+                new EventId(1, "AutomaticRustPathSuppressed"),
+                "Suppressed automatic Rust path '{PathName}': prerequisite state is {PrerequisiteStatus} for this Visual Studio session. Restart Visual Studio to recheck prerequisites.",
                 PathNames[pathIndex],
                 status);
         }
@@ -139,7 +139,8 @@ public sealed class PrerequisiteAvailabilityPolicy
         if (_state.Status == PrerequisiteStatus.Suspended &&
             Interlocked.CompareExchange(ref _suspensionReported, 1, 0) == 0)
         {
-            _logger.WriteLine(
+            _logger.LogInformation(
+                new EventId(2, "PrerequisitesSuspended"),
                 "rust-analyzer.vs entered prerequisite state Suspended for this Visual Studio session. Automatic Rust work is disabled. Restart Visual Studio to recheck prerequisites.");
         }
     }
@@ -153,8 +154,10 @@ public sealed class PrerequisiteAvailabilityPolicy
 
         if (Interlocked.CompareExchange(ref _infoBarFailureReported, 1, 0) == 0)
         {
-            _logger.WriteError("Failed to show prerequisite suspension InfoBar. Ex: {0}", exception);
-            _telemetry.TrackException(exception);
+            _logger.LogError(
+                new EventId(3, "SuspensionInfoBarFailed"),
+                exception,
+                "Failed to show prerequisite suspension InfoBar.");
         }
     }
 

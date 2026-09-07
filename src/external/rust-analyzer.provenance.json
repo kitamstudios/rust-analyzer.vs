@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "upstream": {
+    "repository": "https://github.com/rust-lang/rust-analyzer",
+    "release": "2026-08-31",
+    "target": "x86_64-pc-windows-msvc"
+  },
+  "assets": [
+    {
+      "name": "rust-analyzer-x86_64-pc-windows-msvc.zip",
+      "url": "https://github.com/rust-lang/rust-analyzer/releases/download/2026-08-31/rust-analyzer-x86_64-pc-windows-msvc.zip",
+      "officialSha256": "44106ca5d62e8eb2d6597f8572b5df9dad9799b53630f69114234eeebf8bc899",
+      "officialDigestSource": "https://api.github.com/repos/rust-lang/rust-analyzer/releases/assets/537513202",
+      "verifiedArchiveSha256": "44106ca5d62e8eb2d6597f8572b5df9dad9799b53630f69114234eeebf8bc899"
+    }
+  ],
+  "files": {
+    "executable": {
+      "name": "rust-analyzer.exe",
+      "sha256": "357e58c560c6e186870857c82242230e96bb847108695efb5814718309802395"
+    },
+    "pdb": {
+      "name": "rust_analyzer.pdb",
+      "sha256": "83d85c26aff7559d2085b2245bd6a7f4f87799f317c2ce3dc69b89b3039efe7c"
+    }
+  },
+  "reportedVersion": "rust-analyzer 0.3.3033-standalone (f8996691e9 2026-08-30)"
+}

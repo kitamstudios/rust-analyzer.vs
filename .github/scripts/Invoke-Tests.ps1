@@ -12,6 +12,7 @@ param (
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+$env:RUSTANALYZER_TELEMETRY_DISABLED = "1"
 
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
 $buildRoot = Join-Path $repoRoot "_built"
@@ -21,6 +22,12 @@ $testAdapterPackage = Join-Path $testAdapterDirectory "KS.RustAnalyzer.TestAdapt
 
 $runsAssemblyTests = $Mode -ne "acceptance"
 $runsAcceptanceHarness = $Mode -eq "acceptance" -or $Mode -eq "full"
+
+Write-Host "Test phase: Telemetry connection string validation"
+& (Join-Path $PSScriptRoot "Test-TelemetryConnectionString.ps1")
+
+Write-Host "Test phase: rust-analyzer provenance"
+& (Join-Path $PSScriptRoot "Test-Manage-RustAnalyzer.ps1")
 
 Write-Host "Test phase: TestAdapter packager regression"
 & (Join-Path $PSScriptRoot "Test-New-TestAdapterPackage.ps1")
@@ -33,8 +40,6 @@ if ($Mode -ne "unit") {
     Write-Host "Using pinned Rust nightly: $($nightlyManifest.Release) ($($nightlyManifest.CommitHash))"
 }
 
-$env:RUSTANALYZER_TELEMETRY_DISABLED = "1"
-
 $assemblyTestExitCode = 0
 $zeroTestFailure = $null
 $taxonomyFailure = $null
@@ -46,7 +51,6 @@ if ($runsAssemblyTests) {
     }
 
     $testProjects = @(
-        "RustAnalyzer.Remote.UnitTests",
         "RustAnalyzer.TestAdapter.UnitTests",
         "RustAnalyzer.UnitTests")
     $assemblies = @(

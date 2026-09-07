@@ -7,6 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.Infrastructure;
 
@@ -19,26 +21,40 @@ public interface IPreReqsCheckService
 [PartCreationPolicy(CreationPolicy.Shared)]
 public sealed class PreReqsCheckService : IPreReqsCheckService
 {
+    private readonly MelLogger _diagnosticLogger;
     private readonly IPrerequisiteProbe _probe;
-    private readonly TL _tl;
+    private readonly MelLogger _logger;
 
     [ImportingConstructor]
-    public PreReqsCheckService([Import] ITelemetryService t, [Import] ILogger l)
-        : this(new VisualStudioPrerequisiteProbe(), t, l)
+    public PreReqsCheckService([Import] ILoggerFactory loggerFactory)
+        : this(new VisualStudioPrerequisiteProbe(), loggerFactory)
     {
     }
 
-    public PreReqsCheckService(IPrerequisiteProbe probe, ITelemetryService t, ILogger l)
+    public PreReqsCheckService(
+        IPrerequisiteProbe probe,
+        ILoggerFactory loggerFactory)
+        : this(
+            probe,
+            loggerFactory.CreateLogger(typeof(PreReqsCheckService).FullName),
+            loggerFactory.CreateLogger(
+                typeof(DiagnosticPrerequisiteProbe).FullName))
+    {
+    }
+
+    private PreReqsCheckService(
+        IPrerequisiteProbe probe,
+        MelLogger logger,
+        MelLogger diagnosticLogger)
     {
         _probe = EnsureArg.IsNotNull(
             probe,
             nameof(probe),
             options => options.WithException(new ArgumentNullException(nameof(probe))));
-        _tl = new TL
-        {
-            T = t,
-            L = l,
-        };
+        _logger = EnsureArg.IsNotNull(logger, nameof(logger));
+        _diagnosticLogger = EnsureArg.IsNotNull(
+            diagnosticLogger,
+            nameof(diagnosticLogger));
     }
 
     public async Task<PrerequisiteResult> EvaluateAsync(CancellationToken ct)
@@ -47,7 +63,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         {
             var diagnosticProbe = new DiagnosticPrerequisiteProbe(_probe);
             var result = await new PrerequisiteEvaluator(diagnosticProbe).EvaluateAsync(ct);
-            diagnosticProbe.WriteDiagnostics(result, _tl.L);
+            diagnosticProbe.WriteDiagnostics(result, _diagnosticLogger);
             return result;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -56,8 +72,10 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
         }
         catch (Exception e)
         {
-            _tl.L.WriteError("Prerequisite evaluation failed unexpectedly. Ex: {0}", e);
-            _tl.T.TrackException(e);
+            _logger.LogError(
+                new EventId(1, "PrerequisiteEvaluationFailed"),
+                e,
+                "Prerequisite evaluation failed unexpectedly.");
             return PrerequisiteResult.Failed(
                 new[]
                 {
@@ -110,7 +128,7 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
             return result;
         }
 
-        public void WriteDiagnostics(PrerequisiteResult result, ILogger logger)
+        public void WriteDiagnostics(PrerequisiteResult result, MelLogger logger)
         {
             var defaultToolchainFailed = result.Failures.Any(
                 failure => failure.Kind == PrerequisiteFailureKind.DefaultToolchainNotConfigured);
@@ -119,24 +137,22 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
                 if (!command.Result.IsSuccess ||
                     (command.Operation == RustupDefaultOperation && defaultToolchainFailed))
                 {
-                    logger.WriteError("{0}", FormatDiagnostic(command.Operation, command.Result));
+                    var status = command.Result.WasStarted
+                        ? $"Exit code: {command.Result.ExitCode}"
+                        : "Start status: failed";
+                    var startError = command.Result.WasStarted
+                        ? string.Empty
+                        : $"\nStart error:\n{SanitizeStartError(command.Result.StartError)}";
+                    logger.LogError(
+                        new EventId(1, "PrerequisiteProbeFailed"),
+                        "Prerequisite probe operation: {Operation}\n{Status}{StartError}\nstdout:\n{StandardOutput}\nstderr:\n{StandardError}",
+                        command.Operation,
+                        status,
+                        startError,
+                        SanitizeStream(command.Result.StandardOutput),
+                        SanitizeStream(command.Result.StandardError));
                 }
             }
-        }
-
-        private static string FormatDiagnostic(string operation, PrerequisiteCommandResult result)
-        {
-            var status = result.WasStarted
-                ? $"Exit code: {result.ExitCode}"
-                : "Start status: failed";
-            var startError = result.WasStarted
-                ? string.Empty
-                : $"\nStart error:\n{SanitizeStartError(result.StartError)}";
-            return
-                $"Prerequisite probe operation: {operation}\n" +
-                $"{status}{startError}\n" +
-                $"stdout:\n{SanitizeStream(result.StandardOutput)}\n" +
-                $"stderr:\n{SanitizeStream(result.StandardError)}";
         }
 
         private static string GetOperation(IReadOnlyList<string> arguments)

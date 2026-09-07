@@ -36,7 +36,7 @@ public class FileContextProviderTests
             Mock.Of<IToolchainService>(),
             Mock.Of<IBuildOutputSink>(),
             GetSettingsService,
-            new PrerequisiteAvailabilityPolicy(state, TestHelpers.TL.L, TestHelpers.TL.T));
+            new PrerequisiteAvailabilityPolicy(state, TestHelpers.Logger));
         var filePath = workspaceRoot.Combine((PathEx)filePathRel);
 
         var refInfos = await fcp.GetContextsForFileAsync(filePath, default);

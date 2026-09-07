@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -8,6 +9,7 @@ using FluentAssertions;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Xunit;
 
@@ -22,7 +24,7 @@ public class BuildJsonOutputParserTests
     public void IfNotParsableReturnAsIs()
     {
         var jsonOutput = "   Compiling pest v2.5.2";
-        var output = BuildJsonOutputParser.Parse(TestHelpers.ThisTestRoot, jsonOutput, TestHelpers.TL);
+        var output = BuildJsonOutputParser.Parse(TestHelpers.ThisTestRoot, jsonOutput, TestHelpers.Logger);
 
         Approvals.VerifyAll(output.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }
@@ -38,7 +40,7 @@ public class BuildJsonOutputParserTests
     {
         NamerFactory.AdditionalInformation = $"datafile-{dataFile}";
         var jsonOutput = File.ReadAllText(TestHelpers.ThisTestRoot.Combine((PathEx)dataFile));
-        var output = BuildJsonOutputParser.Parse(TestHelpers.ThisTestRoot, jsonOutput, TestHelpers.TL);
+        var output = BuildJsonOutputParser.Parse(TestHelpers.ThisTestRoot, jsonOutput, TestHelpers.Logger);
 
         Approvals.VerifyAll(output.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }
@@ -54,7 +56,7 @@ public class BuildJsonOutputParserTests
     {
         NamerFactory.AdditionalInformation = $"datafile-{dataFile}";
         var jsonOutput = File.ReadAllText(TestHelpers.ThisTestRoot.Combine((PathEx)dataFile));
-        var output = BuildJsonOutputParser.Parse((PathEx)@"d:\src\dpt\pls\test_app", jsonOutput, TestHelpers.TL);
+        var output = BuildJsonOutputParser.Parse((PathEx)@"d:\src\dpt\pls\test_app", jsonOutput, TestHelpers.Logger);
 
         Approvals.VerifyAll(output.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }
@@ -94,5 +96,49 @@ public class BuildJsonOutputParserTests
         act.Should().Throw<InvalidDataException>()
             .WithMessage("Malformed Cargo JSON protocol record at stdout line 2:*")
             .Where(e => e.InnerException is JsonReaderException);
+    }
+}
+
+[Trait("type", "UnitTests")]
+public sealed class BuildJsonOutputParserLoggingTests
+{
+    [Theory]
+    [InlineData(
+        "{not-json",
+        1,
+        "JsonLineParseFailed",
+        typeof(JsonReaderException))]
+    [InlineData(
+        "{\"reason\":\"compiler-artifact\",\"fresh\":false,\"package_id\":\"unmatched\"}",
+        2,
+        "CargoMessageParseFailed",
+        typeof(InvalidDataException))]
+    public void ParseFailuresUseStructuredWarnings(
+        string jsonLine,
+        int eventId,
+        string eventName,
+        Type exceptionType)
+    {
+        using var provider = new RecordingLoggerProvider();
+        using var factory = new LoggerFactory(new[] { provider, });
+        var logger = factory.CreateLogger(
+            typeof(BuildJsonOutputParser).FullName);
+
+        var output = BuildJsonOutputParser.Parse(
+            TestHelpers.ThisTestRoot,
+            jsonLine,
+            logger);
+
+        output.Should().ContainSingle()
+            .Which.Should().BeOfType<StringBuildMessage>()
+            .Which.Message.Should().Be(jsonLine);
+        var entry = provider.Entries.Should().ContainSingle().Which;
+        entry.Category.Should().Be(typeof(BuildJsonOutputParser).FullName);
+        entry.Level.Should().Be(LogLevel.Warning);
+        entry.EventId.Should().Be(new EventId(eventId, eventName));
+        entry.Template.Should().Be(
+            "CargoJsonOutputParser failed to parse line: {JsonLine}.");
+        entry.Properties["JsonLine"].Should().Be(jsonLine);
+        entry.Exception.GetType().Should().Be(exceptionType);
     }
 }

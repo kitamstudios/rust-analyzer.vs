@@ -9,8 +9,11 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Common;
+using KS.RustAnalyzer.Tests.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Threading;
+using Moq;
 using Xunit;
 
 namespace KS.RustAnalyzer.UnitTests.Infrastructure;
@@ -67,18 +70,20 @@ public sealed class PrerequisiteStartupCoordinatorTests
         {
             PromptAction = state.Suspend,
         };
-        var logger = new RecordingLogger();
+        using var logging = new RecordingLoggerFixture();
         var coordinator = CreateCoordinator(
             context,
             state,
             operations,
-            new PrerequisiteAvailabilityPolicy(state, logger, new RecordingTelemetry()));
+            new PrerequisiteAvailabilityPolicy(
+                state,
+                logging.CreateLogger(typeof(PrerequisiteAvailabilityPolicy))));
 
         await EvaluateAndRunAsync(coordinator, state, calls, CreateFailedResult(), default);
         await EvaluateAndRunAsync(coordinator, state, calls, CreateFailedResult(), default);
 
         calls.Should().Equal(Evaluation, Prompt, InfoBar);
-        logger.Lines.Select(line => string.Format(line.Format, line.Arguments)).Should()
+        logging.Lines.Select(entry => entry.Message).Should()
             .ContainSingle(message => message.Contains("entered prerequisite state Suspended"))
             .And.ContainSingle(message => message.Contains("package follow-on startup"));
         state.Status.Should().Be(PrerequisiteStatus.Suspended);
@@ -158,9 +163,10 @@ public sealed class PrerequisiteStartupCoordinatorTests
     {
         using var context = new JoinableTaskContext();
         var probe = new HostVersionPrerequisiteProbe(_ => Task.FromResult<Version>(null));
-        var logger = new RecordingLogger();
-        var telemetry = new RecordingTelemetry();
-        var service = new PreReqsCheckService(probe, telemetry, logger);
+        using var logging = new RecordingLoggerFixture();
+        var service = new PreReqsCheckService(
+            probe,
+            logging.Factory);
         var state = new PrerequisiteProcessState(context.Factory);
         var calls = new List<string>();
         var operations = new TestStartupOperations(state, calls)
@@ -169,7 +175,9 @@ public sealed class PrerequisiteStartupCoordinatorTests
         };
         var coordinator = new PrerequisiteStartupCoordinator(
             state,
-            new PrerequisiteAvailabilityPolicy(state, logger, telemetry),
+            new PrerequisiteAvailabilityPolicy(
+                state,
+                logging.CreateLogger(typeof(PrerequisiteAvailabilityPolicy))),
             context.Factory,
             RunInlineAsync,
             operations);
@@ -189,8 +197,7 @@ public sealed class PrerequisiteStartupCoordinatorTests
         state.Status.Should().Be(PrerequisiteStatus.Suspended);
         state.CachedResult.Failures.Should().ContainSingle();
         state.CachedResult.Failures[0].Kind.Should().Be(PrerequisiteFailureKind.UnsupportedVisualStudioHost);
-        logger.Errors.Should().BeEmpty();
-        telemetry.Exceptions.Should().BeEmpty();
+        logging.Errors.Should().BeEmpty();
     }
 
     [Fact]
@@ -258,18 +265,14 @@ public sealed class PrerequisiteStartupCoordinatorTests
     {
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
-        var logger = new RecordingLogger();
-        var telemetry = new RecordingTelemetry();
+        using var logging = new RecordingLoggerFixture();
         var service = new PreReqsCheckService(
             new HostVersionPrerequisiteProbe(_ => Task.FromResult(new Version(17, 12))),
-            telemetry,
-            logger);
+            logging.Factory);
         Func<Task> evaluate = async () => await service.EvaluateAsync(cancellation.Token);
 
         await evaluate.Should().ThrowAsync<OperationCanceledException>();
-
-        logger.Errors.Should().BeEmpty();
-        telemetry.Exceptions.Should().BeEmpty();
+        logging.Errors.Should().BeEmpty();
     }
 
     [Fact]
@@ -284,21 +287,21 @@ public sealed class PrerequisiteStartupCoordinatorTests
             PromptAction = state.Suspend,
             InfoBarAction = () => Task.FromException<bool>(expected),
         };
-        var logger = new RecordingLogger();
-        var telemetry = new RecordingTelemetry();
+        using var logging = new RecordingLoggerFixture();
         var coordinator = CreateCoordinator(
             context,
             state,
             operations,
-            new PrerequisiteAvailabilityPolicy(state, logger, telemetry));
+            new PrerequisiteAvailabilityPolicy(
+                state,
+                logging.CreateLogger(typeof(PrerequisiteAvailabilityPolicy))));
 
         await EvaluateAndRunAsync(coordinator, state, calls, CreateFailedResult(), default);
         await EvaluateAndRunAsync(coordinator, state, calls, CreateFailedResult(), default);
 
         calls.Should().Equal(Evaluation, Prompt, InfoBar);
-        logger.Errors.Should().ContainSingle();
-        logger.Errors[0].Arguments.Should().ContainSingle().Which.Should().BeSameAs(expected);
-        telemetry.Exceptions.Should().Equal(expected);
+        logging.Errors.Should().ContainSingle();
+        logging.Errors.Single().Exception.Should().BeSameAs(expected);
         state.Status.Should().Be(PrerequisiteStatus.Suspended);
     }
 
@@ -371,8 +374,6 @@ public sealed class PrerequisiteStartupCoordinatorTests
             Path.Combine(productRoot, "Infrastructure", "PrerequisiteEvaluator.cs"));
         var coordinatorSource = File.ReadAllText(
             Path.Combine(productRoot, "Infrastructure", "PrerequisiteStartupCoordinator.cs"));
-        var availabilityPolicySource = File.ReadAllText(
-            Path.Combine(productRoot, "Infrastructure", "PrerequisiteAvailabilityPolicy.cs"));
         var packagePath = Path.Combine(productRoot, "RustAnalyzerPackage.cs");
         var packageSource = File.ReadAllText(packagePath);
 
@@ -394,9 +395,6 @@ public sealed class PrerequisiteStartupCoordinatorTests
         prerequisiteSource.Should().NotContain("OpenSystemBrowser").And.NotContain("RestartAsync");
         coordinatorSource.Should().NotContain("OpenSystemBrowser").And.NotContain("RestartAsync");
         packageSource.Should().NotContain("_preReqs.SatisfyAsync");
-        availabilityPolicySource.Should().Contain(
-            "_logger.WriteError(\"Failed to show prerequisite suspension InfoBar. Ex: {0}\", exception);");
-        availabilityPolicySource.Should().Contain("_telemetry.TrackException(exception);");
         packageSource.Should().NotContain("CommunityVS.Shell.GetVsVersionAsync()");
         evaluatorSource
             .Split(new[] { "CommunityVS.Shell.GetVsVersionAsync()" }, StringSplitOptions.None)
@@ -452,9 +450,10 @@ public sealed class PrerequisiteStartupCoordinatorTests
         using var context = new JoinableTaskContext();
         var probe = new HostVersionPrerequisiteProbe(
             _ => Task.FromException<Version>(expected));
-        var logger = new RecordingLogger();
-        var telemetry = new RecordingTelemetry();
-        var service = new PreReqsCheckService(probe, telemetry, logger);
+        using var logging = new RecordingLoggerFixture();
+        var service = new PreReqsCheckService(
+            probe,
+            logging.Factory);
         var state = new PrerequisiteProcessState(context.Factory);
         var calls = new List<string>();
         string promptMessage = null;
@@ -492,10 +491,10 @@ public sealed class PrerequisiteStartupCoordinatorTests
         state.CachedResult.Failures[0].Kind.Should().Be(PrerequisiteFailureKind.PrerequisiteEvaluationFailed);
         promptMessage.Should().Contain("Review Output > rust-analyzer.vs");
         promptMessage.Should().NotContain(expected.Message);
-        logger.Errors.Should().HaveCount(1);
-        string.Format(logger.Errors[0].Format, logger.Errors[0].Arguments)
-            .Should().Contain(expected.ToString());
-        telemetry.Exceptions.Should().Equal(expected);
+        var error = logging.Errors.Should().ContainSingle().Which;
+        error.Message.Should().Be(
+            "Prerequisite evaluation failed unexpectedly.");
+        error.Exception.Should().BeSameAs(expected);
     }
 
     private static PrerequisiteStartupCoordinator CreateCoordinator(
@@ -516,8 +515,7 @@ public sealed class PrerequisiteStartupCoordinatorTests
     {
         return new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger(),
-            new RecordingTelemetry());
+            Mock.Of<ILogger>());
     }
 
     private static Task EvaluateAndRunAsync(
@@ -657,45 +655,6 @@ public sealed class PrerequisiteStartupCoordinatorTests
                 : string.Empty;
             return Task.FromResult(
                 PrerequisiteCommandResult.Completed(0, standardOutput, string.Empty));
-        }
-    }
-
-    private sealed class RecordingLogger : ILogger
-    {
-        public List<(string Format, object[] Arguments)> Errors { get; } = new();
-
-        public List<(string Format, object[] Arguments)> Lines { get; } = new();
-
-        public void WriteLine(string format, params object[] args)
-        {
-            Lines.Add((format, args));
-        }
-
-        public void WriteError(string format, params object[] args)
-        {
-            Errors.Add((format, args));
-        }
-    }
-
-    private sealed class RecordingTelemetry : ITelemetryService
-    {
-        public List<Exception> Exceptions { get; } = new();
-
-        public void TrackEvent(string eventName, params (string Key, string Value)[] properties)
-        {
-        }
-
-        public void TrackException(Exception e, string siteName = null)
-        {
-            Exceptions.Add(e);
-        }
-
-        public void TrackException(
-            Exception e,
-            (string Key, string Value)[] properties,
-            string siteName = null)
-        {
-            Exceptions.Add(e);
         }
     }
 }

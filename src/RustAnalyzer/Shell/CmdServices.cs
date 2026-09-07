@@ -5,11 +5,13 @@ using System.Threading.Tasks;
 using AutoMapper;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 using ShellInterop = Microsoft.VisualStudio.Shell.Interop;
 using WorkspaceBuildMessage = Microsoft.VisualStudio.Workspace.Build.BuildMessage;
 
@@ -20,7 +22,8 @@ using ToolchainOperation = System.Func<KS.RustAnalyzer.TestAdapter.Common.IToolc
 public sealed class CmdServices
 {
     private IComponentModel2 _mef;
-    private ILogger _l;
+    private ILoggerFactory _loggerFactory;
+    private MelLogger _logger;
     private ShellInterop.IVsSolution _solution;
     private ShellInterop.IVsDebugger _debugger;
     private ShellInterop.IVsUIShell _vsUIShell;
@@ -41,8 +44,6 @@ public sealed class CmdServices
     public IBuildOutputSink BuildOutputSink => _buildOutputSink ??= Mef?.GetService<IBuildOutputSink>();
 
     public IComponentModel2 Mef => _mef ??= GetPackage().GetService<SComponentModel, IComponentModel2>(false);
-
-    public ILogger L => _l ??= Mef?.GetService<ILogger>();
 
     public ShellInterop.IVsSolution Solution => _solution ??= GetPackage().GetService<ShellInterop.SVsSolution, ShellInterop.IVsSolution>(false);
 
@@ -90,7 +91,7 @@ public sealed class CmdServices
         string workspaceRoot = null;
         if (ErrorHandler.Failed(Solution?.GetSolutionInfo(out workspaceRoot, out var _, out var _) ?? VSConstants.E_FAIL))
         {
-            L.WriteError("Unable to determine workspace root.");
+            LogWorkspaceRootUnavailable();
         }
 
         return (PathEx)workspaceRoot;
@@ -103,10 +104,30 @@ public sealed class CmdServices
         var dbgMode = new ShellInterop.DBGMODE[1];
         if (ErrorHandler.Failed(Debugger?.GetMode(dbgMode) ?? VSConstants.E_FAIL))
         {
-            L.WriteError("Unable to determine debugger mode.");
+            LogDebuggerModeUnavailable();
             return false;
         }
 
         return dbgMode[0] == ShellInterop.DBGMODE.DBGMODE_Design;
+    }
+
+    private ILoggerFactory LoggerFactory =>
+        _loggerFactory ??= Mef?.GetService<ILoggerFactory>();
+
+    private MelLogger Logger =>
+        _logger ??= LoggerFactory.CreateLogger(typeof(CmdServices).FullName);
+
+    private void LogWorkspaceRootUnavailable()
+    {
+        Logger.LogError(
+            new EventId(1, "WorkspaceRootUnavailable"),
+            "Unable to determine workspace root.");
+    }
+
+    private void LogDebuggerModeUnavailable()
+    {
+        Logger.LogError(
+            new EventId(2, "DebuggerModeUnavailable"),
+            "Unable to determine debugger mode.");
     }
 }

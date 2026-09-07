@@ -1,14 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Newtonsoft.Json;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter;
 
@@ -20,7 +24,18 @@ namespace KS.RustAnalyzer.TestAdapter;
 [ExtensionUri(Constants.ExecutorUriString)]
 public class TestExecutor : BaseTestExecutor, ITestExecutor
 {
+    private readonly IFeatureUsageTelemetry _telemetry;
     private bool _cancelled;
+
+    public TestExecutor()
+        : this(FeatureUsageTelemetry.CreateForTestAdapter())
+    {
+    }
+
+    public TestExecutor(IFeatureUsageTelemetry telemetry)
+    {
+        _telemetry = EnsureArg.IsNotNull(telemetry, nameof(telemetry));
+    }
 
     /// <summary>
     /// Signature requried by ITestExecutor.
@@ -28,40 +43,76 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
     public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
     {
         var ct = new CancellationToken(_cancelled);
-        var tl = frameworkHandle.CreateTL();
-        tl.L.WriteLine("RunTests starting. Executing {0} tests", tests.Count());
-        var tasks = tests
-            .GroupBy(t => t.Source)
-            .Select(g => (g.Key, g.AsEnumerable()))
-            .Select(async g => (await ((PathEx)g.Key).ReadTestContainerAsync(ct), g.Item2))
-            .Select(async x =>
+        using var loggingContext =
+            new VSTestLoggingContext(frameworkHandle, "Execution");
+        var executorLogger =
+            loggingContext.CreateLogger(typeof(TestExecutor));
+        var processLogger =
+            loggingContext.CreateLogger(typeof(ProcessRunner));
+        RunWithTelemetry(
+            () =>
             {
-                var (c, tcs) = await x;
-                c.TestExes.ForEach(exe => RunAndRecordTestResultsFromOneExe(exe, tcs, TestRunParams.FromContainer(c), runContext.IsBeingDebugged, frameworkHandle, tl, ct));
-            });
+                executorLogger.LogInformation(
+                    new EventId(1, "SelectedTestExecutionStarted"),
+                    "RunTests starting. Executing {TestCount} tests",
+                    tests.Count());
+                var tasks = tests
+                    .GroupBy(t => t.Source)
+                    .Select(g => (g.Key, g.AsEnumerable()))
+                    .Select(async g => (await ((PathEx)g.Key).ReadTestContainerAsync(ct), g.Item2))
+                    .Select(async x =>
+                    {
+                        var (c, tcs) = await x;
+                        c.TestExes.ForEach(exe => RunAndRecordTestResultsFromOneExe(
+                            exe,
+                            tcs,
+                            TestRunParams.FromContainer(c),
+                            runContext.IsBeingDebugged,
+                            frameworkHandle,
+                            executorLogger,
+                            processLogger,
+                            ct));
+                    });
 
-        Task.WaitAll(tasks.ToArray());
+                Task.WaitAll(tasks.ToArray());
+            },
+            _telemetry);
     }
 
     public override void RunTests(IEnumerable<PathEx> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
     {
         var ct = new CancellationToken(_cancelled);
-        var tl = frameworkHandle.CreateTL();
-        tl.L.WriteLine("RunTests starting. Executing {0} sources.", sources.Count());
-        var tasks = sources.Select(async source => await RunTestsTestsFromOneSourceAsync(await source.ReadTestContainerAsync(ct), runContext, frameworkHandle, tl, ct));
-        Task.WaitAll(tasks.ToArray());
-    }
-
-    /// <summary>
-    /// Each TestContainer has multiple Exes, Each exe has multiple tests.
-    /// Execution of tests happen by running the Exes. All in parallel.
-    /// </summary>
-    public static async Task RunTestsTestsFromOneSourceAsync(TestContainer container, IRunContext runContext, IFrameworkHandle fh, TL tl, CancellationToken ct)
-    {
-        foreach (var (tsi, tcs) in await container.DiscoverTestCasesFromOneSourceAsync(tl, ct))
-        {
-            RunAndRecordTestResultsFromOneExe(tsi.Exe, tcs, TestRunParams.FromContainer(container), runContext.IsBeingDebugged, fh, tl, ct);
-        }
+        using var loggingContext =
+            new VSTestLoggingContext(frameworkHandle, "Execution");
+        var executorLogger =
+            loggingContext.CreateLogger(typeof(TestExecutor));
+        var commonLogger =
+            loggingContext.CreateLogger(typeof(TestDiscovererCommon));
+        var toolchainLogger =
+            loggingContext.CreateLogger(typeof(ToolchainService));
+        var processLogger =
+            loggingContext.CreateLogger(typeof(ProcessRunner));
+        RunWithTelemetry(
+            () =>
+            {
+                executorLogger.LogInformation(
+                    new EventId(2, "SourceExecutionStarted"),
+                    "RunTests starting. Executing {SourceCount} sources.",
+                    sources.Count());
+                var tasks = sources.Select(
+                    async source => await RunTestsTestsFromOneSourceAsync(
+                        await source.ReadTestContainerAsync(ct),
+                        runContext,
+                        frameworkHandle,
+                        _telemetry,
+                        executorLogger,
+                        commonLogger,
+                        toolchainLogger,
+                        processLogger,
+                        ct));
+                Task.WaitAll(tasks.ToArray());
+            },
+            _telemetry);
     }
 
     public void Cancel()
@@ -69,12 +120,59 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         _cancelled = true;
     }
 
-    private static void RunAndRecordTestResultsFromOneExe(PathEx exe, IEnumerable<TestCase> testCases, TestRunParams trp, bool isBeingDebugged, IFrameworkHandle fh, TL tl, CancellationToken ct)
+    internal static async Task RunTestsTestsFromOneSourceAsync(
+        TestContainer container,
+        IRunContext runContext,
+        IFrameworkHandle fh,
+        IFeatureUsageTelemetry telemetry,
+        MelLogger logger,
+        MelLogger commonLogger,
+        MelLogger toolchainLogger,
+        MelLogger processLogger,
+        CancellationToken ct)
     {
-        tl.L.WriteLine("RunAndRecordTestResultsFromOneExe starting with {0}, {1}, {2}", trp.Source, exe, testCases.Count());
+        foreach (var (tsi, tcs) in await container.DiscoverTestCasesFromOneSourceAsync(
+            telemetry,
+            commonLogger,
+            toolchainLogger,
+            processLogger,
+            ct))
+        {
+            RunAndRecordTestResultsFromOneExe(
+                tsi.Exe,
+                tcs,
+                TestRunParams.FromContainer(container),
+                runContext.IsBeingDebugged,
+                fh,
+                logger,
+                processLogger,
+                ct);
+        }
+    }
+
+    private static void RunAndRecordTestResultsFromOneExe(
+        PathEx exe,
+        IEnumerable<TestCase> testCases,
+        TestRunParams trp,
+        bool isBeingDebugged,
+        IFrameworkHandle fh,
+        MelLogger logger,
+        MelLogger processLogger,
+        CancellationToken ct)
+    {
+        logger.LogInformation(
+            new EventId(3, "TestExecutableExecutionStarted"),
+            "RunAndRecordTestResultsFromOneExe starting with {Source}, {TestExecutable}, {TestCount}",
+            trp.Source,
+            exe,
+            testCases.Count());
         if (!testCases.Any())
         {
-            tl.L.WriteError("RunTestsFromOneSourceAsync: Something has gone wrong. Asking to run empty set of test cases. {0}, {1}", trp.Source, exe);
+            logger.LogError(
+                new EventId(4, "EmptyTestSet"),
+                "RunTestsFromOneSourceAsync: Something has gone wrong. Asking to run empty set of test cases. {Source}, {TestExecutable}",
+                trp.Source,
+                exe);
         }
 
         try
@@ -90,35 +188,70 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
                         .Concat(trp.AdditionalTestExecutionArguments.FromNullSeparatedArray()));
             Parallel.Invoke(
                 grps
-                    .Select(args => RunTestsFromOneExe(exe, args.ToArray(), testCasesMap, envDict, tl, isBeingDebugged, fh, ct))
+                    .Select(args => RunTestsFromOneExe(
+                        exe,
+                        args.ToArray(),
+                        testCasesMap,
+                        envDict,
+                        logger,
+                        processLogger,
+                        isBeingDebugged,
+                        fh,
+                        ct))
                     .Select(t => (Action)(() => t.Wait()))
                     .ToArray());
         }
         catch (Exception e)
         {
-            tl.L.WriteError("RunTests failed with {0}", e);
-            tl.T.TrackException(e);
+            logger.LogError(
+                new EventId(5, "TestExecutableExecutionFailed"),
+                e,
+                "RunTests failed");
             throw;
         }
     }
 
-    private static async Task RunTestsFromOneExe(PathEx exe, string[] args, IReadOnlyDictionary<string, TestCase> testCasesMap, IDictionary<string, string> envDict, TL tl, bool isBeingDebugged, IFrameworkHandle fh, CancellationToken ct)
+    private static async Task RunTestsFromOneExe(
+        PathEx exe,
+        string[] args,
+        IReadOnlyDictionary<string, TestCase> testCasesMap,
+        IDictionary<string, string> envDict,
+        MelLogger logger,
+        MelLogger processLogger,
+        bool isBeingDebugged,
+        IFrameworkHandle fh,
+        CancellationToken ct)
     {
-        tl.L.WriteLine("... RunTestsFromOneExe starting with {0}, {1}", exe, args.Length);
-        tl.T.TrackEvent("RunTestsFromOneSourceAsync", ("IsBeingDebugged", $"{isBeingDebugged}"), ("Args", string.Join("|", args)));
+        logger.LogInformation(
+            new EventId(6, "TestProcessExecutionStarted"),
+            "... RunTestsFromOneExe starting with {TestExecutable}, {ArgumentCount}",
+            exe,
+            args.Length);
         var trs = Enumerable.Empty<TestResult>();
         if (isBeingDebugged)
         {
-            tl.L.WriteLine("RunTestsFromOneSourceAsync launching test under debugger.");
+            logger.LogInformation(
+                new EventId(7, "DebuggerLaunchStarted"),
+                "RunTestsFromOneSourceAsync launching test under debugger.");
             var rc = fh.LaunchProcessWithDebuggerAttached(exe, exe.GetDirectoryName(), string.Join(" ", args), envDict);
             if (rc != 0)
             {
-                tl.L.WriteError("RunTestsFromOneSourceAsync launching test under debugger - returned {0}.", rc);
+                logger.LogError(
+                    new EventId(8, "DebuggerLaunchFailed"),
+                    "RunTestsFromOneSourceAsync launching test under debugger - returned {ExitCode}.",
+                    rc);
             }
         }
         else
         {
-            using var testExeProc = await ProcessRunner.RunWithLogging(exe, args, exe.GetDirectoryName(), envDict, ct, tl.L, @throw: false);
+            using var testExeProc = await ProcessRunner.RunWithLogging(
+                exe,
+                args,
+                exe.GetDirectoryName(),
+                envDict,
+                ct,
+                processLogger,
+                @throw: false);
             trs = testExeProc.StandardOutputLines
                 .Skip(1)
                 .Take(testExeProc.StandardOutputLines.Count() - 2)
@@ -129,11 +262,12 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
             var ec = testExeProc.ExitCode ?? 0;
             if (ec != 0 && !trs.Any())
             {
-                tl.L.WriteError("RunTestsFromOneSourceAsync test executable exited with code {0}.", ec);
+                logger.LogError(
+                    new EventId(9, "TestProcessFailed"),
+                    "RunTestsFromOneSourceAsync test executable exited with code {ExitCode}.",
+                    ec);
                 throw new ApplicationException($"Test executable returned {ec}. Check above for the arguments passed to test executable by running it on the command line.");
             }
-
-            tl.T.TrackEvent("RunTestsFromOneSourceAsync", ("Results", $"{trs.Count()}"));
         }
 
         foreach (var tr in trs)
@@ -151,6 +285,27 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
             Outcome = GetOutcome(tri.Event),
             Duration = TimeSpan.FromSeconds(tri.ExecutionTime)
         };
+    }
+
+    private static void RunWithTelemetry(Action operation, IFeatureUsageTelemetry telemetry)
+    {
+        var duration = Stopwatch.StartNew();
+        try
+        {
+            operation();
+            telemetry.Track(UsageOperation.TestAdapterExecute, UsageOutcome.Succeeded, duration.Elapsed);
+        }
+        catch (Exception e)
+        {
+            var cancelled = e is OperationCanceledException
+                || (e is AggregateException aggregate
+                    && aggregate.Flatten().InnerExceptions.All(inner => inner is OperationCanceledException));
+            telemetry.Track(
+                UsageOperation.TestAdapterExecute,
+                cancelled ? UsageOutcome.Cancelled : UsageOutcome.Failed,
+                duration.Elapsed);
+            throw;
+        }
     }
 
     private static TestOutcome GetOutcome(TestRunInfo.EventType @event)

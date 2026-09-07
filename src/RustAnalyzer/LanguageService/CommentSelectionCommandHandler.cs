@@ -3,7 +3,6 @@ using System.ComponentModel.Composition;
 using EnsureThat;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter;
-using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.PythonTools.Editor;
 using Microsoft.VisualStudio.Commanding;
 using Microsoft.VisualStudio.Text.Editor;
@@ -22,21 +21,16 @@ public class CommentSelectionCommandHandler : ICommandHandler<CommentSelectionCo
 {
     private readonly Func<ITextView, bool, bool> _changeComment;
     private readonly PrerequisiteProcessState _prerequisiteState;
-    private readonly TL _tl;
 
     [ImportingConstructor]
-    public CommentSelectionCommandHandler([Import] ITelemetryService t, [Import] ILogger l)
+    public CommentSelectionCommandHandler()
         : this(
-            t,
-            l,
             PrerequisiteProcessState.Current,
             CommentHelper.CommentOrUncommentBlock)
     {
     }
 
     protected CommentSelectionCommandHandler(
-        ITelemetryService t,
-        ILogger l,
         PrerequisiteProcessState prerequisiteState,
         Func<ITextView, bool, bool> changeComment)
     {
@@ -50,11 +44,6 @@ public class CommentSelectionCommandHandler : ICommandHandler<CommentSelectionCo
             nameof(changeComment),
             options => options.WithException(
                 new ArgumentNullException(nameof(changeComment))));
-        _tl = new TL
-        {
-            T = t,
-            L = l,
-        };
     }
 
     public string DisplayName => nameof(CommentSelectionCommandHandler);
@@ -76,16 +65,7 @@ public class CommentSelectionCommandHandler : ICommandHandler<CommentSelectionCo
             return false;
         }
 
-        try
-        {
-            _tl.T.TrackEvent("CommentSelection");
-            return _changeComment(args.TextView, true);
-        }
-        catch (Exception e)
-        {
-            _tl.T.TrackException(e);
-            throw;
-        }
+        return _changeComment(args.TextView, true);
     }
 
     public bool ExecuteCommand(UncommentSelectionCommandArgs args, CommandExecutionContext executionContext)
@@ -95,15 +75,6 @@ public class CommentSelectionCommandHandler : ICommandHandler<CommentSelectionCo
             return false;
         }
 
-        try
-        {
-            _tl.T.TrackEvent("UncommentSelection");
-            return _changeComment(args.TextView, false);
-        }
-        catch (Exception e)
-        {
-            _tl.T.TrackException(e);
-            throw;
-        }
+        return _changeComment(args.TextView, false);
     }
 }

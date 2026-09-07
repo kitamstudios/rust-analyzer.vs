@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Workspace;
@@ -18,10 +19,7 @@ namespace KS.RustAnalyzer.Infrastructure;
 public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
 {
     [Import]
-    public ITelemetryService T { get; set; }
-
-    [Import]
-    public ILogger L { get; set; }
+    public Microsoft.Extensions.Logging.ILoggerFactory LoggerFactory { get; set; }
 
     [Import]
     public Lazy<IToolchainService> CargoService { get; set; }
@@ -45,11 +43,17 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
         EnsureArg.IsNotNull(workspaceContext);
         EnsureArg.IsNotNull(getFileWatcherService);
         EnsureArg.IsNotNull(joinableTaskFactory);
+        var logger = LoggerFactory.CreateLogger(
+            typeof(MetadataServiceFactory).FullName);
+        var metadataLogger = LoggerFactory.CreateLogger(
+            typeof(MetadataService).FullName);
+
         return new PrerequisiteGatedMetadataService(
             workspaceContext,
             getFileWatcherService,
             CargoService,
-            new TL { T = T, L = L, },
+            logger,
+            metadataLogger,
             AvailabilityPolicy,
             joinableTaskFactory);
     }
@@ -62,8 +66,9 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
         private readonly JoinableTask _initialization;
         private readonly CancellationTokenSource _lifetimeCancellation = new();
         private readonly CancellationToken _lifetimeToken;
+        private readonly Microsoft.Extensions.Logging.ILogger _logger;
+        private readonly Microsoft.Extensions.Logging.ILogger _metadataLogger;
         private readonly object _sync = new();
-        private readonly TL _tl;
         private readonly MetadataWorkspaceUpdateHandler _updateHandler;
         private readonly IWorkspace _workspace;
         private int _activeOperations;
@@ -75,7 +80,8 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
             IWorkspace workspace,
             Func<IFileWatcherService> getFileWatcherService,
             Lazy<IToolchainService> cargoService,
-            TL tl,
+            Microsoft.Extensions.Logging.ILogger logger,
+            Microsoft.Extensions.Logging.ILogger metadataLogger,
             PrerequisiteAvailabilityPolicy availabilityPolicy,
             JoinableTaskFactory joinableTaskFactory)
         {
@@ -84,7 +90,8 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
             _cargoService = cargoService;
             _availabilityPolicy = availabilityPolicy;
             _lifetimeToken = _lifetimeCancellation.Token;
-            _tl = tl;
+            _logger = logger;
+            _metadataLogger = metadataLogger;
             _updateHandler = new MetadataWorkspaceUpdateHandler(availabilityPolicy);
             _initialization = joinableTaskFactory.RunAsync(InitializeAsync);
             ObserveInitialization();
@@ -190,7 +197,7 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
                         metadataService = new MetadataService(
                             _cargoService.Value,
                             (PathEx)_workspace.Location,
-                            _tl);
+                            _metadataLogger);
                         var fileWatcherService = _getFileWatcherService();
 
                         metadataService.PackageAdded += OnPackageAdded;
@@ -327,10 +334,11 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
                 }
             }
 
-            _tl.L.WriteError(
-                "Operation '{0}' failed unexpectedly. Ex: {1}",
-                operation,
-                exception);
+            _logger.LogError(
+                new EventId(1, "InitializationFailed"),
+                exception,
+                "Operation '{Operation}' failed unexpectedly.",
+                operation);
         }
 
         private async Task OnBatchFileSystemChangedAsync(

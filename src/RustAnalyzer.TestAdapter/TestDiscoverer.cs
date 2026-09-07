@@ -1,13 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter;
 
@@ -20,33 +24,100 @@ namespace KS.RustAnalyzer.TestAdapter;
 [FileExtension(Constants.TestsContainerExtension)]
 public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
 {
+    private readonly IFeatureUsageTelemetry _telemetry;
+
+    public TestDiscoverer()
+        : this(FeatureUsageTelemetry.CreateForTestAdapter())
+    {
+    }
+
+    public TestDiscoverer(IFeatureUsageTelemetry telemetry)
+    {
+        _telemetry = EnsureArg.IsNotNull(telemetry, nameof(telemetry));
+    }
+
     public override void DiscoverTests(IEnumerable<PathEx> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
     {
-        var tl = logger.CreateTL();
-        var tasks = sources
-            .GroupBy(s => s)
-            .Select(async g => await DiscoverAndReportTestsFromOneSource(await g.Key.ReadTestContainerAsync(default), discoverySink, tl, default));
-        Task.WaitAll(tasks.ToArray());
+        var duration = Stopwatch.StartNew();
+        using var loggingContext =
+            new VSTestLoggingContext(logger, "Discovery");
+        var discovererLogger =
+            loggingContext.CreateLogger(typeof(TestDiscoverer));
+        var commonLogger =
+            loggingContext.CreateLogger(typeof(TestDiscovererCommon));
+        var toolchainLogger =
+            loggingContext.CreateLogger(typeof(ToolchainService));
+        var processLogger =
+            loggingContext.CreateLogger(typeof(ProcessRunner));
+        try
+        {
+            var tasks = sources
+                .GroupBy(s => s)
+                .Select(async g => await DiscoverAndReportTestsFromOneSource(
+                    await g.Key.ReadTestContainerAsync(default),
+                    discoverySink,
+                    _telemetry,
+                    discovererLogger,
+                    commonLogger,
+                    toolchainLogger,
+                    processLogger,
+                    default));
+            Task.WaitAll(tasks.ToArray());
+            _telemetry.Track(UsageOperation.TestAdapterDiscover, UsageOutcome.Succeeded, duration.Elapsed);
+        }
+        catch (Exception e)
+        {
+            _telemetry.Track(
+                UsageOperation.TestAdapterDiscover,
+                IsCancellation(e) ? UsageOutcome.Cancelled : UsageOutcome.Failed,
+                duration.Elapsed);
+            throw;
+        }
     }
 
     /// <summary>
     /// Each TestContainer contains multiple Exes, each Exes contain multiple tests.
     /// </summary>
-    private async Task DiscoverAndReportTestsFromOneSource(TestContainer tc, ITestCaseDiscoverySink discoverySink, TL tl, CancellationToken ct)
+    private async Task DiscoverAndReportTestsFromOneSource(
+        TestContainer tc,
+        ITestCaseDiscoverySink discoverySink,
+        IFeatureUsageTelemetry telemetry,
+        MelLogger logger,
+        MelLogger commonLogger,
+        MelLogger toolchainLogger,
+        MelLogger processLogger,
+        CancellationToken ct)
     {
-        tl.L.WriteLine("DiscoverAndReportTestsFromOneSource starting with {0}", tc.ThisPath);
+        logger.LogInformation(
+            new EventId(1, "SourceDiscoveryStarted"),
+            "DiscoverAndReportTestsFromOneSource starting with {Source}",
+            tc.ThisPath);
         try
         {
-            foreach (var (_, tcs) in await tc.DiscoverTestCasesFromOneSourceAsync(tl, ct))
+            foreach (var (_, tcs) in await tc.DiscoverTestCasesFromOneSourceAsync(
+                telemetry,
+                commonLogger,
+                toolchainLogger,
+                processLogger,
+                ct))
             {
                 tcs.ForEach(discoverySink.SendTestCase);
             }
         }
         catch (Exception e)
         {
-            tl.L.WriteError("DiscoverAndReportTestsFromOneSource failed with {0}", e);
-            tl.T.TrackException(e, new[] { ("Source", $"{tc.ThisPath}") });
+            logger.LogError(
+                new EventId(2, "SourceDiscoveryFailed"),
+                e,
+                "DiscoverAndReportTestsFromOneSource failed");
             throw;
         }
+    }
+
+    private static bool IsCancellation(Exception exception)
+    {
+        return exception is OperationCanceledException
+            || (exception is AggregateException aggregate
+                && aggregate.Flatten().InnerExceptions.All(inner => inner is OperationCanceledException));
     }
 }

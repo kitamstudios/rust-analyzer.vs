@@ -1,7 +1,6 @@
 using System;
 using System.ComponentModel.Composition;
 using System.IO;
-using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -13,6 +12,8 @@ public interface IRegistrySettingsService
 {
     public bool InfoBarDismissedByUser { get; set; }
 
+    string InstalledRustAnalyzerVersion { get; set; }
+
     bool GetPackageRegistryRoot(out string packageRegistryRoot);
 }
 
@@ -21,20 +22,14 @@ public interface IRegistrySettingsService
 public class RegistrySettingsService : IRegistrySettingsService
 {
     private const string DismissedRegKeyName = "release_notes_dismissed";
-
-    private readonly TL _tl;
+    private const string InstalledRustAnalyzerVersionKey = "InstalledRlsVersion";
 
     private readonly IServiceProvider _serviceProvider;
 
     [ImportingConstructor]
-    public RegistrySettingsService([Import(typeof(SVsServiceProvider))] IServiceProvider serviceProvider, [Import] ITelemetryService t, [Import] ILogger l)
+    public RegistrySettingsService([Import(typeof(SVsServiceProvider))] IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
-        _tl = new TL
-        {
-            T = t,
-            L = l,
-        };
     }
 
     public bool InfoBarDismissedByUser
@@ -59,6 +54,29 @@ public class RegistrySettingsService : IRegistrySettingsService
             {
                 Registry.SetValue(regRoot, DismissedRegKeyName, Vsix.Version);
             }
+        }
+    }
+
+    public string InstalledRustAnalyzerVersion
+    {
+        get
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return GetPackageRegistryRoot(out var regRoot)
+                ? Registry.GetValue(regRoot, InstalledRustAnalyzerVersionKey, null) as string
+                : null;
+        }
+
+        set
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (!GetPackageRegistryRoot(out var regRoot))
+            {
+                throw new InvalidOperationException(
+                    "The Visual Studio package registry root is unavailable.");
+            }
+
+            Registry.SetValue(regRoot, InstalledRustAnalyzerVersionKey, value);
         }
     }
 

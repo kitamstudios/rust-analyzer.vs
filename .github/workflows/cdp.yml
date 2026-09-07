@@ -62,8 +62,16 @@ jobs:
           $version = .\.github\scripts\Set-VsixVersion.ps1 -BuildNumber $env:GITHUB_RUN_NUMBER
           "version-number=$version" >> $env:GITHUB_OUTPUT
 
+      - name: Validate telemetry connection string
+        shell: pwsh
+        env:
+          RUSTANALYZER_TELEMETRY_CONNECTION_STRING: ${{ secrets.RUSTANALYZER_TELEMETRY_CONNECTION_STRING }}
+        run: .\.github\scripts\Assert-TelemetryConnectionString.ps1
+
       - name: Build
         shell: pwsh
+        env:
+          RUSTANALYZER_TELEMETRY_CONNECTION_STRING: ${{ secrets.RUSTANALYZER_TELEMETRY_CONNECTION_STRING }}
         run: .\.github\scripts\Invoke-Build.ps1 -VisualStudioMajorVersion ${{ needs.config.outputs.vs-major }}
 
       - name: Zip TestAdapter

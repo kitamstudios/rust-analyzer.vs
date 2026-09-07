@@ -2,9 +2,10 @@ using System;
 using System.ComponentModel.Composition;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Settings;
-using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.Infrastructure;
 
@@ -22,18 +23,17 @@ public interface ISettingsService
 public sealed class SettingsServiceFactory : IWorkspaceServiceFactory
 {
     [Import]
-    public ITelemetryService T { get; set; }
-
-    [Import]
-    public ILogger L { get; set; }
+    public ILoggerFactory LoggerFactory { get; set; }
 
     public object CreateService(IWorkspace workspaceContext)
     {
+        var logger = LoggerFactory.CreateLogger(
+            typeof(SettingsService).FullName);
         return new SettingsService(
             (PathEx)workspaceContext.Location,
             workspaceContext.GetSettingsManager(),
             async () => await Options.GetLiveInstanceAsync(),
-            new TL { T = T, L = L, });
+            logger);
     }
 }
 
@@ -42,21 +42,24 @@ public sealed class SettingsService : ISettingsService
     private readonly PathEx _location;
     private readonly IWorkspaceSettingsManager _settingsManager;
     private readonly Func<Task<ISettingsServiceDefaults>> _hostWideOptionsGetter;
-    private readonly TL _tl;
+    private readonly MelLogger _logger;
 
-    public SettingsService(PathEx location, IWorkspaceSettingsManager settingsManager, Func<Task<ISettingsServiceDefaults>> hostWideOptionsGetter, TL tl)
+    public SettingsService(
+        PathEx location,
+        IWorkspaceSettingsManager settingsManager,
+        Func<Task<ISettingsServiceDefaults>> hostWideOptionsGetter,
+        MelLogger logger)
     {
         _location = location;
         _settingsManager = settingsManager;
         _hostWideOptionsGetter = hostWideOptionsGetter;
-        _tl = tl;
+        _logger = logger;
     }
 
     public string GetRaw(string type, PathEx fullItemPath)
     {
         if (_settingsManager == null)
         {
-            _tl.T.TrackException(new NullReferenceException("CurrentWorkspace is null."));
             return default;
         }
 
@@ -88,10 +91,8 @@ public sealed class SettingsService : ISettingsService
 
     public async Task SetAsync(string type, PathEx fullItemPath, string value)
     {
-        _tl.T.TrackEvent("SaveSettings", ("Type", type), ("RelativePath", fullItemPath), ("CmdLineArgs", value));
         if (_settingsManager == null)
         {
-            _tl.T.TrackException(new NullReferenceException("CurrentWorkspace is null."));
             return;
         }
 
@@ -104,8 +105,10 @@ public sealed class SettingsService : ISettingsService
         }
         catch (Exception e)
         {
-            _tl.T.TrackException(e);
-            _tl.L.WriteError("Exception: {0}.", e);
+            _logger.LogError(
+                new EventId(1, "SettingsPersistenceFailed"),
+                e,
+                "Exception.");
         }
     }
 

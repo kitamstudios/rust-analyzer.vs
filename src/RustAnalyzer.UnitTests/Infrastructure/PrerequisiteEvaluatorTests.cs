@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Common;
+using KS.RustAnalyzer.Tests.Common;
 using Xunit;
 using Constants = KS.RustAnalyzer.TestAdapter.Constants;
+using MelEventId = Microsoft.Extensions.Logging.EventId;
+using MelLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace KS.RustAnalyzer.UnitTests.Infrastructure;
 
@@ -168,7 +171,7 @@ public sealed class PrerequisiteEvaluatorTests
         PrerequisiteFailureKind.CargoNotOperational,
         "Prerequisite.CargoVersion",
         42)]
-    public async Task FailedProbeWritesOneLocalDiagnosticWithoutModalOrTelemetryOutputAsync(
+    public async Task FailedProbeWritesOneLocalDiagnosticWithoutModalOutputAsync(
         string operation,
         PrerequisiteFailureKind expectedFailure,
         string expectedOperation,
@@ -178,17 +181,16 @@ public sealed class PrerequisiteEvaluatorTests
         const string standardError = "captured stderr secret";
         var probe = new FakePrerequisiteProbe();
         SetFailedProbe(probe, operation, standardOutput, standardError);
-        var logger = new RecordingLogger();
-        var telemetry = new RecordingTelemetry();
-        var result = await new PreReqsCheckService(probe, telemetry, logger)
+        using var logging = new RecordingLoggerFixture();
+        var result = await new PreReqsCheckService(
+                probe,
+                logging.Factory)
             .EvaluateAsync(default);
 
         result.Failures.Should().ContainSingle();
         result.Failures[0].Kind.Should().Be(expectedFailure);
-        logger.Errors.Should().ContainSingle();
-        var diagnostic = string.Format(
-            logger.Errors[0].Format,
-            logger.Errors[0].Arguments);
+        logging.Errors.Should().ContainSingle();
+        var diagnostic = logging.Errors.Single().Message;
         diagnostic.Should().Contain(expectedOperation);
         diagnostic.Should().Contain($"Exit code: {expectedExitCode}");
         diagnostic.Should().Contain($"stdout:\n{standardOutput}");
@@ -197,8 +199,84 @@ public sealed class PrerequisiteEvaluatorTests
         var prompt = new PrerequisiteFailurePromptModel(result);
         prompt.Message.Should().NotContain(standardOutput);
         prompt.Message.Should().NotContain(standardError);
-        telemetry.Events.Should().BeEmpty();
-        telemetry.Exceptions.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task FailedProbeUsesStructuredOwnerEventWithoutDuplicateDeliveryAsync()
+    {
+        const string standardOutput = "captured stdout";
+        const string standardError = "captured stderr";
+        var probe = new FakePrerequisiteProbe();
+        SetFailedProbe(
+            probe,
+            "cargo-version",
+            standardOutput,
+            standardError);
+        using var provider = new RecordingLoggerProvider();
+        using var factory = new Microsoft.Extensions.Logging.LoggerFactory(
+            new[] { provider, });
+        var service = new PreReqsCheckService(
+            probe,
+            factory);
+
+        var result = await service.EvaluateAsync(default);
+
+        result.Failures.Should().ContainSingle();
+        var entry = provider.Entries.Should().ContainSingle().Which;
+        entry.Category.Should().Be(
+            typeof(PreReqsCheckService).FullName +
+            "+DiagnosticPrerequisiteProbe");
+        entry.EventId.Should().Be(
+            new MelEventId(1, "PrerequisiteProbeFailed"));
+        entry.Level.Should().Be(MelLogLevel.Error);
+        entry.Template.Should().Be(
+            "Prerequisite probe operation: {Operation}\n" +
+            "{Status}{StartError}\n" +
+            "stdout:\n{StandardOutput}\n" +
+            "stderr:\n{StandardError}");
+        entry.Properties.Should().HaveCount(6);
+        entry.Properties["Operation"].Should().Be(
+            "Prerequisite.CargoVersion");
+        entry.Properties["Status"].Should().Be("Exit code: 42");
+        entry.Properties["StartError"].Should().Be(string.Empty);
+        entry.Properties["StandardOutput"].Should().Be(standardOutput);
+        entry.Properties["StandardError"].Should().Be(standardError);
+        entry.Message.Should().Be(
+            "Prerequisite probe operation: Prerequisite.CargoVersion\n" +
+            "Exit code: 42\n" +
+            $"stdout:\n{standardOutput}\n" +
+            $"stderr:\n{standardError}");
+        entry.Exception.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UnexpectedEvaluationFailureUsesExceptionEventAndTypedFailureAsync()
+    {
+        var expected = new InvalidOperationException("Probe failure.");
+        var probe = new FakePrerequisiteProbe
+        {
+            RunException = expected,
+        };
+        using var provider = new RecordingLoggerProvider();
+        using var factory = new Microsoft.Extensions.Logging.LoggerFactory(
+            new[] { provider, });
+        var service = new PreReqsCheckService(
+            probe,
+            factory);
+
+        var result = await service.EvaluateAsync(default);
+
+        result.Failures.Should().ContainSingle()
+            .Which.Kind.Should().Be(
+                PrerequisiteFailureKind.PrerequisiteEvaluationFailed);
+        var entry = provider.Entries.Should().ContainSingle().Which;
+        entry.Category.Should().Be(typeof(PreReqsCheckService).FullName);
+        entry.EventId.Should().Be(
+            new MelEventId(1, "PrerequisiteEvaluationFailed"));
+        entry.Level.Should().Be(MelLogLevel.Error);
+        entry.Template.Should().Be(
+            "Prerequisite evaluation failed unexpectedly.");
+        entry.Exception.Should().BeSameAs(expected);
     }
 
     [Fact]
@@ -214,17 +292,14 @@ public sealed class PrerequisiteEvaluatorTests
                 standardOutput,
                 "first\rsecond\u0002\tthird\vfourth\ffifth"),
         };
-        var logger = new RecordingLogger();
+        using var logging = new RecordingLoggerFixture();
 
         await new PreReqsCheckService(
                 probe,
-                new RecordingTelemetry(),
-                logger)
+                logging.Factory)
             .EvaluateAsync(default);
 
-        var diagnostic = string.Format(
-            logger.Errors.Single().Format,
-            logger.Errors.Single().Arguments);
+        var diagnostic = logging.Errors.Single().Message;
         diagnostic.Should().Contain(new string('H', 4 * 1024));
         diagnostic.Should().Contain("\n...[truncated]...\n");
         diagnostic.Should().Contain(new string('T', 4 * 1024));
@@ -243,17 +318,14 @@ public sealed class PrerequisiteEvaluatorTests
             RustupVersionResult = PrerequisiteCommandResult.FailedToStart(
                 new string('S', 3 * 1024) + "\0\u0003"),
         };
-        var startLogger = new RecordingLogger();
+        using var startLogging = new RecordingLoggerFixture();
 
         await new PreReqsCheckService(
                 startProbe,
-                new RecordingTelemetry(),
-                startLogger)
+                startLogging.Factory)
             .EvaluateAsync(default);
 
-        var startDiagnostic = string.Format(
-            startLogger.Errors.Single().Format,
-            startLogger.Errors.Single().Arguments);
+        var startDiagnostic = startLogging.Errors.Single().Message;
         var startError = startDiagnostic
             .Split(new[] { "Start error:\n", "\nstdout:" }, StringSplitOptions.None)[1];
         startError.Should().HaveLength(2 * 1024);
@@ -265,12 +337,10 @@ public sealed class PrerequisiteEvaluatorTests
     [Fact]
     public async Task SuccessfulAndCanceledEvaluationsWriteNoProbeDiagnosticsAsync()
     {
-        var logger = new RecordingLogger();
-        var telemetry = new RecordingTelemetry();
+        using var logging = new RecordingLoggerFixture();
         var service = new PreReqsCheckService(
             new FakePrerequisiteProbe(),
-            telemetry,
-            logger);
+            logging.Factory);
 
         var result = await service.EvaluateAsync(default);
         using var cancellation = new CancellationTokenSource();
@@ -280,10 +350,7 @@ public sealed class PrerequisiteEvaluatorTests
 
         result.Should().BeSameAs(PrerequisiteResult.Success);
         await evaluateCanceled.Should().ThrowAsync<OperationCanceledException>();
-        logger.Errors.Should().BeEmpty();
-        logger.Lines.Should().BeEmpty();
-        telemetry.Events.Should().BeEmpty();
-        telemetry.Exceptions.Should().BeEmpty();
+        logging.Entries.Should().BeEmpty();
     }
 
     [Fact]
@@ -534,50 +601,6 @@ public sealed class PrerequisiteEvaluatorTests
             }
 
             throw new InvalidOperationException($"Unexpected command: {Commands.Last()}");
-        }
-    }
-
-    private sealed class RecordingLogger : ILogger
-    {
-        public List<(string Format, object[] Arguments)> Errors { get; } = new();
-
-        public List<(string Format, object[] Arguments)> Lines { get; } = new();
-
-        public void WriteLine(string format, params object[] args)
-        {
-            Lines.Add((format, args));
-        }
-
-        public void WriteError(string format, params object[] args)
-        {
-            Errors.Add((format, args));
-        }
-    }
-
-    private sealed class RecordingTelemetry : ITelemetryService
-    {
-        public List<string> Events { get; } = new();
-
-        public List<Exception> Exceptions { get; } = new();
-
-        public void TrackEvent(
-            string eventName,
-            params (string Key, string Value)[] properties)
-        {
-            Events.Add(eventName);
-        }
-
-        public void TrackException(Exception e, string siteName = null)
-        {
-            Exceptions.Add(e);
-        }
-
-        public void TrackException(
-            Exception e,
-            (string Key, string Value)[] properties,
-            string siteName = null)
-        {
-            Exceptions.Add(e);
         }
     }
 }
