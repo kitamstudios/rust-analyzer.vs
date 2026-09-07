@@ -1,6 +1,6 @@
 # Feature: Premium Foundation
 **Branch:** vibe/004-premium-foundation
-**Status:** In Progress
+**Status:** Complete
 
 ## Requirements
 
@@ -59,25 +59,24 @@
     consent prompt or user-facing opt-out, operational suppression, and 365-day raw-event retention.
     Existing Application Insights access controls remain unchanged.
 24. Make only critical product-consistency corrections caused by completed work or this feature.
-25. Record final canonical-VSIX and standalone-TestAdapter smoke tests in supported Visual Studio
-    2022 and 2026 versions.
+25. Prepare canonical-VSIX and standalone-TestAdapter smoke-test artifacts and steps. Defer recorded
+    Visual Studio 2022 and 2026 outcomes.
 26. Do not add CI supply-chain hardening, premium delivery, entitlement, or target abstractions.
-27. As the final slice, replace the custom logger with explicitly pinned
-    `Microsoft.Extensions.Logging` 6.0.0 and built-in `[LoggerMessage]` source generation.
+27. Add explicitly pinned `Microsoft.Extensions.Logging` 2.2.0 providers and a temporary one-way
+    bridge from the custom logger.
 28. Route semantic local logs through a shared VSIX Output-window provider and invocation-scoped
     VSTest provider. Keep Build-pane output separate.
 29. Keep logging and feature telemetry independent. Add no Application Insights logging provider,
     logging decorator, or automatic log-to-telemetry mapping.
 30. Permit unrestricted local diagnostic content, including paths, arguments, environment values,
     settings, and exception text. None may cross into feature telemetry.
-31. Default local logging to `Information` and above. Use category, level, `EventId`, named
+31. Default local logging to `Information` and above. Preserve category, level, `EventId`, named
     templates, exceptions, and limited deterministic scopes.
 32. Use best-effort in-process delivery only. Add no durable file, export, retry, drain, flush, or
     shutdown guarantee.
 33. Expand the exact standalone TestAdapter payload for the explicit MEL runtime closure and update
     its package tests.
-34. After logging migration, repeat affected VS2022/VS2026 Output-window and standalone-TestAdapter
-    validation.
+34. Move source-generated logging migration and its affected host validation to a focused feature.
 
 ## Design Options (Ox)
 
@@ -199,8 +198,8 @@ Logging remains local. Feature telemetry remains one separate, fixed, allow-list
 | S1 | Typed, bounded feature-usage telemetry replaces unsafe and noisy telemetry. | - |
 | S2 | Packaged and downloaded rust-analyzer binaries are verified, attributable, and recoverable. | - |
 | S3 | Unused Remote projects and critical product contradictions are removed. | S1, S2 |
-| S4 | Canonical VSIX and standalone TestAdapter behavior is recorded on both supported Visual Studio generations. | S3 |
-| S5 | MEL semantic logging replaces the custom logger; affected host delivery is revalidated. | S4 |
+| S4 | Canonical VSIX and standalone TestAdapter artifacts and host-test steps are prepared; evidence is deferred. | S3 |
+| S5 | MEL 2.2 providers and a compatibility bridge establish the logging foundation. | S4 |
 
 ## Tasks (Tx)
 
@@ -216,8 +215,8 @@ Execute one task at a time.
 | T6 | S3 | Correct only a super-critical current-product fact made false by T1–T5. Defer unrelated README, historical-feature, build-skill, and backlog edits. | Done | `ea87618` |
 | T7 | S4 | Human-test the canonical VSIX and packaged standalone TestAdapter in one supported VS2022 17.x host and one VS2026 18.x host; record exact host/artifact versions plus install/load, LSP, Cargo, and test discovery/execution outcomes. | Deferred | - |
 | T8 | S5 | Add explicit MEL 2.2 ownership, the VSIX Output-window and VSTest providers, factory composition, payload closure, and focused provider tests. | Done | `1d378af` |
-| T9 | S5 | Migrate semantic local logging, remove the custom logger and logging/telemetry bundle, and preserve independent telemetry calls. | Pending | - |
-| T10 | S5 | Repeat affected VS2022/VS2026 Output-window and standalone-TestAdapter validation after the logging payload change. | Deferred | - |
+| T9 | S5 | Migrate semantic local logging, remove the custom logger and logging/telemetry bundle, and preserve independent telemetry calls. | Moved | - |
+| T10 | S5 | Repeat affected VS2022/VS2026 Output-window and standalone-TestAdapter validation after the logging payload change. | Moved | - |
 
 ## Task Contracts
 
@@ -369,36 +368,12 @@ Execute one task at a time.
 
 ### T9 — Semantic logging migration
 
-**Work**
-
-- Upgrade the MEL family to 6.0.0 and rederive the standalone runtime closure.
-- Declare events as built-in `[LoggerMessage]` partial methods in layer-local logging catalogs.
-- Keep event metadata and templates out of product types; they retain only typed catalog calls.
-- Permit unrestricted local diagnostic fields as approved.
-- Remove the custom `ILogger`, both custom sinks, the temporary bridge, and logging from `TL`.
-- Keep local logging and fixed feature telemetry as explicit separate calls.
-
-**Acceptance**
-
-- No custom logger or two-purpose logging/telemetry bundle remains.
-- Existing Output-window, Build-pane, and VSTest routing semantics remain distinct.
-- No log, scope, category, event, template property, or exception enters telemetry.
-- No duplicate logging path or retained callback-scoped VSTest logger remains.
-- Existing product error behavior is unchanged.
+Moved to a focused logging-modernization feature. The attempted all-at-once migration was not
+committed.
 
 ### T10 — Logging host closure
 
-**Work**
-
-- Re-run the affected human VS2022 and VS2026 scenarios after the payload change.
-- Record exact artifacts, hosts, Output-window behavior, and standalone TestAdapter messages.
-
-**Acceptance**
-
-- Semantic logs reach the private VSIX Output pane on both hosts.
-- Build output remains in the Build pane.
-- Standalone TestAdapter informational, warning, and error messages reach VSTest on both hosts.
-- Final Feature 004 evidence refers to the post-logging artifacts.
+Moved with T9. No post-migration host behavior is claimed by Feature 004.
 
 ## Risks (Rx)
 
@@ -421,8 +396,8 @@ Execute one task at a time.
   explicitly accepts that API break.
 - **R10:** The generated client telemetry connection string is recoverable from shipped binaries and
   can be used to submit false events. Treat ingestion as untrusted and enforce service-side controls.
-- **R11:** MEL 6.0 source generation expands the standalone TestAdapter payload and can introduce
-  assembly-load conflicts. Rederive and verify the exact closure.
+- **R11:** Explicit MEL ownership expands the standalone TestAdapter payload and can introduce
+  assembly-load conflicts. T8 pins 2.2.0 and verifies its exact 14-file closure.
 - **R12:** Unrestricted local diagnostics can expose sensitive values when users copy or share
   Output/VSTest logs. This exposure is explicitly accepted; never export it through telemetry.
 - **R13:** Non-blocking Output-window delivery can lose queued entries during shutdown or host
@@ -438,8 +413,8 @@ Execute one task at a time.
 - **A4:** The registry pointer remains the activation authority.
 - **A5:** The main VSIX and standalone TestAdapter retain their identities and delivery formats.
 - **A6:** Existing Application Insights access controls need no repository or Azure change.
-- **A7:** MEL 6.0.0 source generation supports the repository's C# 10 compiler, net48, and
-  netstandard2.0 targets; its runtime closure must be derived rather than assumed.
+- **A7:** The restored MEL 2.2.0 family remains compatible with net48 and netstandard2.0 when
+  explicitly owned.
 
 ## Deferrals (Dx)
 
@@ -455,16 +430,19 @@ Execute one task at a time.
 - **D10:** Broad documentation or backlog rewrites.
 - **D11:** Launch/workspace correctness, toolchain/protocol UX, and process-lifetime redesign.
 - **D12:** Performance investigations and ApprovalTests/tool-version hardening.
-- **D13:** T7 and T10 human VS2022/VS2026 smoke evidence. The human deferred both on 2026-09-06;
-  T8 and T9 may proceed without claiming host validation.
+- **D13:** T7 human VS2022/VS2026 smoke evidence. The human deferred it on 2026-09-06.
+- **D14:** MEL 6 source generation, semantic caller migration, legacy public logging API retirement,
+  payload redesign, and post-migration host validation move to a focused feature.
 
 ## Notes & Decisions
 
-### T9 source-generation decision
+### Future logging-modernization direction
 
 - The human selected built-in `[LoggerMessage]` generation over hand-written `EventId` fields.
-- Events live in layer-local partial catalogs; product types own only typed calls.
-- Use MEL 6.0.0 consistently, rederive both payloads, and add no repository-owned generator.
+- The attempted 85-event, 71-path T9 unit was rejected and no implementation was committed.
+- A focused feature must start with a small dependency proof, review events by subsystem, and
+  separately approve any public API removal.
+- The Release build accepted malformed catalog indentation; formatting enforcement remains separate.
 
 ### T1 outcome
 
