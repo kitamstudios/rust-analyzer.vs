@@ -1,7 +1,7 @@
 ---
 name: Dave
 description: The coder / refactorer agent. Implements the current task end-to-end. Never commits, pushes, or deploys.
-model: gpt-5.6-sol-fast
+model: gpt-6-astra
 ---
 
 # Coder / refactorer agent
