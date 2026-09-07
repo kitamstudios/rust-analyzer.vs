@@ -1,10 +1,12 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -122,6 +124,125 @@ public sealed class MetadataServiceTests
         await mds.OnWorkspaceUpdateAsync(new[] { testContainer }, default);
         mMds.Should().Raise(nameof(IMetadataService.TestContainerUpdated)).WithArgs<PathEx>(p => p == testContainer);
         mMds.Clear();
+    }
+
+    [Fact]
+    [Trait("type", "UnitTests")]
+    public async Task LifecycleLogsUseStructuredMetadataCategoryAsync()
+    {
+        var workspaceRoot =
+            TestHelpers.ThisTestRoot.Combine((PathEx)"hello_world");
+        var manifestPath = workspaceRoot + Constants.ManifestFileName2;
+        var cargoService = new Mock<IToolchainService>();
+        cargoService
+            .Setup(
+                service => service.GetWorkspaceAsync(
+                    manifestPath,
+                    It.IsAny<CancellationToken>()))
+            .Returns(CreateWorkspace(manifestPath).ToTask());
+        using var provider = new RecordingLoggerProvider();
+        using var factory = new LoggerFactory(new[] { provider, });
+        var service = new MetadataService(
+            cargoService.Object,
+            workspaceRoot,
+            factory.CreateLogger(typeof(MetadataService).FullName));
+
+        await service.GetPackageAsync(manifestPath, default);
+        await service.GetPackageAsync(manifestPath, default);
+        await service.OnWorkspaceUpdateAsync(
+            new[]
+            {
+                workspaceRoot.Combine(
+                    (PathEx)"src",
+                    (PathEx)"main.rs"),
+            },
+            default);
+        service.Dispose();
+
+        var entries = provider.Entries.ToArray();
+        entries.Select(entry => entry.EventId).Should().Equal(
+            new EventId(1, "MetadataServiceCreated"),
+            new EventId(2, "PackageRequested"),
+            new EventId(6, "PackageCacheMiss"),
+            new EventId(2, "PackageRequested"),
+            new EventId(5, "PackageCacheEntryRemoved"),
+            new EventId(7, "MetadataServiceDisposing"));
+        entries.Should().OnlyContain(
+            entry => entry.Category == typeof(MetadataService).FullName
+                && entry.Level == LogLevel.Information);
+        var created = entries.Single(entry => entry.EventId.Id == 1);
+        created.Template.Should().Be(
+            "Creating MDS. Workspace root: {WorkspaceRoot}.");
+        created.Properties["WorkspaceRoot"].Should().Be(workspaceRoot);
+        created.Exception.Should().BeNull();
+        foreach (var requested in entries.Where(
+                     entry => entry.EventId.Id == 2))
+        {
+            requested.Template.Should().Be(
+                "GetPackageAsync. Manifest path: {ManifestPath}.");
+            requested.Properties["ManifestPath"].Should().Be(manifestPath);
+            requested.Exception.Should().BeNull();
+        }
+
+        var cacheMiss = entries.Single(entry => entry.EventId.Id == 6);
+        cacheMiss.Template.Should().Be("... Cache miss: {ManifestPath}.");
+        cacheMiss.Properties["ManifestPath"].Should().Be(manifestPath);
+        cacheMiss.Exception.Should().BeNull();
+        var cacheEntryRemoved = entries.Single(
+            entry => entry.EventId.Id == 5);
+        cacheEntryRemoved.Template.Should().Be(
+            "OnWorkspaceUpdateAsync: Removing from cache: {ManifestPath}");
+        cacheEntryRemoved.Properties["ManifestPath"].Should().Be(manifestPath);
+        cacheEntryRemoved.Exception.Should().BeNull();
+        var disposing = entries.Single(entry => entry.EventId.Id == 7);
+        disposing.Template.Should().Be(
+            "Disposing MDS. Package cache has {PackageCount} entries.");
+        disposing.Properties["PackageCount"].Should().Be(0);
+        disposing.Exception.Should().BeNull();
+        cargoService.Verify(
+            service => service.GetWorkspaceAsync(
+                manifestPath,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    [Trait("type", "UnitTests")]
+    public async Task EventDispatchFailureIsLoggedAsynchronouslyAsync()
+    {
+        var expected = new InvalidOperationException("handler failed");
+        using var provider = new RecordingLoggerProvider();
+        using var factory = new LoggerFactory(new[] { provider, });
+        using var service = new MetadataService(
+            Mock.Of<IToolchainService>(),
+            TestHelpers.ThisTestRoot,
+            factory.CreateLogger(typeof(MetadataService).FullName));
+        service.TestContainerUpdated += (_, _) => throw expected;
+
+        await service.OnWorkspaceUpdateAsync(
+            new[]
+            {
+                TestHelpers.ThisTestRoot.Combine(
+                    (PathEx)"target",
+                    (PathEx)$"test.{Constants.TestsContainerExtension}"),
+            },
+            default);
+
+        SpinWait.SpinUntil(
+                () => provider.Entries.Any(
+                    entry => entry.EventId.Id == 8),
+                TimeSpan.FromSeconds(5))
+            .Should().BeTrue();
+        var entry = provider.Entries.Single(
+            logEntry => logEntry.EventId.Id == 8);
+        entry.Category.Should().Be(typeof(MetadataService).FullName);
+        entry.Level.Should().Be(LogLevel.Error);
+        entry.EventId.Name.Should().Be("EventDispatchFailed");
+        entry.Template.Should().Be(
+            "Operation '{Operation}' failed unexpectedly.");
+        entry.Properties["Operation"].Should().Be(
+            "MetadataService.TestContainerUpdatedDispatch");
+        entry.Exception.Should().BeSameAs(expected);
     }
 
     private static void CreateMDS(PathEx workspaceRoot, PathEx manifestPath, out Mock<IToolchainService> cs, out IMetadataService mds)

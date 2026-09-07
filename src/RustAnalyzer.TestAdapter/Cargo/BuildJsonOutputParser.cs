@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using static KS.RustAnalyzer.TestAdapter.Common.DetailedBuildMessage;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
 
@@ -36,6 +39,16 @@ public static class BuildJsonOutputParser
 
     public static BuildMessage[] Parse(PathEx workspaceRoot, string jsonLine, TL tl)
     {
+        return Parse(
+            workspaceRoot,
+            jsonLine,
+            LegacyLoggerBridge.ToMelLogger(
+                EnsureArg.IsNotNull(tl, nameof(tl)).L));
+    }
+
+    public static BuildMessage[] Parse(PathEx workspaceRoot, string jsonLine, MelLogger logger)
+    {
+        EnsureArg.IsNotNull(logger, nameof(logger));
         dynamic obj;
         try
         {
@@ -43,7 +56,11 @@ public static class BuildJsonOutputParser
         }
         catch (Exception e)
         {
-            tl.L.WriteLine("CargoJsonOutputParser failed to parse line: {0}. Exception {1}.", jsonLine, e);
+            logger.LogWarning(
+                new EventId(1, "JsonLineParseFailed"),
+                e,
+                "CargoJsonOutputParser failed to parse line: {JsonLine}.",
+                jsonLine);
             return new[] { new StringBuildMessage { Message = jsonLine } };
         }
 
@@ -60,7 +77,11 @@ public static class BuildJsonOutputParser
         }
         catch (Exception e)
         {
-            tl.L.WriteLine("CargoJsonOutputParser failed to parse line: {0}. Exception {1}.", jsonLine, e);
+            logger.LogWarning(
+                new EventId(2, "CargoMessageParseFailed"),
+                e,
+                "CargoJsonOutputParser failed to parse line: {JsonLine}.",
+                jsonLine);
             return new[] { new StringBuildMessage { Message = jsonLine } };
         }
 

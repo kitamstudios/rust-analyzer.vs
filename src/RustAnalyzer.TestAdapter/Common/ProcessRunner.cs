@@ -8,6 +8,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using EnsureThat;
+using Microsoft.Extensions.Logging;
+using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter.Common;
 
@@ -336,12 +339,48 @@ public sealed class ProcessRunner : IDisposable
         return Run(filename, arguments, workingDirectory, env, false, null!, cancellationToken: cancellationToken);
     }
 
-    public static async Task<ProcessRunner> RunWithLogging(string filename, string[] arguments, string workingDirectory, IDictionary<string, string> env, CancellationToken ct, ILogger l, bool @throw = true)
+    public static Task<ProcessRunner> RunWithLogging(
+        string filename,
+        string[] arguments,
+        string workingDirectory,
+        IDictionary<string, string> env,
+        CancellationToken ct,
+        LegacyLogger logger,
+        bool @throw = true)
     {
+        return RunWithLogging(
+            filename,
+            arguments,
+            workingDirectory,
+            env,
+            ct,
+            LegacyLoggerBridge.ToMelLogger(
+                EnsureArg.IsNotNull(logger, nameof(logger))),
+            @throw);
+    }
+
+    public static async Task<ProcessRunner> RunWithLogging(
+        string filename,
+        string[] arguments,
+        string workingDirectory,
+        IDictionary<string, string> env,
+        CancellationToken ct,
+        MelLogger logger,
+        bool @throw = true)
+    {
+        EnsureArg.IsNotNull(logger, nameof(logger));
         var proc = Run(filename, arguments, workingDirectory, env, ct);
-        l.WriteLine("Started PID:{0} with args: {1}...", proc.ProcessId, proc.Arguments);
+        logger.LogInformation(
+            new EventId(1, "ProcessStarted"),
+            "Started PID:{ProcessId} with args: {Arguments}...",
+            proc.ProcessId,
+            proc.Arguments);
         var exitCode = await proc;
-        l.WriteLine("... Finished PID {0} with exit code {1}.", proc.ProcessId, proc.ExitCode);
+        logger.LogInformation(
+            new EventId(2, "ProcessFinished"),
+            "... Finished PID {ProcessId} with exit code {ExitCode}.",
+            proc.ProcessId,
+            proc.ExitCode);
         if (@throw && exitCode != 0)
         {
             throw new InvalidOperationException($"{exitCode}\n{string.Join("\n", proc.StandardErrorLines)}").AddExitCode(exitCode);

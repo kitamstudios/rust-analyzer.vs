@@ -1,8 +1,10 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ApprovalTests;
 using ApprovalTests.Namers;
 using ApprovalTests.Reporters;
+using FluentAssertions;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
@@ -36,12 +38,35 @@ public class TestDiscovererTests : TestsWithLogger
 
         await _tcs.DoBuildAsync(tps.WorkspacePath, tps.ManifestPath, profile);
         var sink = new SpyTestCaseDiscoverySink();
-        new TestDiscoverer().DiscoverTests(tcPath, Mock.Of<IDiscoveryContext>(), MessageLogger, sink);
+        var messages = new List<string>();
+        var logger = new Mock<IMessageLogger>();
+        logger
+            .Setup(
+                value => value.SendMessage(
+                    It.IsAny<TestMessageLevel>(),
+                    It.IsAny<string>()))
+            .Callback<TestMessageLevel, string>(
+                (_, message) => messages.Add(message));
+        new TestDiscoverer().DiscoverTests(
+            tcPath,
+            Mock.Of<IDiscoveryContext>(),
+            logger.Object,
+            sink);
 
         var normalizedStr = sink.TestCases
             .OrderBy(x => x.FullyQualifiedName).ThenBy(x => x.LineNumber)
             .SerializeAndNormalizeObject();
         Approvals.Verify(normalizedStr);
+        messages.Should().Contain(
+            message => message.Contains(
+                typeof(TestDiscovererCommon).FullName));
+        messages.Should().Contain(
+            message => message.Contains(typeof(ToolchainService).FullName));
+        messages.Should().Contain(
+            message => message.Contains(typeof(ProcessRunner).FullName));
+        messages.Should().NotContain(
+            message => message.Contains(
+                "KS.RustAnalyzer.TestAdapter.Legacy"));
     }
 
     [Theory]

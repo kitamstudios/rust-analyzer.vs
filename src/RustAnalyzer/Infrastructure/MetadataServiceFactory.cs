@@ -21,6 +21,9 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
     public ILogger L { get; set; }
 
     [Import]
+    public Microsoft.Extensions.Logging.ILoggerFactory LoggerFactory { get; set; }
+
+    [Import]
     public Lazy<IToolchainService> CargoService { get; set; }
 
     [Import]
@@ -47,6 +50,7 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
             getFileWatcherService,
             CargoService,
             new TL { L = L, },
+            LoggerFactory.CreateLogger(typeof(MetadataService).FullName),
             AvailabilityPolicy,
             joinableTaskFactory);
     }
@@ -59,6 +63,7 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
         private readonly JoinableTask _initialization;
         private readonly CancellationTokenSource _lifetimeCancellation = new();
         private readonly CancellationToken _lifetimeToken;
+        private readonly Microsoft.Extensions.Logging.ILogger _metadataLogger;
         private readonly object _sync = new();
         private readonly TL _tl;
         private readonly MetadataWorkspaceUpdateHandler _updateHandler;
@@ -73,6 +78,7 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
             Func<IFileWatcherService> getFileWatcherService,
             Lazy<IToolchainService> cargoService,
             TL tl,
+            Microsoft.Extensions.Logging.ILogger metadataLogger,
             PrerequisiteAvailabilityPolicy availabilityPolicy,
             JoinableTaskFactory joinableTaskFactory)
         {
@@ -81,6 +87,7 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
             _cargoService = cargoService;
             _availabilityPolicy = availabilityPolicy;
             _lifetimeToken = _lifetimeCancellation.Token;
+            _metadataLogger = metadataLogger;
             _tl = tl;
             _updateHandler = new MetadataWorkspaceUpdateHandler(availabilityPolicy);
             _initialization = joinableTaskFactory.RunAsync(InitializeAsync);
@@ -187,7 +194,7 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
                         metadataService = new MetadataService(
                             _cargoService.Value,
                             (PathEx)_workspace.Location,
-                            _tl);
+                            _metadataLogger);
                         var fileWatcherService = _getFileWatcherService();
 
                         metadataService.PackageAdded += OnPackageAdded;

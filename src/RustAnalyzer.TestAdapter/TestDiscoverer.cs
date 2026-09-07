@@ -45,6 +45,10 @@ public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
             loggingContext.CreateLogger(typeof(TestDiscoverer));
         var commonLogger =
             loggingContext.CreateLogger(typeof(TestDiscovererCommon));
+        var toolchainLogger =
+            loggingContext.CreateLogger(typeof(ToolchainService));
+        var processLogger =
+            loggingContext.CreateLogger(typeof(ProcessRunner));
         var tl = new TL { T = _telemetry, L = loggingContext.LegacyLogger, };
         try
         {
@@ -56,6 +60,8 @@ public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
                     tl,
                     discovererLogger,
                     commonLogger,
+                    toolchainLogger,
+                    processLogger,
                     default));
             Task.WaitAll(tasks.ToArray());
             _telemetry.Track(UsageOperation.TestAdapterDiscover, UsageOutcome.Succeeded, duration.Elapsed);
@@ -79,6 +85,8 @@ public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
         TL tl,
         MelLogger logger,
         MelLogger commonLogger,
+        MelLogger toolchainLogger,
+        MelLogger processLogger,
         CancellationToken ct)
     {
         logger.LogInformation(
@@ -90,6 +98,8 @@ public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
             foreach (var (_, tcs) in await tc.DiscoverTestCasesFromOneSourceAsync(
                 tl,
                 commonLogger,
+                toolchainLogger,
+                processLogger,
                 ct))
             {
                 tcs.ForEach(discoverySink.SendTestCase);

@@ -31,9 +31,12 @@ public static class TestDiscovererCommon
     /// </summary>
     public static async Task<IEnumerable<(TestSuiteInfo TSI, IEnumerable<TestCase> TCs)>> DiscoverTestCasesFromOneSourceAsync(this TestContainer tc, TL tl, CancellationToken ct)
     {
+        var logger = LegacyLoggerBridge.ToMelLogger(tl.L);
         return await tc.DiscoverTestCasesFromOneSourceAsync(
             tl,
-            LegacyLoggerBridge.ToMelLogger(tl.L),
+            logger,
+            logger,
+            logger,
             ct);
     }
 
@@ -53,10 +56,26 @@ public static class TestDiscovererCommon
 
     public static string StripNamespace(this string testName) => string.Join(".", testName.Split('.').Skip(1));
 
+    internal static async Task<IEnumerable<Task<TestSuiteInfo>>> FindTestsInSourceAsync(
+        this TestContainer tc,
+        TL tl,
+        MelLogger toolchainLogger,
+        MelLogger processLogger,
+        CancellationToken ct)
+    {
+        return await new ToolchainService(
+                tl.T,
+                toolchainLogger,
+                processLogger)
+            .GetTestSuiteInfoAsync(tc.ThisPath, tc.Profile, ct);
+    }
+
     internal static async Task<IEnumerable<(TestSuiteInfo TSI, IEnumerable<TestCase> TCs)>> DiscoverTestCasesFromOneSourceAsync(
         this TestContainer tc,
         TL tl,
         MelLogger logger,
+        MelLogger toolchainLogger,
+        MelLogger processLogger,
         CancellationToken ct)
     {
         logger.LogInformation(
@@ -64,7 +83,11 @@ public static class TestDiscovererCommon
             "Starting discovery of tests from {Source}.",
             tc.ThisPath);
         var ret = new List<(TestSuiteInfo, IEnumerable<TestCase>)>();
-        foreach (var suite in await tc.FindTestsInSourceAsync(tl, ct))
+        foreach (var suite in await tc.FindTestsInSourceAsync(
+            tl,
+            toolchainLogger,
+            processLogger,
+            ct))
         {
             var tsi = await suite;
             var testCaseInfos = tsi.Tests.Select(t => CreateTestCaseFromTest(tsi.Container.ThisPath, tsi.Exe, t));

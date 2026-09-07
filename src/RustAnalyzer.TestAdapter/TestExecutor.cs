@@ -47,6 +47,8 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
             new VSTestLoggingContext(frameworkHandle, "Execution");
         var executorLogger =
             loggingContext.CreateLogger(typeof(TestExecutor));
+        var processLogger =
+            loggingContext.CreateLogger(typeof(ProcessRunner));
         var tl = new TL { T = _telemetry, L = loggingContext.LegacyLogger, };
         RunWithTelemetry(
             () =>
@@ -68,8 +70,8 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
                             TestRunParams.FromContainer(c),
                             runContext.IsBeingDebugged,
                             frameworkHandle,
-                            tl,
                             executorLogger,
+                            processLogger,
                             ct));
                     });
 
@@ -87,6 +89,10 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
             loggingContext.CreateLogger(typeof(TestExecutor));
         var commonLogger =
             loggingContext.CreateLogger(typeof(TestDiscovererCommon));
+        var toolchainLogger =
+            loggingContext.CreateLogger(typeof(ToolchainService));
+        var processLogger =
+            loggingContext.CreateLogger(typeof(ProcessRunner));
         var tl = new TL { T = _telemetry, L = loggingContext.LegacyLogger, };
         RunWithTelemetry(
             () =>
@@ -103,6 +109,8 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
                         tl,
                         executorLogger,
                         commonLogger,
+                        toolchainLogger,
+                        processLogger,
                         ct));
                 Task.WaitAll(tasks.ToArray());
             },
@@ -123,6 +131,8 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
             tl,
             logger,
             logger,
+            logger,
+            logger,
             ct);
     }
 
@@ -138,11 +148,15 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         TL tl,
         MelLogger logger,
         MelLogger commonLogger,
+        MelLogger toolchainLogger,
+        MelLogger processLogger,
         CancellationToken ct)
     {
         foreach (var (tsi, tcs) in await container.DiscoverTestCasesFromOneSourceAsync(
             tl,
             commonLogger,
+            toolchainLogger,
+            processLogger,
             ct))
         {
             RunAndRecordTestResultsFromOneExe(
@@ -151,8 +165,8 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
                 TestRunParams.FromContainer(container),
                 runContext.IsBeingDebugged,
                 fh,
-                tl,
                 logger,
+                processLogger,
                 ct);
         }
     }
@@ -163,8 +177,8 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         TestRunParams trp,
         bool isBeingDebugged,
         IFrameworkHandle fh,
-        TL tl,
         MelLogger logger,
+        MelLogger processLogger,
         CancellationToken ct)
     {
         logger.LogInformation(
@@ -200,8 +214,8 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
                         args.ToArray(),
                         testCasesMap,
                         envDict,
-                        tl,
                         logger,
+                        processLogger,
                         isBeingDebugged,
                         fh,
                         ct))
@@ -223,8 +237,8 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         string[] args,
         IReadOnlyDictionary<string, TestCase> testCasesMap,
         IDictionary<string, string> envDict,
-        TL tl,
         MelLogger logger,
+        MelLogger processLogger,
         bool isBeingDebugged,
         IFrameworkHandle fh,
         CancellationToken ct)
@@ -251,7 +265,14 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         }
         else
         {
-            using var testExeProc = await ProcessRunner.RunWithLogging(exe, args, exe.GetDirectoryName(), envDict, ct, tl.L, @throw: false);
+            using var testExeProc = await ProcessRunner.RunWithLogging(
+                exe,
+                args,
+                exe.GetDirectoryName(),
+                envDict,
+                ct,
+                processLogger,
+                @throw: false);
             trs = testExeProc.StandardOutputLines
                 .Skip(1)
                 .Take(testExeProc.StandardOutputLines.Count() - 2)

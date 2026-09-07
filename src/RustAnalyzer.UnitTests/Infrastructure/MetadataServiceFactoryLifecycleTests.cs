@@ -7,17 +7,64 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using KS.RustAnalyzer.Infrastructure;
+using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using KS.RustAnalyzer.Tests.Common;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Workspace;
 using Moq;
 using Xunit;
+using MelEventId = Microsoft.Extensions.Logging.EventId;
+using MelLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace KS.RustAnalyzer.UnitTests.Infrastructure;
 
 [Trait("type", "UnitTests")]
 public sealed class MetadataServiceFactoryLifecycleTests
 {
+    [Fact]
+    public async Task ReadyServicePreservesMetadataOwnerLogContractsAsync()
+    {
+        using var fixture = new PrerequisiteFixture();
+        await fixture.MakeReadyAsync();
+        var toolchain = new Mock<IToolchainService>(MockBehavior.Strict);
+        var watcher = CreateWatcher();
+        var factory = fixture.CreateFactory(
+            new Lazy<IToolchainService>(() => toolchain.Object));
+        var created = factory.CreateService(
+            CreateWorkspace().Object,
+            () => watcher.Object,
+            fixture.Context.Factory);
+        var metadata = created.Should().BeAssignableTo<IMetadataService>().Which;
+        using var lifetime = created.Should().BeAssignableTo<IDisposable>().Which;
+        var filePath = (PathEx)@"C:\outside\main.rs";
+
+        (await metadata.GetContainingPackageAsync(filePath, default))
+            .Should().BeNull();
+
+        var requested = fixture.LoggerProvider.Entries.Single(
+            entry => entry.EventId.Id == 3);
+        requested.Category.Should().Be(typeof(MetadataService).FullName);
+        requested.EventId.Should().Be(
+            new MelEventId(3, "ContainingPackageRequested"));
+        requested.Level.Should().Be(MelLogLevel.Information);
+        requested.Template.Should().Be(
+            "GetContainingPackageAsync. File path: {FilePath}.");
+        requested.Properties["FilePath"].Should().Be(filePath);
+        requested.Exception.Should().BeNull();
+
+        var notFound = fixture.LoggerProvider.Entries.Single(
+            entry => entry.EventId.Id == 4);
+        notFound.Category.Should().Be(typeof(MetadataService).FullName);
+        notFound.EventId.Should().Be(
+            new MelEventId(4, "ContainingPackageNotFound"));
+        notFound.Level.Should().Be(MelLogLevel.Information);
+        notFound.Template.Should().Be(
+            "GetContainingPackageAsync. No containing package found.");
+        notFound.Exception.Should().BeNull();
+        toolchain.VerifyNoOtherCalls();
+    }
+
     [Fact]
     public async Task ConstructionIsInertUntilLaterReadyAsync()
     {
@@ -312,6 +359,9 @@ public sealed class MetadataServiceFactoryLifecycleTests
         public PrerequisiteFixture()
         {
             Context = new JoinableTaskContext();
+            LoggerProvider = new RecordingLoggerProvider();
+            LoggerFactory = new Microsoft.Extensions.Logging.LoggerFactory(
+                new[] { LoggerProvider, });
             State = new PrerequisiteProcessState(Context.Factory);
             Policy = new PrerequisiteAvailabilityPolicy(
                 State,
@@ -319,6 +369,10 @@ public sealed class MetadataServiceFactoryLifecycleTests
         }
 
         public JoinableTaskContext Context { get; }
+
+        public Microsoft.Extensions.Logging.ILoggerFactory LoggerFactory { get; }
+
+        public RecordingLoggerProvider LoggerProvider { get; }
 
         public PrerequisiteAvailabilityPolicy Policy { get; }
 
@@ -331,6 +385,7 @@ public sealed class MetadataServiceFactoryLifecycleTests
                 AvailabilityPolicy = Policy,
                 CargoService = cargoService,
                 L = Mock.Of<ILogger>(),
+                LoggerFactory = LoggerFactory,
             };
         }
 
@@ -358,6 +413,7 @@ public sealed class MetadataServiceFactoryLifecycleTests
 
         public void Dispose()
         {
+            LoggerFactory.Dispose();
             Context.Dispose();
         }
     }

@@ -45,6 +45,17 @@ public class TestExecutorTests : TestsWithLogger
             .OrderBy(x => x.TestCase.FullyQualifiedName).ThenBy(x => x.TestCase.LineNumber)
             .SerializeAndNormalizeObject();
         Approvals.Verify(normalizedStr);
+        FrameworkHandle.Messages.Should().Contain(
+            entry => entry.Message.Contains(
+                typeof(TestDiscovererCommon).FullName));
+        FrameworkHandle.Messages.Should().Contain(
+            entry => entry.Message.Contains(
+                typeof(ToolchainService).FullName));
+        FrameworkHandle.Messages.Should().Contain(
+            entry => entry.Message.Contains(typeof(ProcessRunner).FullName));
+        FrameworkHandle.Messages.Should().NotContain(
+            entry => entry.Message.Contains(
+                "KS.RustAnalyzer.TestAdapter.Legacy"));
     }
 
     [Theory]

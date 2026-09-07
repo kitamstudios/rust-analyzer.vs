@@ -13,6 +13,9 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using Moq;
 using Xunit;
+using MelEventId = Microsoft.Extensions.Logging.EventId;
+using MelLoggerFactory = Microsoft.Extensions.Logging.LoggerFactory;
+using MelLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace KS.RustAnalyzer.TestAdapter.UnitTests;
 
@@ -192,6 +195,44 @@ public sealed class FeatureUsageBoundaryTests
             .Which.Should().Match<(UsageOperation Operation, UsageOutcome Outcome, TimeSpan Duration)>(
                 value => value.Operation == UsageOperation.CargoBuild
                     && value.Outcome == expectedOutcome);
+    }
+
+    [Fact]
+    public async Task ToolchainLoggingAndTelemetryRemainSeparateAsync()
+    {
+        var telemetry = new RecordingFeatureUsageTelemetry();
+        using var provider = new RecordingLoggerProvider();
+        using var factory = new MelLoggerFactory(new[] { provider, });
+        var service = new ToolchainService(telemetry, factory);
+
+        var cargoExePath = service.GetCargoExePath();
+        var method = typeof(ToolchainService).GetMethod(
+            "TrackOperationAsync",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        method.Should().NotBeNull();
+        (await (Task<bool>)method.Invoke(
+            service,
+            new object[]
+            {
+                UsageOperation.CargoBuild,
+                CancellationToken.None,
+                (Func<Task<bool>>)(() => Task.FromResult(true)),
+            })).Should().BeTrue();
+
+        var entry = provider.Entries.Should().ContainSingle().Which;
+        entry.Category.Should().Be(typeof(ToolchainService).FullName);
+        entry.Level.Should().Be(MelLogLevel.Information);
+        entry.EventId.Should().Be(
+            new MelEventId(1, "CargoExecutableResolved"));
+        entry.Template.Should().Be(
+            "... using {ExecutableName} from '{ExecutablePath}'.");
+        entry.Properties["ExecutableName"].Should().Be(Constants.CargoExe);
+        entry.Properties["ExecutablePath"].Should().Be(cargoExePath);
+        entry.Exception.Should().BeNull();
+        telemetry.Events.Should().ContainSingle()
+            .Which.Should().Match<(UsageOperation Operation, UsageOutcome Outcome, TimeSpan Duration)>(
+                value => value.Operation == UsageOperation.CargoBuild
+                    && value.Outcome == UsageOutcome.Succeeded);
     }
 
     private static Task<bool> TrackCargoOperationAsync(

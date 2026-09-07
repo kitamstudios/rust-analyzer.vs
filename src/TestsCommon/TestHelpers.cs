@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json;
 
@@ -22,7 +25,7 @@ public static class TestHelpers
     public static readonly TL TL =
         new()
         {
-            L = Mock.Of<ILogger>(),
+            L = Mock.Of<KS.RustAnalyzer.TestAdapter.Common.ILogger>(),
             T = Mock.Of<IFeatureUsageTelemetry>(),
         };
 
@@ -112,4 +115,114 @@ public sealed class RecordingFeatureUsageTelemetry : IFeatureUsageTelemetry
     {
         Events.Enqueue((operation, outcome, duration));
     }
+}
+
+public sealed class RecordingLoggerProvider : ILoggerProvider
+{
+    public ConcurrentQueue<RecordingLogEntry> Entries { get; } = new();
+
+    public Microsoft.Extensions.Logging.ILogger CreateLogger(string categoryName)
+    {
+        return new RecordingLogger(categoryName, Entries);
+    }
+
+    public void Dispose()
+    {
+    }
+
+    private sealed class RecordingLogger : Microsoft.Extensions.Logging.ILogger
+    {
+        private readonly string _categoryName;
+        private readonly ConcurrentQueue<RecordingLogEntry> _entries;
+
+        public RecordingLogger(
+            string categoryName,
+            ConcurrentQueue<RecordingLogEntry> entries)
+        {
+            _categoryName = categoryName;
+            _entries = entries;
+        }
+
+        public IDisposable BeginScope<TState>(TState state)
+        {
+            return EmptyScope.Instance;
+        }
+
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return logLevel != LogLevel.None;
+        }
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception exception,
+            Func<TState, Exception, string> formatter)
+        {
+            if (IsEnabled(logLevel))
+            {
+                _entries.Enqueue(
+                    new RecordingLogEntry(
+                        _categoryName,
+                        logLevel,
+                        eventId,
+                        state,
+                        exception,
+                        formatter(state, exception)));
+            }
+        }
+    }
+
+    private sealed class EmptyScope : IDisposable
+    {
+        public static readonly EmptyScope Instance = new();
+
+        private EmptyScope()
+        {
+        }
+
+        public void Dispose()
+        {
+        }
+    }
+}
+
+public sealed class RecordingLogEntry
+{
+    public RecordingLogEntry(
+        string category,
+        LogLevel level,
+        EventId eventId,
+        object state,
+        Exception exception,
+        string message)
+    {
+        Category = category;
+        Level = level;
+        EventId = eventId;
+        Exception = exception;
+        Message = message;
+        Properties = (state as IEnumerable<KeyValuePair<string, object>>)
+            ?.ToDictionary(pair => pair.Key, pair => pair.Value)
+            ?? new Dictionary<string, object>();
+    }
+
+    public string Category { get; }
+
+    public LogLevel Level { get; }
+
+    public EventId EventId { get; }
+
+    public Exception Exception { get; }
+
+    public string Message { get; }
+
+    public IReadOnlyDictionary<string, object> Properties { get; }
+
+    public string Template => Properties.TryGetValue(
+        "{OriginalFormat}",
+        out var template)
+        ? (string)template
+        : null;
 }
