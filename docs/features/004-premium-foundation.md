@@ -220,7 +220,7 @@ Execute one task at a time.
 | T10 | S5 | Migrate Cargo parsing, metadata, toolchain, and process logging. | Done | `ff90907` |
 | T11 | S5 | Migrate prerequisite, settings, updater, and language-client logging. | Done | `036ba20` |
 | T12 | S5 | Migrate package, debugger, editor, node, and command logging. | Done | `f228b8e` |
-| T13 | S5 | Migrate Open Folder test-container logging. | Pending | - |
+| T13 | S5 | Migrate Open Folder test-container logging. | Done | `fe944ce` |
 | T14 | S5 | Remove approved legacy logging APIs and reconcile the final architecture. | Pending | - |
 
 ## Task Contracts
@@ -562,6 +562,13 @@ Execute one task at a time.
 - Preserved category-local command IDs and duplicate-free legacy construction.
 - Kept cancellation silent and telemetry, notifications, Build output, and transport separate.
 - Full verification passed with 566 assembly tests and 18 acceptance outcomes.
+
+### T13 outcome
+
+- Migrated 10 Open Folder container logs to owner-category MEL.
+- Preserved workspace subscriptions, cancellation, disposal, and copied-container logger lifetimes.
+- Kept legacy delivery single and Build output and telemetry separate.
+- Full verification passed with 570 assembly tests and 18 acceptance outcomes.
 
 ### Telemetry audit
 
