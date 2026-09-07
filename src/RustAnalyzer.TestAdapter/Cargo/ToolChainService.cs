@@ -12,7 +12,6 @@ using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
@@ -39,24 +38,11 @@ public sealed class ToolchainService : IToolchainService
             loggerFactory.CreateLogger(typeof(BuildJsonOutputParser).FullName);
     }
 
-    public ToolchainService(IFeatureUsageTelemetry telemetry, LegacyLogger logger)
-        : this(
-            telemetry,
-            LegacyLoggerBridge.ToMelLogger(
-                EnsureArg.IsNotNull(logger, nameof(logger))))
-    {
-    }
-
     internal ToolchainService(
         IFeatureUsageTelemetry telemetry,
         MelLogger logger,
         MelLogger processLogger)
         : this(telemetry, logger, processLogger, logger)
-    {
-    }
-
-    private ToolchainService(IFeatureUsageTelemetry telemetry, MelLogger logger)
-        : this(telemetry, logger, logger)
     {
     }
 

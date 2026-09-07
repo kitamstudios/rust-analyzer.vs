@@ -9,7 +9,6 @@ using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
-using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 using MelLogger = Microsoft.Extensions.Logging.ILogger;
 using ShellInterop = Microsoft.VisualStudio.Shell.Interop;
 
@@ -22,7 +21,6 @@ public abstract class BaseRustAnalyzerCommand<T> : BaseCommand<T>
     where T : class, new()
 {
     private readonly PrerequisiteProcessState _prerequisiteState;
-    private LegacyLogger _logger;
     private ILoggerFactory _loggerFactory;
     private MelLogger _melLogger;
     private PrerequisiteAvailabilityPolicy _availabilityPolicy;
@@ -47,13 +45,10 @@ public abstract class BaseRustAnalyzerCommand<T> : BaseCommand<T>
 
     public CmdServices CmdServices { get; }
 
-    protected LegacyLogger Logger => _logger ??= Package.GetService<SComponentModel, IComponentModel2>(false)?.GetService<LegacyLogger>();
-
     protected ILoggerFactory LoggerFactory => _loggerFactory ??= Package.GetService<SComponentModel, IComponentModel2>(false)?.GetService<ILoggerFactory>();
 
     protected MelLogger MelLogger =>
-        _melLogger ??= LoggerFactory?.CreateLogger(typeof(T).FullName)
-            ?? LegacyLoggerBridge.ToMelLogger(Logger);
+        _melLogger ??= LoggerFactory.CreateLogger(typeof(T).FullName);
 
     protected IFeatureUsageTelemetry UsageTelemetry => _usageTelemetry ??= Package.GetService<SComponentModel, IComponentModel2>(false)?.GetService<IFeatureUsageTelemetry>();
 

@@ -67,7 +67,7 @@ public sealed class ProcessExtensionTests
     }
 
     [Fact]
-    public async Task RunWithLoggingUsesStructuredProcessCategoryAndLegacyCompatibilityAsync()
+    public async Task RunWithLoggingUsesStructuredProcessCategoryAsync()
     {
         using var provider = new RecordingLoggerProvider();
         using var factory = new LoggerFactory(new[] { provider, });
@@ -97,34 +97,6 @@ public sealed class ProcessExtensionTests
             "... Finished PID {ProcessId} with exit code {ExitCode}.");
         entries[1].Properties["ProcessId"].Should().Be(process.ProcessId);
         entries[1].Properties["ExitCode"].Should().Be(0);
-
-        var legacyLogger = new RecordingLegacyLogger();
-        using var legacyProcess = await ProcessRunner.RunWithLogging(
-            "cmd.exe",
-            new[] { "/c", "exit", "0" },
-            Environment.CurrentDirectory,
-            new Dictionary<string, string>(),
-            CancellationToken.None,
-            legacyLogger);
-
-        legacyLogger.Messages.Should().HaveCount(2);
-        provider.Entries.Should().HaveCount(2);
-    }
-
-    private sealed class RecordingLegacyLogger :
-        KS.RustAnalyzer.TestAdapter.Common.ILogger
-    {
-        public List<string> Messages { get; } = new();
-
-        public void WriteLine(string format, params object[] args)
-        {
-            Messages.Add(string.Format(format, args));
-        }
-
-        public void WriteError(string format, params object[] args)
-        {
-            Messages.Add(string.Format(format, args));
-        }
     }
 }
 

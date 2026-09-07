@@ -5,7 +5,6 @@ using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Settings;
-using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.Infrastructure;
@@ -24,16 +23,12 @@ public interface ISettingsService
 public sealed class SettingsServiceFactory : IWorkspaceServiceFactory
 {
     [Import]
-    public LegacyLogger L { get; set; }
-
-    [Import]
     public ILoggerFactory LoggerFactory { get; set; }
 
     public object CreateService(IWorkspace workspaceContext)
     {
-        var logger = LoggerFactory?.CreateLogger(
-            typeof(SettingsService).FullName)
-            ?? LegacyLoggerBridge.ToMelLogger(L);
+        var logger = LoggerFactory.CreateLogger(
+            typeof(SettingsService).FullName);
         return new SettingsService(
             (PathEx)workspaceContext.Location,
             workspaceContext.GetSettingsManager(),
@@ -48,15 +43,6 @@ public sealed class SettingsService : ISettingsService
     private readonly IWorkspaceSettingsManager _settingsManager;
     private readonly Func<Task<ISettingsServiceDefaults>> _hostWideOptionsGetter;
     private readonly MelLogger _logger;
-
-    public SettingsService(PathEx location, IWorkspaceSettingsManager settingsManager, Func<Task<ISettingsServiceDefaults>> hostWideOptionsGetter, TL tl)
-        : this(
-            location,
-            settingsManager,
-            hostWideOptionsGetter,
-            LegacyLoggerBridge.ToMelLogger(tl.L))
-    {
-    }
 
     public SettingsService(
         PathEx location,

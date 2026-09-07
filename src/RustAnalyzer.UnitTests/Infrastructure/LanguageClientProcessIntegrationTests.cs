@@ -30,7 +30,6 @@ public sealed class LanguageClientProcessIntegrationTests
             new[] { provider, });
         using var client = new ProcessLanguageClient(context.Factory)
         {
-            L = Mock.Of<ILogger>(),
             LoggerFactory = factory,
             WorkspaceService = Mock.Of<IVsFolderWorkspaceService>(),
         };

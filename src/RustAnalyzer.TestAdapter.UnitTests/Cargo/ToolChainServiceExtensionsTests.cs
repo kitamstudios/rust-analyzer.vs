@@ -22,13 +22,12 @@ public sealed class ToolchainServiceExtensionsTests
 {
     [Fact]
     [Trait("type", "IntegrationTests")]
-    public async Task LegacyToolchainOverrideLoggerDeliversEachMessageOnceAsync()
+    public async Task ToolchainOverrideLoggerDeliversEachStructuredMessageOnceAsync()
     {
         using var provider = new RecordingLoggerProvider();
         using var factory = new LoggerFactory(new[] { provider, });
-        KS.RustAnalyzer.TestAdapter.Common.ILogger logger =
-            new LegacyLoggerBridge(
-                factory.CreateLogger("Legacy.ToolchainOverride"));
+        var logger = factory.CreateLogger(
+            typeof(ToolchainServiceExtensions).FullName);
 
         await TestHelpers.ThisTestRoot.SetToolchainOverrideAsync(
             string.Empty,
@@ -37,20 +36,36 @@ public sealed class ToolchainServiceExtensionsTests
 
         var entries = provider.Entries.ToArray();
         entries.Should().HaveCount(3);
+        entries.Select(entry => entry.EventId).Should().Equal(
+            new EventId(1, "ToolchainOverrideCommandStarted"),
+            new EventId(2, "ToolchainOverrideWorkspaceSelected"),
+            new EventId(3, "ToolchainOverrideCommandCompleted"));
         entries.Should().OnlyContain(
             entry =>
-                entry.Category == "Legacy.ToolchainOverride"
+                entry.Category
+                    == "KS.RustAnalyzer.TestAdapter.Cargo.ToolchainServiceExtensions"
                 && entry.Level == LogLevel.Information
-                && entry.EventId == default
                 && entry.Exception == null);
-        entries.Count(entry =>
-                entry.Message == "Running: rustup override set ")
+
+        var started = entries[0];
+        started.Template.Should().Be(
+            "Running: {ExecutableName} {Arguments}");
+        started.Properties.Should().HaveCount(3);
+        started.Properties["ExecutableName"].Should().Be("rustup");
+        started.Properties["Arguments"].Should().Be("override set ");
+
+        var workspaceSelected = entries[1];
+        workspaceSelected.Template.Should().Be(
+            "Workspace: {WorkspaceRoot}");
+        workspaceSelected.Properties.Should().HaveCount(2);
+        workspaceSelected.Properties["WorkspaceRoot"]
             .Should()
-            .Be(1);
-        entries.Count(entry =>
-                entry.Message == $"Workspace: {TestHelpers.ThisTestRoot}")
-            .Should()
-            .Be(1);
+            .Be(TestHelpers.ThisTestRoot);
+
+        var completed = entries[2];
+        completed.Template.Should().Be("{Output}");
+        completed.Properties.Should().HaveCount(2);
+        completed.Properties["Output"].Should().Be(completed.Message);
     }
 
     [Fact]

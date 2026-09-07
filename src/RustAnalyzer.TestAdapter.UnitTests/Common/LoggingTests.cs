@@ -116,7 +116,7 @@ public sealed class VSTestLoggerProviderTests
     public void CallbackContextSharesScopeAndStopsLateMessages()
     {
         var messageLogger = new RecordingMessageLogger();
-        var contextType = typeof(TestAdapterLogger).Assembly.GetType(
+        var contextType = typeof(VSTestLoggerProvider).Assembly.GetType(
             "KS.RustAnalyzer.TestAdapter.VSTestLoggingContext");
         contextType.Should().NotBeNull();
         var context = (IDisposable)Activator.CreateInstance(
@@ -128,29 +128,20 @@ public sealed class VSTestLoggerProviderTests
         var createLogger = contextType.GetMethod(
             "CreateLogger",
             BindingFlags.Instance | BindingFlags.NonPublic);
-        var legacyLoggerProperty = contextType.GetProperty(
-            "LegacyLogger",
-            BindingFlags.Instance | BindingFlags.NonPublic);
         createLogger.Should().NotBeNull();
-        legacyLoggerProperty.Should().NotBeNull();
         var logger = (Microsoft.Extensions.Logging.ILogger)createLogger.Invoke(
             context,
             new object[] { typeof(TestExecutor) });
-        var legacyLogger =
-            (KS.RustAnalyzer.TestAdapter.Common.ILogger)legacyLoggerProperty.GetValue(context);
 
         logger.LogInformation(
             new EventId(21, "ContextMessage"),
             "Context message {Value}",
             42);
-        legacyLogger.WriteLine("Legacy message {0}", 43);
         context.Dispose();
         logger.LogInformation("late");
-        legacyLogger.WriteLine("late");
 
-        messageLogger.Messages.Should().HaveCount(2);
-        messageLogger.Messages.Select(message => message.Level).Should().Equal(
-            TestMessageLevel.Informational,
+        messageLogger.Messages.Should().ContainSingle();
+        messageLogger.Messages[0].Level.Should().Be(
             TestMessageLevel.Informational);
         messageLogger.Messages[0].Message.Should().Contain(
             "KS.RustAnalyzer.TestAdapter.TestExecutor EventId=21(ContextMessage)");
@@ -160,31 +151,6 @@ public sealed class VSTestLoggerProviderTests
             "Properties: Value=42");
         messageLogger.Messages[0].Message.Should().Contain(
             "VSTest invocation Execution");
-        messageLogger.Messages[1].Message.Should().Contain(
-            "KS.RustAnalyzer.TestAdapter.Legacy EventId=0");
-        messageLogger.Messages[1].Message.Should().Contain(
-            "Legacy message 43");
-        messageLogger.Messages[1].Message.Should().Contain(
-            "VSTest invocation Execution");
-    }
-
-    [Fact]
-    public void LegacyBridgeWritesExactlyOnceThroughMel()
-    {
-        var messageLogger = new RecordingMessageLogger();
-        var logger = new TestAdapterLogger(messageLogger);
-
-        logger.WriteLine("message {0} {1}", "value", 42);
-        logger.WriteError("failure {0}", "detail");
-        logger.Dispose();
-        logger.WriteLine("late");
-
-        messageLogger.Messages.Should().HaveCount(2);
-        messageLogger.Messages[0].Level.Should().Be(
-            TestMessageLevel.Informational);
-        messageLogger.Messages[0].Message.Should().Contain("message value 42");
-        messageLogger.Messages[1].Level.Should().Be(TestMessageLevel.Error);
-        messageLogger.Messages[1].Message.Should().Contain("failure detail");
     }
 
     [Fact]

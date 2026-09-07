@@ -49,7 +49,6 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
             loggingContext.CreateLogger(typeof(TestExecutor));
         var processLogger =
             loggingContext.CreateLogger(typeof(ProcessRunner));
-        var tl = new TL { T = _telemetry, L = loggingContext.LegacyLogger, };
         RunWithTelemetry(
             () =>
             {
@@ -77,7 +76,7 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
 
                 Task.WaitAll(tasks.ToArray());
             },
-            tl.T);
+            _telemetry);
     }
 
     public override void RunTests(IEnumerable<PathEx> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
@@ -93,7 +92,6 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
             loggingContext.CreateLogger(typeof(ToolchainService));
         var processLogger =
             loggingContext.CreateLogger(typeof(ProcessRunner));
-        var tl = new TL { T = _telemetry, L = loggingContext.LegacyLogger, };
         RunWithTelemetry(
             () =>
             {
@@ -106,7 +104,7 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
                         await source.ReadTestContainerAsync(ct),
                         runContext,
                         frameworkHandle,
-                        tl,
+                        _telemetry,
                         executorLogger,
                         commonLogger,
                         toolchainLogger,
@@ -114,26 +112,7 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
                         ct));
                 Task.WaitAll(tasks.ToArray());
             },
-            tl.T);
-    }
-
-    /// <summary>
-    /// Each TestContainer has multiple Exes, Each exe has multiple tests.
-    /// Execution of tests happen by running the Exes. All in parallel.
-    /// </summary>
-    public static async Task RunTestsTestsFromOneSourceAsync(TestContainer container, IRunContext runContext, IFrameworkHandle fh, TL tl, CancellationToken ct)
-    {
-        var logger = LegacyLoggerBridge.ToMelLogger(tl.L);
-        await RunTestsTestsFromOneSourceAsync(
-            container,
-            runContext,
-            fh,
-            tl,
-            logger,
-            logger,
-            logger,
-            logger,
-            ct);
+            _telemetry);
     }
 
     public void Cancel()
@@ -145,7 +124,7 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         TestContainer container,
         IRunContext runContext,
         IFrameworkHandle fh,
-        TL tl,
+        IFeatureUsageTelemetry telemetry,
         MelLogger logger,
         MelLogger commonLogger,
         MelLogger toolchainLogger,
@@ -153,7 +132,7 @@ public class TestExecutor : BaseTestExecutor, ITestExecutor
         CancellationToken ct)
     {
         foreach (var (tsi, tcs) in await container.DiscoverTestCasesFromOneSourceAsync(
-            tl,
+            telemetry,
             commonLogger,
             toolchainLogger,
             processLogger,

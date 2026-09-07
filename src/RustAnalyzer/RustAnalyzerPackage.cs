@@ -16,7 +16,6 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using CommunityVS = Community.VisualStudio.Toolkit.VS;
 using Constants = KS.RustAnalyzer.TestAdapter.Constants;
-using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 using MelLogger = Microsoft.Extensions.Logging.ILogger;
 using MelLoggerFactory = Microsoft.Extensions.Logging.ILoggerFactory;
 
@@ -95,13 +94,10 @@ public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOp
         await JTF.SwitchToMainThreadAsync(cancellationToken);
 
         var cmServiceProvider = (IComponentModel)await GetServiceAsync(typeof(SComponentModel));
-        var legacyLogger = cmServiceProvider?.GetService<LegacyLogger>();
         var loggerFactory = cmServiceProvider?.GetService<MelLoggerFactory>();
-        _logger = loggerFactory?.CreateLogger(typeof(RustAnalyzerPackage).FullName)
-            ?? LegacyLoggerBridge.ToMelLogger(legacyLogger);
-        _releaseSummaryLogger = loggerFactory?.CreateLogger(
-            typeof(ReleaseSummaryNotification).FullName)
-            ?? LegacyLoggerBridge.ToMelLogger(legacyLogger);
+        _logger = loggerFactory.CreateLogger(typeof(RustAnalyzerPackage).FullName);
+        _releaseSummaryLogger = loggerFactory.CreateLogger(
+            typeof(ReleaseSummaryNotification).FullName);
         _regSettings = cmServiceProvider?.GetService<IRegistrySettingsService>();
         _preReqs = cmServiceProvider?.GetService<IPreReqsCheckService>();
         _raDownloader = cmServiceProvider?.GetService<IRlsInstallerService>();
@@ -221,13 +217,6 @@ public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOp
         private const string ActionContextGetHelp = "get_help";
         private const string ActionContextRateExtension = "rate_extension";
         private const string ActionContextTestExperienceDemo = "test_experience_demo";
-
-        public static async Task ShowAsync(IRegistrySettingsService regSettings, TL tl)
-        {
-            await ShowAsync(
-                regSettings,
-                LegacyLoggerBridge.ToMelLogger(tl.L));
-        }
 
         public static async Task ShowAsync(
             IRegistrySettingsService regSettings,

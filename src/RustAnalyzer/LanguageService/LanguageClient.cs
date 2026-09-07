@@ -16,7 +16,6 @@ using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Utilities;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 using StreamJsonRpc;
-using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.LanguageService;
@@ -65,9 +64,6 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
 
     [Import]
     public IVsFolderWorkspaceService WorkspaceService { get; set; }
-
-    [Import]
-    public LegacyLogger L { get; set; }
 
     [Import]
     public ILoggerFactory LoggerFactory { get; set; }
@@ -460,6 +456,5 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
     }
 
     private MelLogger Logger =>
-        _logger ??= LoggerFactory?.CreateLogger(typeof(LanguageClient).FullName)
-            ?? LegacyLoggerBridge.ToMelLogger(L);
+        _logger ??= LoggerFactory.CreateLogger(typeof(LanguageClient).FullName);
 }

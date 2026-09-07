@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using KS.RustAnalyzer.Infrastructure;
@@ -29,10 +28,8 @@ public sealed class SettingsServiceTests
         using var provider = new RecordingLoggerProvider();
         using var factory = new Microsoft.Extensions.Logging.LoggerFactory(
             new[] { provider, });
-        var legacyLogger = new RecordingLegacyLogger();
         var service = (ISettingsService)new SettingsServiceFactory
         {
-            L = legacyLogger,
             LoggerFactory = factory,
         }.CreateService(CreateWorkspace(settingsManager.Object).Object);
 
@@ -48,36 +45,6 @@ public sealed class SettingsServiceTests
         entry.Level.Should().Be(MelLogLevel.Error);
         entry.Template.Should().Be("Exception.");
         entry.Exception.Should().BeSameAs(expected);
-        legacyLogger.Errors.Should().BeEmpty();
-        legacyLogger.Lines.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task LegacyFactoryDeliversFailureOnceAsync()
-    {
-        var expected =
-            new InvalidOperationException("Settings persistence failed.");
-        var settingsManager = new Mock<IWorkspaceSettingsManager>();
-        settingsManager
-            .Setup(manager => manager.GetPersistanceAsync(true))
-            .ThrowsAsync(expected);
-        var logger = new RecordingLegacyLogger();
-        var service = (ISettingsService)new SettingsServiceFactory
-        {
-            L = logger,
-        }.CreateService(CreateWorkspace(settingsManager.Object).Object);
-
-        await service.SetAsync(
-            SettingsInfo.TypeCommandLineArguments,
-            (PathEx)@"C:\workspace\Cargo.toml",
-            "--release");
-
-        logger.Errors.Should().ContainSingle();
-        logger.Errors[0].Format.Should().Be("{0} {1}");
-        logger.Errors[0].Arguments.Should().HaveCount(2);
-        logger.Errors[0].Arguments[0].Should().Be("Exception.");
-        logger.Errors[0].Arguments[1].Should().BeSameAs(expected);
-        logger.Lines.Should().BeEmpty();
     }
 
     private static Mock<IWorkspace> CreateWorkspace(
@@ -90,24 +57,5 @@ public sealed class SettingsServiceTests
                 typeof(IWorkspaceSettingsManager)))
             .Returns(settingsManager);
         return workspace;
-    }
-
-    private sealed class RecordingLegacyLogger : ILogger
-    {
-        public List<(string Format, object[] Arguments)> Errors { get; } =
-            new();
-
-        public List<(string Format, object[] Arguments)> Lines { get; } =
-            new();
-
-        public void WriteLine(string format, params object[] args)
-        {
-            Lines.Add((format, args));
-        }
-
-        public void WriteError(string format, params object[] args)
-        {
-            Errors.Add((format, args));
-        }
     }
 }

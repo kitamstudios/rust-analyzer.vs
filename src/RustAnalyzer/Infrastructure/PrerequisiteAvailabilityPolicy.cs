@@ -6,7 +6,6 @@ using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Threading;
-using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.Infrastructure;
@@ -59,21 +58,6 @@ public sealed class PrerequisiteAvailabilityPolicy
             PrerequisiteProcessState.Current,
             loggerFactory.CreateLogger(
                 typeof(PrerequisiteAvailabilityPolicy).FullName))
-    {
-    }
-
-    public PrerequisiteAvailabilityPolicy(LegacyLogger logger)
-        : this(PrerequisiteProcessState.Current, logger)
-    {
-    }
-
-    public PrerequisiteAvailabilityPolicy(
-        PrerequisiteProcessState state,
-        LegacyLogger logger)
-        : this(
-            state,
-            LegacyLoggerBridge.ToMelLogger(
-                EnsureArg.IsNotNull(logger, nameof(logger))))
     {
     }
 

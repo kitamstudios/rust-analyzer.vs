@@ -17,7 +17,6 @@ using Microsoft.VisualStudio.TestWindow.Extensibility;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
-using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter;
@@ -34,7 +33,6 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
     private readonly MelLogger _logger;
     private readonly object _sync = new();
     private readonly MelLogger _testContainerLogger;
-    private readonly TL _tl;
     private readonly SemaphoreSlim _workspaceChangeGate = new(1, 1);
     private IMetadataService _currentMetadataService;
     private IWorkspace _currentWorkspace;
@@ -44,16 +42,11 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
     [ImportingConstructor]
     public TestContainerDiscoverer(
         [Import] SVsServiceProvider serviceProvider,
-        [Import] ILogger l,
         [Import] ILoggerFactory loggerFactory,
         [Import] PrerequisiteAvailabilityPolicy availabilityPolicy)
         : this(
             () => VS.GetRequiredService<SComponentModel, IComponentModel>()
                 .GetService<IVsFolderWorkspaceService>(),
-            new TL
-            {
-                L = l,
-            },
             loggerFactory,
             availabilityPolicy,
             RustAnalyzerPackage.JTF)
@@ -61,38 +54,7 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
     }
 
     public TestContainerDiscoverer(
-        SVsServiceProvider serviceProvider,
-        ILogger l,
-        PrerequisiteAvailabilityPolicy availabilityPolicy)
-        : this(
-            () => VS.GetRequiredService<SComponentModel, IComponentModel>()
-                .GetService<IVsFolderWorkspaceService>(),
-            new TL
-            {
-                L = l,
-            },
-            availabilityPolicy,
-            RustAnalyzerPackage.JTF)
-    {
-    }
-
-    public TestContainerDiscoverer(
         Func<IVsFolderWorkspaceService> getWorkspaceFactory,
-        TL tl,
-        PrerequisiteAvailabilityPolicy availabilityPolicy,
-        JoinableTaskFactory joinableTaskFactory)
-        : this(
-            getWorkspaceFactory,
-            tl,
-            null,
-            availabilityPolicy,
-            joinableTaskFactory)
-    {
-    }
-
-    public TestContainerDiscoverer(
-        Func<IVsFolderWorkspaceService> getWorkspaceFactory,
-        TL tl,
         ILoggerFactory loggerFactory,
         PrerequisiteAvailabilityPolicy availabilityPolicy,
         JoinableTaskFactory joinableTaskFactory)
@@ -102,10 +64,11 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
             nameof(getWorkspaceFactory),
             options => options.WithException(
                 new ArgumentNullException(nameof(getWorkspaceFactory))));
-        _tl = EnsureArg.IsNotNull(
-            tl,
-            nameof(tl),
-            options => options.WithException(new ArgumentNullException(nameof(tl))));
+        loggerFactory = EnsureArg.IsNotNull(
+            loggerFactory,
+            nameof(loggerFactory),
+            options => options.WithException(
+                new ArgumentNullException(nameof(loggerFactory))));
         _availabilityPolicy = EnsureArg.IsNotNull(
             availabilityPolicy,
             nameof(availabilityPolicy),
@@ -116,18 +79,10 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
             nameof(joinableTaskFactory),
             options => options.WithException(
                 new ArgumentNullException(nameof(joinableTaskFactory))));
-        if (loggerFactory == null)
-        {
-            _logger = LegacyLoggerBridge.ToMelLogger(_tl.L);
-            _testContainerLogger = LegacyLoggerBridge.ToMelLogger(_tl.L);
-        }
-        else
-        {
-            _logger = loggerFactory.CreateLogger(
-                typeof(TestContainerDiscoverer).FullName);
-            _testContainerLogger = loggerFactory.CreateLogger(
-                typeof(TestContainer).FullName);
-        }
+        _logger = loggerFactory.CreateLogger(
+            typeof(TestContainerDiscoverer).FullName);
+        _testContainerLogger = loggerFactory.CreateLogger(
+            typeof(TestContainer).FullName);
 
         _lifetimeToken = _lifetimeCancellation.Token;
         var initialization = joinableTaskFactory.RunAsync(InitializeAsync);
@@ -401,7 +356,6 @@ public sealed class TestContainerDiscoverer : ITestContainerDiscoverer, IDisposa
                 new TestContainer(
                     container,
                     this,
-                    _tl,
                     _testContainerLogger)))
         {
             _logger.LogError(

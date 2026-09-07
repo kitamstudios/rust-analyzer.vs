@@ -19,9 +19,6 @@ namespace KS.RustAnalyzer.Infrastructure;
 public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
 {
     [Import]
-    public KS.RustAnalyzer.TestAdapter.Common.ILogger L { get; set; }
-
-    [Import]
     public Microsoft.Extensions.Logging.ILoggerFactory LoggerFactory { get; set; }
 
     [Import]
@@ -46,20 +43,10 @@ public sealed class MetadataServiceFactory : IWorkspaceServiceFactory
         EnsureArg.IsNotNull(workspaceContext);
         EnsureArg.IsNotNull(getFileWatcherService);
         EnsureArg.IsNotNull(joinableTaskFactory);
-        Microsoft.Extensions.Logging.ILogger logger;
-        Microsoft.Extensions.Logging.ILogger metadataLogger;
-        if (LoggerFactory == null)
-        {
-            logger = LegacyLoggerBridge.ToMelLogger(L);
-            metadataLogger = logger;
-        }
-        else
-        {
-            logger = LoggerFactory.CreateLogger(
-                typeof(MetadataServiceFactory).FullName);
-            metadataLogger = LoggerFactory.CreateLogger(
-                typeof(MetadataService).FullName);
-        }
+        var logger = LoggerFactory.CreateLogger(
+            typeof(MetadataServiceFactory).FullName);
+        var metadataLogger = LoggerFactory.CreateLogger(
+            typeof(MetadataService).FullName);
 
         return new PrerequisiteGatedMetadataService(
             workspaceContext,

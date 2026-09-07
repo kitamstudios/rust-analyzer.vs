@@ -16,30 +16,6 @@ public static class TestDiscovererCommon
 {
     private static readonly Regex TestExecutableFingerPrintCracker = new(@"^(.*)\-[\da-f]{16}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    /// <summary>
-    /// Each TestContainer contains multiple Exes, each Exes has multiple tests. Each Exe is represented by a TestSuiteInfo.
-    /// Enumeration of test cases happen Exe by Exe, in parallel => IAsyncEnumerable[TSI].
-    /// </summary>
-    public static async Task<IEnumerable<Task<TestSuiteInfo>>> FindTestsInSourceAsync(this TestContainer tc, TL tl, CancellationToken ct)
-    {
-        return await new ToolchainService(tl.T, tl.L).GetTestSuiteInfoAsync(tc.ThisPath, tc.Profile, ct);
-    }
-
-    /// <summary>
-    /// Each Exe is represented by a TestSuiteInfo.
-    /// Discovery is done by running Exes in parallel => IAsyncEnumerable[(TestSuiteInfo, IEnumerable[TestCase])].
-    /// </summary>
-    public static async Task<IEnumerable<(TestSuiteInfo TSI, IEnumerable<TestCase> TCs)>> DiscoverTestCasesFromOneSourceAsync(this TestContainer tc, TL tl, CancellationToken ct)
-    {
-        var logger = LegacyLoggerBridge.ToMelLogger(tl.L);
-        return await tc.DiscoverTestCasesFromOneSourceAsync(
-            tl,
-            logger,
-            logger,
-            logger,
-            ct);
-    }
-
     public static string RustFQN2TestExplorerFQN(this string rustTestFQN, PathEx exe)
     {
         var strippedExe = (string)exe.GetFileNameWithoutExtension();
@@ -58,13 +34,13 @@ public static class TestDiscovererCommon
 
     internal static async Task<IEnumerable<Task<TestSuiteInfo>>> FindTestsInSourceAsync(
         this TestContainer tc,
-        TL tl,
+        IFeatureUsageTelemetry telemetry,
         MelLogger toolchainLogger,
         MelLogger processLogger,
         CancellationToken ct)
     {
         return await new ToolchainService(
-                tl.T,
+                telemetry,
                 toolchainLogger,
                 processLogger)
             .GetTestSuiteInfoAsync(tc.ThisPath, tc.Profile, ct);
@@ -72,7 +48,7 @@ public static class TestDiscovererCommon
 
     internal static async Task<IEnumerable<(TestSuiteInfo TSI, IEnumerable<TestCase> TCs)>> DiscoverTestCasesFromOneSourceAsync(
         this TestContainer tc,
-        TL tl,
+        IFeatureUsageTelemetry telemetry,
         MelLogger logger,
         MelLogger toolchainLogger,
         MelLogger processLogger,
@@ -84,7 +60,7 @@ public static class TestDiscovererCommon
             tc.ThisPath);
         var ret = new List<(TestSuiteInfo, IEnumerable<TestCase>)>();
         foreach (var suite in await tc.FindTestsInSourceAsync(
-            tl,
+            telemetry,
             toolchainLogger,
             processLogger,
             ct))

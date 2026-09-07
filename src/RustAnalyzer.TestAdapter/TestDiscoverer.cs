@@ -49,7 +49,6 @@ public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
             loggingContext.CreateLogger(typeof(ToolchainService));
         var processLogger =
             loggingContext.CreateLogger(typeof(ProcessRunner));
-        var tl = new TL { T = _telemetry, L = loggingContext.LegacyLogger, };
         try
         {
             var tasks = sources
@@ -57,7 +56,7 @@ public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
                 .Select(async g => await DiscoverAndReportTestsFromOneSource(
                     await g.Key.ReadTestContainerAsync(default),
                     discoverySink,
-                    tl,
+                    _telemetry,
                     discovererLogger,
                     commonLogger,
                     toolchainLogger,
@@ -82,7 +81,7 @@ public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
     private async Task DiscoverAndReportTestsFromOneSource(
         TestContainer tc,
         ITestCaseDiscoverySink discoverySink,
-        TL tl,
+        IFeatureUsageTelemetry telemetry,
         MelLogger logger,
         MelLogger commonLogger,
         MelLogger toolchainLogger,
@@ -96,7 +95,7 @@ public class TestDiscoverer : BaseTestDiscoverer, ITestDiscoverer
         try
         {
             foreach (var (_, tcs) in await tc.DiscoverTestCasesFromOneSourceAsync(
-                tl,
+                telemetry,
                 commonLogger,
                 toolchainLogger,
                 processLogger,

@@ -17,6 +17,7 @@ using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
@@ -57,7 +58,7 @@ public sealed class AutomaticRustBoundaryTests
 
         starts.Should().Be(0);
         downloader.VerifyNoOtherCalls();
-        unavailable.Logger.Lines.Should().ContainSingle();
+        unavailable.Lines.Should().ContainSingle();
 
         using var ready = await PrerequisiteFixture.CreateAsync(PrerequisiteStatus.Ready);
         var expected = new InvalidOperationException("Language server path requested.");
@@ -198,7 +199,7 @@ public sealed class AutomaticRustBoundaryTests
 
         await handler.HandleAsync(null, null, default);
 
-        unavailable.Logger.Lines.Should().ContainSingle();
+        unavailable.Lines.Should().ContainSingle();
 
         using var ready = await PrerequisiteFixture.CreateAsync(PrerequisiteStatus.Ready);
         var metadata = new Mock<IMetadataService>(MockBehavior.Strict);
@@ -228,7 +229,7 @@ public sealed class AutomaticRustBoundaryTests
         var factory = new FileScannerFactory
         {
             AvailabilityPolicy = unavailable.Policy,
-            L = unavailable.Logger,
+            LoggerFactory = unavailable.LoggerFactory,
         };
 
         var scanner = factory.CreateProvider(null);
@@ -237,7 +238,7 @@ public sealed class AutomaticRustBoundaryTests
             .IsUpToDateAsync(null, null, default, default)).Should().BeFalse();
 
         unavailable.Telemetry.Events.Should().BeEmpty();
-        unavailable.Logger.Lines.Should().ContainSingle();
+        unavailable.Lines.Should().ContainSingle();
 
         using var ready = await PrerequisiteFixture.CreateAsync(PrerequisiteStatus.Ready);
         var expected = new InvalidOperationException("Metadata requested.");
@@ -260,7 +261,7 @@ public sealed class AutomaticRustBoundaryTests
         var readyFactory = new FileScannerFactory
         {
             AvailabilityPolicy = ready.Policy,
-            L = ready.Logger,
+            LoggerFactory = ready.LoggerFactory,
         };
 
         readyFactory.CreateProvider(workspace.Object).Should().NotBeNull();
@@ -276,7 +277,7 @@ public sealed class AutomaticRustBoundaryTests
             AvailabilityPolicy = unavailable.Policy,
             LazyCargoService = new Lazy<IToolchainService>(
                 () => Mock.Of<IToolchainService>()),
-            L = unavailable.Logger,
+            LoggerFactory = unavailable.LoggerFactory,
             OutputPane = Mock.Of<IBuildOutputSink>(),
         };
 
@@ -285,7 +286,7 @@ public sealed class AutomaticRustBoundaryTests
 
         contexts.Should().BeEmpty();
         unavailable.Telemetry.Events.Should().BeEmpty();
-        unavailable.Logger.Lines.Should().ContainSingle();
+        unavailable.Lines.Should().ContainSingle();
 
         using var ready = await PrerequisiteFixture.CreateAsync(PrerequisiteStatus.Ready);
         var metadata = new Mock<IMetadataService>(MockBehavior.Strict);
@@ -313,7 +314,7 @@ public sealed class AutomaticRustBoundaryTests
             AvailabilityPolicy = ready.Policy,
             LazyCargoService = new Lazy<IToolchainService>(
                 () => Mock.Of<IToolchainService>()),
-            L = ready.Logger,
+            LoggerFactory = ready.LoggerFactory,
             OutputPane = Mock.Of<IBuildOutputSink>(),
         };
 
@@ -336,7 +337,7 @@ public sealed class AutomaticRustBoundaryTests
         (await clean.ExecuteBuildAsync(progress, default)).Should().BeFalse();
 
         toolchain.VerifyNoOtherCalls();
-        unavailable.Logger.Lines.Should().HaveCount(2);
+        unavailable.Lines.Should().HaveCount(2);
 
         using var ready = await PrerequisiteFixture.CreateAsync(PrerequisiteStatus.Ready);
         var updates = 0;
@@ -364,12 +365,12 @@ public sealed class AutomaticRustBoundaryTests
     {
         using var unavailable = await PrerequisiteFixture.CreateAsync(PrerequisiteStatus.Suspended);
         var nodeProvider = new NodeBrowseObjectProvider(
-            unavailable.Logger,
+            unavailable.LoggerFactory,
             unavailable.Policy);
         var debugProvider = new DebugLaunchTargetProvider
         {
             AvailabilityPolicy = unavailable.Policy,
-            L = unavailable.Logger,
+            LoggerFactory = unavailable.LoggerFactory,
             UsageTelemetry = unavailable.Telemetry,
         };
 
@@ -377,7 +378,7 @@ public sealed class AutomaticRustBoundaryTests
         debugProvider.SupportsContext(null, null).Should().BeFalse();
         debugProvider.LaunchDebugTarget(null, null, null);
 
-        unavailable.Logger.Lines.Should().HaveCount(2);
+        unavailable.Lines.Should().HaveCount(2);
         unavailable.Telemetry.Events.Should().BeEmpty();
     }
 
@@ -392,7 +393,7 @@ public sealed class AutomaticRustBoundaryTests
                 workspaceLookups++;
                 throw new InvalidOperationException("Workspace service should not be requested.");
             },
-            new TL { L = unavailable.Logger, T = unavailable.Telemetry },
+            unavailable.LoggerFactory,
             unavailable.Policy,
             unavailable.Context.Factory);
 
@@ -400,7 +401,7 @@ public sealed class AutomaticRustBoundaryTests
 
         workspaceLookups.Should().Be(0);
         discoverer.TestContainers.Should().BeEmpty();
-        unavailable.Logger.Lines.Should().ContainSingle();
+        unavailable.Lines.Should().ContainSingle();
 
         using var ready = await PrerequisiteFixture.CreateAsync(PrerequisiteStatus.Ready);
         var readyWorkspaceLookups = 0;
@@ -415,7 +416,7 @@ public sealed class AutomaticRustBoundaryTests
                 readyWorkspaceLookups++;
                 return workspaceService.Object;
             },
-            new TL { L = ready.Logger, T = ready.Telemetry },
+            ready.LoggerFactory,
             ready.Policy,
             ready.Context.Factory);
 
@@ -441,7 +442,7 @@ public sealed class AutomaticRustBoundaryTests
                 Interlocked.Increment(ref workspaceLookups);
                 return workspaceService.Object;
             },
-            new TL { L = fixture.Logger, T = fixture.Telemetry },
+            fixture.LoggerFactory,
             fixture.Policy,
             fixture.Context.Factory);
 
@@ -471,7 +472,7 @@ public sealed class AutomaticRustBoundaryTests
                 workspaceLookups++;
                 return workspaceService.Object;
             },
-            new TL { L = fixture.Logger, T = fixture.Telemetry },
+            fixture.LoggerFactory,
             fixture.Policy,
             fixture.Context.Factory);
         var firstCompletion = new TaskCompletionSource<PrerequisiteResult>(
@@ -509,7 +510,7 @@ public sealed class AutomaticRustBoundaryTests
                 workspaceLookups++;
                 return workspaceService.Object;
             },
-            new TL { L = fixture.Logger, T = fixture.Telemetry },
+            fixture.LoggerFactory,
             fixture.Policy,
             fixture.Context.Factory);
 
@@ -542,7 +543,7 @@ public sealed class AutomaticRustBoundaryTests
             new AsyncEvent<EventArgs>());
         var discoverer = new TestContainerDiscoverer(
             () => workspaceService.Object,
-            new TL { L = fixture.Logger, T = fixture.Telemetry },
+            fixture.LoggerFactory,
             fixture.Policy,
             fixture.Context.Factory);
         await discoverer.Initialization;
@@ -579,7 +580,7 @@ public sealed class AutomaticRustBoundaryTests
             new AsyncEvent<EventArgs>());
         var discoverer = new TestContainerDiscoverer(
             () => workspaceService.Object,
-            new TL { L = fixture.Logger, T = fixture.Telemetry },
+            fixture.LoggerFactory,
             fixture.Policy,
             fixture.Context.Factory);
 
@@ -602,13 +603,13 @@ public sealed class AutomaticRustBoundaryTests
         var registry = new Mock<IRegistrySettingsService>(MockBehavior.Strict);
         var installer = new RlsInstallerService(
             registry.Object,
-            unavailable.Logger,
+            unavailable.LoggerFactory,
             unavailable.Policy);
 
         await installer.InstallLatestAsync();
 
         registry.VerifyNoOtherCalls();
-        unavailable.Logger.Lines.Should().ContainSingle();
+        unavailable.Lines.Should().ContainSingle();
         unavailable.Telemetry.Events.Should().BeEmpty();
     }
 
@@ -801,14 +802,20 @@ public sealed class AutomaticRustBoundaryTests
         {
             Context = new JoinableTaskContext();
             State = new PrerequisiteProcessState(Context.Factory);
-            Logger = new RecordingLogger();
+            Logging = new RecordingLoggerFixture();
             Telemetry = new RecordingFeatureUsageTelemetry();
-            Policy = new PrerequisiteAvailabilityPolicy(State, Logger);
+            Policy = new PrerequisiteAvailabilityPolicy(
+                State,
+                Logging.CreateLogger(typeof(PrerequisiteAvailabilityPolicy)));
         }
 
         public JoinableTaskContext Context { get; }
 
-        public RecordingLogger Logger { get; }
+        public ILoggerFactory LoggerFactory => Logging.Factory;
+
+        public IEnumerable<RecordingLogEntry> Lines => Logging.Lines;
+
+        public RecordingLoggerFixture Logging { get; }
 
         public PrerequisiteAvailabilityPolicy Policy { get; }
 
@@ -851,24 +858,8 @@ public sealed class AutomaticRustBoundaryTests
 
         public void Dispose()
         {
+            Logging.Dispose();
             Context.Dispose();
-        }
-    }
-
-    private sealed class RecordingLogger : ILogger
-    {
-        public ConcurrentQueue<(string Format, object[] Arguments)> Errors { get; } = new();
-
-        public ConcurrentQueue<(string Format, object[] Arguments)> Lines { get; } = new();
-
-        public void WriteLine(string format, params object[] args)
-        {
-            Lines.Enqueue((format, args));
-        }
-
-        public void WriteError(string format, params object[] args)
-        {
-            Errors.Enqueue((format, args));
         }
     }
 }

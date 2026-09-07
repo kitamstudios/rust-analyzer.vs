@@ -434,32 +434,6 @@ public sealed class RlsInstallerServiceTests
     }
 
     [Fact]
-    public async Task IncompleteRustAnalyzerReplacingPreservesExceptionOnLegacyRouteAsync()
-    {
-        var logger = new RecordingLogger();
-        using var fixture = await Fixture.CreateAsync(legacyLogger: logger);
-        fixture.CreateArchive(
-            ("rust-analyzer.exe", "new executable"),
-            ("rust_analyzer.pdb", "new pdb"));
-        Directory.CreateDirectory(
-            fixture.Installer.VersionDirectory(DownloadedRelease));
-
-        await fixture.Installer.InstallLatestAsync();
-
-        logger.Errors.Should().BeEmpty();
-        logger.Lines.Should().HaveCount(3);
-        var delivery = logger.Lines.Single(
-            line => string.Format(line.Format, line.Arguments).StartsWith(
-                "Replacing incomplete rust-analyzer ",
-                StringComparison.Ordinal));
-        var exception = delivery.Arguments.OfType<Exception>()
-            .Should().ContainSingle().Which;
-        string.Format(delivery.Format, delivery.Arguments).Should().Be(
-            $"Replacing incomplete rust-analyzer {DownloadedRelease}. " +
-            exception);
-    }
-
-    [Fact]
     public async Task LockTimeoutDoesNotInspectOrActivateTargetAsync()
     {
         using var fixture = await Fixture.CreateAsync();
@@ -504,7 +478,7 @@ public sealed class RlsInstallerServiceTests
         var state = new PrerequisiteProcessState(context.Factory);
         var policy = new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger());
+            Mock.Of<Microsoft.Extensions.Logging.ILogger>());
         var root = Path.Combine(
             AppDomain.CurrentDomain.BaseDirectory,
             "runtime-lock-tests",
@@ -556,7 +530,7 @@ public sealed class RlsInstallerServiceTests
                         default);
                     var policy = new PrerequisiteAvailabilityPolicy(
                         state,
-                        new RecordingLogger());
+                        Mock.Of<Microsoft.Extensions.Logging.ILogger>());
                     var first = new LockProbeInstaller(root, policy);
                     var second = new LockProbeInstaller(root, policy);
                     var held = await first.AcquireAsync();
@@ -938,8 +912,7 @@ public sealed class RlsInstallerServiceTests
         public RecordingLoggerProvider LoggerProvider { get; }
 
         public static async Task<Fixture> CreateAsync(
-            JoinableTaskContext context = null,
-            RecordingLogger legacyLogger = null)
+            JoinableTaskContext context = null)
         {
             var root = Path.Combine(
                 AppDomain.CurrentDomain.BaseDirectory,
@@ -958,30 +931,18 @@ public sealed class RlsInstallerServiceTests
             await state.GetOrEvaluateAsync(
                 _ => Task.FromResult(PrerequisiteResult.Success),
                 default);
-            RecordingLoggerProvider loggerProvider = null;
-            Microsoft.Extensions.Logging.LoggerFactory loggerFactory = null;
-            PrerequisiteAvailabilityPolicy availabilityPolicy;
-            if (legacyLogger == null)
-            {
-                loggerProvider = new RecordingLoggerProvider();
-                loggerFactory =
-                    new Microsoft.Extensions.Logging.LoggerFactory(
-                        new[] { loggerProvider, });
-                availabilityPolicy = new PrerequisiteAvailabilityPolicy(
-                    state,
-                    loggerFactory.CreateLogger(
-                        typeof(PrerequisiteAvailabilityPolicy).FullName));
-            }
-            else
-            {
-                availabilityPolicy = new PrerequisiteAvailabilityPolicy(
-                    state,
-                    legacyLogger);
-            }
-
-            var installer = legacyLogger == null
-                ? new TestInstaller(root, loggerFactory, availabilityPolicy)
-                : new TestInstaller(root, legacyLogger, availabilityPolicy);
+            var loggerProvider = new RecordingLoggerProvider();
+            var loggerFactory =
+                new Microsoft.Extensions.Logging.LoggerFactory(
+                    new[] { loggerProvider, });
+            var availabilityPolicy = new PrerequisiteAvailabilityPolicy(
+                state,
+                loggerFactory.CreateLogger(
+                    typeof(PrerequisiteAvailabilityPolicy).FullName));
+            var installer = new TestInstaller(
+                root,
+                loggerFactory,
+                availabilityPolicy);
             return new Fixture(
                 root,
                 context,
@@ -1115,19 +1076,6 @@ public sealed class RlsInstallerServiceTests
             : base(
                 Mock.Of<IRegistrySettingsService>(),
                 loggerFactory,
-                availabilityPolicy)
-        {
-            _root = root;
-            SelectedVersion = Constants.RlsLatestInPackageVersion;
-        }
-
-        public TestInstaller(
-            string root,
-            ILogger logger,
-            PrerequisiteAvailabilityPolicy availabilityPolicy)
-            : base(
-                Mock.Of<IRegistrySettingsService>(),
-                logger,
                 availabilityPolicy)
         {
             _root = root;
@@ -1375,7 +1323,7 @@ public sealed class RlsInstallerServiceTests
             PrerequisiteAvailabilityPolicy availabilityPolicy)
             : base(
                 Mock.Of<IRegistrySettingsService>(),
-                new RecordingLogger(),
+                new Microsoft.Extensions.Logging.LoggerFactory(),
                 availabilityPolicy)
         {
             InstallationRoot = root;
@@ -1390,24 +1338,5 @@ public sealed class RlsInstallerServiceTests
             TimeSpan.FromMilliseconds(100);
 
         protected override string InstallationRoot { get; }
-    }
-
-    private sealed class RecordingLogger : ILogger
-    {
-        public List<(string Format, object[] Arguments)> Errors { get; } =
-            new();
-
-        public List<(string Format, object[] Arguments)> Lines { get; } =
-            new();
-
-        public void WriteError(string format, params object[] args)
-        {
-            Errors.Add((format, args));
-        }
-
-        public void WriteLine(string format, params object[] args)
-        {
-            Lines.Add((format, args));
-        }
     }
 }

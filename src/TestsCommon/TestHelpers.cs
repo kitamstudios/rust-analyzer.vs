@@ -22,12 +22,13 @@ public static class TestHelpers
             Path.GetDirectoryName(Uri.UnescapeDataString(new Uri(Assembly.GetExecutingAssembly().CodeBase).AbsolutePath)),
             @"Cargo\TestData").ToLowerInvariant();
 
-    public static readonly TL TL =
-        new()
-        {
-            L = Mock.Of<KS.RustAnalyzer.TestAdapter.Common.ILogger>(),
-            T = Mock.Of<IFeatureUsageTelemetry>(),
-        };
+    public static readonly IFeatureUsageTelemetry Telemetry =
+        Mock.Of<IFeatureUsageTelemetry>();
+
+    public static readonly Microsoft.Extensions.Logging.ILogger Logger =
+        Mock.Of<Microsoft.Extensions.Logging.ILogger>();
+
+    public static readonly ILoggerFactory LoggerFactory = CreateLoggerFactory();
 
     private static readonly ConcurrentDictionary<PathEx, IMetadataService> MetadataServices = new ConcurrentDictionary<PathEx, IMetadataService>();
 
@@ -38,7 +39,12 @@ public static class TestHelpers
     {
         // NOTE: This simulates the case when a folder with multiple workspaces is opened.
         var root = @this.GetDirectoryName();
-        return MetadataServices.GetOrAdd(root, (wr) => new MetadataService(new ToolchainService(TL.T, TL.L), wr, TL));
+        return MetadataServices.GetOrAdd(
+            root,
+            wr => new MetadataService(
+                new ToolchainService(Telemetry, LoggerFactory),
+                wr,
+                Logger));
     }
 
     public static string Replace(this string str, string old, string @new, StringComparison comparison)
@@ -104,6 +110,15 @@ public static class TestHelpers
         var targetPath = (workspacePath + (PathEx)@"target").MakeProfilePath(profile);
 
         return (WorkspacePath: workspacePath, ManifestPath: manifestPath, TargetPath: targetPath);
+    }
+
+    private static ILoggerFactory CreateLoggerFactory()
+    {
+        var factory = new Mock<ILoggerFactory>();
+        factory
+            .Setup(value => value.CreateLogger(It.IsAny<string>()))
+            .Returns(Logger);
+        return factory.Object;
     }
 }
 
@@ -185,6 +200,38 @@ public sealed class RecordingLoggerProvider : ILoggerProvider
         public void Dispose()
         {
         }
+    }
+}
+
+public sealed class RecordingLoggerFixture : IDisposable
+{
+    private readonly LoggerFactory _factory;
+    private readonly RecordingLoggerProvider _provider;
+
+    public RecordingLoggerFixture()
+    {
+        _provider = new RecordingLoggerProvider();
+        _factory = new LoggerFactory(new[] { _provider, });
+    }
+
+    public IEnumerable<RecordingLogEntry> Errors =>
+        Entries.Where(entry => entry.Level >= LogLevel.Error);
+
+    public ConcurrentQueue<RecordingLogEntry> Entries => _provider.Entries;
+
+    public ILoggerFactory Factory => _factory;
+
+    public IEnumerable<RecordingLogEntry> Lines =>
+        Entries.Where(entry => entry.Level < LogLevel.Error);
+
+    public Microsoft.Extensions.Logging.ILogger CreateLogger(Type owner)
+    {
+        return _factory.CreateLogger(owner.FullName);
+    }
+
+    public void Dispose()
+    {
+        _factory.Dispose();
     }
 }
 

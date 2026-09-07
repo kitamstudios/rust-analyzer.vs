@@ -18,26 +18,15 @@ public class TestContainer : BaseTestContainer, ITestContainer
 {
     private readonly MelLogger _logger;
 
-    public TestContainer(PathEx testContainerPath, ITestContainerDiscoverer discoverer, TL tl)
-        : this(
-            testContainerPath,
-            discoverer,
-            tl,
-            LegacyLoggerBridge.ToMelLogger(tl.L))
-    {
-    }
-
     public TestContainer(
         PathEx testContainerPath,
         ITestContainerDiscoverer discoverer,
-        TL tl,
         MelLogger logger)
     {
         EnsureArg.IsTrue(testContainerPath.FileExists(), nameof(testContainerPath));
         TestContainerPath = testContainerPath;
         TimeStamp = GetTimeStamp();
         Discoverer = discoverer;
-        TL = tl;
         _logger = EnsureArg.IsNotNull(logger, nameof(logger));
 
         _logger.LogInformation(
@@ -51,7 +40,6 @@ public class TestContainer : BaseTestContainer, ITestContainer
         : this(
             testContainer.TestContainerPath,
             testContainer.Discoverer,
-            testContainer.TL,
             testContainer._logger)
     {
     }
@@ -69,8 +57,6 @@ public class TestContainer : BaseTestContainer, ITestContainer
     public bool IsAppContainerTestContainer => false;
 
     public DateTime TimeStamp { get; }
-
-    public TL TL { get; }
 
     public int CompareTo(ITestContainer other)
     {

@@ -5,7 +5,6 @@ using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Build;
-using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 
 namespace KS.RustAnalyzer.Editor;
 
@@ -22,9 +21,6 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
 
     [Import]
     public IBuildOutputSink OutputPane { get; set; }
-
-    [Import]
-    public LegacyLogger L { get; set; }
 
     [Import]
     public ILoggerFactory LoggerFactory { get; set; }
@@ -50,9 +46,8 @@ public sealed class FileContextProviderFactory : IWorkspaceProviderFactory<IFile
             return provider;
         }
 
-        var logger = LoggerFactory?.CreateLogger(
-            typeof(FileContextProviderFactory).FullName)
-            ?? LegacyLoggerBridge.ToMelLogger(L);
+        var logger = LoggerFactory.CreateLogger(
+            typeof(FileContextProviderFactory).FullName);
         logger.LogInformation(
             new EventId(1, "ProviderCreated"),
             "Creating {ProviderType}.",

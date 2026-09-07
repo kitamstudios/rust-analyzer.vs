@@ -21,28 +21,8 @@ public class MetadataService : IMetadataService, IDisposable
     private ConcurrentDictionary<PathEx, Workspace.Package> _packageCache = new();
     private bool _disposedValue;
 
-    public MetadataService(IToolchainService cargoService, PathEx workspaceRoot, TL tl)
-        : this(
-            cargoService,
-            workspaceRoot,
-            LegacyLoggerBridge.ToMelLogger(
-                EnsureArg.IsNotNull(tl, nameof(tl)).L),
-            syncEvents: false)
-    {
-    }
-
     public MetadataService(IToolchainService cargoService, PathEx workspaceRoot, MelLogger logger)
         : this(cargoService, workspaceRoot, logger, syncEvents: false)
-    {
-    }
-
-    protected MetadataService(IToolchainService cargoService, PathEx workspaceRoot, TL tl, bool syncEvents = false)
-        : this(
-            cargoService,
-            workspaceRoot,
-            LegacyLoggerBridge.ToMelLogger(
-                EnsureArg.IsNotNull(tl, nameof(tl)).L),
-            syncEvents)
     {
     }
 

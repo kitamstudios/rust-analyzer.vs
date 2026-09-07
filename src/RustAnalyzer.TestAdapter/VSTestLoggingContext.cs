@@ -8,9 +8,6 @@ namespace KS.RustAnalyzer.TestAdapter;
 
 internal sealed class VSTestLoggingContext : IDisposable
 {
-    private const string LegacyCategory =
-        "KS.RustAnalyzer.TestAdapter.Legacy";
-
     private readonly LoggerFactory _loggerFactory;
     private readonly VSTestLoggerProvider _provider;
     private readonly IDisposable _scope;
@@ -25,14 +22,10 @@ internal sealed class VSTestLoggingContext : IDisposable
         _loggerFactory = new LoggerFactory(
             new[] { _provider, },
             new LoggerFilterOptions { MinLevel = LogLevel.Information, });
-        LegacyLogger = new TestAdapterLogger(
-            _loggerFactory.CreateLogger(LegacyCategory));
         _scope = _loggerFactory
             .CreateLogger<VSTestLoggingContext>()
             .BeginScope("VSTest invocation {Operation}", operation);
     }
-
-    internal Common.ILogger LegacyLogger { get; }
 
     void IDisposable.Dispose()
     {

@@ -14,7 +14,6 @@ using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TestWindow.Extensibility;
 using Microsoft.VisualStudio.Threading;
@@ -24,7 +23,6 @@ using Microsoft.VisualStudio.Workspace.Debug;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 using Moq;
 using Xunit;
-using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 using OpenFolderTestContainer = KS.RustAnalyzer.TestAdapter.TestContainer;
 
 namespace KS.RustAnalyzer.UnitTests.Infrastructure;
@@ -38,8 +36,6 @@ public sealed class TestContainerLoggingTests
         using var readiness = await ReadyFixture.CreateAsync();
         var provider = new DisposeTrackingLoggerProvider();
         var factory = new LoggerFactory(new[] { provider, });
-        var legacy = new Mock<LegacyLogger>(MockBehavior.Strict);
-        var telemetry = new RecordingFeatureUsageTelemetry();
         var metadata = CreateMetadataService(
             Task.FromResult<IEnumerable<Workspace.Package>>(
                 Array.Empty<Workspace.Package>()));
@@ -52,11 +48,6 @@ public sealed class TestContainerLoggingTests
         var testContainerPath = CreateTestContainerFile();
         var discoverer = new TestContainerDiscoverer(
             () => workspaceService.Object,
-            new TL
-            {
-                L = legacy.Object,
-                T = telemetry,
-            },
             factory,
             readiness.Policy,
             readiness.Context.Factory);
@@ -104,7 +95,6 @@ public sealed class TestContainerLoggingTests
             snapshot.Source.Should().Be(container.Source);
             snapshot.TestContainerPath.Should().Be(container.TestContainerPath);
             snapshot.Discoverer.Should().BeSameAs(discoverer);
-            snapshot.TL.Should().BeSameAs(container.TL);
             snapshot.CompareTo(container).Should().Be(0);
 
             File.Delete(testContainerPath);
@@ -164,7 +154,6 @@ public sealed class TestContainerLoggingTests
                 .Which;
             postDisposeSnapshot.Source.Should().Be(container.Source);
             postDisposeSnapshot.Discoverer.Should().BeSameAs(discoverer);
-            postDisposeSnapshot.TL.Should().BeSameAs(container.TL);
 
             var entries = provider.Recorder.Entries.ToArray();
             entries.Should().HaveCount(18);
@@ -293,9 +282,6 @@ public sealed class TestContainerLoggingTests
                 .Should()
                 .OnlyContain(entry => entry.Exception == null);
 
-            legacy.VerifyNoOtherCalls();
-            telemetry.Events.Should().BeEmpty();
-
             factory.Dispose();
             provider.IsDisposed.Should().BeFalse();
             provider.Dispose();
@@ -333,15 +319,9 @@ public sealed class TestContainerLoggingTests
                 return pane.Object;
             });
         using var factory = new VsixLoggerFactory(provider);
-        var telemetry = new RecordingFeatureUsageTelemetry();
         var workspaceService = CreateWorkspaceService(() => null);
         using var discoverer = new TestContainerDiscoverer(
             () => workspaceService.Object,
-            new TL
-            {
-                L = Mock.Of<LegacyLogger>(),
-                T = telemetry,
-            },
             factory,
             readiness.Policy,
             readiness.Context.Factory);
@@ -360,8 +340,6 @@ public sealed class TestContainerLoggingTests
         writes.Should().OnlyContain(value =>
             value.Contains(typeof(TestContainerDiscoverer).FullName));
         pane.Verify(value => value.Activate(), Times.Never);
-        telemetry.Events.Should().BeEmpty();
-
         var importingConstructor = typeof(TestContainerDiscoverer)
             .GetConstructors()
             .Single(constructor => constructor.GetCustomAttributes(
@@ -393,14 +371,8 @@ public sealed class TestContainerLoggingTests
         var workspace = CreateWorkspace(metadata.Object);
         var workspaceService = CreateWorkspaceService(
             () => workspace.Object);
-        var telemetry = new RecordingFeatureUsageTelemetry();
         var discoverer = new TestContainerDiscoverer(
             () => workspaceService.Object,
-            new TL
-            {
-                L = Mock.Of<LegacyLogger>(),
-                T = telemetry,
-            },
             factory,
             readiness.Policy,
             readiness.Context.Factory);
@@ -428,83 +400,6 @@ public sealed class TestContainerLoggingTests
             value => value.TestContainerUpdated +=
                 It.IsAny<EventHandler<PathEx>>(),
             Times.Never);
-        telemetry.Events.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task RetainedLegacyConstructorsRouteEachInvocationOnceAsync()
-    {
-        using var readiness = await ReadyFixture.CreateAsync();
-        using var provider = new RecordingLoggerProvider();
-        using var factory = new LoggerFactory(new[] { provider, });
-        LegacyLogger legacy = new LegacyLoggerBridge(
-            factory.CreateLogger("Legacy.TestContainers"));
-        var telemetry = new RecordingFeatureUsageTelemetry();
-        var tl = new TL
-        {
-            L = legacy,
-            T = telemetry,
-        };
-        var workspaceService = CreateWorkspaceService(() => null);
-        var discoverer = new TestContainerDiscoverer(
-            () => workspaceService.Object,
-            tl,
-            readiness.Policy,
-            readiness.Context.Factory);
-        var testContainerPath = CreateTestContainerFile();
-
-        try
-        {
-            await discoverer.Initialization;
-            var container = new OpenFolderTestContainer(
-                testContainerPath,
-                Mock.Of<ITestContainerDiscoverer>(),
-                tl);
-            container.CompareTo(container).Should().Be(0);
-
-            provider.Entries.Should().HaveCount(3);
-            discoverer.Dispose();
-            provider.Entries.Should().HaveCount(4);
-            provider.Entries.Should().OnlyContain(entry =>
-                entry.Category == "Legacy.TestContainers"
-                && entry.EventId == new EventId(0, null)
-                && entry.Template == "{0}");
-            telemetry.Events.Should().BeEmpty();
-
-            typeof(OpenFolderTestContainer).GetConstructor(
-                    new[]
-                    {
-                        typeof(PathEx),
-                        typeof(ITestContainerDiscoverer),
-                        typeof(TL),
-                    })
-                .Should()
-                .NotBeNull();
-            typeof(TestContainerDiscoverer).GetConstructor(
-                    new[]
-                    {
-                        typeof(Func<IVsFolderWorkspaceService>),
-                        typeof(TL),
-                        typeof(PrerequisiteAvailabilityPolicy),
-                        typeof(JoinableTaskFactory),
-                    })
-                .Should()
-                .NotBeNull();
-            typeof(TestContainerDiscoverer).GetConstructor(
-                    new[]
-                    {
-                        typeof(SVsServiceProvider),
-                        typeof(LegacyLogger),
-                        typeof(PrerequisiteAvailabilityPolicy),
-                    })
-                .Should()
-                .NotBeNull();
-        }
-        finally
-        {
-            discoverer.Dispose();
-            File.Delete(testContainerPath);
-        }
     }
 
     private static RecordingLogEntry[] AssertContract(
@@ -638,7 +533,7 @@ public sealed class TestContainerLoggingTests
             State = new PrerequisiteProcessState(Context.Factory);
             Policy = new PrerequisiteAvailabilityPolicy(
                 State,
-                Mock.Of<LegacyLogger>());
+                Mock.Of<Microsoft.Extensions.Logging.ILogger>());
         }
 
         public JoinableTaskContext Context { get; }

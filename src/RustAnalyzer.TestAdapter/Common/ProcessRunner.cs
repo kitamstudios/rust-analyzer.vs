@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using EnsureThat;
 using Microsoft.Extensions.Logging;
-using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter.Common;
@@ -337,26 +336,6 @@ public sealed class ProcessRunner : IDisposable
     public static ProcessRunner Run(string filename, string[] arguments, string workingDirectory, IDictionary<string, string> env, CancellationToken cancellationToken)
     {
         return Run(filename, arguments, workingDirectory, env, false, null!, cancellationToken: cancellationToken);
-    }
-
-    public static Task<ProcessRunner> RunWithLogging(
-        string filename,
-        string[] arguments,
-        string workingDirectory,
-        IDictionary<string, string> env,
-        CancellationToken ct,
-        LegacyLogger logger,
-        bool @throw = true)
-    {
-        return RunWithLogging(
-            filename,
-            arguments,
-            workingDirectory,
-            env,
-            ct,
-            LegacyLoggerBridge.ToMelLogger(
-                EnsureArg.IsNotNull(logger, nameof(logger))),
-            @throw);
     }
 
     public static async Task<ProcessRunner> RunWithLogging(

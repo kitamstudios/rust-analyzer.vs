@@ -24,7 +24,7 @@ public class BuildJsonOutputParserTests
     public void IfNotParsableReturnAsIs()
     {
         var jsonOutput = "   Compiling pest v2.5.2";
-        var output = BuildJsonOutputParser.Parse(TestHelpers.ThisTestRoot, jsonOutput, TestHelpers.TL);
+        var output = BuildJsonOutputParser.Parse(TestHelpers.ThisTestRoot, jsonOutput, TestHelpers.Logger);
 
         Approvals.VerifyAll(output.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }
@@ -40,7 +40,7 @@ public class BuildJsonOutputParserTests
     {
         NamerFactory.AdditionalInformation = $"datafile-{dataFile}";
         var jsonOutput = File.ReadAllText(TestHelpers.ThisTestRoot.Combine((PathEx)dataFile));
-        var output = BuildJsonOutputParser.Parse(TestHelpers.ThisTestRoot, jsonOutput, TestHelpers.TL);
+        var output = BuildJsonOutputParser.Parse(TestHelpers.ThisTestRoot, jsonOutput, TestHelpers.Logger);
 
         Approvals.VerifyAll(output.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }
@@ -56,7 +56,7 @@ public class BuildJsonOutputParserTests
     {
         NamerFactory.AdditionalInformation = $"datafile-{dataFile}";
         var jsonOutput = File.ReadAllText(TestHelpers.ThisTestRoot.Combine((PathEx)dataFile));
-        var output = BuildJsonOutputParser.Parse((PathEx)@"d:\src\dpt\pls\test_app", jsonOutput, TestHelpers.TL);
+        var output = BuildJsonOutputParser.Parse((PathEx)@"d:\src\dpt\pls\test_app", jsonOutput, TestHelpers.Logger);
 
         Approvals.VerifyAll(output.Select(o => o.SerializeObject(Formatting.Indented)), label: string.Empty);
     }

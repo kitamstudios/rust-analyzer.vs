@@ -37,15 +37,6 @@ public static class BuildJsonOutputParser
     private static readonly Regex CompilerArtifactMessageCracker2 =
         new(@"^(.*)\+(.*)@(.*)$", RegexOptions.Compiled);
 
-    public static BuildMessage[] Parse(PathEx workspaceRoot, string jsonLine, TL tl)
-    {
-        return Parse(
-            workspaceRoot,
-            jsonLine,
-            LegacyLoggerBridge.ToMelLogger(
-                EnsureArg.IsNotNull(tl, nameof(tl)).L));
-    }
-
     public static BuildMessage[] Parse(PathEx workspaceRoot, string jsonLine, MelLogger logger)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));

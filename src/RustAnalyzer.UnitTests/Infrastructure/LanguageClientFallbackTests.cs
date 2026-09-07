@@ -33,7 +33,6 @@ public sealed class LanguageClientFallbackTests
             new[] { provider, });
         using var client = new ProcessLanguageClient(context.Factory)
         {
-            L = Mock.Of<ILogger>(),
             LoggerFactory = factory,
             WorkspaceService = Mock.Of<IVsFolderWorkspaceService>(),
         };
@@ -131,39 +130,6 @@ public sealed class LanguageClientFallbackTests
             .NotContainKey("InitializationException");
         fixture.Telemetry.Events.Should().ContainSingle()
             .Which.Outcome.Should().Be(UsageOutcome.Failed);
-    }
-
-    [Fact]
-    public async Task ServerInitializationFailedPreservesExceptionOnLegacyRouteAsync()
-    {
-        using var context = new JoinableTaskContext();
-        var state = new PrerequisiteProcessState(context.Factory);
-        await state.GetOrEvaluateAsync(
-            _ => Task.FromResult(PrerequisiteResult.Success),
-            default);
-        var logger = new RecordingLogger();
-        using var client = new LanguageClient(context.Factory)
-        {
-            AvailabilityPolicy = new PrerequisiteAvailabilityPolicy(
-                state,
-                logger),
-            L = logger,
-        };
-        var expected =
-            new InvalidOperationException("LSP initialization failed.");
-        var initialization = new Mock<ILanguageClientInitializationInfo>();
-        initialization.SetupGet(value => value.InitializationException)
-            .Returns(expected);
-
-        await client.OnServerInitializeFailedAsync(initialization.Object);
-
-        logger.Errors.Should().BeEmpty();
-        var delivery = logger.Lines.Should().ContainSingle().Which;
-        delivery.Arguments.Should().ContainSingle(
-            argument => ReferenceEquals(argument, expected));
-        string.Format(delivery.Format, delivery.Arguments).Should().Be(
-            "Oh no! rust-analyzer failed to activate, now we can't test LSP! :( " +
-            expected);
     }
 
     [Fact]
@@ -366,7 +332,6 @@ public sealed class LanguageClientFallbackTests
                     state,
                     loggerFactory.CreateLogger(
                         typeof(PrerequisiteAvailabilityPolicy).FullName)),
-                L = Mock.Of<ILogger>(),
                 LoggerFactory = loggerFactory,
                 RADownloader = downloader.Object,
                 UsageTelemetry = telemetry,
@@ -432,25 +397,6 @@ public sealed class LanguageClientFallbackTests
             CancellationToken cancellationToken)
         {
             return StartServerAsync(serverPath, cancellationToken);
-        }
-    }
-
-    private sealed class RecordingLogger : ILogger
-    {
-        public List<(string Format, object[] Arguments)> Errors { get; } =
-            new();
-
-        public List<(string Format, object[] Arguments)> Lines { get; } =
-            new();
-
-        public void WriteError(string format, params object[] args)
-        {
-            Errors.Add((format, args));
-        }
-
-        public void WriteLine(string format, params object[] args)
-        {
-            Lines.Add((format, args));
         }
     }
 }

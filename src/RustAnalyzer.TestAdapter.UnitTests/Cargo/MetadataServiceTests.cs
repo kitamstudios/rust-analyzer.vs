@@ -250,7 +250,7 @@ public sealed class MetadataServiceTests
         cs = new Mock<IToolchainService>();
         cs.Setup(cs => cs.GetWorkspaceAsync(It.IsAny<PathEx>(), It.IsAny<CancellationToken>()))
             .Returns(CreateWorkspace(manifestPath).ToTask());
-        mds = new MetadataService(cs.Object, workspaceRoot, TestHelpers.TL);
+        mds = new MetadataService(cs.Object, workspaceRoot, TestHelpers.Logger);
     }
 
     private static void CreateTestableMDS(PathEx workspaceRoot, PathEx manifestPath, out Mock<IToolchainService> cs, out IMetadataService mds)
@@ -258,7 +258,7 @@ public sealed class MetadataServiceTests
         cs = new Mock<IToolchainService>();
         cs.Setup(cs => cs.GetWorkspaceAsync(It.IsAny<PathEx>(), It.IsAny<CancellationToken>()))
             .Returns(CreateWorkspace(manifestPath).ToTask());
-        mds = new TestableMDS(cs.Object, workspaceRoot, TestHelpers.TL);
+        mds = new TestableMDS(cs.Object, workspaceRoot, TestHelpers.Logger);
     }
 
     private static Workspace CreateWorkspace(PathEx manifestPath)
@@ -270,8 +270,11 @@ public sealed class MetadataServiceTests
 
     private class TestableMDS : MetadataService
     {
-        public TestableMDS(IToolchainService tcs, PathEx workspaceRoot, TL tl)
-            : base(tcs, workspaceRoot, tl, syncEvents: true)
+        public TestableMDS(
+            IToolchainService tcs,
+            PathEx workspaceRoot,
+            Microsoft.Extensions.Logging.ILogger logger)
+            : base(tcs, workspaceRoot, logger, syncEvents: true)
         {
         }
     }

@@ -241,7 +241,9 @@ public sealed class FeatureUsageBoundaryTests
         CancellationToken cancellationToken,
         Func<Task<bool>> execute)
     {
-        var service = new ToolchainService(telemetry, Mock.Of<ILogger>());
+        var service = new ToolchainService(
+            telemetry,
+            Mock.Of<Microsoft.Extensions.Logging.ILoggerFactory>());
         var method = typeof(ToolchainService).GetMethod(
             "TrackOperationAsync",
             BindingFlags.Instance | BindingFlags.NonPublic);

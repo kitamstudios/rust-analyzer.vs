@@ -9,6 +9,7 @@ using KS.RustAnalyzer.LanguageService;
 using KS.RustAnalyzer.Shell;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -82,6 +83,7 @@ public sealed class FeatureUsageBoundaryTests
             _ => Task.FromResult(PrerequisiteResult.Success),
             default);
         var telemetry = new RecordingFeatureUsageTelemetry();
+        using var loggerFactory = new LoggerFactory();
         var expected = new InvalidOperationException();
         var metadata = new Mock<IMetadataService>();
         metadata.Setup(service => service.GetContainingPackageAsync(
@@ -103,7 +105,7 @@ public sealed class FeatureUsageBoundaryTests
             AvailabilityPolicy = new PrerequisiteAvailabilityPolicy(
                 state,
                 Mock.Of<ILogger>()),
-            L = Mock.Of<ILogger>(),
+            LoggerFactory = loggerFactory,
             UsageTelemetry = telemetry,
         };
         var method = typeof(DebugLaunchTargetProvider).GetMethod(
@@ -261,11 +263,13 @@ public sealed class FeatureUsageBoundaryTests
         downloader.Setup(service => service.GetExePathAsync(
                 It.IsAny<CancellationToken>()))
             .Returns(Task.FromException<PathEx>(exception));
+        using var loggerFactory = new LoggerFactory();
         using var client = new LanguageClient(context.Factory)
         {
             AvailabilityPolicy = new PrerequisiteAvailabilityPolicy(
                 state,
                 Mock.Of<ILogger>()),
+            LoggerFactory = loggerFactory,
             RADownloader = downloader.Object,
             UsageTelemetry = telemetry,
         };

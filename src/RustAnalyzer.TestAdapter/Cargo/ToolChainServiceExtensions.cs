@@ -12,7 +12,6 @@ using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter.Cargo;
@@ -234,19 +233,6 @@ public static class ToolchainServiceExtensions
                 return false;
             }
         }
-    }
-
-    public static Task SetToolchainOverrideAsync(
-        this PathEx workspaceRoot,
-        string toolChain,
-        LegacyLogger logger,
-        CancellationToken ct)
-    {
-        return SetToolchainOverrideAsync(
-            workspaceRoot,
-            toolChain,
-            LegacyLoggerBridge.ToMelLogger(logger),
-            ct);
     }
 
     public static Task SetToolchainOverrideAsync(

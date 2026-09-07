@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,7 +6,9 @@ using FluentAssertions;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Threading;
+using Moq;
 using Xunit;
 using MelEventId = Microsoft.Extensions.Logging.EventId;
 using MelLogLevel = Microsoft.Extensions.Logging.LogLevel;
@@ -108,14 +109,16 @@ public sealed class PrerequisiteAvailabilityPolicyTests
             }
         }
 
-        var logger = new RecordingLogger();
-        var policy = new PrerequisiteAvailabilityPolicy(state, logger);
+        using var logging = new RecordingLoggerFixture();
+        var policy = new PrerequisiteAvailabilityPolicy(
+            state,
+            logging.CreateLogger(typeof(PrerequisiteAvailabilityPolicy)));
 
         policy.IsReady(AutomaticRustPath.LanguageClientActivation).Should().BeFalse();
         policy.IsReady(AutomaticRustPath.LanguageClientActivation).Should().BeFalse();
 
-        logger.Lines.Should().ContainSingle();
-        logger.FormatLines().Single().Should()
+        logging.Lines.Should().ContainSingle();
+        logging.Lines.Single().Message.Should()
             .Contain("language-client activation")
             .And.Contain(status.ToString())
             .And.Contain("this Visual Studio session")
@@ -134,16 +137,17 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         using var context = new JoinableTaskContext();
         var state = new PrerequisiteProcessState(context.Factory);
         await state.GetOrEvaluateAsync(_ => Task.FromResult(PrerequisiteResult.Success), default);
-        var logger = new RecordingLogger();
-        var policy = new PrerequisiteAvailabilityPolicy(state, logger);
+        using var logging = new RecordingLoggerFixture();
+        var policy = new PrerequisiteAvailabilityPolicy(
+            state,
+            logging.CreateLogger(typeof(PrerequisiteAvailabilityPolicy)));
 
         foreach (AutomaticRustPath path in Enum.GetValues(typeof(AutomaticRustPath)))
         {
             policy.IsReady(path).Should().BeTrue();
         }
 
-        logger.Lines.Should().BeEmpty();
-        logger.Errors.Should().BeEmpty();
+        logging.Entries.Should().BeEmpty();
     }
 
     [Fact]
@@ -153,16 +157,18 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         var state = new PrerequisiteProcessState(context.Factory);
         await state.GetOrEvaluateAsync(_ => Task.FromResult(CreateFailedResult()), default);
         state.Suspend();
-        var logger = new RecordingLogger();
-        var policy = new PrerequisiteAvailabilityPolicy(state, logger);
+        using var logging = new RecordingLoggerFixture();
+        var policy = new PrerequisiteAvailabilityPolicy(
+            state,
+            logging.CreateLogger(typeof(PrerequisiteAvailabilityPolicy)));
         var paths = Enum.GetValues(typeof(AutomaticRustPath)).Cast<AutomaticRustPath>().ToArray();
 
         Parallel.ForEach(
             paths.SelectMany(path => Enumerable.Repeat(path, 32)),
             path => policy.IsReady(path).Should().BeFalse());
 
-        logger.Lines.Should().HaveCount(paths.Length);
-        logger.FormatLines().Should().OnlyContain(
+        logging.Lines.Should().HaveCount(paths.Length);
+        logging.Lines.Select(entry => entry.Message).Should().OnlyContain(
             message => message.Contains("Suspended") &&
                 message.Contains("Restart Visual Studio to recheck prerequisites."));
     }
@@ -171,17 +177,17 @@ public sealed class PrerequisiteAvailabilityPolicyTests
     public void InvalidPathIdentityFailsWithoutLogging()
     {
         using var context = new JoinableTaskContext();
-        var logger = new RecordingLogger();
+        using var logging = new RecordingLoggerFixture();
         var policy = new PrerequisiteAvailabilityPolicy(
             new PrerequisiteProcessState(context.Factory),
-            logger);
+            logging.CreateLogger(typeof(PrerequisiteAvailabilityPolicy)));
 
         Action check = () => policy.IsReady((AutomaticRustPath)int.MaxValue);
 
         var exception = check.Should().ThrowExactly<ArgumentOutOfRangeException>().Which;
         exception.ParamName.Should().Be("path");
         exception.Message.Should().Be(new ArgumentOutOfRangeException("path").Message);
-        logger.Lines.Should().BeEmpty();
+        logging.Entries.Should().BeEmpty();
     }
 
     [Fact]
@@ -189,16 +195,18 @@ public sealed class PrerequisiteAvailabilityPolicyTests
     {
         using var context = new JoinableTaskContext();
         var state = new PrerequisiteProcessState(context.Factory);
-        var logger = new RecordingLogger();
-        var policy = new PrerequisiteAvailabilityPolicy(state, logger);
+        using var logging = new RecordingLoggerFixture();
+        var policy = new PrerequisiteAvailabilityPolicy(
+            state,
+            logging.CreateLogger(typeof(PrerequisiteAvailabilityPolicy)));
         policy.ReportSuspended();
         await state.GetOrEvaluateAsync(_ => Task.FromResult(CreateFailedResult()), default);
         state.Suspend();
 
         Parallel.For(0, 64, _ => policy.ReportSuspended());
 
-        logger.Lines.Should().ContainSingle();
-        logger.FormatLines().Single().Should()
+        logging.Lines.Should().ContainSingle();
+        logging.Lines.Single().Message.Should()
             .Contain("entered prerequisite state Suspended")
             .And.Contain("Restart Visual Studio to recheck prerequisites.");
     }
@@ -208,17 +216,18 @@ public sealed class PrerequisiteAvailabilityPolicyTests
     {
         using var context = new JoinableTaskContext();
         var state = new PrerequisiteProcessState(context.Factory);
-        var logger = new RecordingLogger();
-        var policy = new PrerequisiteAvailabilityPolicy(state, logger);
+        using var logging = new RecordingLoggerFixture();
+        var policy = new PrerequisiteAvailabilityPolicy(
+            state,
+            logging.CreateLogger(typeof(PrerequisiteAvailabilityPolicy)));
         var exceptions = Enumerable.Range(0, 32)
             .Select(index => new InvalidOperationException($"InfoBar failure {index}."))
             .ToArray();
 
         Parallel.ForEach(exceptions, policy.ReportInfoBarFailure);
 
-        logger.Errors.Should().ContainSingle();
-        logger.Errors.Single().Arguments.Should().HaveCount(2);
-        logger.Errors.Single().Arguments[1].Should().BeOneOf(exceptions);
+        logging.Errors.Should().ContainSingle();
+        logging.Errors.Single().Exception.Should().BeOneOf(exceptions);
     }
 
     [Fact]
@@ -238,7 +247,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
             default);
         var policy = new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger());
+            Mock.Of<ILogger>());
 
         var backgroundCheck = policy.IsReadyAsync(
             AutomaticRustPath.LanguageClientActivation,
@@ -261,7 +270,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         var state = new PrerequisiteProcessState(context.Factory);
         var policy = new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger());
+            Mock.Of<ILogger>());
 
         (await policy.IsReadyAsync(
             AutomaticRustPath.WorkspaceMetadata,
@@ -278,7 +287,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         var state = new PrerequisiteProcessState(context.Factory);
         var policy = new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger());
+            Mock.Of<ILogger>());
 
         var observation = policy.WaitForReadyAsync(
             AutomaticRustPath.LanguageClientActivation,
@@ -302,7 +311,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         var state = new PrerequisiteProcessState(context.Factory);
         var policy = new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger());
+            Mock.Of<ILogger>());
         var observation = policy.WaitForReadyAsync(
             AutomaticRustPath.WorkspaceMetadata,
             default);
@@ -329,7 +338,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         var state = new PrerequisiteProcessState(context.Factory);
         var policy = new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger());
+            Mock.Of<ILogger>());
         var observation = policy.WaitForReadyAsync(
             AutomaticRustPath.RustTestDiscoveryExecutionHandoff,
             default);
@@ -359,7 +368,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         await state.GetOrEvaluateAsync(_ => Task.FromResult(PrerequisiteResult.Success), default);
         var policy = new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger());
+            Mock.Of<ILogger>());
         cancellation.Cancel();
         Func<Task> check = async () =>
             await policy.IsReadyAsync(
@@ -387,7 +396,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
             default);
         var policy = new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger());
+            Mock.Of<ILogger>());
         var observer = policy.IsReadyAsync(
             AutomaticRustPath.LanguageClientActivation,
             observerCancellation.Token);
@@ -425,7 +434,7 @@ public sealed class PrerequisiteAvailabilityPolicyTests
             packageCancellation.Token);
         var policy = new PrerequisiteAvailabilityPolicy(
             state,
-            new RecordingLogger());
+            Mock.Of<ILogger>());
         var observer = policy.IsReadyAsync(
             AutomaticRustPath.RustTestDiscoveryExecutionHandoff,
             default);
@@ -450,27 +459,5 @@ public sealed class PrerequisiteAvailabilityPolicyTests
                     PrerequisiteFailureKind.CargoNotFound,
                     "Cargo was not found."),
             });
-    }
-
-    private sealed class RecordingLogger : ILogger
-    {
-        public ConcurrentQueue<(string Format, object[] Arguments)> Errors { get; } = new();
-
-        public ConcurrentQueue<(string Format, object[] Arguments)> Lines { get; } = new();
-
-        public void WriteLine(string format, params object[] args)
-        {
-            Lines.Enqueue((format, args));
-        }
-
-        public void WriteError(string format, params object[] args)
-        {
-            Errors.Enqueue((format, args));
-        }
-
-        public string[] FormatLines()
-        {
-            return Lines.Select(line => string.Format(line.Format, line.Arguments)).ToArray();
-        }
     }
 }

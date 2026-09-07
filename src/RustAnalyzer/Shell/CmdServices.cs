@@ -11,7 +11,6 @@ using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
-using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 using MelLogger = Microsoft.Extensions.Logging.ILogger;
 using ShellInterop = Microsoft.VisualStudio.Shell.Interop;
 using WorkspaceBuildMessage = Microsoft.VisualStudio.Workspace.Build.BuildMessage;
@@ -23,7 +22,6 @@ using ToolchainOperation = System.Func<KS.RustAnalyzer.TestAdapter.Common.IToolc
 public sealed class CmdServices
 {
     private IComponentModel2 _mef;
-    private LegacyLogger _l;
     private ILoggerFactory _loggerFactory;
     private MelLogger _logger;
     private ShellInterop.IVsSolution _solution;
@@ -46,8 +44,6 @@ public sealed class CmdServices
     public IBuildOutputSink BuildOutputSink => _buildOutputSink ??= Mef?.GetService<IBuildOutputSink>();
 
     public IComponentModel2 Mef => _mef ??= GetPackage().GetService<SComponentModel, IComponentModel2>(false);
-
-    public LegacyLogger L => _l ??= Mef?.GetService<LegacyLogger>();
 
     public ShellInterop.IVsSolution Solution => _solution ??= GetPackage().GetService<ShellInterop.SVsSolution, ShellInterop.IVsSolution>(false);
 
@@ -119,8 +115,7 @@ public sealed class CmdServices
         _loggerFactory ??= Mef?.GetService<ILoggerFactory>();
 
     private MelLogger Logger =>
-        _logger ??= LoggerFactory?.CreateLogger(typeof(CmdServices).FullName)
-            ?? LegacyLoggerBridge.ToMelLogger(L);
+        _logger ??= LoggerFactory.CreateLogger(typeof(CmdServices).FullName);
 
     private void LogWorkspaceRootUnavailable()
     {

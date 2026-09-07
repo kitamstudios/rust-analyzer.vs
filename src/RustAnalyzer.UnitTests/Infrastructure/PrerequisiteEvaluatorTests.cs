@@ -181,16 +181,16 @@ public sealed class PrerequisiteEvaluatorTests
         const string standardError = "captured stderr secret";
         var probe = new FakePrerequisiteProbe();
         SetFailedProbe(probe, operation, standardOutput, standardError);
-        var logger = new RecordingLogger();
-        var result = await new PreReqsCheckService(probe, logger)
+        using var logging = new RecordingLoggerFixture();
+        var result = await new PreReqsCheckService(
+                probe,
+                logging.Factory)
             .EvaluateAsync(default);
 
         result.Failures.Should().ContainSingle();
         result.Failures[0].Kind.Should().Be(expectedFailure);
-        logger.Errors.Should().ContainSingle();
-        var diagnostic = string.Format(
-            logger.Errors[0].Format,
-            logger.Errors[0].Arguments);
+        logging.Errors.Should().ContainSingle();
+        var diagnostic = logging.Errors.Single().Message;
         diagnostic.Should().Contain(expectedOperation);
         diagnostic.Should().Contain($"Exit code: {expectedExitCode}");
         diagnostic.Should().Contain($"stdout:\n{standardOutput}");
@@ -292,16 +292,14 @@ public sealed class PrerequisiteEvaluatorTests
                 standardOutput,
                 "first\rsecond\u0002\tthird\vfourth\ffifth"),
         };
-        var logger = new RecordingLogger();
+        using var logging = new RecordingLoggerFixture();
 
         await new PreReqsCheckService(
                 probe,
-                logger)
+                logging.Factory)
             .EvaluateAsync(default);
 
-        var diagnostic = string.Format(
-            logger.Errors.Single().Format,
-            logger.Errors.Single().Arguments);
+        var diagnostic = logging.Errors.Single().Message;
         diagnostic.Should().Contain(new string('H', 4 * 1024));
         diagnostic.Should().Contain("\n...[truncated]...\n");
         diagnostic.Should().Contain(new string('T', 4 * 1024));
@@ -320,16 +318,14 @@ public sealed class PrerequisiteEvaluatorTests
             RustupVersionResult = PrerequisiteCommandResult.FailedToStart(
                 new string('S', 3 * 1024) + "\0\u0003"),
         };
-        var startLogger = new RecordingLogger();
+        using var startLogging = new RecordingLoggerFixture();
 
         await new PreReqsCheckService(
                 startProbe,
-                startLogger)
+                startLogging.Factory)
             .EvaluateAsync(default);
 
-        var startDiagnostic = string.Format(
-            startLogger.Errors.Single().Format,
-            startLogger.Errors.Single().Arguments);
+        var startDiagnostic = startLogging.Errors.Single().Message;
         var startError = startDiagnostic
             .Split(new[] { "Start error:\n", "\nstdout:" }, StringSplitOptions.None)[1];
         startError.Should().HaveLength(2 * 1024);
@@ -341,10 +337,10 @@ public sealed class PrerequisiteEvaluatorTests
     [Fact]
     public async Task SuccessfulAndCanceledEvaluationsWriteNoProbeDiagnosticsAsync()
     {
-        var logger = new RecordingLogger();
+        using var logging = new RecordingLoggerFixture();
         var service = new PreReqsCheckService(
             new FakePrerequisiteProbe(),
-            logger);
+            logging.Factory);
 
         var result = await service.EvaluateAsync(default);
         using var cancellation = new CancellationTokenSource();
@@ -354,8 +350,7 @@ public sealed class PrerequisiteEvaluatorTests
 
         result.Should().BeSameAs(PrerequisiteResult.Success);
         await evaluateCanceled.Should().ThrowAsync<OperationCanceledException>();
-        logger.Errors.Should().BeEmpty();
-        logger.Lines.Should().BeEmpty();
+        logging.Entries.Should().BeEmpty();
     }
 
     [Fact]
@@ -606,23 +601,6 @@ public sealed class PrerequisiteEvaluatorTests
             }
 
             throw new InvalidOperationException($"Unexpected command: {Commands.Last()}");
-        }
-    }
-
-    private sealed class RecordingLogger : ILogger
-    {
-        public List<(string Format, object[] Arguments)> Errors { get; } = new();
-
-        public List<(string Format, object[] Arguments)> Lines { get; } = new();
-
-        public void WriteLine(string format, params object[] args)
-        {
-            Lines.Add((format, args));
-        }
-
-        public void WriteError(string format, params object[] args)
-        {
-            Errors.Add((format, args));
         }
     }
 }

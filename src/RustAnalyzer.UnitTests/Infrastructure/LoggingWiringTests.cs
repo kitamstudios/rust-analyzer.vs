@@ -17,7 +17,6 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using Moq;
 using Xunit;
-using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 
 namespace KS.RustAnalyzer.UnitTests.Infrastructure;
 
@@ -260,23 +259,11 @@ public sealed class OutputWindowLoggerProviderTests
                     typeof(OutputWindowLoggerProvider),
                     typeof(VSTestLoggerProvider),
                 });
-        productAssemblies
-            .SelectMany(assembly => assembly.GetTypes())
-            .Where(type => typeof(LegacyLogger).IsAssignableFrom(type))
-            .Where(type => type
-                .GetCustomAttributes<ExportAttribute>()
-                .Any(attribute =>
-                    attribute.ContractType == typeof(LegacyLogger)))
-            .Should()
-            .Equal(typeof(LegacyLoggerBridge));
-
         var loggingTypes = new[]
         {
             typeof(OutputWindowLoggerProvider),
             typeof(VsixLoggerFactory),
             typeof(VSTestLoggerProvider),
-            typeof(TestAdapterLogger),
-            typeof(LegacyLoggerBridge),
         };
         var dependencyTypes = loggingTypes
             .SelectMany(type => type

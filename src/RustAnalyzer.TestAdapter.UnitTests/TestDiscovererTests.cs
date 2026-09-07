@@ -19,7 +19,8 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests;
 [Trait("type", "IntegrationTests")]
 public class TestDiscovererTests : TestsWithLogger
 {
-    private readonly IToolchainService _tcs = new ToolchainService(TestHelpers.TL.T, TestHelpers.TL.L);
+    private readonly IToolchainService _tcs =
+        new ToolchainService(TestHelpers.Telemetry, TestHelpers.LoggerFactory);
 
     public TestDiscovererTests(ITestOutputHelper output)
         : base(output)

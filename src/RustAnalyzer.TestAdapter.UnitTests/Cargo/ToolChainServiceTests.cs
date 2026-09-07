@@ -20,7 +20,8 @@ namespace KS.RustAnalyzer.TestAdapter.UnitTests.Cargo;
 [Trait("type", "IntegrationTests")]
 public sealed class ToolchainServiceTests
 {
-    private readonly IToolchainService _tcs = new ToolchainService(TestHelpers.TL.T, TestHelpers.TL.L);
+    private readonly IToolchainService _tcs =
+        new ToolchainService(TestHelpers.Telemetry, TestHelpers.LoggerFactory);
 
     [Theory]
     [InlineData(@"hello_world")]
@@ -183,7 +184,7 @@ public sealed class ToolchainServiceTests
     {
         using var provider = new RecordingLoggerProvider();
         using var factory = new LoggerFactory(new[] { provider, });
-        var service = new ToolchainService(TestHelpers.TL.T, factory);
+        var service = new ToolchainService(TestHelpers.Telemetry, factory);
         var paths = "hello_world".GetTestPaths("release");
         var testContainerPath = paths.TargetPath
             + (PathEx)"hello_world_hello_world.rusttests";
@@ -254,7 +255,7 @@ public sealed class ToolchainServiceTests
     {
         using var provider = new RecordingLoggerProvider();
         using var factory = new LoggerFactory(new[] { provider, });
-        var service = new ToolchainService(TestHelpers.TL.T, factory);
+        var service = new ToolchainService(TestHelpers.Telemetry, factory);
         var paths = "hello_world".GetTestPaths("release");
         var testContainerPath = paths.TargetPath
             + (PathEx)"hello_world_hello_world.rusttests";
@@ -300,7 +301,7 @@ public sealed class ToolchainServiceTests
     {
         using var provider = new RecordingLoggerProvider();
         using var factory = new LoggerFactory(new[] { provider, });
-        var service = new ToolchainService(TestHelpers.TL.T, factory);
+        var service = new ToolchainService(TestHelpers.Telemetry, factory);
         var paths = "hello_world".GetTestPaths("release");
         var testContainerPath = paths.TargetPath
             + (PathEx)"hello_world_hello_world.rusttests";

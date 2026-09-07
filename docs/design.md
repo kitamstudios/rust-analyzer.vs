@@ -370,11 +370,12 @@ source, manifest, and test-container changes to `MetadataService`.
 MEF exports one shared MEL 2.2 `ILoggerFactory` backed by the standard `LoggerFactory`. Its VSIX
 provider preserves categories and structured log data, defaults to `Information`, and uses one
 coalesced FIFO JTF drain for private Output-window pane creation and writes without activating the
-pane. The legacy custom logger bridges one way into this factory until its callers migrate.
+pane. Production code borrows owner-category MEL loggers directly; no custom logging API, adapter,
+or bridge remains. Retiring those former public contracts was an approved breaking change.
 Standalone VSTest discovery and execution instead create one callback-scoped provider over
-`IMessageLogger`; sends are serialized and stop at provider disposal. Both providers are
-best-effort and in-process only. Build-pane output remains separate. Local logging has no provider,
-decorator, or automatic bridge to `IFeatureUsageTelemetry` or Application Insights.
+`IMessageLogger`; sends are serialized and stop at provider disposal. Both providers are best-effort
+and in-process only. Build-pane output remains separate. Local logging has no provider, decorator,
+or automatic bridge to `IFeatureUsageTelemetry` or Application Insights.
 
 `MetadataService` caches Cargo workspaces/packages and raises package and test-container change
 events. File scanners and context providers translate that model into Visual Studio Open Folder

@@ -22,6 +22,7 @@ using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Commanding;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
@@ -405,7 +406,7 @@ public sealed class UserSurfaceAvailabilityTests
         {
             AvailabilityPolicy = fixture.Policy,
             LazyCargoService = toolchain,
-            L = fixture.Logger,
+            LoggerFactory = fixture.LoggerFactory,
             OutputPane = Mock.Of<IBuildOutputSink>(),
         };
         var provider = factory.CreateProvider(workspace.Object);
@@ -503,12 +504,12 @@ public sealed class UserSurfaceAvailabilityTests
     {
         using var fixture = await PrerequisiteFixture.CreateAsync(status);
         var nodeProvider = new NodeBrowseObjectProvider(
-            fixture.Logger,
+            fixture.LoggerFactory,
             fixture.Policy);
         var debugProvider = new DebugLaunchTargetProvider
         {
             AvailabilityPolicy = fixture.Policy,
-            L = fixture.Logger,
+            LoggerFactory = fixture.LoggerFactory,
             UsageTelemetry = fixture.Telemetry,
         };
 
@@ -526,7 +527,7 @@ public sealed class UserSurfaceAvailabilityTests
         using var fixture = await PrerequisiteFixture.CreateAsync(
             PrerequisiteStatus.Ready);
         var provider = new NodeBrowseObjectProvider(
-            fixture.Logger,
+            fixture.LoggerFactory,
             fixture.Policy);
 
         Action provide = () => provider.ProvideBrowseObject(null);
@@ -554,7 +555,7 @@ public sealed class UserSurfaceAvailabilityTests
         var provider = new DebugLaunchTargetProvider
         {
             AvailabilityPolicy = fixture.Policy,
-            L = fixture.Logger,
+            LoggerFactory = fixture.LoggerFactory,
             UsageTelemetry = fixture.Telemetry,
         };
 
@@ -581,7 +582,7 @@ public sealed class UserSurfaceAvailabilityTests
                 workspaceLookups++;
                 return Mock.Of<Microsoft.VisualStudio.Workspace.VSIntegration.Contracts.IVsFolderWorkspaceService>();
             },
-            new TL { L = fixture.Logger, T = fixture.Telemetry },
+            fixture.LoggerFactory,
             fixture.Policy,
             fixture.Context.Factory);
 
@@ -1058,6 +1059,11 @@ public sealed class UserSurfaceAvailabilityTests
 
             State = new PrerequisiteProcessState(Context.Factory);
             Logger = Mock.Of<ILogger>();
+            var loggerFactory = new Mock<ILoggerFactory>();
+            loggerFactory
+                .Setup(value => value.CreateLogger(It.IsAny<string>()))
+                .Returns(Logger);
+            LoggerFactory = loggerFactory.Object;
             Telemetry = new RecordingFeatureUsageTelemetry();
             Policy = new PrerequisiteAvailabilityPolicy(State, Logger);
         }
@@ -1065,6 +1071,8 @@ public sealed class UserSurfaceAvailabilityTests
         public JoinableTaskContext Context { get; }
 
         public ILogger Logger { get; }
+
+        public ILoggerFactory LoggerFactory { get; }
 
         public SingleThreadedSynchronizationContext MainThreadSynchronizationContext { get; }
 

@@ -26,7 +26,6 @@ using Microsoft.VisualStudio.Workspace.Debug;
 using Microsoft.VisualStudio.Workspace.VSIntegration.UI;
 using Moq;
 using Xunit;
-using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 using WorkspaceModel = KS.RustAnalyzer.TestAdapter.Cargo.Workspace;
 
 namespace KS.RustAnalyzer.UnitTests.Infrastructure;
@@ -69,7 +68,7 @@ public sealed class UserSurfaceLoggingTests
                 .Returns(
                     new PrerequisiteAvailabilityPolicy(
                         new PrerequisiteProcessState(context.Factory),
-                        Mock.Of<LegacyLogger>()));
+                        Mock.Of<Microsoft.Extensions.Logging.ILogger>()));
             AddPackageService(
                 package,
                 typeof(SComponentModel),
@@ -141,7 +140,6 @@ public sealed class UserSurfaceLoggingTests
         var contextFactory = new FileContextProviderFactory
         {
             AvailabilityPolicy = readiness.Policy,
-            L = Mock.Of<LegacyLogger>(),
             LazyCargoService = new Lazy<IToolchainService>(
                 () => Mock.Of<IToolchainService>()),
             LoggerFactory = factory,
@@ -150,7 +148,6 @@ public sealed class UserSurfaceLoggingTests
         var scannerFactory = new FileScannerFactory
         {
             AvailabilityPolicy = readiness.Policy,
-            L = Mock.Of<LegacyLogger>(),
             LoggerFactory = factory,
         };
 
@@ -275,33 +272,6 @@ public sealed class UserSurfaceLoggingTests
     }
 
     [Fact]
-    public async Task NodeLegacyConstructorDeliversOneFaultAsync()
-    {
-        using var readiness = await ReadyFixture.CreateAsync();
-        using var provider = new RecordingLoggerProvider();
-        using var factory = new LoggerFactory(new[] { provider, });
-        LegacyLogger legacy = new LegacyLoggerBridge(
-            factory.CreateLogger("Legacy.Node"));
-        var nodeProvider = new NodeBrowseObjectProvider(
-            legacy,
-            readiness.Policy);
-        var observe = typeof(NodeBrowseObjectProvider).GetMethod(
-            "ObserveUpdate",
-            BindingFlags.Instance | BindingFlags.NonPublic);
-        observe.Should().NotBeNull();
-        observe.Invoke(
-            nodeProvider,
-            new object[]
-            {
-                Task.FromException(
-                    new InvalidOperationException("legacy failure")),
-            });
-
-        provider.Entries.Should().ContainSingle();
-        provider.Entries.Single().Category.Should().Be("Legacy.Node");
-    }
-
-    [Fact]
     public async Task DebuggerLogsStructuredLaunchBranchesAndPreservesNotificationsAsync()
     {
         using var readiness = await ReadyFixture.CreateAsync();
@@ -326,7 +296,6 @@ public sealed class UserSurfaceLoggingTests
             },
             (_, _) => launches++);
         debugProvider.LoggerFactory = factory;
-        debugProvider.L = Mock.Of<LegacyLogger>();
         var telemetry = new RecordingFeatureUsageTelemetry();
         debugProvider.UsageTelemetry = telemetry;
         debugProvider.AvailabilityPolicy = readiness.Policy;
@@ -658,190 +627,6 @@ public sealed class UserSurfaceLoggingTests
             .OnlyHaveUniqueItems();
     }
 
-    [Fact]
-    public async Task RetainedLegacyBoundariesDeliverWithoutDuplicatesAsync()
-    {
-        using var readiness = await ReadyFixture.CreateAsync();
-        using var provider = new RecordingLoggerProvider();
-        using var factory = new LoggerFactory(new[] { provider, });
-        var registry = new Mock<IRegistrySettingsService>();
-        registry.SetupGet(value => value.InfoBarDismissedByUser)
-            .Returns(true);
-        var jtf = typeof(RustAnalyzerPackage).GetField(
-            "_jtf",
-            BindingFlags.Static | BindingFlags.NonPublic);
-        jtf.Should().NotBeNull();
-        var originalJtf = jtf.GetValue(null);
-        try
-        {
-            jtf.SetValue(null, readiness.Context.Factory);
-            await RustAnalyzerPackage.ReleaseSummaryNotification.ShowAsync(
-                registry.Object,
-                new TL
-                {
-                    L = new LegacyLoggerBridge(
-                        factory.CreateLogger("Legacy.ReleaseSummary")),
-                });
-        }
-        finally
-        {
-            jtf.SetValue(null, originalJtf);
-        }
-
-        var launchSettings = new Mock<IPropertySettings>();
-        launchSettings.Setup(value => value.ContainsKey("missing"))
-            .Returns(false);
-        var launchConfiguration =
-            new DebugLaunchTargetProvider.LaunchConfigWrapper(
-                launchSettings.Object,
-                new LegacyLoggerBridge(
-                    factory.CreateLogger("Legacy.LaunchConfig")));
-        ((Func<string>)(() => launchConfiguration["missing"]))
-            .Should()
-            .Throw<KeyNotFoundException>();
-
-        var contextFactory = new FileContextProviderFactory
-        {
-            AvailabilityPolicy = readiness.Policy,
-            L = new LegacyLoggerBridge(
-                factory.CreateLogger("Legacy.FileContextFactory")),
-            LazyCargoService = new Lazy<IToolchainService>(
-                () => Mock.Of<IToolchainService>()),
-            OutputPane = Mock.Of<IBuildOutputSink>(),
-        };
-        contextFactory.CreateProvider(Mock.Of<IWorkspace>());
-        var scannerFactory = new FileScannerFactory
-        {
-            AvailabilityPolicy = readiness.Policy,
-            L = new LegacyLoggerBridge(
-                factory.CreateLogger("Legacy.FileScannerFactory")),
-        };
-        scannerFactory.CreateProvider(Mock.Of<IWorkspace>());
-
-        var commandServices = new CmdServices(() => null);
-        SetField(
-            commandServices,
-            typeof(CmdServices),
-            "_mef",
-            Mock.Of<IComponentModel2>());
-        SetField(
-            commandServices,
-            typeof(CmdServices),
-            "_l",
-            new LegacyLoggerBridge(
-                factory.CreateLogger("Legacy.CmdServices")));
-        var solution = new Mock<IVsSolution>();
-        string solutionDirectory = null;
-        string solutionFile = null;
-        string userOptionsFile = null;
-        solution.Setup(value => value.GetSolutionInfo(
-                out solutionDirectory,
-                out solutionFile,
-                out userOptionsFile))
-            .Returns(Microsoft.VisualStudio.VSConstants.E_FAIL);
-        SetField(
-            commandServices,
-            typeof(CmdServices),
-            "_solution",
-            solution.Object);
-        var debugger = new Mock<IVsDebugger>();
-        debugger.Setup(value => value.GetMode(
-                It.IsAny<DBGMODE[]>()))
-            .Returns(Microsoft.VisualStudio.VSConstants.E_FAIL);
-        SetField(
-            commandServices,
-            typeof(CmdServices),
-            "_debugger",
-            debugger.Object);
-        var threadContext = typeof(ThreadHelper).GetField(
-            "_joinableTaskContextCache",
-            BindingFlags.Static | BindingFlags.NonPublic);
-        threadContext.Should().NotBeNull();
-        var originalThreadContext = threadContext.GetValue(null);
-        var genericThreadHelper = typeof(ThreadHelper).GetField(
-            "_generic",
-            BindingFlags.Static | BindingFlags.NonPublic);
-        genericThreadHelper.Should().NotBeNull();
-        var originalGenericThreadHelper =
-            genericThreadHelper.GetValue(null);
-        try
-        {
-            threadContext.SetValue(null, readiness.Context);
-            genericThreadHelper.SetValue(null, null);
-            typeof(ThreadHelper).GetMethod(
-                    "SetUIThread",
-                    BindingFlags.Static | BindingFlags.NonPublic)
-                .Invoke(null, Array.Empty<object>());
-            ((Func<PathEx>)(() => commandServices.GetWorkspaceRoot()))
-                .Should()
-                .Throw<InvalidOperationException>();
-            commandServices.IsIdeInDesignMode().Should().BeFalse();
-        }
-        finally
-        {
-            genericThreadHelper.SetValue(
-                null,
-                originalGenericThreadHelper);
-            threadContext.SetValue(null, originalThreadContext);
-        }
-
-        LegacyLogger commandLogger = new LegacyLoggerBridge(
-            factory.CreateLogger("Legacy.Command"));
-        var commandFailure = new InvalidOperationException("command failure");
-        var command = new FaultingCommand(
-            readiness.State,
-            commandFailure);
-        var nullFactory = new Mock<ILoggerFactory>();
-        nullFactory.Setup(value => value.CreateLogger(It.IsAny<string>()))
-            .Returns((Microsoft.Extensions.Logging.ILogger)null);
-        SetBaseField(command, "_loggerFactory", nullFactory.Object);
-        SetBaseField(command, "_logger", commandLogger);
-
-        ((Action)command.Invoke)
-            .Should()
-            .Throw<InvalidOperationException>()
-            .Which.Should().BeSameAs(commandFailure);
-
-        provider.Entries.Where(entry =>
-                entry.Category == "Legacy.ReleaseSummary")
-            .Select(entry => entry.Message)
-            .Should()
-            .Equal(
-                "Attempting to show release notes...",
-                "... Not showing release notes as it has already been dismissed by the user.");
-        provider.Entries.Where(entry =>
-                entry.Category == "Legacy.LaunchConfig")
-            .Should()
-            .ContainSingle();
-        provider.Entries.Where(entry =>
-                entry.Category == "Legacy.FileContextFactory")
-            .Should()
-            .ContainSingle();
-        provider.Entries.Where(entry =>
-                entry.Category == "Legacy.FileScannerFactory")
-            .Should()
-            .ContainSingle();
-        provider.Entries.Where(entry =>
-                entry.Category == "Legacy.Command")
-            .Should()
-            .ContainSingle();
-        provider.Entries.Where(entry =>
-                entry.Category == "Legacy.CmdServices")
-            .Select(entry => entry.Message)
-            .Should()
-            .Equal(
-                "Unable to determine workspace root.",
-                "Unable to determine debugger mode.");
-        provider.Entries
-            .GroupBy(entry => entry.Category)
-            .Should()
-            .OnlyContain(group => group.Count() ==
-                (group.Key == "Legacy.ReleaseSummary"
-                    || group.Key == "Legacy.CmdServices"
-                        ? 2
-                        : 1));
-    }
-
     private static RustAnalyzerPackage CreatePackage(
         JoinableTaskContext context)
     {
@@ -1155,7 +940,7 @@ public sealed class UserSurfaceLoggingTests
                 state,
                 new PrerequisiteAvailabilityPolicy(
                     state,
-                    Mock.Of<LegacyLogger>()));
+                    Mock.Of<Microsoft.Extensions.Logging.ILogger>()));
         }
 
         public void Dispose()

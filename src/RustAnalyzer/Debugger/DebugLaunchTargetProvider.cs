@@ -15,7 +15,6 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Debug;
 using static Microsoft.VisualStudio.VSConstants;
-using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.Debugger;
@@ -57,9 +56,6 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
 
     public const string ProviderType = "{72D3FCEF-1111-4266-B8DD-D3ED06E35A2B}";
     public static readonly Guid ProviderTypeGuid = new(ProviderType);
-
-    [Import]
-    public LegacyLogger L { get; set; }
 
     [Import]
     public ILoggerFactory LoggerFactory { get; set; }
@@ -251,11 +247,6 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
         private readonly IPropertySettings _lc;
         private readonly MelLogger _logger;
 
-        public LaunchConfigWrapper(IPropertySettings lc, LegacyLogger logger)
-            : this(lc, LegacyLoggerBridge.ToMelLogger(logger))
-        {
-        }
-
         public LaunchConfigWrapper(IPropertySettings lc, MelLogger logger)
         {
             _lc = lc;
@@ -286,10 +277,8 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
     }
 
     private MelLogger Logger =>
-        LoggerFactory?.CreateLogger(typeof(DebugLaunchTargetProvider).FullName)
-            ?? LegacyLoggerBridge.ToMelLogger(L);
+        LoggerFactory.CreateLogger(typeof(DebugLaunchTargetProvider).FullName);
 
     private MelLogger LaunchConfigLogger =>
-        LoggerFactory?.CreateLogger(typeof(LaunchConfigWrapper).FullName)
-            ?? LegacyLoggerBridge.ToMelLogger(L);
+        LoggerFactory.CreateLogger(typeof(LaunchConfigWrapper).FullName);
 }

@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.VSIntegration.UI;
-using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.NodeEnhancements;
@@ -30,15 +29,6 @@ public sealed class NodeBrowseObjectProvider : INodeBrowseObjectProvider
         [Import] PrerequisiteAvailabilityPolicy availabilityPolicy)
         : this(
             loggerFactory.CreateLogger(typeof(NodeBrowseObjectProvider).FullName),
-            availabilityPolicy)
-    {
-    }
-
-    public NodeBrowseObjectProvider(
-        [Import] ILogger l,
-        [Import] PrerequisiteAvailabilityPolicy availabilityPolicy)
-        : this(
-            LegacyLoggerBridge.ToMelLogger(l),
             availabilityPolicy)
     {
     }

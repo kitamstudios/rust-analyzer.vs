@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using EnsureThat;
 using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.Extensions.Logging;
-using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.Infrastructure;
@@ -40,20 +39,6 @@ public sealed class PreReqsCheckService : IPreReqsCheckService
             loggerFactory.CreateLogger(typeof(PreReqsCheckService).FullName),
             loggerFactory.CreateLogger(
                 typeof(DiagnosticPrerequisiteProbe).FullName))
-    {
-    }
-
-    public PreReqsCheckService(LegacyLogger logger)
-        : this(new VisualStudioPrerequisiteProbe(), logger)
-    {
-    }
-
-    public PreReqsCheckService(IPrerequisiteProbe probe, LegacyLogger logger)
-        : this(
-            probe,
-            LegacyLoggerBridge.ToMelLogger(
-                EnsureArg.IsNotNull(logger, nameof(logger))),
-            LegacyLoggerBridge.ToMelLogger(logger))
     {
     }
 

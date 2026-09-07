@@ -19,7 +19,6 @@ using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.Infrastructure;
@@ -94,17 +93,6 @@ public class RlsInstallerService : IRlsInstallerService
         : this(
             registry,
             loggerFactory.CreateLogger(typeof(RlsInstallerService).FullName),
-            availabilityPolicy)
-    {
-    }
-
-    public RlsInstallerService(
-        IRegistrySettingsService registry,
-        LegacyLogger logger,
-        PrerequisiteAvailabilityPolicy availabilityPolicy)
-        : this(
-            registry,
-            LegacyLoggerBridge.ToMelLogger(logger),
             availabilityPolicy)
     {
     }
