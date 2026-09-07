@@ -62,19 +62,65 @@ public sealed class FeatureUsageBoundaryTests
     }
 
     [Fact]
-    public void ExecutionReportsOneSuccessfulInvocationWithoutDiscovery()
+    public void ExecutionSeparatesCallbackLoggingFromTelemetry()
     {
         var telemetry = new RecordingFeatureUsageTelemetry();
+        var messages = new List<(TestMessageLevel Level, string Message)>();
+        var frameworkHandle = new Mock<IFrameworkHandle>();
+        frameworkHandle
+            .Setup(
+                handle => handle.SendMessage(
+                    It.IsAny<TestMessageLevel>(),
+                    It.IsAny<string>()))
+            .Callback<TestMessageLevel, string>(
+                (level, message) => messages.Add((level, message)));
 
         new TestExecutor(telemetry).RunTests(
             Array.Empty<PathEx>(),
             Mock.Of<IRunContext>(),
-            Mock.Of<IFrameworkHandle>());
+            frameworkHandle.Object);
 
         telemetry.Events.Should().ContainSingle()
             .Which.Should().Match<(UsageOperation Operation, UsageOutcome Outcome, TimeSpan Duration)>(
                 value => value.Operation == UsageOperation.TestAdapterExecute
                     && value.Outcome == UsageOutcome.Succeeded);
+        messages.Should().ContainSingle();
+        messages[0].Level.Should().Be(TestMessageLevel.Informational);
+        messages[0].Message.Should().Contain(
+            "KS.RustAnalyzer.TestAdapter.TestExecutor");
+        messages[0].Message.Should().Contain(
+            "EventId=2(SourceExecutionStarted)");
+        messages[0].Message.Should().Contain(
+            "Template: RunTests starting. Executing {SourceCount} sources.");
+        messages[0].Message.Should().Contain("Properties: SourceCount=0");
+        messages[0].Message.Should().Contain(
+            "VSTest invocation Execution");
+    }
+
+    [Fact]
+    public void LoggingFailureDoesNotReplaceExecutionFailure()
+    {
+        var telemetry = new RecordingFeatureUsageTelemetry();
+        var productException =
+            new InvalidOperationException("product failure");
+        var frameworkHandle = new Mock<IFrameworkHandle>();
+        frameworkHandle
+            .Setup(
+                handle => handle.SendMessage(
+                    It.IsAny<TestMessageLevel>(),
+                    It.IsAny<string>()))
+            .Throws(new InvalidOperationException("logging failure"));
+        Action execute = () => new TestExecutor(telemetry).RunTests(
+            new ThrowingEnumerable<PathEx>(productException),
+            Mock.Of<IRunContext>(),
+            frameworkHandle.Object);
+
+        execute.Should().Throw<InvalidOperationException>()
+            .Which.Should().BeSameAs(productException);
+        telemetry.Events.Should().ContainSingle()
+            .Which.Should().Match<(UsageOperation Operation, UsageOutcome Outcome, TimeSpan Duration)>(
+                value => value.Operation == UsageOperation.TestAdapterExecute
+                    && value.Outcome == UsageOutcome.Failed);
     }
 
     [Theory]

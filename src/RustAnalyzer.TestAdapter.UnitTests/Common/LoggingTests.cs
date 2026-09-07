@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -109,6 +110,62 @@ public sealed class VSTestLoggerProviderTests
                 .LogError(productException, "Product operation failed"));
 
         failure.Should().BeNull();
+    }
+
+    [Fact]
+    public void CallbackContextSharesScopeAndStopsLateMessages()
+    {
+        var messageLogger = new RecordingMessageLogger();
+        var contextType = typeof(TestAdapterLogger).Assembly.GetType(
+            "KS.RustAnalyzer.TestAdapter.VSTestLoggingContext");
+        contextType.Should().NotBeNull();
+        var context = (IDisposable)Activator.CreateInstance(
+            contextType,
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            null,
+            new object[] { messageLogger, "Execution" },
+            null);
+        var createLogger = contextType.GetMethod(
+            "CreateLogger",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        var legacyLoggerProperty = contextType.GetProperty(
+            "LegacyLogger",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        createLogger.Should().NotBeNull();
+        legacyLoggerProperty.Should().NotBeNull();
+        var logger = (Microsoft.Extensions.Logging.ILogger)createLogger.Invoke(
+            context,
+            new object[] { typeof(TestExecutor) });
+        var legacyLogger =
+            (KS.RustAnalyzer.TestAdapter.Common.ILogger)legacyLoggerProperty.GetValue(context);
+
+        logger.LogInformation(
+            new EventId(21, "ContextMessage"),
+            "Context message {Value}",
+            42);
+        legacyLogger.WriteLine("Legacy message {0}", 43);
+        context.Dispose();
+        logger.LogInformation("late");
+        legacyLogger.WriteLine("late");
+
+        messageLogger.Messages.Should().HaveCount(2);
+        messageLogger.Messages.Select(message => message.Level).Should().Equal(
+            TestMessageLevel.Informational,
+            TestMessageLevel.Informational);
+        messageLogger.Messages[0].Message.Should().Contain(
+            "KS.RustAnalyzer.TestAdapter.TestExecutor EventId=21(ContextMessage)");
+        messageLogger.Messages[0].Message.Should().Contain(
+            "Template: Context message {Value}");
+        messageLogger.Messages[0].Message.Should().Contain(
+            "Properties: Value=42");
+        messageLogger.Messages[0].Message.Should().Contain(
+            "VSTest invocation Execution");
+        messageLogger.Messages[1].Message.Should().Contain(
+            "KS.RustAnalyzer.TestAdapter.Legacy EventId=0");
+        messageLogger.Messages[1].Message.Should().Contain(
+            "Legacy message 43");
+        messageLogger.Messages[1].Message.Should().Contain(
+            "VSTest invocation Execution");
     }
 
     [Fact]

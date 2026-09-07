@@ -3,6 +3,7 @@ using KS.RustAnalyzer.TestAdapter.Common;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter;
 
@@ -22,6 +23,11 @@ public sealed class TestAdapterLogger : LegacyLogger, IDisposable
             _loggerFactory.CreateLogger("KS.RustAnalyzer.TestAdapter.Legacy"));
     }
 
+    internal TestAdapterLogger(MelLogger logger)
+    {
+        _logger = new LegacyLoggerBridge(logger);
+    }
+
     public void WriteError(string format, params object[] args)
     {
         _logger.WriteError(format, args);
@@ -34,7 +40,7 @@ public sealed class TestAdapterLogger : LegacyLogger, IDisposable
 
     public void Dispose()
     {
-        _loggerFactory.Dispose();
-        _provider.Dispose();
+        _loggerFactory?.Dispose();
+        _provider?.Dispose();
     }
 }

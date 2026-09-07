@@ -6,7 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.TestAdapter;
 
@@ -29,17 +31,10 @@ public static class TestDiscovererCommon
     /// </summary>
     public static async Task<IEnumerable<(TestSuiteInfo TSI, IEnumerable<TestCase> TCs)>> DiscoverTestCasesFromOneSourceAsync(this TestContainer tc, TL tl, CancellationToken ct)
     {
-        tl.L.WriteLine("Starting discovery of tests from {0}.", tc.ThisPath);
-
-        var ret = new List<(TestSuiteInfo, IEnumerable<TestCase>)>();
-        foreach (var suite in await tc.FindTestsInSourceAsync(tl, ct))
-        {
-            var tsi = await suite;
-            var testCaseInfos = tsi.Tests.Select(t => CreateTestCaseFromTest(tsi.Container.ThisPath, tsi.Exe, t));
-            ret.Add((tsi, testCaseInfos));
-        }
-
-        return ret;
+        return await tc.DiscoverTestCasesFromOneSourceAsync(
+            tl,
+            LegacyLoggerBridge.ToMelLogger(tl.L),
+            ct);
     }
 
     public static string RustFQN2TestExplorerFQN(this string rustTestFQN, PathEx exe)
@@ -57,6 +52,27 @@ public static class TestDiscovererCommon
     public static string FullyQualifiedNameRustFormat(this TestCase @this) => @this.FullyQualifiedName.StripNamespace().Replace(".", "::");
 
     public static string StripNamespace(this string testName) => string.Join(".", testName.Split('.').Skip(1));
+
+    internal static async Task<IEnumerable<(TestSuiteInfo TSI, IEnumerable<TestCase> TCs)>> DiscoverTestCasesFromOneSourceAsync(
+        this TestContainer tc,
+        TL tl,
+        MelLogger logger,
+        CancellationToken ct)
+    {
+        logger.LogInformation(
+            new EventId(1, "TestCaseDiscoveryStarted"),
+            "Starting discovery of tests from {Source}.",
+            tc.ThisPath);
+        var ret = new List<(TestSuiteInfo, IEnumerable<TestCase>)>();
+        foreach (var suite in await tc.FindTestsInSourceAsync(tl, ct))
+        {
+            var tsi = await suite;
+            var testCaseInfos = tsi.Tests.Select(t => CreateTestCaseFromTest(tsi.Container.ThisPath, tsi.Exe, t));
+            ret.Add((tsi, testCaseInfos));
+        }
+
+        return ret;
+    }
 
     private static TestCase CreateTestCaseFromTest(PathEx testContainer, PathEx testExe, TestSuiteInfo.TestInfo test)
     {
