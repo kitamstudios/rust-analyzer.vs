@@ -218,7 +218,7 @@ Execute one task at a time.
 | T8 | S5 | Add explicit MEL 2.2 ownership, the VSIX Output-window and VSTest providers, factory composition, payload closure, and focused provider tests. | Done | `1d378af` |
 | T9 | S5 | Add transitional VSTest composition and migrate discovery/execution callbacks. | Done | `085fdab` |
 | T10 | S5 | Migrate Cargo parsing, metadata, toolchain, and process logging. | Done | `ff90907` |
-| T11 | S5 | Migrate prerequisite, settings, updater, and language-client logging. | Pending | - |
+| T11 | S5 | Migrate prerequisite, settings, updater, and language-client logging. | Done | `036ba20` |
 | T12 | S5 | Migrate package, debugger, editor, node, and command logging. | Pending | - |
 | T13 | S5 | Migrate Open Folder test-container logging. | Pending | - |
 | T14 | S5 | Remove approved legacy logging APIs and reconcile the final architecture. | Pending | - |
@@ -548,6 +548,13 @@ Execute one task at a time.
 - Propagated nested callback and VSIX loggers without changing factory or scope ownership.
 - Preserved legacy compatibility, process streams, Build output, telemetry, and the 14-file payload.
 - Full verification passed with 541 assembly tests and 18 acceptance outcomes.
+
+### T11 outcome
+
+- Migrated 24 prerequisite, settings, updater, and language-client logs to owner-category MEL.
+- Borrowed the shared VSIX factory while preserving legacy construction and single delivery.
+- Kept LSP transport, notifications, telemetry, MEL 2.2, and the 14-file payload separate.
+- Full verification passed with 558 assembly tests and 18 acceptance outcomes.
 
 ### Telemetry audit
 
