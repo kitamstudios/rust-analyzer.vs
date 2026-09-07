@@ -11,8 +11,10 @@ using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.Shell;
 
@@ -160,7 +162,7 @@ public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToo
         }
 
         await VsCommon.ShowInfoBarAsync(true, FormatInstallationStartedMessage(tcName));
-        var logger = Logger;
+        var logger = MelLogger;
         var telemetry = UsageTelemetry;
         var installation = RustAnalyzerPackage.JTF.RunAsync(
             () => TrackUsageAsync(
@@ -229,7 +231,7 @@ public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToo
 
     private static void ObserveBackgroundOperation(
         Task operation,
-        ILogger logger,
+        MelLogger logger,
         string operationName)
     {
         var observation = operation.ContinueWith(
@@ -244,7 +246,7 @@ public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToo
     }
 
     private static void ReportUnexpectedFault(
-        ILogger logger,
+        MelLogger logger,
         string operation,
         Exception exception)
     {
@@ -253,10 +255,11 @@ public sealed class InstallToolchainCommand : BaseRustAnalyzerCommand<InstallToo
             return;
         }
 
-        logger?.WriteError(
-            "Operation '{0}' failed unexpectedly. Ex: {1}",
-            operation,
-            exception);
+        logger?.LogError(
+            new EventId(2, "BackgroundOperationFailed"),
+            exception,
+            "Operation '{Operation}' failed unexpectedly.",
+            operation);
     }
 }
 
@@ -346,7 +349,10 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
         }
 
         var name = command.Properties[ToolchainNameProperty] as string;
-        var logger = Logger;
+        var logger = MelLogger;
+        var toolchainServiceExtensionsLogger = LoggerFactory?.CreateLogger(
+            typeof(ToolchainServiceExtensions).FullName)
+            ?? logger;
         var telemetry = UsageTelemetry;
         var toolchainSwitch = RustAnalyzerPackage.JTF
             .RunAsync(
@@ -357,7 +363,10 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
                     {
                         if (PrerequisiteState.IsAvailable)
                         {
-                            await ((PathEx)workspaceRoot).SetToolchainOverrideAsync(name, logger, default);
+                            await ((PathEx)workspaceRoot).SetToolchainOverrideAsync(
+                                name,
+                                toolchainServiceExtensionsLogger,
+                                default);
                             return UsageOutcome.Succeeded;
                         }
 
@@ -425,7 +434,7 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
 
     private static void ObserveBackgroundOperation(
         Task operation,
-        ILogger logger,
+        MelLogger logger,
         string operationName)
     {
         var observation = operation.ContinueWith(
@@ -440,7 +449,7 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
     }
 
     private static void ReportUnexpectedFault(
-        ILogger logger,
+        MelLogger logger,
         string operation,
         Exception exception)
     {
@@ -449,9 +458,10 @@ public sealed class SwitchToolchainCommand : BaseRustAnalyzerCommand<SwitchToolc
             return;
         }
 
-        logger?.WriteError(
-            "Operation '{0}' failed unexpectedly. Ex: {1}",
-            operation,
-            exception);
+        logger?.LogError(
+            new EventId(2, "BackgroundOperationFailed"),
+            exception,
+            "Operation '{Operation}' failed unexpectedly.",
+            operation);
     }
 }

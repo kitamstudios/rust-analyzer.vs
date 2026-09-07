@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ApprovalTests;
 using ApprovalTests.Namers;
@@ -13,11 +14,45 @@ using FluentAssertions;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
 using KS.RustAnalyzer.Tests.Common;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Xunit;
 
 public sealed class ToolchainServiceExtensionsTests
 {
+    [Fact]
+    [Trait("type", "IntegrationTests")]
+    public async Task LegacyToolchainOverrideLoggerDeliversEachMessageOnceAsync()
+    {
+        using var provider = new RecordingLoggerProvider();
+        using var factory = new LoggerFactory(new[] { provider, });
+        KS.RustAnalyzer.TestAdapter.Common.ILogger logger =
+            new LegacyLoggerBridge(
+                factory.CreateLogger("Legacy.ToolchainOverride"));
+
+        await TestHelpers.ThisTestRoot.SetToolchainOverrideAsync(
+            string.Empty,
+            logger,
+            CancellationToken.None);
+
+        var entries = provider.Entries.ToArray();
+        entries.Should().HaveCount(3);
+        entries.Should().OnlyContain(
+            entry =>
+                entry.Category == "Legacy.ToolchainOverride"
+                && entry.Level == LogLevel.Information
+                && entry.EventId == default
+                && entry.Exception == null);
+        entries.Count(entry =>
+                entry.Message == "Running: rustup override set ")
+            .Should()
+            .Be(1);
+        entries.Count(entry =>
+                entry.Message == $"Workspace: {TestHelpers.ThisTestRoot}")
+            .Should()
+            .Be(1);
+    }
+
     [Fact]
     [Trait("type", "IntegrationTests")]
     public async Task TestGetActiveToolChainAsync()

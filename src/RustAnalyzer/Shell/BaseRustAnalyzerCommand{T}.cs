@@ -6,8 +6,11 @@ using EnsureThat;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
+using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 using ShellInterop = Microsoft.VisualStudio.Shell.Interop;
 
 namespace KS.RustAnalyzer.Shell;
@@ -19,7 +22,9 @@ public abstract class BaseRustAnalyzerCommand<T> : BaseCommand<T>
     where T : class, new()
 {
     private readonly PrerequisiteProcessState _prerequisiteState;
-    private ILogger _logger;
+    private LegacyLogger _logger;
+    private ILoggerFactory _loggerFactory;
+    private MelLogger _melLogger;
     private PrerequisiteAvailabilityPolicy _availabilityPolicy;
     private IFeatureUsageTelemetry _usageTelemetry;
     private ShellInterop.IVsSolution _solution;
@@ -42,7 +47,13 @@ public abstract class BaseRustAnalyzerCommand<T> : BaseCommand<T>
 
     public CmdServices CmdServices { get; }
 
-    protected ILogger Logger => _logger ??= Package.GetService<SComponentModel, IComponentModel2>(false)?.GetService<ILogger>();
+    protected LegacyLogger Logger => _logger ??= Package.GetService<SComponentModel, IComponentModel2>(false)?.GetService<LegacyLogger>();
+
+    protected ILoggerFactory LoggerFactory => _loggerFactory ??= Package.GetService<SComponentModel, IComponentModel2>(false)?.GetService<ILoggerFactory>();
+
+    protected MelLogger MelLogger =>
+        _melLogger ??= LoggerFactory?.CreateLogger(typeof(T).FullName)
+            ?? LegacyLoggerBridge.ToMelLogger(Logger);
 
     protected IFeatureUsageTelemetry UsageTelemetry => _usageTelemetry ??= Package.GetService<SComponentModel, IComponentModel2>(false)?.GetService<IFeatureUsageTelemetry>();
 
@@ -141,11 +152,17 @@ public abstract class BaseRustAnalyzerCommand<T> : BaseCommand<T>
         }
         catch (Exception e)
         {
-            Logger?.WriteError(
-                "Operation '{0}' failed unexpectedly. Ex: {1}",
-                "BaseRustAnalyzerCommand.Execute",
-                e);
+            LogCommandExecutionFailed(e);
             throw;
         }
+    }
+
+    private void LogCommandExecutionFailed(Exception exception)
+    {
+        MelLogger.LogError(
+            new EventId(1, "CommandExecutionFailed"),
+            exception,
+            "Operation '{Operation}' failed unexpectedly.",
+            "BaseRustAnalyzerCommand.Execute");
     }
 }

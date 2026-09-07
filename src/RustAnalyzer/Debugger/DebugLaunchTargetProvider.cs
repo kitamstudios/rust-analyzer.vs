@@ -9,11 +9,14 @@ using System.Threading.Tasks;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Debug;
 using static Microsoft.VisualStudio.VSConstants;
+using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.Debugger;
 
@@ -21,11 +24,45 @@ namespace KS.RustAnalyzer.Debugger;
 [ExportLaunchDebugTarget(LaunchDebugTargetProviderOptions.IsRuntimeSupportContext, ProviderType, new[] { ".exe" }, ProviderPriority.Lowest)]
 public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
 {
+    private readonly Func<PathEx, CancellationToken, Task<(PathEx Bin, PathEx Lib)>>
+        _getBinAndLibPathsAsync;
+
+    private readonly Func<string, bool> _fileExists;
+
+    private readonly Action<IServiceProvider, VsDebugTargetInfo> _launchDebugger;
+
+    private readonly Func<string, string, Task> _showMessageBoxAsync;
+
+    public DebugLaunchTargetProvider()
+        : this(
+            File.Exists,
+            VsCommon.ShowMessageBoxAsync,
+            ToolchainServiceExtensions.GetBinAndLibPathsAsync,
+            VsShellUtilities.LaunchDebugger)
+    {
+    }
+
+    private DebugLaunchTargetProvider(
+        Func<string, bool> fileExists,
+        Func<string, string, Task> showMessageBoxAsync,
+        Func<PathEx, CancellationToken, Task<(PathEx Bin, PathEx Lib)>>
+            getBinAndLibPathsAsync,
+        Action<IServiceProvider, VsDebugTargetInfo> launchDebugger)
+    {
+        _fileExists = fileExists;
+        _showMessageBoxAsync = showMessageBoxAsync;
+        _getBinAndLibPathsAsync = getBinAndLibPathsAsync;
+        _launchDebugger = launchDebugger;
+    }
+
     public const string ProviderType = "{72D3FCEF-1111-4266-B8DD-D3ED06E35A2B}";
     public static readonly Guid ProviderTypeGuid = new(ProviderType);
 
     [Import]
-    public ILogger L { get; set; }
+    public LegacyLogger L { get; set; }
+
+    [Import]
+    public ILoggerFactory LoggerFactory { get; set; }
 
     [Import]
     public IFeatureUsageTelemetry UsageTelemetry { get; set; }
@@ -40,7 +77,9 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
             return;
         }
 
-        var lcw = new LaunchConfigWrapper(debugLaunchActionContext.LaunchConfiguration, L);
+        var lcw = new LaunchConfigWrapper(
+            debugLaunchActionContext.LaunchConfiguration,
+            LaunchConfigLogger);
         workspaceContext.JTF.Run(async () => await LaunchDebugTargetAsync(workspaceContext, serviceProvider, lcw, default));
     }
 
@@ -90,17 +129,25 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
             if (target == null)
             {
                 string message = string.Format("Cannot find target '{0}' in '{1}', for profile '{2}'.", targetFQN, package?.FullPath, profile);
-                L.WriteError(message);
-                await VsCommon.ShowMessageBoxAsync(message, diagMessage);
+                Logger.LogError(
+                    new EventId(1, "LaunchTargetNotFound"),
+                    "Cannot find target '{TargetName}' in '{PackagePath}', for profile '{Profile}'.",
+                    targetFQN,
+                    package?.FullPath,
+                    profile);
+                await _showMessageBoxAsync(message, diagMessage);
                 return false;
             }
 
             var processName = target.GetPath(profile);
-            if (!File.Exists(processName))
+            if (!_fileExists(processName))
             {
                 var message = string.Format("Unable to find file: '{0}'.", processName);
-                L.WriteLine(message);
-                await VsCommon.ShowMessageBoxAsync(message, diagMessage);
+                Logger.LogInformation(
+                    new EventId(2, "LaunchExecutableNotFound"),
+                    "Unable to find file: '{ExecutablePath}'.",
+                    processName);
+                await _showMessageBoxAsync(message, diagMessage);
                 return false;
             }
 
@@ -109,9 +156,15 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
             var workingDirectory = await GetSettingsAsync(SettingsInfo.TypeDebuggerWorkingDirectory, workspaceContext.GetService<ISettingsService>(), lcw);
             var noDebugFlag = operation == UsageOperation.LaunchRun ? __VSDBGLAUNCHFLAGS.DBGLAUNCH_NoDebug : 0;
 
-            L.WriteLine("LaunchDebugTarget with profile: {0}, launchConfiguration: {1}", profile, lcw.SerializeObject());
+            Logger.LogInformation(
+                new EventId(3, "LaunchTargetPrepared"),
+                "LaunchDebugTarget with profile: {Profile}, launchConfiguration: {LaunchConfiguration}",
+                profile,
+                lcw.SerializeObject());
 
-            var binLibPaths = await ToolchainServiceExtensions.GetBinAndLibPathsAsync(package.Parent.WorkspaceRoot, ct);
+            var binLibPaths = await _getBinAndLibPathsAsync(
+                package.Parent.WorkspaceRoot,
+                ct);
             var info = new VsDebugTargetInfo
             {
                 dlo = DEBUG_LAUNCH_OPERATION.DLO_CreateProcess,
@@ -134,12 +187,12 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                 clsidCustom = DebugEnginesGuids.NativeOnly_guid,
             };
 
-            VsShellUtilities.LaunchDebugger(serviceProvider, info);
+            _launchDebugger(serviceProvider, info);
             return true;
         }
         catch (KeyNotFoundException knfe)
         {
-            await VsCommon.ShowMessageBoxAsync(
+            await _showMessageBoxAsync(
                 knfe.Message,
                 "Debugger will not be launched. Please report the repro steps + this message as this issue is hard to track down. 🙏");
             return false;
@@ -150,10 +203,11 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
         }
         catch (Exception e)
         {
-            L.WriteError(
-                "Operation '{0}' failed unexpectedly. Ex: {1}",
-                "DebugLaunchTargetProvider.LaunchDebugTargetAsync",
-                e);
+            Logger.LogError(
+                new EventId(4, "LaunchFailed"),
+                e,
+                "Operation '{Operation}' failed unexpectedly.",
+                "DebugLaunchTargetProvider.LaunchDebugTargetAsync");
             throw;
         }
     }
@@ -195,9 +249,14 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
     public sealed class LaunchConfigWrapper
     {
         private readonly IPropertySettings _lc;
-        private readonly ILogger _logger;
+        private readonly MelLogger _logger;
 
-        public LaunchConfigWrapper(IPropertySettings lc, ILogger logger)
+        public LaunchConfigWrapper(IPropertySettings lc, LegacyLogger logger)
+            : this(lc, LegacyLoggerBridge.ToMelLogger(logger))
+        {
+        }
+
+        public LaunchConfigWrapper(IPropertySettings lc, MelLogger logger)
         {
             _lc = lc;
             _logger = logger;
@@ -211,7 +270,11 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
                 {
                     var msg = $"Key '{key}' is not set in launch configuration and / or is not a string.";
                     var e = new KeyNotFoundException(msg);
-                    _logger.WriteError(msg);
+                    _logger.LogError(
+                        new EventId(1, "LaunchConfigurationKeyInvalid"),
+                        e,
+                        "Key '{Key}' is not set in launch configuration and / or is not a string.",
+                        key);
                     throw e;
                 }
 
@@ -221,4 +284,12 @@ public sealed class DebugLaunchTargetProvider : ILaunchDebugTargetProvider
 
         public bool ContainsKey(string noDebugKey) => _lc.ContainsKey(noDebugKey);
     }
+
+    private MelLogger Logger =>
+        LoggerFactory?.CreateLogger(typeof(DebugLaunchTargetProvider).FullName)
+            ?? LegacyLoggerBridge.ToMelLogger(L);
+
+    private MelLogger LaunchConfigLogger =>
+        LoggerFactory?.CreateLogger(typeof(LaunchConfigWrapper).FullName)
+            ?? LegacyLoggerBridge.ToMelLogger(L);
 }

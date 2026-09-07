@@ -4,8 +4,10 @@ using System.ComponentModel.Composition;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Indexing;
+using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 
 namespace KS.RustAnalyzer.Editor;
 
@@ -22,7 +24,10 @@ public class FileScannerFactory : IWorkspaceProviderFactory<IFileScanner>
     public static readonly Guid ProviderTypeGuid = new(ProviderType);
 
     [Import]
-    public ILogger L { get; set; }
+    public LegacyLogger L { get; set; }
+
+    [Import]
+    public ILoggerFactory LoggerFactory { get; set; }
 
     [Import]
     public PrerequisiteAvailabilityPolicy AvailabilityPolicy { get; set; }
@@ -37,7 +42,13 @@ public class FileScannerFactory : IWorkspaceProviderFactory<IFileScanner>
             return scanner;
         }
 
-        L.WriteLine("Creating {0}.", GetType().Name);
+        var logger = LoggerFactory?.CreateLogger(
+            typeof(FileScannerFactory).FullName)
+            ?? LegacyLoggerBridge.ToMelLogger(L);
+        logger.LogInformation(
+            new EventId(1, "ProviderCreated"),
+            "Creating {ProviderType}.",
+            GetType().Name);
 
         return scanner;
     }

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Community.VisualStudio.Toolkit;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Imaging;
@@ -15,6 +16,9 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using CommunityVS = Community.VisualStudio.Toolkit.VS;
 using Constants = KS.RustAnalyzer.TestAdapter.Constants;
+using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
+using MelLoggerFactory = Microsoft.Extensions.Logging.ILoggerFactory;
 
 namespace KS.RustAnalyzer;
 
@@ -34,7 +38,8 @@ namespace KS.RustAnalyzer;
 [Guid(PackageGuids.guidRustAnalyzerPackageString)]
 public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOperations
 {
-    private TL _tl;
+    private MelLogger _logger;
+    private MelLogger _releaseSummaryLogger;
     private IRegistrySettingsService _regSettings;
     private IPreReqsCheckService _preReqs;
     private IRlsInstallerService _raDownloader;
@@ -61,7 +66,9 @@ public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOp
 
     Task IPrerequisiteStartupOperations.ShowReleaseSummaryAsync()
     {
-        return ReleaseSummaryNotification.ShowAsync(_regSettings, _tl);
+        return ReleaseSummaryNotification.ShowAsync(
+            _regSettings,
+            _releaseSummaryLogger);
     }
 
     Task IPrerequisiteStartupOperations.HandleIncompatibleExtensionsAsync()
@@ -88,10 +95,13 @@ public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOp
         await JTF.SwitchToMainThreadAsync(cancellationToken);
 
         var cmServiceProvider = (IComponentModel)await GetServiceAsync(typeof(SComponentModel));
-        _tl = new TL
-        {
-            L = cmServiceProvider?.GetService<ILogger>(),
-        };
+        var legacyLogger = cmServiceProvider?.GetService<LegacyLogger>();
+        var loggerFactory = cmServiceProvider?.GetService<MelLoggerFactory>();
+        _logger = loggerFactory?.CreateLogger(typeof(RustAnalyzerPackage).FullName)
+            ?? LegacyLoggerBridge.ToMelLogger(legacyLogger);
+        _releaseSummaryLogger = loggerFactory?.CreateLogger(
+            typeof(ReleaseSummaryNotification).FullName)
+            ?? LegacyLoggerBridge.ToMelLogger(legacyLogger);
         _regSettings = cmServiceProvider?.GetService<IRegistrySettingsService>();
         _preReqs = cmServiceProvider?.GetService<IPreReqsCheckService>();
         _raDownloader = cmServiceProvider?.GetService<IRlsInstallerService>();
@@ -126,7 +136,11 @@ public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOp
 
     private async Task SearchAndDisableIncompatibleExtensionsAsync()
     {
-        _tl.L.WriteLine("Searching and disabling incompatible extensions.");
+        _logger.LogInformation(
+            new Microsoft.Extensions.Logging.EventId(
+                1,
+                "IncompatibleExtensionsSearchStarted"),
+            "Searching and disabling incompatible extensions.");
 
         try
         {
@@ -163,7 +177,12 @@ public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOp
         }
         catch (Exception e)
         {
-            _tl.L.WriteLine("Failed in searching and disabling incompatible extensions. Ex: {0}", e);
+            _logger.LogInformation(
+                new Microsoft.Extensions.Logging.EventId(
+                    2,
+                    "IncompatibleExtensionsSearchFailed"),
+                e,
+                "Failed in searching and disabling incompatible extensions.");
         }
     }
 
@@ -205,12 +224,29 @@ public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOp
 
         public static async Task ShowAsync(IRegistrySettingsService regSettings, TL tl)
         {
+            await ShowAsync(
+                regSettings,
+                LegacyLoggerBridge.ToMelLogger(tl.L));
+        }
+
+        public static async Task ShowAsync(
+            IRegistrySettingsService regSettings,
+            MelLogger logger)
+        {
             await RustAnalyzerPackage.JTF.SwitchToMainThreadAsync();
 
-            tl.L.WriteLine("Attempting to show release notes...");
+            logger.LogInformation(
+                new Microsoft.Extensions.Logging.EventId(
+                    1,
+                    "ReleaseNotesShowAttempted"),
+                "Attempting to show release notes...");
             if (regSettings.InfoBarDismissedByUser)
             {
-                tl.L.WriteLine("... Not showing release notes as it has already been dismissed by the user.");
+                logger.LogInformation(
+                    new Microsoft.Extensions.Logging.EventId(
+                        2,
+                        "ReleaseNotesAlreadyDismissed"),
+                    "... Not showing release notes as it has already been dismissed by the user.");
                 return;
             }
 
@@ -226,11 +262,11 @@ public sealed class RustAnalyzerPackage : ToolkitPackage, IPrerequisiteStartupOp
                 image: KnownMonikers.StatusInformation,
                 isCloseButtonVisible: true);
             var infoBar = await CommunityVS.InfoBar.CreateAsync(model);
-            infoBar.ActionItemClicked += (s, ea) => InfoBar_ActionItemClicked(s, ea, regSettings, tl);
+            infoBar.ActionItemClicked += (s, ea) => InfoBar_ActionItemClicked(s, ea, regSettings);
             await infoBar.TryShowInfoBarUIAsync();
         }
 
-        private static void InfoBar_ActionItemClicked(object sender, InfoBarActionItemEventArgs e, IRegistrySettingsService regSettings, TL tl)
+        private static void InfoBar_ActionItemClicked(object sender, InfoBarActionItemEventArgs e, IRegistrySettingsService regSettings)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
