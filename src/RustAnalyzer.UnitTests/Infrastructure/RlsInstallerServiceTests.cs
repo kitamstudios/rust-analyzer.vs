@@ -11,10 +11,13 @@ using FluentAssertions;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Common;
+using KS.RustAnalyzer.Tests.Common;
 using Microsoft.VisualStudio.Threading;
 using Moq;
 using Newtonsoft.Json;
 using Xunit;
+using MelEventId = Microsoft.Extensions.Logging.EventId;
+using MelLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace KS.RustAnalyzer.UnitTests.Infrastructure;
 
@@ -26,6 +29,34 @@ public sealed class RlsInstallerServiceTests
         "rust-analyzer 0.3.3034-standalone (2222222 2026-09-06)";
 
     private const string PreviousRelease = "2026-08-17";
+
+    [Fact]
+    public async Task CurrentPackagedVersionUsesCheckAndCurrentEventsAsync()
+    {
+        using var fixture = await Fixture.CreateAsync();
+        fixture.Installer.ReleaseVersion =
+            Constants.RlsLatestInPackageVersion;
+
+        await fixture.Installer.InstallLatestAsync();
+
+        fixture.Installer.Downloads.Should().Be(0);
+        fixture.Installer.LockAcquisitions.Should().Be(0);
+        fixture.LoggerProvider.Entries.Should().HaveCount(2);
+        GetEntry(
+            fixture,
+            new MelEventId(1, "RustAnalyzerUpdateCheckStarted"),
+            MelLogLevel.Information,
+            "Checking for a rust-analyzer update.")
+            .Exception.Should().BeNull();
+        var current = GetEntry(
+            fixture,
+            new MelEventId(2, "PackagedRustAnalyzerCurrent"),
+            MelLogLevel.Information,
+            "Packaged rust-analyzer {Version} is current.");
+        current.Properties["Version"].Should().Be(
+            Constants.RlsLatestInPackageVersion);
+        current.Exception.Should().BeNull();
+    }
 
     [Theory]
     [InlineData(RlsReleaseLookupFailure.Unavailable)]
@@ -46,11 +77,114 @@ public sealed class RlsInstallerServiceTests
             Constants.RlsLatestInPackageVersion);
         fixture.Installer.PointerWrites.Should().Equal(
             Constants.RlsLatestInPackageVersion);
-        fixture.Logger.Errors.Should().ContainSingle();
-        string.Format(
-                fixture.Logger.Errors[0].Format,
-                fixture.Logger.Errors[0].Arguments)
-            .Should().Contain(failure.ToString());
+        fixture.LoggerProvider.Entries.Should().HaveCount(2);
+        var entry = GetEntry(
+            fixture,
+            new MelEventId(3, "RustAnalyzerUpdateMetadataFailed"),
+            MelLogLevel.Error,
+            "Rust-analyzer update metadata failed ({Failure}); using the packaged version.");
+        entry.Properties["Failure"].Should().Be(failure);
+        entry.Exception.Should().BeSameAs(
+            fixture.Installer.ReleaseFailure);
+    }
+
+    [Fact]
+    public async Task UnexpectedMetadataFailureUsesUpdateFailureEventAsync()
+    {
+        using var fixture = await Fixture.CreateAsync();
+        var expected =
+            new InvalidOperationException("Unexpected metadata failure.");
+        fixture.Installer.ReleaseFailure = expected;
+
+        await fixture.Installer.InstallLatestAsync();
+
+        fixture.Installer.SelectedVersion.Should().Be(
+            Constants.RlsLatestInPackageVersion);
+        var entry = GetEntry(
+            fixture,
+            new MelEventId(4, "RustAnalyzerUpdateFailed"),
+            MelLogLevel.Error,
+            "Rust-analyzer update failed; using the packaged version.");
+        entry.Exception.Should().BeSameAs(expected);
+    }
+
+    [Fact]
+    public async Task SelectionLockFailuresUseTypedValidationEventsAsync()
+    {
+        using (var timeoutFixture = await Fixture.CreateAsync())
+        {
+            var expected = new TimeoutException("Synthetic timeout.");
+            timeoutFixture.Installer.LockFailure = expected;
+
+            var selected =
+                await timeoutFixture.Installer.GetExePathAsync();
+
+            selected.Should().Be(
+                (PathEx)Path.Combine(
+                    timeoutFixture.Root,
+                    Constants.RlsLatestInPackageVersion,
+                    "rust-analyzer.exe"));
+            var entry = GetEntry(
+                timeoutFixture,
+                new MelEventId(
+                    5,
+                    "SelectedRustAnalyzerValidationTimedOut"),
+                MelLogLevel.Error,
+                "Timed out waiting to validate the selected rust-analyzer; using the packaged version.");
+            entry.Exception.Should().BeSameAs(expected);
+        }
+
+        using (var failureFixture = await Fixture.CreateAsync())
+        {
+            var expected =
+                new InvalidOperationException("Synthetic lock failure.");
+            failureFixture.Installer.LockFailure = expected;
+
+            var selected =
+                await failureFixture.Installer.GetExePathAsync();
+
+            selected.Should().Be(
+                (PathEx)Path.Combine(
+                    failureFixture.Root,
+                    Constants.RlsLatestInPackageVersion,
+                    "rust-analyzer.exe"));
+            var entry = GetEntry(
+                failureFixture,
+                new MelEventId(
+                    6,
+                    "SelectedRustAnalyzerValidationFailed"),
+                MelLogLevel.Error,
+                "Failed to validate the selected rust-analyzer; using the packaged version.");
+            entry.Exception.Should().BeSameAs(expected);
+        }
+    }
+
+    [Fact]
+    public async Task ResetFailureUsesSeparateExceptionEventAsync()
+    {
+        using var fixture = await Fixture.CreateAsync();
+        var metadataFailure = new RlsReleaseLookupException(
+            RlsReleaseLookupFailure.Unavailable,
+            "Metadata failure.");
+        var resetFailure =
+            new InvalidOperationException("Reset lock failure.");
+        fixture.Installer.ReleaseFailure = metadataFailure;
+        fixture.Installer.LockFailure = resetFailure;
+
+        await fixture.Installer.InstallLatestAsync();
+
+        var entry = GetEntry(
+            fixture,
+            new MelEventId(11, "PackagedRustAnalyzerResetFailed"),
+            MelLogLevel.Error,
+            "Failed to reset rust-analyzer to the packaged version.");
+        entry.Exception.Should().BeSameAs(resetFailure);
+        GetEntry(
+            fixture,
+            new MelEventId(3, "RustAnalyzerUpdateMetadataFailed"),
+            MelLogLevel.Error,
+            "Rust-analyzer update metadata failed ({Failure}); using the packaged version.")
+            .Exception.Should().BeSameAs(metadataFailure);
     }
 
     [Fact]
@@ -70,7 +204,7 @@ public sealed class RlsInstallerServiceTests
         fixture.Installer.SelectedVersion.Should().Be(PreviousRelease);
         fixture.Installer.PointerWrites.Should().BeEmpty();
         fixture.Installer.LockAcquisitions.Should().Be(0);
-        fixture.Logger.Errors.Should().BeEmpty();
+        fixture.Errors.Should().BeEmpty();
     }
 
     [Theory]
@@ -125,7 +259,7 @@ public sealed class RlsInstallerServiceTests
             Constants.RlsLatestInPackageVersion);
         fixture.Installer.PointerWrites.Should().Equal(
             Constants.RlsLatestInPackageVersion);
-        fixture.Logger.Errors.Should().ContainSingle();
+        fixture.Errors.Should().ContainSingle();
     }
 
     [Fact]
@@ -281,6 +415,48 @@ public sealed class RlsInstallerServiceTests
         File.Exists(completedMarker).Should().BeTrue();
         fixture.Installer.PointerObservedValidManifest.Should().BeTrue();
         fixture.Installer.PointerObservedVersionValidation.Should().BeTrue();
+        fixture.Installer.Notifications.Should().Be(1);
+        fixture.LoggerProvider.Entries.Should().HaveCount(3);
+        var replacing = GetEntry(
+            fixture,
+            new MelEventId(7, "IncompleteRustAnalyzerReplacing"),
+            MelLogLevel.Information,
+            "Replacing incomplete rust-analyzer {Version}.");
+        replacing.Properties["Version"].Should().Be(DownloadedRelease);
+        replacing.Exception.Should().NotBeNull();
+        var committed = GetEntry(
+            fixture,
+            new MelEventId(10, "RustAnalyzerCommitted"),
+            MelLogLevel.Information,
+            "Committed rust-analyzer {Version}.");
+        committed.Properties["Version"].Should().Be(DownloadedRelease);
+        committed.Exception.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task IncompleteRustAnalyzerReplacingPreservesExceptionOnLegacyRouteAsync()
+    {
+        var logger = new RecordingLogger();
+        using var fixture = await Fixture.CreateAsync(legacyLogger: logger);
+        fixture.CreateArchive(
+            ("rust-analyzer.exe", "new executable"),
+            ("rust_analyzer.pdb", "new pdb"));
+        Directory.CreateDirectory(
+            fixture.Installer.VersionDirectory(DownloadedRelease));
+
+        await fixture.Installer.InstallLatestAsync();
+
+        logger.Errors.Should().BeEmpty();
+        logger.Lines.Should().HaveCount(3);
+        var delivery = logger.Lines.Single(
+            line => string.Format(line.Format, line.Arguments).StartsWith(
+                "Replacing incomplete rust-analyzer ",
+                StringComparison.Ordinal));
+        var exception = delivery.Arguments.OfType<Exception>()
+            .Should().ContainSingle().Which;
+        string.Format(delivery.Format, delivery.Arguments).Should().Be(
+            $"Replacing incomplete rust-analyzer {DownloadedRelease}. " +
+            exception);
     }
 
     [Fact]
@@ -318,7 +494,7 @@ public sealed class RlsInstallerServiceTests
         await AssertCanceledAsync(update);
         fixture.Installer.SelectedVersion.Should().Be(PreviousRelease);
         fixture.Installer.PointerWrites.Should().BeEmpty();
-        fixture.Logger.Errors.Should().BeEmpty();
+        fixture.Errors.Should().BeEmpty();
     }
 
     [Fact]
@@ -462,6 +638,14 @@ public sealed class RlsInstallerServiceTests
         Directory.Exists(
             fixture.Installer.VersionDirectory(PreviousRelease))
             .Should().BeTrue();
+        var entry = GetEntry(
+            fixture,
+            new MelEventId(8, "LockedRustAnalyzerUpdateFailed"),
+            MelLogLevel.Error,
+            "Rust-analyzer update failed; using the packaged version.");
+        entry.Exception.Should().BeOfType<InvalidOperationException>()
+            .Which.Message.Should().Be(
+                "Synthetic pointer commit failure.");
     }
 
     [Fact]
@@ -489,7 +673,7 @@ public sealed class RlsInstallerServiceTests
         await AssertCanceledAsync(update);
         fixture.Installer.SelectedVersion.Should().Be(PreviousRelease);
         fixture.Installer.PointerWrites.Should().BeEmpty();
-        fixture.Logger.Errors.Should().BeEmpty();
+        fixture.Errors.Should().BeEmpty();
         Directory.Exists(
             fixture.Installer.VersionDirectory(PreviousRelease))
             .Should().BeTrue();
@@ -609,7 +793,7 @@ public sealed class RlsInstallerServiceTests
         await AssertCanceledAsync(selection);
         fixture.Installer.SelectedVersion.Should().Be(DownloadedRelease);
         fixture.Installer.PointerWrites.Should().BeEmpty();
-        fixture.Logger.Errors.Should().BeEmpty();
+        fixture.Errors.Should().BeEmpty();
     }
 
     [Fact]
@@ -628,7 +812,7 @@ public sealed class RlsInstallerServiceTests
         await AssertCanceledAsync(reset);
         fixture.Installer.SelectedVersion.Should().Be(PreviousRelease);
         fixture.Installer.PointerWrites.Should().BeEmpty();
-        fixture.Logger.Errors.Should().BeEmpty();
+        fixture.Errors.Should().BeEmpty();
     }
 
     [Fact]
@@ -654,6 +838,28 @@ public sealed class RlsInstallerServiceTests
             Constants.RlsLatestInPackageVersion);
         Directory.Exists(targetDirectory).Should().BeTrue();
         fixture.Installer.VersionReads.Should().BeEmpty();
+        var entry = GetEntry(
+            fixture,
+            new MelEventId(9, "SelectedRustAnalyzerInvalid"),
+            MelLogLevel.Error,
+            "Selected rust-analyzer {Version} is invalid; using the packaged version.");
+        entry.Properties["Version"].Should().Be(DownloadedRelease);
+        entry.Exception.Should().NotBeNull();
+    }
+
+    private static RecordingLogEntry GetEntry(
+        Fixture fixture,
+        MelEventId eventId,
+        MelLogLevel level,
+        string template)
+    {
+        var entry = fixture.LoggerProvider.Entries.Single(
+            candidate =>
+                candidate.Category == typeof(RlsInstallerService).FullName
+                && candidate.EventId == eventId);
+        entry.Level.Should().Be(level);
+        entry.Template.Should().Be(template);
+        return entry;
     }
 
     private static string GetSha256(string path)
@@ -705,12 +911,14 @@ public sealed class RlsInstallerServiceTests
         private Fixture(
             string root,
             JoinableTaskContext context,
-            RecordingLogger logger,
+            RecordingLoggerProvider loggerProvider,
+            Microsoft.Extensions.Logging.LoggerFactory loggerFactory,
             TestInstaller installer)
         {
             Root = root;
             Context = context;
-            Logger = logger;
+            LoggerProvider = loggerProvider;
+            LoggerFactory = loggerFactory;
             Installer = installer;
         }
 
@@ -720,10 +928,18 @@ public sealed class RlsInstallerServiceTests
 
         public TestInstaller Installer { get; }
 
-        public RecordingLogger Logger { get; }
+        public IEnumerable<RecordingLogEntry> Errors =>
+            LoggerProvider.Entries.Where(
+                entry => entry.Category == typeof(RlsInstallerService).FullName
+                    && entry.Level == MelLogLevel.Error);
+
+        public Microsoft.Extensions.Logging.LoggerFactory LoggerFactory { get; }
+
+        public RecordingLoggerProvider LoggerProvider { get; }
 
         public static async Task<Fixture> CreateAsync(
-            JoinableTaskContext context = null)
+            JoinableTaskContext context = null,
+            RecordingLogger legacyLogger = null)
         {
             var root = Path.Combine(
                 AppDomain.CurrentDomain.BaseDirectory,
@@ -742,14 +958,36 @@ public sealed class RlsInstallerServiceTests
             await state.GetOrEvaluateAsync(
                 _ => Task.FromResult(PrerequisiteResult.Success),
                 default);
-            var logger = new RecordingLogger();
-            var installer = new TestInstaller(
-                root,
-                logger,
-                new PrerequisiteAvailabilityPolicy(
+            RecordingLoggerProvider loggerProvider = null;
+            Microsoft.Extensions.Logging.LoggerFactory loggerFactory = null;
+            PrerequisiteAvailabilityPolicy availabilityPolicy;
+            if (legacyLogger == null)
+            {
+                loggerProvider = new RecordingLoggerProvider();
+                loggerFactory =
+                    new Microsoft.Extensions.Logging.LoggerFactory(
+                        new[] { loggerProvider, });
+                availabilityPolicy = new PrerequisiteAvailabilityPolicy(
                     state,
-                    logger));
-            return new Fixture(root, context, logger, installer);
+                    loggerFactory.CreateLogger(
+                        typeof(PrerequisiteAvailabilityPolicy).FullName));
+            }
+            else
+            {
+                availabilityPolicy = new PrerequisiteAvailabilityPolicy(
+                    state,
+                    legacyLogger);
+            }
+
+            var installer = legacyLogger == null
+                ? new TestInstaller(root, loggerFactory, availabilityPolicy)
+                : new TestInstaller(root, legacyLogger, availabilityPolicy);
+            return new Fixture(
+                root,
+                context,
+                loggerProvider,
+                loggerFactory,
+                installer);
         }
 
         public void CreateArchive(
@@ -857,6 +1095,7 @@ public sealed class RlsInstallerServiceTests
 
         public void Dispose()
         {
+            LoggerFactory?.Dispose();
             Context.Dispose();
             if (Directory.Exists(Root))
             {
@@ -868,6 +1107,19 @@ public sealed class RlsInstallerServiceTests
     private sealed class TestInstaller : RlsInstallerService
     {
         private readonly string _root;
+
+        public TestInstaller(
+            string root,
+            Microsoft.Extensions.Logging.ILoggerFactory loggerFactory,
+            PrerequisiteAvailabilityPolicy availabilityPolicy)
+            : base(
+                Mock.Of<IRegistrySettingsService>(),
+                loggerFactory,
+                availabilityPolicy)
+        {
+            _root = root;
+            SelectedVersion = Constants.RlsLatestInPackageVersion;
+        }
 
         public TestInstaller(
             string root,
@@ -910,6 +1162,8 @@ public sealed class RlsInstallerServiceTests
         public TaskCompletionSource<object> MetadataStarted { get; } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        public int Notifications { get; private set; }
+
         public string OfficialSha256 { get; set; } =
             new string('a', 64);
 
@@ -922,6 +1176,8 @@ public sealed class RlsInstallerServiceTests
         public string ReportedVersion { get; set; } = DownloadedVersion;
 
         public Exception ReleaseFailure { get; set; }
+
+        public string ReleaseVersion { get; set; } = DownloadedRelease;
 
         public string SelectedVersion { get; set; }
 
@@ -1008,6 +1264,7 @@ public sealed class RlsInstallerServiceTests
             CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            Notifications++;
             return Task.CompletedTask;
         }
 
@@ -1057,9 +1314,9 @@ public sealed class RlsInstallerServiceTests
             }
 
             return new ReleaseInfo(
-                DownloadedRelease,
+                ReleaseVersion,
                 new Uri(
-                    $"https://example.invalid/{DownloadedRelease}/rust-analyzer.zip"),
+                    $"https://example.invalid/{ReleaseVersion}/rust-analyzer.zip"),
                 OfficialSha256,
                 new Uri(
                     "https://api.github.com/repos/rust-lang/rust-analyzer/releases/assets/2"));

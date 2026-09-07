@@ -9,12 +9,15 @@ using EnsureThat;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Utilities;
 using Microsoft.VisualStudio.Workspace.VSIntegration.Contracts;
 using StreamJsonRpc;
+using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.LanguageService;
 
@@ -31,6 +34,8 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
     private bool _activationReported;
     private bool _packagedRetryAttempted;
     private bool _disposed;
+    private MelLogger _logger;
+    private Func<Process, bool> _startProcess = process => process.Start();
     private bool _serverStarted;
     private PathEx _serverPath;
     private bool _stopped;
@@ -62,7 +67,10 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
     public IVsFolderWorkspaceService WorkspaceService { get; set; }
 
     [Import]
-    public ILogger L { get; set; }
+    public LegacyLogger L { get; set; }
+
+    [Import]
+    public ILoggerFactory LoggerFactory { get; set; }
 
     [Import]
     public IFeatureUsageTelemetry UsageTelemetry { get; set; }
@@ -225,15 +233,20 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
             return null;
         }
 
-        string message = "Oh no! rust-analyzer failed to activate, now we can't test LSP! :(";
-        string exception = initializationState.InitializationException?.ToString() ?? string.Empty;
-        message = $"{message}\n {exception}";
-
-        L.WriteLine(message);
+        const string message =
+            "Oh no! rust-analyzer failed to activate, now we can't test LSP! :(";
+        var initializationException =
+            initializationState.InitializationException;
+        Logger.LogInformation(
+            new EventId(1, "ServerInitializationFailed"),
+            initializationException,
+            message);
+        var failureMessage =
+            $"{message}\n {initializationException?.ToString() ?? string.Empty}";
 
         var failureContext = new InitializationFailureContext()
         {
-            FailureMessage = message,
+            FailureMessage = failureMessage,
         };
 
         return failureContext;
@@ -244,7 +257,10 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        L.WriteLine("Starting rust-analyzer from path: {0}.", serverPath);
+        Logger.LogInformation(
+            new EventId(2, "ServerStarting"),
+            "Starting rust-analyzer from path: {ServerPath}.",
+            serverPath);
         ProcessStartInfo info = new()
         {
             FileName = serverPath,
@@ -268,15 +284,20 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
                 throw new OperationCanceledException(cancellationToken);
             }
 
-            if (!process.Start())
+            if (!_startProcess(process))
             {
                 process.Dispose();
-                L.WriteLine("Error starting rust-analyzer from path.");
+                Logger.LogInformation(
+                    new EventId(3, "ServerStartFailed"),
+                    "Error starting rust-analyzer from path.");
                 return Task.FromResult<Connection>(null);
             }
         }
 
-        L.WriteLine("Done starting rust-analyzer from path. PID: {0}", process.Id);
+        Logger.LogInformation(
+            new EventId(4, "ServerStarted"),
+            "Done starting rust-analyzer from path. PID: {ProcessId}",
+            process.Id);
         return Task.FromResult(
             new Connection(
                 process.StandardOutput.BaseStream,
@@ -352,9 +373,10 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
         catch (Exception e) when (
             !RADownloader.IsPackagedExePath(selectedPath))
         {
-            L.WriteError(
-                "Downloaded rust-analyzer failed to start; retrying the packaged version. Ex: {0}",
-                e);
+            Logger.LogError(
+                new EventId(5, "DownloadedServerStartFailed"),
+                e,
+                "Downloaded rust-analyzer failed to start; retrying the packaged version.");
         }
 
         _packagedRetryAttempted = true;
@@ -396,9 +418,10 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
         }
         catch (Exception e)
         {
-            L.WriteError(
-                "Packaged rust-analyzer retry failed. Ex: {0}",
-                e);
+            Logger.LogError(
+                new EventId(6, "PackagedServerRetryFailed"),
+                e,
+                "Packaged rust-analyzer retry failed.");
             return false;
         }
     }
@@ -435,4 +458,8 @@ public class LanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ID
 
         await start;
     }
+
+    private MelLogger Logger =>
+        _logger ??= LoggerFactory?.CreateLogger(typeof(LanguageClient).FullName)
+            ?? LegacyLoggerBridge.ToMelLogger(L);
 }

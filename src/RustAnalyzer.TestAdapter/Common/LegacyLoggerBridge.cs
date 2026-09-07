@@ -36,7 +36,7 @@ public sealed class LegacyLoggerBridge : ILogger
         TryLog(LogLevel.Error, format, args);
     }
 
-    internal static MelLogger ToMelLogger(ILogger logger)
+    public static MelLogger ToMelLogger(ILogger logger)
     {
         return new MelLoggerAdapter(EnsureArg.IsNotNull(logger, nameof(logger)));
     }
@@ -86,35 +86,22 @@ public sealed class LegacyLoggerBridge : ILogger
 
             try
             {
+                var message = formatter(state, exception);
+                var format = exception == null ? "{0}" : "{0} {1}";
+                object[] arguments = exception == null
+                    ? new object[] { message, }
+                    : new object[] { message, exception, };
                 if (logLevel >= LogLevel.Error)
                 {
-                    WriteError(state, exception, formatter);
+                    _logger.WriteError(format, arguments);
                 }
                 else
                 {
-                    _logger.WriteLine("{0}", formatter(state, exception));
+                    _logger.WriteLine(format, arguments);
                 }
             }
             catch (Exception)
             {
-            }
-        }
-
-        private void WriteError<TState>(
-            TState state,
-            Exception exception,
-            Func<TState, Exception, string> formatter)
-        {
-            if (exception == null)
-            {
-                _logger.WriteError("{0}", formatter(state, exception));
-            }
-            else
-            {
-                _logger.WriteError(
-                    "{0} {1}",
-                    formatter(state, exception),
-                    exception);
             }
         }
     }

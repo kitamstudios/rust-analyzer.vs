@@ -6,14 +6,82 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Common;
+using KS.RustAnalyzer.Tests.Common;
 using Microsoft.VisualStudio.Threading;
 using Xunit;
+using MelEventId = Microsoft.Extensions.Logging.EventId;
+using MelLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace KS.RustAnalyzer.UnitTests.Infrastructure;
 
 [Trait("type", "UnitTests")]
 public sealed class PrerequisiteAvailabilityPolicyTests
 {
+    [Fact]
+    public async Task StructuredEventsPreserveSuppressionAndSuspensionBehaviorAsync()
+    {
+        using var context = new JoinableTaskContext();
+        var state = new PrerequisiteProcessState(context.Factory);
+        await state.GetOrEvaluateAsync(
+            _ => Task.FromResult(CreateFailedResult()),
+            default);
+        state.Suspend();
+        using var provider = new RecordingLoggerProvider();
+        using var factory = new Microsoft.Extensions.Logging.LoggerFactory(
+            new[] { provider, });
+        var policy = new PrerequisiteAvailabilityPolicy(
+            state,
+            factory.CreateLogger(
+                typeof(PrerequisiteAvailabilityPolicy).FullName));
+        var infoBarException =
+            new InvalidOperationException("InfoBar failure.");
+
+        policy.IsReady(AutomaticRustPath.OpenFolderBuild).Should().BeFalse();
+        policy.IsReady(AutomaticRustPath.OpenFolderBuild).Should().BeFalse();
+        policy.ReportSuspended();
+        policy.ReportSuspended();
+        policy.ReportInfoBarFailure(infoBarException);
+        policy.ReportInfoBarFailure(
+            new InvalidOperationException("Duplicate failure."));
+
+        provider.Entries.Should().HaveCount(3);
+        var suppressed = provider.Entries.Single(
+            entry => entry.EventId.Id == 1);
+        suppressed.Category.Should().Be(
+            typeof(PrerequisiteAvailabilityPolicy).FullName);
+        suppressed.EventId.Should().Be(
+            new MelEventId(1, "AutomaticRustPathSuppressed"));
+        suppressed.Level.Should().Be(MelLogLevel.Information);
+        suppressed.Template.Should().Be(
+            "Suppressed automatic Rust path '{PathName}': prerequisite state is {PrerequisiteStatus} for this Visual Studio session. Restart Visual Studio to recheck prerequisites.");
+        suppressed.Properties["PathName"].Should().Be("Open Folder build");
+        suppressed.Properties["PrerequisiteStatus"]
+            .Should().Be(PrerequisiteStatus.Suspended);
+        suppressed.Exception.Should().BeNull();
+
+        var suspended = provider.Entries.Single(
+            entry => entry.EventId.Id == 2);
+        suspended.Category.Should().Be(
+            typeof(PrerequisiteAvailabilityPolicy).FullName);
+        suspended.EventId.Should().Be(
+            new MelEventId(2, "PrerequisitesSuspended"));
+        suspended.Level.Should().Be(MelLogLevel.Information);
+        suspended.Template.Should().Be(
+            "rust-analyzer.vs entered prerequisite state Suspended for this Visual Studio session. Automatic Rust work is disabled. Restart Visual Studio to recheck prerequisites.");
+        suspended.Exception.Should().BeNull();
+
+        var infoBarFailed = provider.Entries.Single(
+            entry => entry.EventId.Id == 3);
+        infoBarFailed.Category.Should().Be(
+            typeof(PrerequisiteAvailabilityPolicy).FullName);
+        infoBarFailed.EventId.Should().Be(
+            new MelEventId(3, "SuspensionInfoBarFailed"));
+        infoBarFailed.Level.Should().Be(MelLogLevel.Error);
+        infoBarFailed.Template.Should().Be(
+            "Failed to show prerequisite suspension InfoBar.");
+        infoBarFailed.Exception.Should().BeSameAs(infoBarException);
+    }
+
     [Theory]
     [InlineData(PrerequisiteStatus.NotEvaluated)]
     [InlineData(PrerequisiteStatus.Evaluating)]
@@ -149,8 +217,8 @@ public sealed class PrerequisiteAvailabilityPolicyTests
         Parallel.ForEach(exceptions, policy.ReportInfoBarFailure);
 
         logger.Errors.Should().ContainSingle();
-        logger.Errors.Single().Arguments.Should().ContainSingle();
-        logger.Errors.Single().Arguments[0].Should().BeOneOf(exceptions);
+        logger.Errors.Single().Arguments.Should().HaveCount(2);
+        logger.Errors.Single().Arguments[1].Should().BeOneOf(exceptions);
     }
 
     [Fact]

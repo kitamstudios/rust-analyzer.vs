@@ -16,8 +16,11 @@ using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter;
 using KS.RustAnalyzer.TestAdapter.Cargo;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.Infrastructure;
 
@@ -80,14 +83,36 @@ public class RlsInstallerService : IRlsInstallerService
     private static readonly TimeSpan NetworkTimeout = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan VersionTimeout = TimeSpan.FromSeconds(10);
     private readonly PrerequisiteAvailabilityPolicy _availabilityPolicy;
-    private readonly ILogger _logger;
+    private readonly MelLogger _logger;
     private readonly IRegistrySettingsService _registry;
 
     [ImportingConstructor]
     public RlsInstallerService(
         IRegistrySettingsService registry,
-        [Import] ILogger logger,
+        [Import] ILoggerFactory loggerFactory,
         [Import] PrerequisiteAvailabilityPolicy availabilityPolicy)
+        : this(
+            registry,
+            loggerFactory.CreateLogger(typeof(RlsInstallerService).FullName),
+            availabilityPolicy)
+    {
+    }
+
+    public RlsInstallerService(
+        IRegistrySettingsService registry,
+        LegacyLogger logger,
+        PrerequisiteAvailabilityPolicy availabilityPolicy)
+        : this(
+            registry,
+            LegacyLoggerBridge.ToMelLogger(logger),
+            availabilityPolicy)
+    {
+    }
+
+    private RlsInstallerService(
+        IRegistrySettingsService registry,
+        MelLogger logger,
+        PrerequisiteAvailabilityPolicy availabilityPolicy)
     {
         _registry = registry;
         _logger = logger;
@@ -112,15 +137,18 @@ public class RlsInstallerService : IRlsInstallerService
             return;
         }
 
-        _logger.WriteLine("Checking for a rust-analyzer update.");
+        _logger.LogInformation(
+            new EventId(1, "RustAnalyzerUpdateCheckStarted"),
+            "Checking for a rust-analyzer update.");
         try
         {
             var release = await ResolveLatestReleaseAsync(cancellationToken)
                 .ConfigureAwait(false);
             if (string.CompareOrdinal(release.Version, Constants.RlsLatestInPackageVersion) <= 0)
             {
-                _logger.WriteLine(
-                    "Packaged rust-analyzer {0} is current.",
+                _logger.LogInformation(
+                    new EventId(2, "PackagedRustAnalyzerCurrent"),
+                    "Packaged rust-analyzer {Version} is current.",
                     Constants.RlsLatestInPackageVersion);
                 return;
             }
@@ -141,18 +169,20 @@ public class RlsInstallerService : IRlsInstallerService
         {
             await ResetAfterUpdateFailureAsync(cancellationToken)
                 .ConfigureAwait(false);
-            _logger.WriteError(
-                "Rust-analyzer update metadata failed ({0}); using the packaged version. Ex: {1}",
-                e.Failure,
-                e);
+            _logger.LogError(
+                new EventId(3, "RustAnalyzerUpdateMetadataFailed"),
+                e,
+                "Rust-analyzer update metadata failed ({Failure}); using the packaged version.",
+                e.Failure);
         }
         catch (Exception e)
         {
             await ResetAfterUpdateFailureAsync(cancellationToken)
                 .ConfigureAwait(false);
-            _logger.WriteError(
-                "Rust-analyzer update failed; using the packaged version. Ex: {0}",
-                e);
+            _logger.LogError(
+                new EventId(4, "RustAnalyzerUpdateFailed"),
+                e,
+                "Rust-analyzer update failed; using the packaged version.");
         }
     }
 
@@ -180,16 +210,18 @@ public class RlsInstallerService : IRlsInstallerService
         }
         catch (TimeoutException e)
         {
-            _logger.WriteError(
-                "Timed out waiting to validate the selected rust-analyzer; using the packaged version. Ex: {0}",
-                e);
+            _logger.LogError(
+                new EventId(5, "SelectedRustAnalyzerValidationTimedOut"),
+                e,
+                "Timed out waiting to validate the selected rust-analyzer; using the packaged version.");
             return packagedPath;
         }
         catch (Exception e)
         {
-            _logger.WriteError(
-                "Failed to validate the selected rust-analyzer; using the packaged version. Ex: {0}",
-                e);
+            _logger.LogError(
+                new EventId(6, "SelectedRustAnalyzerValidationFailed"),
+                e,
+                "Failed to validate the selected rust-analyzer; using the packaged version.");
             return packagedPath;
         }
     }
@@ -484,10 +516,11 @@ public class RlsInstallerService : IRlsInstallerService
                                 Constants.RlsLatestInPackageVersion,
                                 cancellationToken)
                             .ConfigureAwait(false);
-                        _logger.WriteLine(
-                            "Replacing incomplete rust-analyzer {0}. Ex: {1}",
-                            release.Version,
-                            e);
+                        _logger.LogInformation(
+                            new EventId(7, "IncompleteRustAnalyzerReplacing"),
+                            e,
+                            "Replacing incomplete rust-analyzer {Version}.",
+                            release.Version);
                         Directory.Delete(targetDirectory, true);
                     }
 
@@ -528,9 +561,10 @@ public class RlsInstallerService : IRlsInstallerService
                         Constants.RlsLatestInPackageVersion,
                         cancellationToken)
                     .ConfigureAwait(false);
-                _logger.WriteError(
-                    "Rust-analyzer update failed; using the packaged version. Ex: {0}",
-                    e);
+                _logger.LogError(
+                    new EventId(8, "LockedRustAnalyzerUpdateFailed"),
+                    e,
+                    "Rust-analyzer update failed; using the packaged version.");
             }
         }
     }
@@ -587,10 +621,11 @@ public class RlsInstallerService : IRlsInstallerService
             }
             catch (Exception e)
             {
-                _logger.WriteError(
-                    "Selected rust-analyzer {0} is invalid; using the packaged version. Ex: {1}",
-                    selectedVersion,
-                    e);
+                _logger.LogError(
+                    new EventId(9, "SelectedRustAnalyzerInvalid"),
+                    e,
+                    "Selected rust-analyzer {Version} is invalid; using the packaged version.",
+                    selectedVersion);
                 await WriteSelectedVersionAsync(
                         Constants.RlsLatestInPackageVersion,
                         cancellationToken)
@@ -751,8 +786,9 @@ public class RlsInstallerService : IRlsInstallerService
             .ConfigureAwait(false);
         await EnableUpdateNotificationAsync(cancellationToken)
             .ConfigureAwait(false);
-        _logger.WriteLine(
-            "Committed rust-analyzer {0}.",
+        _logger.LogInformation(
+            new EventId(10, "RustAnalyzerCommitted"),
+            "Committed rust-analyzer {Version}.",
             version);
     }
 
@@ -786,9 +822,10 @@ public class RlsInstallerService : IRlsInstallerService
         }
         catch (Exception e)
         {
-            _logger.WriteError(
-                "Failed to reset rust-analyzer to the packaged version. Ex: {0}",
-                e);
+            _logger.LogError(
+                new EventId(11, "PackagedRustAnalyzerResetFailed"),
+                e,
+                "Failed to reset rust-analyzer to the packaged version.");
         }
     }
 

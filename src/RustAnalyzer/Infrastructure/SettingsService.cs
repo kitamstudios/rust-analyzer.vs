@@ -2,9 +2,11 @@ using System;
 using System.ComponentModel.Composition;
 using System.Threading.Tasks;
 using KS.RustAnalyzer.TestAdapter.Common;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Workspace;
 using Microsoft.VisualStudio.Workspace.Settings;
-using ILogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
+using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KS.RustAnalyzer.Infrastructure;
 
@@ -22,15 +24,21 @@ public interface ISettingsService
 public sealed class SettingsServiceFactory : IWorkspaceServiceFactory
 {
     [Import]
-    public ILogger L { get; set; }
+    public LegacyLogger L { get; set; }
+
+    [Import]
+    public ILoggerFactory LoggerFactory { get; set; }
 
     public object CreateService(IWorkspace workspaceContext)
     {
+        var logger = LoggerFactory?.CreateLogger(
+            typeof(SettingsService).FullName)
+            ?? LegacyLoggerBridge.ToMelLogger(L);
         return new SettingsService(
             (PathEx)workspaceContext.Location,
             workspaceContext.GetSettingsManager(),
             async () => await Options.GetLiveInstanceAsync(),
-            new TL { L = L, });
+            logger);
     }
 }
 
@@ -39,14 +47,27 @@ public sealed class SettingsService : ISettingsService
     private readonly PathEx _location;
     private readonly IWorkspaceSettingsManager _settingsManager;
     private readonly Func<Task<ISettingsServiceDefaults>> _hostWideOptionsGetter;
-    private readonly TL _tl;
+    private readonly MelLogger _logger;
 
     public SettingsService(PathEx location, IWorkspaceSettingsManager settingsManager, Func<Task<ISettingsServiceDefaults>> hostWideOptionsGetter, TL tl)
+        : this(
+            location,
+            settingsManager,
+            hostWideOptionsGetter,
+            LegacyLoggerBridge.ToMelLogger(tl.L))
+    {
+    }
+
+    public SettingsService(
+        PathEx location,
+        IWorkspaceSettingsManager settingsManager,
+        Func<Task<ISettingsServiceDefaults>> hostWideOptionsGetter,
+        MelLogger logger)
     {
         _location = location;
         _settingsManager = settingsManager;
         _hostWideOptionsGetter = hostWideOptionsGetter;
-        _tl = tl;
+        _logger = logger;
     }
 
     public string GetRaw(string type, PathEx fullItemPath)
@@ -98,7 +119,10 @@ public sealed class SettingsService : ISettingsService
         }
         catch (Exception e)
         {
-            _tl.L.WriteError("Exception: {0}.", e);
+            _logger.LogError(
+                new EventId(1, "SettingsPersistenceFailed"),
+                e,
+                "Exception.");
         }
     }
 

@@ -55,6 +55,7 @@
     <Compile Include="Infrastructure\AutomaticRustBoundaryTests.cs" />
     <Compile Include="Infrastructure\FeatureUsageBoundaryTests.cs" />
     <Compile Include="Infrastructure\LanguageClientFallbackTests.cs" />
+    <Compile Include="Infrastructure\LanguageClientProcessIntegrationTests.cs" />
     <Compile Include="Infrastructure\LoggingWiringTests.cs" />
     <Compile Include="Infrastructure\MetadataServiceFactoryLifecycleTests.cs" />
     <Compile Include="Infrastructure\PrerequisiteAvailabilityPolicyTests.cs" />
@@ -62,6 +63,7 @@
     <Compile Include="Infrastructure\PrerequisiteProcessStateTests.cs" />
     <Compile Include="Infrastructure\PrerequisiteStartupCoordinatorTests.cs" />
     <Compile Include="Infrastructure\RlsInstallerServiceTests.cs" />
+    <Compile Include="Infrastructure\SettingsServiceTests.cs" />
     <Compile Include="Infrastructure\PrerequisiteSuspensionInfoBarIntegrationTests.cs" />
     <Compile Include="Infrastructure\PrerequisiteSuspensionNotificationTests.cs" />
     <Compile Include="Infrastructure\UserSurfaceAvailabilityTests.cs" />

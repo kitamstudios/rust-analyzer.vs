@@ -14,7 +14,9 @@ using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Workspace;
 using Moq;
 using Xunit;
+using LegacyLogger = KS.RustAnalyzer.TestAdapter.Common.ILogger;
 using MelEventId = Microsoft.Extensions.Logging.EventId;
+using MelLogger = Microsoft.Extensions.Logging.ILogger;
 using MelLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace KS.RustAnalyzer.UnitTests.Infrastructure;
@@ -63,6 +65,79 @@ public sealed class MetadataServiceFactoryLifecycleTests
             "GetContainingPackageAsync. No containing package found.");
         notFound.Exception.Should().BeNull();
         toolchain.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task DeferredInitializationFaultUsesFactoryOwnerOnceAsync()
+    {
+        using var fixture = new PrerequisiteFixture();
+        await fixture.MakeReadyAsync();
+        var expected =
+            new InvalidOperationException("Toolchain composition failed.");
+        var legacyLogger = new Mock<LegacyLogger>(MockBehavior.Strict);
+        var factory = fixture.CreateFactory(
+            new Lazy<IToolchainService>(() => throw expected));
+        factory.L = legacyLogger.Object;
+        var created = factory.CreateService(
+            CreateWorkspace().Object,
+            () => CreateWatcher().Object,
+            fixture.Context.Factory);
+        var metadata = created.Should().BeAssignableTo<IMetadataService>().Which;
+        using var lifetime = created.Should().BeAssignableTo<IDisposable>().Which;
+        Func<Task> access = async () =>
+            await metadata.GetCachedPackagesAsync(default);
+
+        (await access.Should().ThrowAsync<InvalidOperationException>())
+            .Which.Should().BeSameAs(expected);
+
+        var entry = fixture.LoggerProvider.Entries.Should()
+            .ContainSingle()
+            .Which;
+        entry.Category.Should().Be(typeof(MetadataServiceFactory).FullName);
+        entry.EventId.Should().Be(
+            new MelEventId(1, "InitializationFailed"));
+        entry.Level.Should().Be(MelLogLevel.Error);
+        entry.Template.Should().Be(
+            "Operation '{Operation}' failed unexpectedly.");
+        entry.Properties["Operation"].Should().Be(
+            "MetadataServiceFactory.PrerequisiteGatedMetadataService.InitializeAsync");
+        entry.Exception.Should().BeSameAs(expected);
+        legacyLogger.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task LegacyFactoryDeliversDeferredFaultOnceAsync()
+    {
+        using var fixture = new PrerequisiteFixture();
+        await fixture.MakeReadyAsync();
+        var expected =
+            new InvalidOperationException("Toolchain composition failed.");
+        var legacyLogger = new RecordingLegacyLogger();
+        var factory = new MetadataServiceFactory
+        {
+            AvailabilityPolicy = fixture.Policy,
+            CargoService =
+                new Lazy<IToolchainService>(() => throw expected),
+            L = legacyLogger,
+        };
+        var created = factory.CreateService(
+            CreateWorkspace().Object,
+            () => CreateWatcher().Object,
+            fixture.Context.Factory);
+        var metadata = created.Should().BeAssignableTo<IMetadataService>().Which;
+        using var lifetime = created.Should().BeAssignableTo<IDisposable>().Which;
+        Func<Task> access = async () =>
+            await metadata.GetCachedPackagesAsync(default);
+
+        (await access.Should().ThrowAsync<InvalidOperationException>())
+            .Which.Should().BeSameAs(expected);
+
+        legacyLogger.Errors.Should().ContainSingle();
+        legacyLogger.Errors[0].Format.Should().Be("{0} {1}");
+        legacyLogger.Errors[0].Arguments[0].Should().Be(
+            "Operation 'MetadataServiceFactory.PrerequisiteGatedMetadataService.InitializeAsync' failed unexpectedly.");
+        legacyLogger.Errors[0].Arguments[1].Should().BeSameAs(expected);
+        legacyLogger.Lines.Should().BeEmpty();
     }
 
     [Fact]
@@ -354,6 +429,25 @@ public sealed class MetadataServiceFactoryLifecycleTests
         }
     }
 
+    private sealed class RecordingLegacyLogger : LegacyLogger
+    {
+        public List<(string Format, object[] Arguments)> Errors { get; } =
+            new();
+
+        public List<(string Format, object[] Arguments)> Lines { get; } =
+            new();
+
+        public void WriteLine(string format, params object[] args)
+        {
+            Lines.Add((format, args));
+        }
+
+        public void WriteError(string format, params object[] args)
+        {
+            Errors.Add((format, args));
+        }
+    }
+
     private sealed class PrerequisiteFixture : IDisposable
     {
         public PrerequisiteFixture()
@@ -365,7 +459,7 @@ public sealed class MetadataServiceFactoryLifecycleTests
             State = new PrerequisiteProcessState(Context.Factory);
             Policy = new PrerequisiteAvailabilityPolicy(
                 State,
-                Mock.Of<ILogger>());
+                Mock.Of<MelLogger>());
         }
 
         public JoinableTaskContext Context { get; }
@@ -384,7 +478,7 @@ public sealed class MetadataServiceFactoryLifecycleTests
             {
                 AvailabilityPolicy = Policy,
                 CargoService = cargoService,
-                L = Mock.Of<ILogger>(),
+                L = Mock.Of<LegacyLogger>(),
                 LoggerFactory = LoggerFactory,
             };
         }

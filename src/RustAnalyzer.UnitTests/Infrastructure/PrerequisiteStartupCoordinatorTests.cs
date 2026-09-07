@@ -291,7 +291,8 @@ public sealed class PrerequisiteStartupCoordinatorTests
 
         calls.Should().Equal(Evaluation, Prompt, InfoBar);
         logger.Errors.Should().ContainSingle();
-        logger.Errors[0].Arguments.Should().ContainSingle().Which.Should().BeSameAs(expected);
+        logger.Errors[0].Arguments.Should().HaveCount(2);
+        logger.Errors[0].Arguments[1].Should().BeSameAs(expected);
         state.Status.Should().Be(PrerequisiteStatus.Suspended);
     }
 
@@ -364,8 +365,6 @@ public sealed class PrerequisiteStartupCoordinatorTests
             Path.Combine(productRoot, "Infrastructure", "PrerequisiteEvaluator.cs"));
         var coordinatorSource = File.ReadAllText(
             Path.Combine(productRoot, "Infrastructure", "PrerequisiteStartupCoordinator.cs"));
-        var availabilityPolicySource = File.ReadAllText(
-            Path.Combine(productRoot, "Infrastructure", "PrerequisiteAvailabilityPolicy.cs"));
         var packagePath = Path.Combine(productRoot, "RustAnalyzerPackage.cs");
         var packageSource = File.ReadAllText(packagePath);
 
@@ -387,8 +386,6 @@ public sealed class PrerequisiteStartupCoordinatorTests
         prerequisiteSource.Should().NotContain("OpenSystemBrowser").And.NotContain("RestartAsync");
         coordinatorSource.Should().NotContain("OpenSystemBrowser").And.NotContain("RestartAsync");
         packageSource.Should().NotContain("_preReqs.SatisfyAsync");
-        availabilityPolicySource.Should().Contain(
-            "_logger.WriteError(\"Failed to show prerequisite suspension InfoBar. Ex: {0}\", exception);");
         packageSource.Should().NotContain("CommunityVS.Shell.GetVsVersionAsync()");
         evaluatorSource
             .Split(new[] { "CommunityVS.Shell.GetVsVersionAsync()" }, StringSplitOptions.None)

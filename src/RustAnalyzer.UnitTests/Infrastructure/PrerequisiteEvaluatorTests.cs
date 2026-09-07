@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using KS.RustAnalyzer.Infrastructure;
 using KS.RustAnalyzer.TestAdapter.Common;
+using KS.RustAnalyzer.Tests.Common;
 using Xunit;
 using Constants = KS.RustAnalyzer.TestAdapter.Constants;
+using MelEventId = Microsoft.Extensions.Logging.EventId;
+using MelLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace KS.RustAnalyzer.UnitTests.Infrastructure;
 
@@ -196,6 +199,84 @@ public sealed class PrerequisiteEvaluatorTests
         var prompt = new PrerequisiteFailurePromptModel(result);
         prompt.Message.Should().NotContain(standardOutput);
         prompt.Message.Should().NotContain(standardError);
+    }
+
+    [Fact]
+    public async Task FailedProbeUsesStructuredOwnerEventWithoutDuplicateDeliveryAsync()
+    {
+        const string standardOutput = "captured stdout";
+        const string standardError = "captured stderr";
+        var probe = new FakePrerequisiteProbe();
+        SetFailedProbe(
+            probe,
+            "cargo-version",
+            standardOutput,
+            standardError);
+        using var provider = new RecordingLoggerProvider();
+        using var factory = new Microsoft.Extensions.Logging.LoggerFactory(
+            new[] { provider, });
+        var service = new PreReqsCheckService(
+            probe,
+            factory);
+
+        var result = await service.EvaluateAsync(default);
+
+        result.Failures.Should().ContainSingle();
+        var entry = provider.Entries.Should().ContainSingle().Which;
+        entry.Category.Should().Be(
+            typeof(PreReqsCheckService).FullName +
+            "+DiagnosticPrerequisiteProbe");
+        entry.EventId.Should().Be(
+            new MelEventId(1, "PrerequisiteProbeFailed"));
+        entry.Level.Should().Be(MelLogLevel.Error);
+        entry.Template.Should().Be(
+            "Prerequisite probe operation: {Operation}\n" +
+            "{Status}{StartError}\n" +
+            "stdout:\n{StandardOutput}\n" +
+            "stderr:\n{StandardError}");
+        entry.Properties.Should().HaveCount(6);
+        entry.Properties["Operation"].Should().Be(
+            "Prerequisite.CargoVersion");
+        entry.Properties["Status"].Should().Be("Exit code: 42");
+        entry.Properties["StartError"].Should().Be(string.Empty);
+        entry.Properties["StandardOutput"].Should().Be(standardOutput);
+        entry.Properties["StandardError"].Should().Be(standardError);
+        entry.Message.Should().Be(
+            "Prerequisite probe operation: Prerequisite.CargoVersion\n" +
+            "Exit code: 42\n" +
+            $"stdout:\n{standardOutput}\n" +
+            $"stderr:\n{standardError}");
+        entry.Exception.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UnexpectedEvaluationFailureUsesExceptionEventAndTypedFailureAsync()
+    {
+        var expected = new InvalidOperationException("Probe failure.");
+        var probe = new FakePrerequisiteProbe
+        {
+            RunException = expected,
+        };
+        using var provider = new RecordingLoggerProvider();
+        using var factory = new Microsoft.Extensions.Logging.LoggerFactory(
+            new[] { provider, });
+        var service = new PreReqsCheckService(
+            probe,
+            factory);
+
+        var result = await service.EvaluateAsync(default);
+
+        result.Failures.Should().ContainSingle()
+            .Which.Kind.Should().Be(
+                PrerequisiteFailureKind.PrerequisiteEvaluationFailed);
+        var entry = provider.Entries.Should().ContainSingle().Which;
+        entry.Category.Should().Be(typeof(PreReqsCheckService).FullName);
+        entry.EventId.Should().Be(
+            new MelEventId(1, "PrerequisiteEvaluationFailed"));
+        entry.Level.Should().Be(MelLogLevel.Error);
+        entry.Template.Should().Be(
+            "Prerequisite evaluation failed unexpectedly.");
+        entry.Exception.Should().BeSameAs(expected);
     }
 
     [Fact]
